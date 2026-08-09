@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>醫療恐懼緩解討論區</title>
+    <style>
+        body {
+            font-family: sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .section {
+            border: 1px solid #ccc;
+            padding: 15px;
+            margin-bottom: 20px;
+            border-radius: 8px;
+        }
+
+        .form-group {
+            margin-bottom: 10px;
+        }
+
+        label {
+            display: inline-block;
+            width: 100px;
+        }
+
+        .thread-card {
+            border-bottom: 1px solid #eee;
+            padding: 10px 0;
+            margin-bottom: 10px;
+        }
+
+        .meta {
+            color: #666;
+            font-size: 0.9em;
+            margin-bottom: 5px;
+        }
+
+        .tags {
+            color: #0066cc;
+        }
+    </style>
+</head>
+
+<body>
+
+    <h1>兒童醫療恐懼緩解與安慰經驗分享</h1>
+
+    <!-- 發布討論串表單 -->
+    <div class="section">
+        <h2>發布新討論</h2>
+        <form id="postForm">
+            <div class="form-group">
+                <label>身分角色：</label>
+                <select id="postRole" required>
+                    <option value="家長">家長</option>
+                    <option value="醫師">醫師</option>
+                    <option value="護士">護士</option>
+                    <option value="醫檢師">醫檢師</option>
+                    <option value="其他">其他</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label>小孩年紀：</label>
+                <select id="postAge" required>
+                    <!-- 選項將由 JavaScript 動態生成 -->
+                </select>
+            </div>
+            <div class="form-group">
+                <label>小孩性別：</label>
+                <select id="postGender" required>
+                    <option value="男">男</option>
+                    <option value="女">女</option>
+                    <option value="不指定">不指定</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label>Hashtag：</label>
+                <input type="text" id="postHashtag" placeholder="例如：打針, 抽血 (以逗號分隔)" required>
+            </div>
+            <div class="form-group">
+                <label>作者(選填)：</label>
+                <input type="text" id="postAuthor" placeholder="匿名">
+            </div>
+            <div class="form-group">
+                <label>討論內容：</label>
+                <textarea id="postContent" rows="4" style="width: 100%;" required></textarea>
+            </div>
+            <button type="submit">發布文章</button>
+        </form>
+    </div>
+
+    <!-- 篩選器 -->
+    <div class="section">
+        <h2>篩選查詢</h2>
+        <form id="filterForm">
+            <label>年紀：
+                <select id="filterAge">
+                    <!-- 選項將由 JavaScript 動態生成 -->
+                </select>
+            </label>
+            <label>性別：
+                <select id="filterGender">
+                    <option value="">全部</option>
+                    <option value="男">男</option>
+                    <option value="女">女</option>
+                </select>
+            </label>
+            <label>角色：
+                <select id="filterRole">
+                    <option value="">全部</option>
+                    <option value="家長">家長</option>
+                    <option value="醫師">醫師</option>
+                    <option value="護士">護士</option>
+                    <option value="醫檢師">醫檢師</option>
+                    <option value="其他">其他</option>
+                </select>
+            </label>
+            <label>標籤：<input type="text" id="filterHashtag" placeholder="輸入單一標籤，例如：打針"></label>
+            <button type="submit">查詢</button>
+            <button type="button" id="clearFilterBtn">清除篩選</button>
+        </form>
+    </div>
+
+    <!-- 討論串列表呈現區 -->
+    <div class="section" id="threadsContainer">
+        載入中...
+    </div>
+
+    <script type="module" src="script.js"></script>
+</body>
+
+</html>
