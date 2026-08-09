@@ -20,14 +20,13 @@ import {
 // 這是 Firebase 的「用戶端」設定值（不是機密金鑰），公開在前端程式碼中是正常且預期的做法。
 // 真正的存取控制是由 Firestore 安全規則（見 firestore.rules）決定，而不是靠隱藏這組設定。
 const firebaseConfig = {
-    apiKey: "AIzaSyAZ7cCQlXh8oiNzwnT2LL07KPt5TMaI2d8",
-    authDomain: "dhjhweb.firebaseapp.com",
-    databaseURL: "https://dhjhweb-default-rtdb.asia-southeast1.firebasedatabase.app",
-    projectId: "dhjhweb",
-    storageBucket: "dhjhweb.firebasestorage.app",
-    messagingSenderId: "763721572642",
-    appId: "1:763721572642:web:4395ab9f74010a7fc0c57b",
-    measurementId: "G-SSKS8JV7GN"
+    apiKey: "AIzaSyAgojah0JPnyrPjPan1GfRhRBO52abkgBE",
+    authDomain: "dftt-48e02.firebaseapp.com",
+    projectId: "dftt-48e02",
+    storageBucket: "dftt-48e02.firebasestorage.app",
+    messagingSenderId: "144394925297",
+    appId: "1:144394925297:web:44b9be77dcd2117f34a550",
+    measurementId: "G-YQTYB97482"
 };
 
 const app = initializeApp(firebaseConfig);
