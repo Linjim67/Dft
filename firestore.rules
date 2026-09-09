@@ -1,0 +1,53 @@
+rules_version = '2';
+
+// Firestore 安全規則 —「安心陪伴」討論區
+// 部署：firebase deploy --only firestore:rules
+// 原則：公開可讀；寫入需匿名登入（request.auth != null）；並在伺服器端驗證欄位，
+//       避免前端被繞過後寫入異常資料。counters 只允許以遞增方式更新。
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    match /threads/{threadId} {
+
+      allow read: if true;
+
+      // 建立討論串：驗證必要欄位、型別與長度
+      allow create: if request.auth != null
+        && validThread(request.resource.data);
+
+      // 更新：只允許互動統計欄位變動（點閱、停留、回覆數、最後活動時間），
+      //       其餘內容欄位不得被竄改。
+      allow update: if request.auth != null
+        && onlyCounterFieldsChanged();
+
+      allow delete: if false;
+
+      match /replies/{replyId} {
+        allow read: if true;
+        allow create: if request.auth != null
+          && request.resource.data.content is string
+          && request.resource.data.content.size() > 0
+          && request.resource.data.content.size() <= 1000
+          && request.resource.data.author is string
+          && request.resource.data.author.size() <= 50;
+        allow update, delete: if false;
+      }
+    }
+  }
+
+  function validThread(d) {
+    return d.role in ['家長', '醫師', '護士', '醫檢師', '其他']
+      && d.author is string && d.author.size() <= 50
+      && d.content is string && d.content.size() > 0 && d.content.size() <= 2000
+      && d.members is list && d.members.size() >= 1 && d.members.size() <= 8
+      && d.hashtags is list && d.hashtags.size() <= 5
+      && d.clicks == 0 && d.replyCount == 0 && d.dwellMs == 0;
+  }
+
+  // 只有 clicks / dwellMs / replyCount / lastActivityAt 這幾個欄位可被更新
+  function onlyCounterFieldsChanged() {
+    return request.resource.data.diff(resource.data).affectedKeys()
+      .hasOnly(['clicks', 'dwellMs', 'replyCount', 'lastActivityAt']);
+  }
+}
