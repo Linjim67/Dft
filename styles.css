@@ -1,50 +1,77 @@
 /* ============================================================
    安心陪伴 — 樣式
-   設計方向：溫暖、安撫、值得信任。用於兒童醫療情境，
-   採柔和的暖色調、圓角、充足留白，並支援淺／深色模式。
+   設計系統：ui-ux-pro-max「Healthcare App / Minimalism & Swiss」
+   方向：Calm Healthcare（安撫、清爽、可信賴），支援淺／深色模式。
+   色彩以語意化 token 定義，字體為系統 CJK + Atkinson Hyperlegible（拉丁字與數字）。
    ============================================================ */
 
 :root {
-    --bg: #fbf7f2;
-    --surface: #ffffff;
-    --surface-2: #f5efe8;
-    --border: #ece2d6;
-    --text: #2f2a25;
-    --text-soft: #756c62;
-    --primary: #e07a5f;
-    /* 溫暖的珊瑚色，親切不刺眼 */
-    --primary-strong: #c85f45;
-    --primary-soft: #fcece6;
-    --accent: #3d8577;
-    /* 沉穩的藍綠，用於次要標示 */
-    --accent-soft: #e3f0ec;
-    /* 標籤／膠囊文字專用色，確保在淺色底達到 WCAG AA（≥4.5:1） */
-    --chip-warm-fg: #b0472e;
-    --chip-cool-fg: #337263;
-    --focus: #2f6fed;
-    --shadow: 0 1px 2px rgba(47, 42, 37, .06), 0 8px 24px rgba(47, 42, 37, .06);
+    /* ---- ui-ux-pro-max Healthcare 調色盤（淺色） ---- */
+    --color-background: #ECFEFF;
+    --color-foreground: #164E63;
+    --color-card: #FFFFFF;
+    --color-card-foreground: #164E63;
+    --color-muted: #E8F1F6;
+    --color-muted-foreground: #475569;
+    --color-primary: #0891B2;
+    /* 冷靜的青色 */
+    --color-primary-text: #0E7490;
+    /* 供青色「文字」使用的加深版（在白／淺底達 AA ≥4.5:1；純色 primary 保留給滑桿、邊框、焦點環等非文字用途） */
+    --color-accent: #059669;
+    /* 健康的綠色 */
+    --color-border: #A5F3FC;
+    --color-ring: #0891B2;
+    --color-destructive: #DC2626;
+    --color-on-destructive: #FFFFFF;
+
+    /* 主要行動（CTA）：加深的綠以承載白字並通過 AA（白字 on #047857 ≈ 5.4:1） */
+    --cta: #047857;
+    --cta-hover: #036148;
+    --on-cta: #FFFFFF;
+
+    /* 用於膠囊／標籤的文字色（在淺底達 WCAG AA ≥4.5:1） */
+    --chip-cool-bg: #CFFAFE;
+    --chip-cool-fg: #0E6F84;
+    --chip-warm-bg: #D1FAE5;
+    --chip-warm-fg: #05704F;
+
+    /* ---- 尺寸與效果 ---- */
     --radius: 14px;
     --radius-sm: 9px;
+    --shadow: 0 1px 2px rgba(22, 78, 99, .06), 0 8px 24px rgba(22, 78, 99, .08);
+    --shadow-lg: 0 20px 60px rgba(15, 27, 34, .30);
     --maxw: 760px;
+    --dur: 220ms;
+    /* Swiss/Minimalism 建議的柔和 hover 過場 200–250ms */
 }
 
 @media (prefers-color-scheme: dark) {
     :root {
-        --bg: #17140f;
-        --surface: #211d17;
-        --surface-2: #2a251e;
-        --border: #38312a;
-        --text: #f2ece4;
-        --text-soft: #b4a99c;
-        --primary: #e88b71;
-        --primary-strong: #f0a189;
-        --primary-soft: #3a251f;
-        --accent: #6bb8a7;
-        --accent-soft: #1f2f2b;
-        --chip-warm-fg: #f0a189;
-        --chip-cool-fg: #6bb8a7;
-        --focus: #74a3ff;
-        --shadow: 0 1px 2px rgba(0, 0, 0, .3), 0 10px 30px rgba(0, 0, 0, .35);
+        --color-background: #0F1B22;
+        --color-foreground: #E6F4F1;
+        --color-card: #13242C;
+        --color-card-foreground: #E6F4F1;
+        --color-muted: #1B2E36;
+        --color-muted-foreground: #AAC2C9;
+        --color-primary: #22D3EE;
+        --color-primary-text: #22D3EE;
+        --color-accent: #34D399;
+        --color-border: #2A4650;
+        --color-ring: #22D3EE;
+        --color-destructive: #F87171;
+        --color-on-destructive: #04231A;
+
+        --cta: #34D399;
+        --cta-hover: #56E0AC;
+        --on-cta: #04231A;
+
+        --chip-cool-bg: #0C3A44;
+        --chip-cool-fg: #7DE7F5;
+        --chip-warm-bg: #0C3A2C;
+        --chip-warm-fg: #6EE7B7;
+
+        --shadow: 0 1px 2px rgba(0, 0, 0, .3), 0 10px 30px rgba(0, 0, 0, .38);
+        --shadow-lg: 0 20px 60px rgba(0, 0, 0, .55);
     }
 }
 
@@ -58,10 +85,12 @@ html {
 
 body {
     margin: 0;
-    background: var(--bg);
-    color: var(--text);
-    font-family: "Noto Sans TC", "PingFang TC", "Microsoft JhengHei", system-ui, -apple-system, sans-serif;
-    line-height: 1.65;
+    background: var(--color-background);
+    color: var(--color-foreground);
+    /* 拉丁字與數字用 Atkinson Hyperlegible（無障礙），中文交回系統 CJK 字體 */
+    font-family: "Atkinson Hyperlegible", "Noto Sans TC", "PingFang TC",
+        "Microsoft JhengHei", system-ui, -apple-system, sans-serif;
+    line-height: 1.6;
     font-size: 16px;
 }
 
@@ -88,12 +117,30 @@ body {
     width: auto;
     height: auto;
     clip: auto;
-    background: var(--surface);
-    color: var(--text);
+    background: var(--color-card);
+    color: var(--color-foreground);
     padding: 10px 16px;
     border-radius: var(--radius-sm);
     box-shadow: var(--shadow);
     z-index: 100;
+}
+
+/* 一致的圖示尺寸與對齊 */
+.icon {
+    width: 20px;
+    height: 20px;
+    flex: none;
+    stroke: currentColor;
+    fill: none;
+    stroke-width: 1.75;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    vertical-align: middle;
+}
+
+.icon-lg {
+    width: 24px;
+    height: 24px;
 }
 
 /* ---------- Header ---------- */
@@ -101,9 +148,9 @@ body {
     position: sticky;
     top: 0;
     z-index: 20;
-    background: color-mix(in srgb, var(--bg) 88%, transparent);
+    background: color-mix(in srgb, var(--color-background) 86%, transparent);
     backdrop-filter: saturate(140%) blur(10px);
-    border-bottom: 1px solid var(--border);
+    border-bottom: 1px solid var(--color-border);
 }
 
 .header-inner {
@@ -123,21 +170,27 @@ body {
 }
 
 .brand-mark {
-    font-size: 30px;
-    line-height: 1;
+    display: inline-grid;
+    place-items: center;
+    width: 42px;
+    height: 42px;
+    border-radius: 12px;
+    background: var(--chip-cool-bg);
+    color: var(--color-primary);
     flex: none;
 }
 
 .brand-text h1 {
     margin: 0;
     font-size: 20px;
-    letter-spacing: .5px;
+    font-weight: 700;
+    letter-spacing: .3px;
 }
 
 .tagline {
     margin: 2px 0 0;
     font-size: 12.5px;
-    color: var(--text-soft);
+    color: var(--color-muted-foreground);
 }
 
 /* ---------- Buttons ---------- */
@@ -151,31 +204,28 @@ body {
     display: inline-flex;
     align-items: center;
     gap: 6px;
-    transition: transform .06s ease, background .15s ease, border-color .15s ease;
+    transition: background var(--dur) ease, border-color var(--dur) ease, color var(--dur) ease;
     white-space: nowrap;
 }
 
-.btn:active {
-    transform: translateY(1px);
-}
-
+/* 主要行動：加深綠 + 白字（單一 CTA 原則） */
 .btn-primary {
-    background: var(--primary);
-    color: #fff;
+    background: var(--cta);
+    color: var(--on-cta);
 }
 
 .btn-primary:hover {
-    background: var(--primary-strong);
+    background: var(--cta-hover);
 }
 
 .btn-ghost {
-    background: var(--surface);
-    color: var(--text);
-    border-color: var(--border);
+    background: var(--color-card);
+    color: var(--color-foreground);
+    border-color: var(--color-border);
 }
 
 .btn-ghost:hover {
-    background: var(--surface-2);
+    background: var(--color-muted);
 }
 
 .btn-sm {
@@ -183,36 +233,40 @@ body {
     font-size: 14px;
 }
 
+.btn .icon {
+    width: 18px;
+    height: 18px;
+}
+
 .btn:disabled {
-    opacity: .55;
+    opacity: .5;
     cursor: not-allowed;
-    transform: none;
 }
 
 .icon-btn {
     background: transparent;
     border: none;
-    color: var(--text-soft);
-    font-size: 18px;
-    line-height: 1;
+    color: var(--color-muted-foreground);
+    line-height: 0;
     cursor: pointer;
-    padding: 6px;
+    padding: 8px;
     border-radius: 8px;
+    transition: background var(--dur) ease, color var(--dur) ease;
 }
 
 .icon-btn:hover {
-    background: var(--surface-2);
-    color: var(--text);
+    background: var(--color-muted);
+    color: var(--color-foreground);
 }
 
 :where(button, input, select, textarea, a):focus-visible {
-    outline: 3px solid var(--focus);
+    outline: 3px solid var(--color-ring);
     outline-offset: 2px;
 }
 
 /* ---------- Toolbar ---------- */
 .toolbar {
-    margin: 22px 0 16px;
+    margin: 24px 0 16px;
 }
 
 .search-row {
@@ -226,19 +280,21 @@ body {
     display: flex;
     align-items: center;
     gap: 8px;
-    background: var(--surface);
-    border: 1px solid var(--border);
+    background: var(--color-card);
+    border: 1px solid var(--color-border);
     border-radius: 999px;
     padding: 0 16px;
     box-shadow: var(--shadow);
+    transition: border-color var(--dur) ease;
 }
 
 .search-box:focus-within {
-    border-color: var(--primary);
+    border-color: var(--color-primary);
 }
 
 .search-icon {
-    color: var(--text-soft);
+    color: var(--color-muted-foreground);
+    line-height: 0;
     flex: none;
 }
 
@@ -246,7 +302,7 @@ body {
     flex: 1;
     border: none;
     background: transparent;
-    color: var(--text);
+    color: var(--color-foreground);
     font: inherit;
     padding: 12px 0;
 }
@@ -260,11 +316,19 @@ input[type="text"],
 input[type="search"],
 textarea {
     font: inherit;
-    color: var(--text);
-    background: var(--surface);
-    border: 1px solid var(--border);
+    color: var(--color-foreground);
+    background: var(--color-card);
+    border: 1px solid var(--color-border);
     border-radius: var(--radius-sm);
     padding: 10px 12px;
+    transition: border-color var(--dur) ease;
+}
+
+select:hover,
+input[type="text"]:hover,
+input[type="search"]:hover,
+textarea:hover {
+    border-color: var(--color-primary);
 }
 
 textarea {
@@ -275,8 +339,8 @@ textarea {
 
 .filter-panel {
     margin-top: 12px;
-    background: var(--surface);
-    border: 1px solid var(--border);
+    background: var(--color-card);
+    border: 1px solid var(--color-border);
     border-radius: var(--radius);
     box-shadow: var(--shadow);
     padding: 16px;
@@ -299,18 +363,18 @@ textarea {
 
 .field label {
     font-size: 13.5px;
-    font-weight: 600;
-    color: var(--text-soft);
+    font-weight: 500;
+    color: var(--color-muted-foreground);
 }
 
 .hint {
     margin: 2px 0 0;
     font-size: 12.5px;
-    color: var(--text-soft);
+    color: var(--color-muted-foreground);
 }
 
 .req {
-    color: var(--primary-strong);
+    color: var(--color-destructive);
 }
 
 /* ---------- Range / slider ---------- */
@@ -320,8 +384,8 @@ input[type="range"] {
     width: 100%;
     height: 8px;
     border-radius: 999px;
-    background: var(--surface-2);
-    border: 1px solid var(--border);
+    background: var(--color-muted);
+    border: 1px solid var(--color-border);
     cursor: pointer;
 }
 
@@ -331,8 +395,8 @@ input[type="range"]::-webkit-slider-thumb {
     width: 24px;
     height: 24px;
     border-radius: 50%;
-    background: var(--primary);
-    border: 3px solid var(--surface);
+    background: var(--color-primary);
+    border: 3px solid var(--color-card);
     box-shadow: var(--shadow);
 }
 
@@ -340,13 +404,13 @@ input[type="range"]::-moz-range-thumb {
     width: 22px;
     height: 22px;
     border-radius: 50%;
-    background: var(--primary);
-    border: 3px solid var(--surface);
+    background: var(--color-primary);
+    border: 3px solid var(--color-card);
 }
 
 output {
     font-weight: 700;
-    color: var(--primary-strong);
+    color: var(--color-primary-text);
 }
 
 .age-slider-row {
@@ -365,13 +429,13 @@ output {
 
 .state-msg {
     text-align: center;
-    color: var(--text-soft);
+    color: var(--color-muted-foreground);
     padding: 40px 0;
 }
 
 .thread {
-    background: var(--surface);
-    border: 1px solid var(--border);
+    background: var(--color-card);
+    border: 1px solid var(--color-border);
     border-radius: var(--radius);
     box-shadow: var(--shadow);
     padding: 18px;
@@ -383,15 +447,15 @@ output {
     align-items: center;
     gap: 8px;
     font-size: 13px;
-    color: var(--text-soft);
+    color: var(--color-muted-foreground);
     margin-bottom: 10px;
 }
 
 .role-chip {
-    background: var(--accent-soft);
+    background: var(--chip-cool-bg);
     color: var(--chip-cool-fg);
     font-weight: 700;
-    padding: 5px 12px;
+    padding: 6px 12px;
     border-radius: 999px;
     font-size: 12.5px;
 }
@@ -408,9 +472,9 @@ output {
 }
 
 .kid-chip {
-    background: var(--primary-soft);
+    background: var(--chip-warm-bg);
     color: var(--chip-warm-fg);
-    padding: 5px 12px;
+    padding: 6px 12px;
     border-radius: 999px;
     font-size: 12.5px;
     font-weight: 600;
@@ -419,6 +483,7 @@ output {
 .thread-content {
     white-space: pre-wrap;
     word-break: break-word;
+    overflow-wrap: anywhere;
     margin: 4px 0 12px;
 }
 
@@ -432,18 +497,18 @@ output {
 .tag {
     color: var(--chip-cool-fg);
     font-size: 13px;
-    background: var(--accent-soft);
-    padding: 5px 10px;
+    background: var(--chip-cool-bg);
+    padding: 6px 10px;
     border-radius: 6px;
 }
 
 .thread-actions {
     display: flex;
     align-items: center;
-    gap: 14px;
+    gap: 16px;
     font-size: 13.5px;
-    color: var(--text-soft);
-    border-top: 1px solid var(--border);
+    color: var(--color-muted-foreground);
+    border-top: 1px solid var(--color-border);
     padding-top: 12px;
 }
 
@@ -453,26 +518,45 @@ output {
     gap: 5px;
 }
 
+.thread-actions .stat .icon {
+    width: 18px;
+    height: 18px;
+}
+
 .link-btn {
     background: none;
     border: none;
-    color: var(--primary-strong);
+    color: var(--color-primary-text);
     font: inherit;
     font-weight: 600;
     cursor: pointer;
     padding: 4px 6px;
     border-radius: 6px;
     margin-left: auto;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    transition: background var(--dur) ease;
 }
 
 .link-btn:hover {
-    background: var(--primary-soft);
+    background: var(--chip-cool-bg);
+}
+
+.link-btn .chevron {
+    width: 16px;
+    height: 16px;
+    transition: transform var(--dur) ease;
+}
+
+.link-btn[aria-expanded="true"] .chevron {
+    transform: rotate(180deg);
 }
 
 /* ---------- Replies ---------- */
 .replies {
     margin-top: 12px;
-    border-top: 1px dashed var(--border);
+    border-top: 1px dashed var(--color-border);
     padding-top: 12px;
     display: flex;
     flex-direction: column;
@@ -480,20 +564,21 @@ output {
 }
 
 .reply {
-    background: var(--surface-2);
+    background: var(--color-muted);
     border-radius: var(--radius-sm);
     padding: 10px 12px;
 }
 
 .reply-meta {
     font-size: 12px;
-    color: var(--text-soft);
+    color: var(--color-muted-foreground);
     margin-bottom: 3px;
 }
 
 .reply-content {
     white-space: pre-wrap;
     word-break: break-word;
+    overflow-wrap: anywhere;
     font-size: 14.5px;
 }
 
@@ -515,7 +600,7 @@ output {
 
 .cooldown-note {
     font-size: 12.5px;
-    color: var(--text-soft);
+    color: var(--color-muted-foreground);
 }
 
 /* ---------- Dialog / composer ---------- */
@@ -525,14 +610,14 @@ dialog {
     padding: 0;
     width: min(600px, calc(100vw - 32px));
     max-height: calc(100dvh - 48px);
-    background: var(--surface);
-    color: var(--text);
-    box-shadow: 0 20px 60px rgba(0, 0, 0, .35);
+    background: var(--color-card);
+    color: var(--color-card-foreground);
+    box-shadow: var(--shadow-lg);
     overflow: hidden;
 }
 
 dialog::backdrop {
-    background: rgba(30, 24, 20, .5);
+    background: rgba(15, 27, 34, .5);
     backdrop-filter: blur(3px);
 }
 
@@ -547,12 +632,13 @@ dialog::backdrop {
     align-items: center;
     justify-content: space-between;
     padding: 18px 20px;
-    border-bottom: 1px solid var(--border);
+    border-bottom: 1px solid var(--color-border);
 }
 
 .dialog-head h2 {
     margin: 0;
     font-size: 18px;
+    font-weight: 700;
 }
 
 .dialog-body {
@@ -568,8 +654,8 @@ dialog::backdrop {
     justify-content: flex-end;
     gap: 10px;
     padding: 14px 20px;
-    border-top: 1px solid var(--border);
-    background: var(--surface);
+    border-top: 1px solid var(--color-border);
+    background: var(--color-card);
 }
 
 .grid-2 {
@@ -580,7 +666,7 @@ dialog::backdrop {
 
 /* ---------- Members ---------- */
 .members {
-    border: 1px solid var(--border);
+    border: 1px solid var(--color-border);
     border-radius: var(--radius);
     padding: 14px;
     margin: 0;
@@ -599,7 +685,7 @@ dialog::backdrop {
 }
 
 .member-card {
-    background: var(--surface-2);
+    background: var(--color-muted);
     border-radius: var(--radius-sm);
     padding: 12px;
 }
@@ -620,8 +706,8 @@ dialog::backdrop {
     align-items: center;
     gap: 6px;
     font-size: 13.5px;
-    color: var(--text-soft);
-    font-weight: 600;
+    color: var(--color-muted-foreground);
+    font-weight: 500;
     cursor: pointer;
     padding-bottom: 8px;
 }
@@ -630,8 +716,8 @@ dialog::backdrop {
 .member-range label {
     display: block;
     font-size: 13.5px;
-    font-weight: 600;
-    color: var(--text-soft);
+    font-weight: 500;
+    color: var(--color-muted-foreground);
     margin: 6px 0 2px;
 }
 
@@ -641,8 +727,8 @@ dialog::backdrop {
     left: 50%;
     bottom: 24px;
     transform: translateX(-50%);
-    background: var(--text);
-    color: var(--bg);
+    background: var(--color-foreground);
+    color: var(--color-background);
     padding: 12px 20px;
     border-radius: 999px;
     box-shadow: var(--shadow);
@@ -653,8 +739,8 @@ dialog::backdrop {
 }
 
 .toast.error {
-    background: var(--primary-strong);
-    color: #fff;
+    background: var(--color-destructive);
+    color: var(--color-on-destructive);
 }
 
 /* ---------- Responsive ---------- */

@@ -415,6 +415,18 @@ function el(tag, className, text) {
     return node;
 }
 
+// 內嵌 SVG 圖示（單一線性圖示家族，取代 emoji）。字串為固定常數，無使用者輸入，無 XSS 疑慮。
+const ICONS = {
+    eye: '<svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>',
+    message: '<svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M21 11.5a8.38 8.38 0 0 1-8.5 8.5 8.5 8.5 0 0 1-3.8-.9L3 21l1.9-5.7A8.38 8.38 0 0 1 4 11.5 8.5 8.5 0 0 1 12.5 3 8.38 8.38 0 0 1 21 11.5Z"/></svg>',
+    chevron: '<svg class="icon chevron" viewBox="0 0 24 24" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>'
+};
+function iconSvg(name) {
+    const holder = document.createElement('span');
+    holder.innerHTML = ICONS[name];
+    return holder.firstElementChild;
+}
+
 function renderThread(t) {
     const card = el('div', 'thread');
     card.dataset.id = t.id;
@@ -446,10 +458,14 @@ function renderThread(t) {
 
     // 動作列
     const actions = el('div', 'thread-actions');
-    actions.appendChild(makeStat('👀', t.clicks || 0, 'clicks'));
-    actions.appendChild(makeStat('💬', t.replyCount || 0, 'replies'));
-    const replyBtn = el('button', 'link-btn', '查看 / 回覆');
+    actions.appendChild(makeStat('eye', t.clicks || 0, 'clicks'));
+    actions.appendChild(makeStat('message', t.replyCount || 0, 'replies'));
+    const replyBtn = el('button', 'link-btn');
     replyBtn.type = 'button';
+    replyBtn.setAttribute('aria-expanded', 'false');
+    const replyLabel = el('span', null, '查看 / 回覆');
+    replyBtn.appendChild(replyLabel);
+    replyBtn.appendChild(iconSvg('chevron'));
     actions.appendChild(replyBtn);
     card.appendChild(actions);
 
@@ -462,7 +478,8 @@ function renderThread(t) {
     replyBtn.addEventListener('click', async () => {
         const willOpen = repliesBox.hidden;
         repliesBox.hidden = !willOpen;
-        replyBtn.textContent = willOpen ? '收合' : '查看 / 回覆';
+        replyBtn.setAttribute('aria-expanded', String(willOpen));
+        replyLabel.textContent = willOpen ? '收合' : '查看 / 回覆';
         if (willOpen) {
             openDwell.set(t.id, Date.now());
             if (!opened) {
@@ -491,9 +508,9 @@ window.addEventListener('beforeunload', () => {
     openDwell.forEach((_, id) => flushDwell(id));
 });
 
-function makeStat(icon, value, kind) {
+function makeStat(iconName, value, kind) {
     const s = el('span', 'stat');
-    s.appendChild(el('span', null, icon));
+    s.appendChild(iconSvg(iconName));
     s.appendChild(el('span', `stat-${kind}`, String(value)));
     return s;
 }

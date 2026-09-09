@@ -6,6 +6,11 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="description" content="兒童醫療恐懼緩解與安慰經驗分享討論區 — 家長與醫療人員一起交流如何陪伴孩子面對打針與檢查。">
     <title>安心陪伴 · 兒童醫療安撫經驗分享</title>
+    <!-- 拉丁字與數字使用無障礙字體 Atkinson Hyperlegible；中文交回系統 CJK 字體 -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="stylesheet"
+        href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&display=swap">
     <link rel="stylesheet" href="styles.css">
 </head>
 
@@ -15,14 +20,21 @@
     <header class="site-header">
         <div class="wrap header-inner">
             <div class="brand">
-                <span class="brand-mark" aria-hidden="true">🧸</span>
+                <span class="brand-mark" aria-hidden="true">
+                    <svg class="icon icon-lg" viewBox="0 0 24 24" role="img">
+                        <path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/>
+                    </svg>
+                </span>
                 <div class="brand-text">
                     <h1>安心陪伴</h1>
                     <p class="tagline">兒童醫療安撫經驗分享 · 打針．抽血．檢查不害怕</p>
                 </div>
             </div>
             <button class="btn btn-primary" id="openComposerBtn" type="button">
-                <span aria-hidden="true">＋</span> 分享經驗
+                <svg class="icon" viewBox="0 0 24 24" aria-hidden="true">
+                    <path d="M12 5v14M5 12h14"/>
+                </svg>
+                分享經驗
             </button>
         </div>
     </header>
@@ -34,7 +46,12 @@
             <div class="search-row">
                 <label class="search-box">
                     <span class="visually-hidden">搜尋討論</span>
-                    <span class="search-icon" aria-hidden="true">🔍</span>
+                    <span class="search-icon" aria-hidden="true">
+                        <svg class="icon" viewBox="0 0 24 24">
+                            <circle cx="11" cy="11" r="7"/>
+                            <path d="m21 21-4.3-4.3"/>
+                        </svg>
+                    </span>
                     <input type="search" id="searchInput" placeholder="搜尋關鍵字、內容、標籤或作者…" autocomplete="off">
                 </label>
                 <select id="sortSelect" aria-label="排序方式">
@@ -93,7 +110,11 @@
         <form id="postForm" method="dialog">
             <div class="dialog-head">
                 <h2 id="composerTitle">分享一段安撫經驗</h2>
-                <button class="icon-btn" type="button" id="closeComposerBtn" aria-label="關閉">✕</button>
+                <button class="icon-btn" type="button" id="closeComposerBtn" aria-label="關閉">
+                    <svg class="icon" viewBox="0 0 24 24" aria-hidden="true">
+                        <path d="M18 6 6 18M6 6l12 12"/>
+                    </svg>
+                </button>
             </div>
 
             <div class="dialog-body">
@@ -118,7 +139,12 @@
                     <legend>孩子的年齡與性別 <span class="req">*</span></legend>
                     <p class="hint">可新增多位孩子，分享不同年紀的經驗。醫療人員可切換成「年齡範圍」。</p>
                     <div id="membersList"></div>
-                    <button class="btn btn-ghost btn-sm" type="button" id="addMemberBtn">＋ 新增一位孩子</button>
+                    <button class="btn btn-ghost btn-sm" type="button" id="addMemberBtn">
+                        <svg class="icon" viewBox="0 0 24 24" aria-hidden="true">
+                            <path d="M12 5v14M5 12h14"/>
+                        </svg>
+                        新增一位孩子
+                    </button>
                 </fieldset>
 
                 <div class="field">
@@ -159,7 +185,11 @@
                     <input type="checkbox" class="member-range-toggle">
                     <span>年齡範圍</span>
                 </label>
-                <button class="icon-btn member-remove" type="button" aria-label="移除這位孩子">✕</button>
+                <button class="icon-btn member-remove" type="button" aria-label="移除這位孩子">
+                    <svg class="icon" viewBox="0 0 24 24" aria-hidden="true">
+                        <path d="M18 6 6 18M6 6l12 12"/>
+                    </svg>
+                </button>
             </div>
 
             <div class="member-single">
