@@ -4,8 +4,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="description" content="兒童醫療恐懼緩解與安慰經驗分享討論區 — 家長與醫療人員一起交流如何陪伴孩子面對打針與檢查。">
-    <title>安心陪伴 · 兒童醫療安撫經驗分享</title>
+    <meta name="description" content="安心陪伴 — 開始之前，先簡單認識您的孩子，幫助我們提供更貼心的陪伴內容。">
+    <title>安心陪伴 · 開始之前</title>
     <!-- 拉丁字與數字使用無障礙字體 Atkinson Hyperlegible；中文交回系統 CJK 字體 -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -22,193 +22,129 @@
             <div class="brand">
                 <span class="brand-mark" aria-hidden="true">
                     <svg class="icon icon-lg" viewBox="0 0 24 24" role="img">
-                        <path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/>
+                        <path
+                            d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z" />
                     </svg>
                 </span>
                 <div class="brand-text">
                     <h1>安心陪伴</h1>
-                    <p class="tagline">兒童醫療安撫經驗分享 · 打針．抽血．檢查不害怕</p>
+                    <p class="tagline">開始之前，先簡單認識您的孩子</p>
                 </div>
             </div>
-            <button class="btn btn-primary" id="openComposerBtn" type="button">
-                <svg class="icon" viewBox="0 0 24 24" aria-hidden="true">
-                    <path d="M12 5v14M5 12h14"/>
-                </svg>
-                分享經驗
-            </button>
         </div>
     </header>
 
     <main id="main" class="wrap">
 
-        <!-- 搜尋 / 篩選 / 排序工具列 -->
-        <section class="toolbar" aria-label="搜尋與篩選">
-            <div class="search-row">
-                <label class="search-box">
-                    <span class="visually-hidden">搜尋討論</span>
-                    <span class="search-icon" aria-hidden="true">
-                        <svg class="icon" viewBox="0 0 24 24">
-                            <circle cx="11" cy="11" r="7"/>
-                            <path d="m21 21-4.3-4.3"/>
-                        </svg>
-                    </span>
-                    <input type="search" id="searchInput" placeholder="搜尋關鍵字、內容、標籤或作者…" autocomplete="off">
-                </label>
-                <select id="sortSelect" aria-label="排序方式">
-                    <option value="hot">熱門推薦</option>
-                    <option value="new">最新發布</option>
-                    <option value="replies">回覆最多</option>
-                </select>
-                <button class="btn btn-ghost" id="toggleFiltersBtn" type="button" aria-expanded="false"
-                    aria-controls="filterPanel">篩選</button>
+        <!-- 表單畫面 -->
+        <div id="formView">
+            <div class="intro-note">
+                <svg class="icon" viewBox="0 0 24 24" aria-hidden="true">
+                    <circle cx="12" cy="12" r="9" />
+                    <path d="M12 8v5M12 16h.01" />
+                </svg>
+                <p>不需要註冊，只需要花 1 分鐘。這些資訊只用來讓陪伴內容更貼近您孩子的狀況，24 小時後會自動失效。</p>
             </div>
 
-            <div class="filter-panel" id="filterPanel" hidden>
+            <div id="errorSummary" class="error-summary" role="alert" tabindex="-1" hidden>
+                <h2 id="errorSummaryTitle">請確認以下欄位</h2>
+                <ul id="errorList"></ul>
+            </div>
+
+            <form id="personalInfoForm" novalidate>
+
+                <!-- 1. 暱稱 -->
                 <div class="field">
-                    <label for="filterRole">身分角色</label>
-                    <select id="filterRole">
-                        <option value="">全部</option>
-                        <option value="家長">家長</option>
-                        <option value="醫師">醫師</option>
-                        <option value="護士">護士</option>
-                        <option value="醫檢師">醫檢師</option>
-                        <option value="其他">其他</option>
-                    </select>
+                    <label for="nickname">小孩的暱稱 <span class="req">*</span></label>
+                    <input type="text" id="nickname" name="nickname" maxlength="20" autocomplete="off"
+                        placeholder="例如：小恩" aria-describedby="nickname-error">
+                    <p class="field-error" id="nickname-error" hidden></p>
                 </div>
-                <div class="field">
-                    <label for="filterGender">孩子性別</label>
-                    <select id="filterGender">
-                        <option value="">全部</option>
-                        <option value="男孩">男孩</option>
-                        <option value="女孩">女孩</option>
-                        <option value="不指定">不指定</option>
-                    </select>
-                </div>
-                <div class="field field-age">
-                    <label for="filterAge">適用年齡 <output id="filterAgeOut">全部</output></label>
-                    <div class="age-slider-row">
-                        <input type="range" id="filterAge" min="-1" max="18" step="0.5" value="-1">
+
+                <!-- 2. 年紀 -->
+                <fieldset class="field field-age">
+                    <legend>小孩的年紀 <span class="req">*</span></legend>
+                    <div class="age-slider-wrap">
+                        <div class="age-bubble" id="ageBubble" aria-hidden="true">5 歲</div>
+                        <input type="range" id="ageIndex" min="0" max="24" step="1" value="10"
+                            aria-label="小孩的年紀" aria-describedby="ageOut age-error">
                     </div>
-                    <p class="hint">拖到最左＝不限年齡；含蓋此年齡的討論都會顯示。</p>
-                </div>
-                <div class="field field-tag">
-                    <label for="filterHashtag">標籤</label>
-                    <input type="text" id="filterHashtag" placeholder="例如：打針">
-                </div>
-                <button class="btn btn-ghost" id="clearFilterBtn" type="button">清除篩選</button>
-            </div>
-        </section>
-
-        <!-- 討論串列表 -->
-        <section id="threadsContainer" aria-live="polite" aria-busy="true">
-            <p class="state-msg">載入中…</p>
-        </section>
-    </main>
-
-    <!-- 發布討論的對話框 -->
-    <dialog id="composer" aria-labelledby="composerTitle">
-        <form id="postForm" method="dialog">
-            <div class="dialog-head">
-                <h2 id="composerTitle">分享一段安撫經驗</h2>
-                <button class="icon-btn" type="button" id="closeComposerBtn" aria-label="關閉">
-                    <svg class="icon" viewBox="0 0 24 24" aria-hidden="true">
-                        <path d="M18 6 6 18M6 6l12 12"/>
-                    </svg>
-                </button>
-            </div>
-
-            <div class="dialog-body">
-                <div class="grid-2">
-                    <div class="field">
-                        <label for="postRole">你的身分 <span class="req">*</span></label>
-                        <select id="postRole" required>
-                            <option value="家長">家長</option>
-                            <option value="醫師">醫師</option>
-                            <option value="護士">護士</option>
-                            <option value="醫檢師">醫檢師</option>
-                            <option value="其他">其他</option>
-                        </select>
-                    </div>
-                    <div class="field">
-                        <label for="postAuthor">暱稱（選填）</label>
-                        <input type="text" id="postAuthor" placeholder="匿名" maxlength="50">
-                    </div>
-                </div>
-
-                <fieldset class="members">
-                    <legend>孩子的年齡與性別 <span class="req">*</span></legend>
-                    <p class="hint">可新增多位孩子，分享不同年紀的經驗。醫療人員可切換成「年齡範圍」。</p>
-                    <div id="membersList"></div>
-                    <button class="btn btn-ghost btn-sm" type="button" id="addMemberBtn">
-                        <svg class="icon" viewBox="0 0 24 24" aria-hidden="true">
-                            <path d="M12 5v14M5 12h14"/>
-                        </svg>
-                        新增一位孩子
-                    </button>
+                    <p class="age-scale-caption"><span>0 歲</span><span>18 歲</span></p>
+                    <p class="age-readout">目前選擇：<output id="ageOut" for="ageIndex">尚未選擇，請拖曳滑桿</output></p>
+                    <p class="field-error" id="age-error" hidden></p>
                 </fieldset>
 
+                <!-- 3. 性別 -->
+                <fieldset class="field">
+                    <legend>小孩的性別 <span class="req">*</span></legend>
+                    <div class="segmented" role="radiogroup" aria-label="小孩的性別">
+                        <label class="segmented-option">
+                            <input type="radio" name="gender" value="男" required>
+                            <span>男</span>
+                        </label>
+                        <label class="segmented-option">
+                            <input type="radio" name="gender" value="女">
+                            <span>女</span>
+                        </label>
+                    </div>
+                    <p class="field-error" id="gender-error" hidden></p>
+                </fieldset>
+
+                <!-- 4. 害怕程度 -->
+                <fieldset class="field">
+                    <legend>小孩會害怕抽血嗎？ <span class="req">*</span></legend>
+                    <div class="face-scale" role="radiogroup" aria-label="小孩害怕抽血的程度，1 為最不會，5 為最會" id="fearScale">
+                    </div>
+                    <p class="scale-caption"><span>最不會</span><span>最會</span></p>
+                    <p class="field-error" id="fearLevel-error" hidden></p>
+                </fieldset>
+
+                <!-- 5. 家長擔心程度 -->
+                <fieldset class="field">
+                    <legend>家長會擔心小孩嗎？ <span class="req">*</span></legend>
+                    <div class="face-scale" role="radiogroup" aria-label="家長擔心小孩的程度，1 為最不會，5 為最會" id="worryScale">
+                    </div>
+                    <p class="scale-caption"><span>最不會</span><span>最會</span></p>
+                    <p class="field-error" id="worryLevel-error" hidden></p>
+                </fieldset>
+
+                <!-- 6. 特殊需求 -->
                 <div class="field">
-                    <label for="postHashtag">標籤（選填）</label>
-                    <input type="text" id="postHashtag" placeholder="例如：打針, 抽血, 分散注意力（以逗號分隔）">
-                    <p class="hint">最多 5 個標籤，方便別人搜尋到你的經驗。</p>
+                    <label for="specialNeeds">小孩的特殊需求（選填）</label>
+                    <textarea id="specialNeeds" name="specialNeeds" maxlength="200"
+                        placeholder="例如：對某些藥物過敏、特殊病史、其他提醒事項…"></textarea>
                 </div>
 
-                <div class="field">
-                    <label for="postContent">分享內容 <span class="req">*</span></label>
-                    <textarea id="postContent" rows="6"
-                        placeholder="描述當時的情境、你用了什麼方法安撫孩子、效果如何……"
-                        maxlength="2000" required></textarea>
-                    <p class="hint"><span id="contentCount">0</span> / 2000</p>
-                </div>
-            </div>
-
-            <div class="dialog-foot">
-                <button class="btn btn-ghost" type="button" id="cancelComposerBtn">取消</button>
-                <button class="btn btn-primary" type="submit" id="submitPostBtn">發布分享</button>
-            </div>
-        </form>
-    </dialog>
-
-    <!-- 樣板：一位孩子的輸入列（由 JS 複製使用） -->
-    <template id="memberTemplate">
-        <div class="member-card">
-            <div class="member-head">
-                <div class="field">
-                    <label>性別</label>
-                    <select class="member-gender">
-                        <option value="男孩">男孩</option>
-                        <option value="女孩">女孩</option>
-                        <option value="不指定">不指定</option>
-                    </select>
-                </div>
-                <label class="switch">
-                    <input type="checkbox" class="member-range-toggle">
-                    <span>年齡範圍</span>
-                </label>
-                <button class="icon-btn member-remove" type="button" aria-label="移除這位孩子">
-                    <svg class="icon" viewBox="0 0 24 24" aria-hidden="true">
-                        <path d="M18 6 6 18M6 6l12 12"/>
-                    </svg>
-                </button>
-            </div>
-
-            <div class="member-single">
-                <label>年齡：<output class="member-age-out">3 歲</output></label>
-                <input type="range" class="member-age" min="0" max="18" step="0.5" value="3">
-            </div>
-
-            <div class="member-range" hidden>
-                <label>最小年齡：<output class="member-agemin-out">3 歲</output></label>
-                <input type="range" class="member-agemin" min="0" max="18" step="0.5" value="3">
-                <label>最大年齡：<output class="member-agemax-out">6 歲</output></label>
-                <input type="range" class="member-agemax" min="0" max="18" step="0.5" value="6">
-            </div>
+                <button class="btn btn-primary" type="submit">完成，開始使用</button>
+            </form>
         </div>
-    </template>
 
-    <div id="toast" class="toast" role="status" aria-live="polite" hidden></div>
+        <!-- 完成畫面 -->
+        <section id="successView" class="success-view" aria-live="polite" hidden>
+            <div class="success-icon" aria-hidden="true">
+                <svg class="icon" viewBox="0 0 24 24">
+                    <path d="M20 6 9 17l-5-5" />
+                </svg>
+            </div>
+            <h2 id="successHeading" tabindex="-1">已經準備好了</h2>
+            <p>資料已安全保存在這台裝置上，24 小時內有效。</p>
 
-    <script type="module" src="script.js"></script>
+            <div class="code-card">
+                <p class="code-label">您的暫時代碼</p>
+                <p class="code-digits" id="codeDigits">0000</p>
+                <p class="code-expiry" id="codeExpiry"></p>
+            </div>
+
+            <dl class="summary-card" id="summaryCard"></dl>
+
+            <div class="success-actions">
+                <button class="btn btn-ghost" type="button" id="restartBtn">重新填寫</button>
+            </div>
+        </section>
+
+    </main>
+
+    <script src="script.js"></script>
 </body>
 
 </html>
