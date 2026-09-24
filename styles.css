@@ -42,6 +42,8 @@
   /* — 線條 — */
   --line: #9C8578;
   /* 3.48:1 on card · 3.27:1 on bg */
+  --line-w: 1px;
+  /* 控制項邊框線寬。對比由顏色承擔（3.48:1），不靠厚度。 */
   --hairline: #F5E3CE;
   /* 裝飾用，不作控制項邊界 */
   --rule: #C09A72;
@@ -436,7 +438,7 @@ textarea {
   min-height: var(--tap);
   padding: var(--sp-3) var(--sp-4);
   background: var(--card);
-  border: 2px solid var(--line);
+  border: var(--line-w) solid var(--line);
   border-radius: var(--r-md);
   box-shadow: var(--sh-inset);
   transition: border-color var(--t-fast) var(--ease),
@@ -624,7 +626,7 @@ input[type="range"]:active::-webkit-slider-thumb {
   font-weight: 700;
   border-radius: var(--r-md);
   background: var(--card);
-  border: 2px solid var(--line);
+  border: var(--line-w) solid var(--line);
   box-shadow: var(--sh-sm);
   transition: transform var(--t-fast) var(--ease),
     box-shadow var(--t-fast) var(--ease),
@@ -646,7 +648,7 @@ input[type="range"]:active::-webkit-slider-thumb {
 }
 
 .segmented-option input:active+.segmented-face {
-  transform: translateY(2px);
+  transform: translateY(1px);
 }
 
 /* ═══ Face scale (1–5) ═══════════════════════════════════════ */
@@ -682,7 +684,7 @@ input[type="range"]:active::-webkit-slider-thumb {
   min-height: 94px;
   border-radius: var(--r-md);
   background: var(--card);
-  border: 2px solid var(--line);
+  border: var(--line-w) solid var(--line);
   box-shadow: var(--sh-sm);
   transition: transform var(--t-fast) var(--ease),
     box-shadow var(--t-fast) var(--ease),
@@ -712,11 +714,12 @@ input[type="range"]:active::-webkit-slider-thumb {
 }
 
 /* 選取狀態：除了顏色，另用「更粗的框」當非顏色線索。
-   用 inset shadow 疊出 2+2px 的厚度，不動 border-width 就不會有 1px 位移。 */
+   用 inset shadow 疊出 1+1px 的厚度，不動 border-width 就不會有 1px 位移。
+   未選 1px / 已選 2px，倍率與改細前相同。 */
 .face-option input:checked+.face-body {
   background: var(--primary-wash);
   border-color: var(--primary-deep);
-  box-shadow: var(--sh-md), inset 0 0 0 2px var(--primary-deep);
+  box-shadow: var(--sh-md), inset 0 0 0 var(--line-w) var(--primary-deep);
 }
 
 .face-option input:checked+.face-body svg {
