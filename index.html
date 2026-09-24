@@ -72,34 +72,44 @@
 
       <form id="infoForm" novalidate>
 
-        <!-- ── 1. 暱稱（題目與作答同一行） ── -->
-        <div class="field field-inline">
+        <!-- ── 1. 暱稱 ── -->
+        <div class="field">
           <label class="field-label" for="nickname">
             孩子的暱稱 <span class="req">必填</span>
           </label>
           <input type="text" id="nickname" name="nickname" maxlength="20" autocomplete="off"
-            enterkeyhint="next" placeholder="例如：小恩" aria-required="true" aria-describedby="nickname-error">
+            enterkeyhint="next" placeholder="例如：小恩" aria-required="true" aria-describedby="nickname-hint nickname-error">
           <p class="field-error" id="nickname-error" hidden></p>
         </div>
 
-        <!-- ── 2. 年紀（結果與題目同一行，滑桿獨占下一行） ──
-             只有一個控制項，改用 label 直接關聯，比 fieldset/legend 更精準。 -->
-        <div class="field field-inline field-age">
-          <label class="field-label" for="ageIndex">
+        <!-- ── 2. 年紀 ── -->
+        <fieldset class="field">
+          <legend class="field-label">
             孩子的年紀 <span class="req">必填</span>
-          </label>
+          </legend>
           <p class="age-readout">
             <output id="ageOut" for="ageIndex">尚未選擇</output>
           </p>
 
-          <div class="slider-track-wrap">
-            <span class="age-bubble" id="ageBubble" aria-hidden="true" data-empty="true">？</span>
-            <input type="range" id="ageIndex" name="ageIndex" min="0" max="36" step="1" value="12" aria-required="true"
-              aria-describedby="age-error">
+          <div class="slider-row">
+            <button class="stepper" type="button" id="ageDown" aria-label="年紀減少一格">
+              <svg viewBox="0 0 24 24" class="icon" aria-hidden="true"><path d="M6 12h12" /></svg>
+            </button>
+
+            <div class="slider-track-wrap">
+              <span class="age-bubble" id="ageBubble" aria-hidden="true" data-empty="true">？</span>
+              <input type="range" id="ageIndex" name="ageIndex" min="0" max="36" step="1" value="12" aria-required="true"
+                aria-describedby="age-hint age-error">
+            </div>
+
+            <button class="stepper" type="button" id="ageUp" aria-label="年紀增加一格">
+              <svg viewBox="0 0 24 24" class="icon" aria-hidden="true"><path d="M12 6v12M6 12h12" /></svg>
+            </button>
           </div>
 
+          <p class="scale-ends" aria-hidden="true"><span>剛出生</span><span>18 歲</span></p>
           <p class="field-error" id="age-error" hidden></p>
-        </div>
+        </fieldset>
 
         <!-- ── 3. 性別（題目與選項同一行） ── -->
         <div class="field field-inline" role="radiogroup" aria-labelledby="gender-label">
@@ -124,7 +134,7 @@
           <legend class="field-label">
             孩子會害怕抽血嗎？ <span class="req">必填</span>
           </legend>
-          <p class="field-hint" id="fear-hint">沒有標準答案，選最接近的就好。</p>
+          <p class="field-hint" id="fear-hint">猜猜看自己小孩多害怕。</p>
           <div class="face-scale" id="fearScale" data-name="fearLevel"
             data-describedby="fear-hint fearLevel-error"></div>
           <p class="field-error" id="fearLevel-error" hidden></p>
@@ -135,7 +145,7 @@
           <legend class="field-label">
             您自己會擔心嗎？ <span class="req">必填</span>
           </legend>
-          <p class="field-hint" id="worry-hint">家長的緊張孩子會感覺到，所以這題同樣重要。</p>
+          <p class="field-hint" id="worry-hint">孩子也會感覺到家長的緊張，所以這題也很重要。</p>
           <div class="face-scale" id="worryScale" data-name="worryLevel"
             data-describedby="worry-hint worryLevel-error"></div>
           <p class="field-error" id="worryLevel-error" hidden></p>
@@ -146,16 +156,15 @@
           <label class="field-label" for="specialNeeds">
             有什麼需求，我們需要注意的嗎？ <span class="opt">選填</span>
           </label>
-          <p class="field-hint" id="needs-hint">例如：上次抽血暈針、只給媽媽抱。</p>
           <textarea id="specialNeeds" name="specialNeeds" maxlength="200" rows="3"
-            placeholder="沒有的話可以留空" aria-describedby="needs-hint needs-count"></textarea>
+            placeholder="例如：上次抽血暈針、只給媽媽抱。" aria-describedby="needs-hint needs-count"></textarea>
           <p class="char-count" id="needs-count" aria-live="polite">還可以輸入 200 字</p>
         </div>
 
         <button class="btn btn-primary" type="submit" id="submitBtn">
           <span class="btn-label">完成，開始陪伴</span>
         </button>
-        <p class="form-foot">送出後會拿到一組 4 位數代碼，方便隨時回到這個頁面。</p>
+        <p class="form-foot">送出後會拿到一組 4 位數代碼，到時候要交給醫檢師。</p>
       </form>
     </div>
 
@@ -186,7 +195,7 @@
       </button>
     </section>
 
-  </main>
+  </main> 
 
   <div class="live-region" id="liveRegion" role="status" aria-live="polite"></div>
   <script src="script.js"></script>
