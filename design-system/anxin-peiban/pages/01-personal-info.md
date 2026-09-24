@@ -44,8 +44,12 @@ The steppers skip the dead index entirely, so +/− always walks one real stop.
 The earlier 25-index version packed 0–6yr into the same width as 7–18yr, so a year was twice
 as wide at the young end — the bar lied about the scale.
 
-- **`input` → bubble** (live while dragging) · **`change` → `<output>`** (commits on release).
-  This is the spec's "shows number while scrolling, displays after complete scrolling."
+- **The floating bubble is gone.** The readout on the question line is now the single display and
+  it live-syncs: `input` and `change` both call the same `updateAge()`, so the number, the
+  `aria-valuetext`, and the orange track fill can never disagree with each other.
+- ⚠️ **Deliberate deviation from prompt.md.** The original spec asked for the value to appear
+  "after complete scrolling"; the product owner asked for continuous sync instead, so the number
+  now updates during the drag rather than on release.
 - `aria-valuetext` is set on every paint — otherwise a screen reader announces the raw index
   ("7") instead of the age ("3 歲半").
 - Labels: `0 → 未滿 6 個月` · `0.5 → 6 個月` · `n.5 → n 歲半` · `n → n 歲`

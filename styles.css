@@ -332,9 +332,9 @@ button {
   display: block;
   font-size: 1.08rem;
   font-weight: 700;
-  line-height: 1.5;
+  line-height: 1.4;
   padding: 0;
-  margin-bottom: var(--sp-1);
+  margin-bottom: 0;
 }
 
 .req,
@@ -382,11 +382,12 @@ button {
     opacity var(--t-base) var(--ease);
 }
 
+/* 說明緊貼題目：只留行距的自然留白，不再額外加 margin */
 .field-hint {
   font-size: .9rem;
   line-height: 1.6;
   color: var(--fg-muted);
-  margin-bottom: var(--sp-3);
+  margin: 0 0 var(--sp-3);
 }
 
 .field-error {
@@ -486,44 +487,8 @@ textarea:focus {
   position: relative;
   flex: 1 0 100%;
   min-width: 0;
-  padding-top: 44px;
 }
 
-.age-bubble {
-  position: absolute;
-  top: 0;
-  left: 0;
-  transform: translateX(-50%);
-  padding: 3px var(--sp-3);
-  border-radius: var(--r-pill);
-  background: var(--primary-deep);
-  color: #FFFFFF;
-  font-size: .92rem;
-  font-weight: 700;
-  white-space: nowrap;
-  font-variant-numeric: tabular-nums;
-  box-shadow: var(--sh-orange);
-  transition: left var(--t-fast) var(--ease);
-}
-
-.age-bubble::after {
-  content: "";
-  position: absolute;
-  left: 50%;
-  bottom: -4px;
-  width: 10px;
-  height: 10px;
-  transform: translateX(-50%) rotate(45deg);
-  background: inherit;
-  border-radius: 2px;
-}
-
-.age-bubble[data-empty="true"] {
-  background: var(--fg-muted);
-  box-shadow: var(--sh-sm);
-}
-
-/* --fill 由 JS 更新，讓已選範圍填成橘色 */
 input[type="range"] {
   --fill: 0%;
   -webkit-appearance: none;
@@ -734,10 +699,12 @@ input[type="range"]:active::-webkit-slider-thumb {
   transition: color var(--t-fast) var(--ease);
 }
 
+/* 選取狀態：除了顏色，另用「更粗的框」當非顏色線索。
+   用 inset shadow 疊出 2+2px 的厚度，不動 border-width 就不會有 1px 位移。 */
 .face-option input:checked+.face-body {
   background: var(--primary-wash);
   border-color: var(--primary-deep);
-  box-shadow: var(--sh-md);
+  box-shadow: var(--sh-md), inset 0 0 0 2px var(--primary-deep);
 }
 
 .face-option input:checked+.face-body svg {
@@ -755,32 +722,6 @@ input[type="range"]:active::-webkit-slider-thumb {
 
 .face-option input:active+.face-body {
   transform: translateY(2px);
-}
-
-/* 選取標記：不單靠顏色傳達狀態 */
-.face-check {
-  position: absolute;
-  top: -7px;
-  inset-inline-end: -5px;
-  display: none;
-  place-items: center;
-  width: 22px;
-  height: 22px;
-  border-radius: 50%;
-  background: var(--primary-deep);
-  color: #FFFFFF;
-  box-shadow: var(--sh-sm);
-}
-
-.face-check svg {
-  width: 13px;
-  height: 13px;
-  stroke: currentColor;
-  stroke-width: 3;
-}
-
-.face-option input:checked~.face-check {
-  display: grid;
 }
 
 /* ═══ Buttons ════════════════════════════════════════════════ */

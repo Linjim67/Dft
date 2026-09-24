@@ -51,51 +51,39 @@
   }
 
   var ageInput = $('ageIndex');
-  var ageBubble = $('ageBubble');
   var ageOut = $('ageOut');
   var ageIdx = 12;
-  var ageTouched = false;
-  /* engaged：使用者是否已經碰過滑桿。未碰過就不填色，
+  /* 使用者是否已經碰過滑桿。沒碰過就不填色，
      否則軌道會暗示一個家長沒有選過的值。 */
-  var ageEngaged = false;
+  var ageTouched = false;
 
-  /* 氣泡跟著滑桿頭走：扣掉頭的寬度，端點才不會超出軌道 */
-  function positionBubble() {
-    var idx = Number(ageInput.value);
-    var ratio = (idx - AGE_MIN_IDX) / (AGE_MAX_IDX - AGE_MIN_IDX);
-    var thumb = 32;
-    var usable = ageInput.offsetWidth - thumb;
-    ageBubble.style.left = (thumb / 2 + ratio * usable) + 'px';
+  function paintFill() {
+    var ratio = (ageIdx - AGE_MIN_IDX) / (AGE_MAX_IDX - AGE_MIN_IDX);
     /* 軌道已選區段填成橘色（--fill 由 CSS 的 linear-gradient 取用） */
     ageInput.style.setProperty(
-      '--fill', ageEngaged ? (ratio * 100).toFixed(2) + '%' : '0%');
+      '--fill', ageTouched ? (ratio * 100).toFixed(2) + '%' : '0%');
   }
 
-  /* 拖曳中即時更新氣泡；放開後才把值寫進 output（「完整捲動後顯示」） */
-  function paintBubble() {
-    ageEngaged = true;
+  /* 氣泡已移除，改由題目那一行的 output 直接即時同步滑桿。
+     input（拖曳中）與 change（放開）都走同一條路徑，兩者必定一致。 */
+  function updateAge() {
+    ageTouched = true;
     var snapped = snapIndex(Number(ageInput.value), ageIdx);
     if (snapped !== Number(ageInput.value)) ageInput.value = snapped;
     ageIdx = snapped;
-    var label = ageLabel(indexToAge(snapped));
-    ageBubble.textContent = label;
-    ageBubble.removeAttribute('data-empty');
-    ageInput.setAttribute('aria-valuetext', label);
-    positionBubble();
-  }
 
-  function commitAge() {
-    ageTouched = true;
-    setAnswered(ageInput, true);
-    var label = ageLabel(indexToAge(ageIdx));
+    var label = ageLabel(indexToAge(snapped));
     ageOut.textContent = label;
     ageOut.removeAttribute('data-empty');
+    ageInput.setAttribute('aria-valuetext', label);
+
+    setAnswered(ageInput, true);
     clearError('age');
+    paintFill();
   }
 
-  ageInput.addEventListener('input', paintBubble);
-  ageInput.addEventListener('change', commitAge);
-  window.addEventListener('resize', positionBubble);
+  ageInput.addEventListener('input', updateAge);
+  ageInput.addEventListener('change', updateAge);
 
   /* ─────────────────────────────────────────────────────────────
      1–5 表情量表
@@ -111,9 +99,6 @@
     '<ellipse cx="12" cy="15.6" rx="2.3" ry="1.7"/>'
   ];
 
-  var CHECK = '<span class="face-check" aria-hidden="true">' +
-    '<svg viewBox="0 0 24 24"><path d="M5 12.6 9.6 17 19 7.4" fill="none"/></svg></span>';
-
   function buildScale(host, captions) {
     var name = host.dataset.name;
     var describedby = host.dataset.describedby;
@@ -128,7 +113,7 @@
         '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/>' +
         FACES[i] + '</svg>' +
         '<span class="face-caption">' + captions[i] + '</span>' +
-        '</span>' + CHECK +
+        '</span>' +
         '</label>';
     }
     host.innerHTML = html;
@@ -386,12 +371,10 @@
     ageTouched = false;
     ageIdx = 12;
     ageInput.value = ageIdx;
-    ageBubble.textContent = '？';
-    ageBubble.setAttribute('data-empty', 'true');
     ageOut.textContent = '尚未選擇';
     ageOut.setAttribute('data-empty', 'true');
     ageInput.removeAttribute('aria-valuetext');
-    ageEngaged = false;
+    ageTouched = false;
     needsCount.textContent = '還可以輸入 ' + NEEDS_MAX + ' 字';
     Object.keys(FIELDS).forEach(clearError);
     Array.prototype.forEach.call(
@@ -400,7 +383,7 @@
     errorSummary.hidden = true;
     successView.hidden = true;
     formView.hidden = false;
-    positionBubble();
+    paintFill();
     $('nickname').focus();
   });
 
@@ -409,7 +392,7 @@
      ───────────────────────────────────────────────────────────── */
 
   ageOut.setAttribute('data-empty', 'true');
-  positionBubble();
+  paintFill();
 
   var saved = load();
   if (saved) renderSuccess(saved);
