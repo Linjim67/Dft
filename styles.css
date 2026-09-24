@@ -44,6 +44,10 @@
   /* 3.48:1 on card · 3.27:1 on bg */
   --hairline: #F5E3CE;
   /* 裝飾用，不作控制項邊界 */
+  --rule: #F0DCC4;
+  /* 題目之間的分隔線 */
+  --idle: #78716C;
+  /* 未作答的表情／說明灰 — 4.80:1 on card */
 
   /* — 暖色陰影（取代硬邊，質感較軟） — */
   --sh-sm: 0 1px 2px rgba(124, 45, 18, .05), 0 2px 8px -2px rgba(124, 45, 18, .08);
@@ -128,6 +132,12 @@ textarea {
 button {
   cursor: pointer;
   touch-action: manipulation;
+}
+
+/* 作者樣式的 display 會蓋過 UA 的 [hidden]{display:none}，
+   .field-error 是 display:flex，沒有這條就會露出空的警示三角形。 */
+[hidden] {
+  display: none !important;
 }
 
 :focus-visible {
@@ -305,9 +315,15 @@ button {
 /* ═══ Fields ═════════════════════════════════════════════════ */
 
 .field {
-  margin: 0 0 var(--sp-6);
+  margin: 0 0 var(--sp-5);
   padding: 0;
   border: 0;
+}
+
+/* 每一題之間畫一條分隔線 */
+.field+.field {
+  border-top: 1px solid var(--rule);
+  padding-top: var(--sp-5);
 }
 
 .field-label {
@@ -339,6 +355,29 @@ button {
 .opt {
   color: var(--fg-muted);
   background: var(--bg-sunk);
+}
+
+/* 已作答：題目與說明退後一階，讓未填的題目自然跳出來 */
+.field.is-answered .field-label {
+  color: var(--fg-muted);
+}
+
+/* 用實色而非 opacity 淡化：opacity .7 會把提示壓到 3.49:1，低於 4.5 門檻 */
+.field.is-answered .field-hint {
+  color: var(--idle);
+}
+
+.field.is-answered .req {
+  color: var(--fg-muted);
+  background: var(--bg-sunk);
+}
+
+.field-label,
+.field-hint,
+.req {
+  transition: color var(--t-base) var(--ease),
+    background-color var(--t-base) var(--ease),
+    opacity var(--t-base) var(--ease);
 }
 
 .field-hint {
@@ -587,10 +626,29 @@ input[type="range"]:active::-webkit-slider-thumb {
 
 /* ═══ Segmented (gender) ═════════════════════════════════════ */
 
+/* 題目與選項並排；空間不足時自然換行，不擠壓選項 */
+.field-inline {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--sp-2) var(--sp-3);
+}
+
+.field-inline .field-label {
+  margin-bottom: 0;
+}
+
+.field-inline .field-error {
+  flex: 1 0 100%;
+  margin-top: 0;
+}
+
 .segmented {
   display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: var(--sp-3);
+  grid-template-columns: repeat(2, 68px);
+  gap: var(--sp-2);
+  flex: 0 0 auto;
 }
 
 .segmented-option {
@@ -612,8 +670,8 @@ input[type="range"]:active::-webkit-slider-thumb {
 .segmented-face {
   display: grid;
   place-items: center;
-  min-height: 62px;
-  padding: var(--sp-3);
+  min-height: 50px;
+  padding: var(--sp-2);
   font-weight: 700;
   border-radius: var(--r-md);
   background: var(--card);
@@ -687,7 +745,7 @@ input[type="range"]:active::-webkit-slider-thumb {
   width: 36px;
   height: 36px;
   fill: none;
-  stroke: var(--fg);
+  stroke: var(--idle);
   stroke-width: 1.8;
   stroke-linecap: round;
   stroke-linejoin: round;
@@ -699,8 +757,9 @@ input[type="range"]:active::-webkit-slider-thumb {
   font-weight: 700;
   line-height: 1.25;
   text-align: center;
-  color: var(--fg-muted);
+  color: var(--idle);
   overflow-wrap: anywhere;
+  transition: color var(--t-fast) var(--ease);
 }
 
 .face-option input:checked+.face-body {

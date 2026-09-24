@@ -22,10 +22,25 @@
      ───────────────────────────────────────────────────────────── */
 
   var AGE_MIN_IDX = 0;
-  var AGE_MAX_IDX = 24;
+  var AGE_MAX_IDX = 36;
+  var HALF_STEP_MAX = 12;
+  /* 每一格都固定等於 0.5 歲，滑桿在整條軌道上才是線性的。
+     0–12 格每格可選（0–6 歲，0.5 歲一階）；
+     13–36 格只有偶數可選（7–18 歲，1 歲一階），奇數格會被吸附掉。 */
 
   function indexToAge(i) {
-    return i <= 12 ? i * 0.5 : i - 6;
+    return i * 0.5;
+  }
+
+  function isSelectable(i) {
+    return i <= HALF_STEP_MAX || i % 2 === 0;
+  }
+
+  /* 奇數格（>12）不可停留：依移動方向吸附到相鄰的偶數格 */
+  function snapIndex(raw, prev) {
+    if (isSelectable(raw)) return raw;
+    var out = raw > prev ? raw + 1 : raw - 1;
+    return Math.min(AGE_MAX_IDX, Math.max(AGE_MIN_IDX, out));
   }
 
   function ageLabel(v) {
@@ -40,6 +55,7 @@
   var ageOut = $('ageOut');
   var ageDown = $('ageDown');
   var ageUp = $('ageUp');
+  var ageIdx = 12;
   var ageTouched = false;
   /* engaged：使用者是否已經碰過滑桿。未碰過就不填色，
      否則軌道會暗示一個家長沒有選過的值。 */
@@ -60,7 +76,10 @@
   /* 拖曳中即時更新氣泡；放開後才把值寫進 output（「完整捲動後顯示」） */
   function paintBubble() {
     ageEngaged = true;
-    var label = ageLabel(indexToAge(Number(ageInput.value)));
+    var snapped = snapIndex(Number(ageInput.value), ageIdx);
+    if (snapped !== Number(ageInput.value)) ageInput.value = snapped;
+    ageIdx = snapped;
+    var label = ageLabel(indexToAge(snapped));
     ageBubble.textContent = label;
     ageBubble.removeAttribute('data-empty');
     ageInput.setAttribute('aria-valuetext', label);
@@ -69,17 +88,20 @@
 
   function commitAge() {
     ageTouched = true;
-    var label = ageLabel(indexToAge(Number(ageInput.value)));
+    setAnswered(ageInput, true);
+    var label = ageLabel(indexToAge(ageIdx));
     ageOut.textContent = label;
     ageOut.removeAttribute('data-empty');
-    ageDown.disabled = Number(ageInput.value) <= AGE_MIN_IDX;
-    ageUp.disabled = Number(ageInput.value) >= AGE_MAX_IDX;
+    ageDown.disabled = ageIdx <= AGE_MIN_IDX;
+    ageUp.disabled = ageIdx >= AGE_MAX_IDX;
     clearError('age');
   }
 
   function nudgeAge(delta) {
-    var next = Math.min(AGE_MAX_IDX, Math.max(AGE_MIN_IDX, Number(ageInput.value) + delta));
-    if (next === Number(ageInput.value)) return;
+    var next = ageIdx + delta;
+    if (!isSelectable(next)) next += delta;
+    next = Math.min(AGE_MAX_IDX, Math.max(AGE_MIN_IDX, next));
+    if (next === ageIdx) return;
     ageInput.value = next;
     paintBubble();
     commitAge();
@@ -127,7 +149,10 @@
         '</label>';
     }
     host.innerHTML = html;
-    host.addEventListener('change', function () { clearError(name); });
+    host.addEventListener('change', function () {
+      clearError(name);
+      setAnswered(host, true);
+    });
   }
 
   buildScale($('fearScale'), ['完全不會', '有一點', '普通', '蠻害怕', '非常害怕']);
@@ -143,6 +168,15 @@
 
   needs.addEventListener('input', function () {
     needsCount.textContent = '還可以輸入 ' + (NEEDS_MAX - needs.value.length) + ' 字';
+    setAnswered(needs, needs.value.trim());
+  });
+
+  $('nickname').addEventListener('input', function () {
+    setAnswered($('nickname'), $('nickname').value.trim());
+  });
+
+  form.addEventListener('change', function (ev) {
+    if (ev.target.name === 'gender') setAnswered(ev.target, true);
   });
 
   /* ─────────────────────────────────────────────────────────────
@@ -315,6 +349,12 @@
     $('successHeading').focus();
   }
 
+  /* 已作答的題目把標題調淡，讓還沒填的那題自然變成視線焦點 */
+  function setAnswered(el, yes) {
+    var field = el.closest('.field');
+    if (field) field.classList.toggle('is-answered', !!yes);
+  }
+
   function announce(msg) {
     live.textContent = '';
     window.setTimeout(function () { live.textContent = msg; }, 60);
@@ -337,7 +377,7 @@
     errorSummary.hidden = true;
     var now = Date.now();
     var nickname = $('nickname').value.trim();
-    var age = indexToAge(Number(ageInput.value));
+    var age = indexToAge(ageIdx);
     var gender = form.querySelector('[name="gender"]:checked').value;
 
     var profile = {
@@ -361,7 +401,8 @@
     try { localStorage.removeItem(STORE_KEY); } catch (e) { /* 忽略 */ }
     form.reset();
     ageTouched = false;
-    ageInput.value = 10;
+    ageIdx = 12;
+    ageInput.value = ageIdx;
     ageBubble.textContent = '？';
     ageBubble.setAttribute('data-empty', 'true');
     ageOut.textContent = '尚未選擇';
@@ -372,6 +413,9 @@
     ageUp.disabled = false;
     needsCount.textContent = '還可以輸入 ' + NEEDS_MAX + ' 字';
     Object.keys(FIELDS).forEach(clearError);
+    Array.prototype.forEach.call(
+      form.querySelectorAll('.field.is-answered'),
+      function (f) { f.classList.remove('is-answered'); });
     errorSummary.hidden = true;
     successView.hidden = true;
     formView.hidden = false;
