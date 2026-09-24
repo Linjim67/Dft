@@ -1,334 +1,384 @@
-/* ============================================================
-   安心陪伴 — 01. 基本資料頁邏輯
-   純前端、無須登入：以 localStorage 保存 24 小時內的暫時帳號。
-   ============================================================ */
-(() => {
-    'use strict';
+/* ═══════════════════════════════════════════════════════════════
+   安心陪伴 — 01 個人資訊
+   單次使用、不需註冊。資料只存在本機，24 小時後失效。
+   ═══════════════════════════════════════════════════════════════ */
+(function () {
+  'use strict';
 
-    const STORAGE_KEY = 'notcry_patient_session_v1';
-    const DAY_MS = 24 * 60 * 60 * 1000;
+  var STORE_KEY = 'anxin.profile.v1';
+  var TTL_MS = 24 * 60 * 60 * 1000;
 
-    const form = document.getElementById('personalInfoForm');
-    const formView = document.getElementById('formView');
-    const successView = document.getElementById('successView');
-    const errorSummary = document.getElementById('errorSummary');
-    const errorList = document.getElementById('errorList');
-    const nicknameInput = document.getElementById('nickname');
-    const specialNeedsInput = document.getElementById('specialNeeds');
-    const ageIndexInput = document.getElementById('ageIndex');
-    const ageBubble = document.getElementById('ageBubble');
-    const ageOut = document.getElementById('ageOut');
-    const fearScaleEl = document.getElementById('fearScale');
-    const worryScaleEl = document.getElementById('worryScale');
-    const codeDigits = document.getElementById('codeDigits');
-    const codeExpiry = document.getElementById('codeExpiry');
-    const summaryCard = document.getElementById('summaryCard');
-    const successHeading = document.getElementById('successHeading');
-    const restartBtn = document.getElementById('restartBtn');
+  var $ = function (id) { return document.getElementById(id); };
 
-    let ageTouched = false;
+  var formView = $('formView');
+  var successView = $('successView');
+  var form = $('infoForm');
+  var live = $('liveRegion');
 
-    // ---------- 年紀滑桿：0–6 歲以 0.5 為單位，6–18 歲以 1 為單位 ----------
-    const AGE_VALUES = [];
-    for (let i = 0; i <= 12; i++) AGE_VALUES.push(i * 0.5); // 0, 0.5, ... 6
-    for (let a = 7; a <= 18; a++) AGE_VALUES.push(a); // 7, 8, ... 18
+  /* ─────────────────────────────────────────────────────────────
+     年紀：非線性刻度
+     索引 0–12  → 0 至 6 歲，每格 0.5 歲
+     索引 13–24 → 7 至 18 歲，每格 1 歲
+     ───────────────────────────────────────────────────────────── */
 
-    function ageValueFromIndex(index) {
-        const clamped = Math.min(Math.max(index, 0), AGE_VALUES.length - 1);
-        return AGE_VALUES[clamped];
+  var AGE_MIN_IDX = 0;
+  var AGE_MAX_IDX = 24;
+
+  function indexToAge(i) {
+    return i <= 12 ? i * 0.5 : i - 6;
+  }
+
+  function ageLabel(v) {
+    if (v === 0) return '未滿 6 個月';
+    if (v === 0.5) return '6 個月';
+    var whole = Math.floor(v);
+    return whole + ' 歲' + (v % 1 === 0.5 ? '半' : '');
+  }
+
+  var ageInput = $('ageIndex');
+  var ageBubble = $('ageBubble');
+  var ageOut = $('ageOut');
+  var ageDown = $('ageDown');
+  var ageUp = $('ageUp');
+  var ageTouched = false;
+
+  /* 氣泡跟著滑桿頭走：扣掉頭的寬度，端點才不會超出軌道 */
+  function positionBubble() {
+    var idx = Number(ageInput.value);
+    var ratio = (idx - AGE_MIN_IDX) / (AGE_MAX_IDX - AGE_MIN_IDX);
+    var thumb = 34;
+    var usable = ageInput.offsetWidth - thumb;
+    ageBubble.style.left = (thumb / 2 + ratio * usable) + 'px';
+  }
+
+  /* 拖曳中即時更新氣泡；放開後才把值寫進 output（「完整捲動後顯示」） */
+  function paintBubble() {
+    var label = ageLabel(indexToAge(Number(ageInput.value)));
+    ageBubble.textContent = label;
+    ageBubble.removeAttribute('data-empty');
+    ageInput.setAttribute('aria-valuetext', label);
+    positionBubble();
+  }
+
+  function commitAge() {
+    ageTouched = true;
+    var label = ageLabel(indexToAge(Number(ageInput.value)));
+    ageOut.textContent = label;
+    ageOut.removeAttribute('data-empty');
+    ageDown.disabled = Number(ageInput.value) <= AGE_MIN_IDX;
+    ageUp.disabled = Number(ageInput.value) >= AGE_MAX_IDX;
+    clearError('age');
+  }
+
+  function nudgeAge(delta) {
+    var next = Math.min(AGE_MAX_IDX, Math.max(AGE_MIN_IDX, Number(ageInput.value) + delta));
+    if (next === Number(ageInput.value)) return;
+    ageInput.value = next;
+    paintBubble();
+    commitAge();
+    announce('年紀 ' + ageOut.textContent);
+  }
+
+  ageInput.addEventListener('input', paintBubble);
+  ageInput.addEventListener('change', commitAge);
+  ageDown.addEventListener('click', function () { nudgeAge(-1); });
+  ageUp.addEventListener('click', function () { nudgeAge(1); });
+  window.addEventListener('resize', positionBubble);
+
+  /* ─────────────────────────────────────────────────────────────
+     1–5 表情量表
+     圖示只是輔助，語意由文字說明承擔（不單靠顏色或圖形）
+     ───────────────────────────────────────────────────────────── */
+
+  var FACES = [
+    '<path d="M9 10.3h.01M15 10.3h.01"/><path d="M8 13.9c1.1 2 6.9 2 8 0"/>',
+    '<path d="M9 10.3h.01M15 10.3h.01"/><path d="M8.7 14.3c1 1.1 5.6 1.1 6.6 0"/>',
+    '<path d="M9 10.3h.01M15 10.3h.01"/><path d="M8.7 14.8h6.6"/>',
+    '<path d="M9 10.3h.01M15 10.3h.01"/><path d="M8.7 15.6c1-1.1 5.6-1.1 6.6 0"/>',
+    '<path d="M7.7 8.5 10.1 9.6M16.3 8.5 13.9 9.6"/><path d="M9 11.2h.01M15 11.2h.01"/>' +
+    '<ellipse cx="12" cy="15.6" rx="2.3" ry="1.7"/>'
+  ];
+
+  var CHECK = '<span class="face-check" aria-hidden="true">' +
+    '<svg viewBox="0 0 24 24"><path d="M5 12.6 9.6 17 19 7.4" fill="none"/></svg></span>';
+
+  function buildScale(host, captions) {
+    var name = host.dataset.name;
+    var describedby = host.dataset.describedby;
+    var html = '';
+    for (var i = 0; i < 5; i++) {
+      var v = i + 1;
+      html +=
+        '<label class="face-option">' +
+        '<input type="radio" name="' + name + '" value="' + v + '"' +
+        ' aria-required="true" aria-describedby="' + describedby + '">' +
+        '<span class="face-body" style="--face-tint:var(--tint-' + v + ');' +
+        '--face-wash:var(--wash-' + v + ')">' +
+        '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/>' +
+        FACES[i] + '</svg>' +
+        '<span class="face-caption">' + captions[i] + '</span>' +
+        '</span>' + CHECK +
+        '</label>';
+    }
+    host.innerHTML = html;
+    host.addEventListener('change', function () { clearError(name); });
+  }
+
+  buildScale($('fearScale'), ['完全不會', '有一點', '普通', '蠻害怕', '非常害怕']);
+  buildScale($('worryScale'), ['完全不會', '有一點', '普通', '蠻擔心', '非常擔心']);
+
+  /* ─────────────────────────────────────────────────────────────
+     字數提示
+     ───────────────────────────────────────────────────────────── */
+
+  var needs = $('specialNeeds');
+  var needsCount = $('needs-count');
+  var NEEDS_MAX = 200;
+
+  needs.addEventListener('input', function () {
+    needsCount.textContent = '還可以輸入 ' + (NEEDS_MAX - needs.value.length) + ' 字';
+  });
+
+  /* ─────────────────────────────────────────────────────────────
+     驗證：行內錯誤 + 可聚焦的錯誤總覽（兩者並存）
+     ───────────────────────────────────────────────────────────── */
+
+  var errorSummary = $('errorSummary');
+  var errorList = $('errorList');
+
+  var FIELDS = {
+    nickname: { label: '孩子的暱稱', focus: 'nickname' },
+    age: { label: '孩子的年紀', focus: 'ageIndex' },
+    gender: { label: '孩子的性別', focus: null },
+    fearLevel: { label: '孩子會害怕抽血嗎', focus: null },
+    worryLevel: { label: '您自己會擔心嗎', focus: null }
+  };
+
+  function setError(key, message) {
+    var el = $(key + '-error');
+    el.textContent = message;
+    el.hidden = false;
+    if (key === 'nickname') $('nickname').setAttribute('aria-invalid', 'true');
+  }
+
+  function clearError(key) {
+    var el = $(key + '-error');
+    if (!el) return;
+    el.textContent = '';
+    el.hidden = true;
+    if (key === 'nickname') $('nickname').removeAttribute('aria-invalid');
+  }
+
+  function firstFocusable(key) {
+    if (FIELDS[key].focus) return $(FIELDS[key].focus);
+    return form.querySelector('[name="' + key + '"]');
+  }
+
+  function validate() {
+    var errors = [];
+    Object.keys(FIELDS).forEach(clearError);
+
+    if (!$('nickname').value.trim()) {
+      errors.push({ key: 'nickname', msg: '請填寫孩子的暱稱，我們會用它跟孩子說話。' });
+    }
+    if (!ageTouched) {
+      errors.push({ key: 'age', msg: '請拖曳滑桿或按 +／− 選擇孩子的年紀。' });
+    }
+    if (!form.querySelector('[name="gender"]:checked')) {
+      errors.push({ key: 'gender', msg: '請選擇孩子的性別。' });
+    }
+    if (!form.querySelector('[name="fearLevel"]:checked')) {
+      errors.push({ key: 'fearLevel', msg: '請選一個最接近的程度。' });
+    }
+    if (!form.querySelector('[name="worryLevel"]:checked')) {
+      errors.push({ key: 'worryLevel', msg: '請選一個最接近的程度。' });
     }
 
-    function formatAge(value) {
-        const text = Number.isInteger(value) ? String(value) : value.toFixed(1);
-        return `${text} 歲`;
-    }
+    errors.forEach(function (e) { setError(e.key, e.msg); });
+    return errors;
+  }
 
-    function positionBubble() {
-        const max = Number(ageIndexInput.max) || 1;
-        const percent = Number(ageIndexInput.value) / max;
-        const trackWidth = ageIndexInput.offsetWidth;
-        const thumbSize = 26;
-        const offset = (thumbSize / 2) + percent * Math.max(trackWidth - thumbSize, 0);
-        ageBubble.style.left = `${offset}px`;
-    }
+  function showSummary(errors) {
+    errorList.innerHTML = errors.map(function (e) {
+      return '<li><a href="#' + (FIELDS[e.key].focus || '') + '" data-key="' + e.key + '">' +
+        FIELDS[e.key].label + '：' + e.msg + '</a></li>';
+    }).join('');
+    errorSummary.hidden = false;
+    errorSummary.focus();
+  }
 
-    ageIndexInput.addEventListener('pointerdown', () => {
-        ageBubble.classList.add('is-visible');
+  errorList.addEventListener('click', function (ev) {
+    var link = ev.target.closest('a');
+    if (!link) return;
+    ev.preventDefault();
+    var target = firstFocusable(link.dataset.key);
+    if (target) {
+      target.focus();
+      target.scrollIntoView({ block: 'center', behavior: 'smooth' });
+    }
+  });
+
+  $('nickname').addEventListener('blur', function () {
+    if ($('nickname').value.trim()) clearError('nickname');
+  });
+
+  /* ─────────────────────────────────────────────────────────────
+     暫時代碼：djb2 雜湊取 4 位十進位，24 小時後失效
+     （僅用於讓家長回到同一份資料，不具身分驗證作用）
+     ───────────────────────────────────────────────────────────── */
+
+  function makeCode(seed) {
+    var h = 5381;
+    for (var i = 0; i < seed.length; i++) {
+      h = ((h << 5) + h + seed.charCodeAt(i)) >>> 0;
+    }
+    return String(h % 10000).padStart(4, '0');
+  }
+
+  function save(profile) {
+    try {
+      localStorage.setItem(STORE_KEY, JSON.stringify(profile));
+    } catch (e) {
+      /* 無痕模式或儲存已滿：畫面照常顯示，只是重新整理後會消失 */
+    }
+  }
+
+  function load() {
+    try {
+      var raw = localStorage.getItem(STORE_KEY);
+      if (!raw) return null;
+      var p = JSON.parse(raw);
+      var intact = p && p.expiresAt && p.code &&
+        typeof p.nickname === 'string' && p.nickname &&
+        typeof p.age === 'number' &&
+        p.fearLevel >= 1 && p.fearLevel <= 5 &&
+        p.worryLevel >= 1 && p.worryLevel <= 5;
+      /* 過期或結構不完整（舊版本、手動竄改）一律丟棄，重新填寫比顯示壞掉的摘要好 */
+      if (!intact || Date.now() > p.expiresAt) {
+        localStorage.removeItem(STORE_KEY);
+        return null;
+      }
+      return p;
+    } catch (e) {
+      return null;
+    }
+  }
+
+  /* ─────────────────────────────────────────────────────────────
+     完成畫面
+     ───────────────────────────────────────────────────────────── */
+
+  var LEVEL_TEXT = ['', '完全不會', '有一點', '普通', '蠻明顯的', '非常明顯'];
+
+  function formatExpiry(ts) {
+    var d = new Date(ts);
+    var hh = String(d.getHours()).padStart(2, '0');
+    var mm = String(d.getMinutes()).padStart(2, '0');
+    return '有效至 ' + (d.getMonth() + 1) + ' 月 ' + d.getDate() + ' 日 ' + hh + ':' + mm;
+  }
+
+  function row(term, detail, stacked) {
+    return '<div class="summary-row' + (stacked ? ' is-stacked' : '') + '">' +
+      '<dt>' + term + '</dt><dd>' + escapeHtml(detail) + '</dd></div>';
+  }
+
+  function escapeHtml(s) {
+    return String(s).replace(/[&<>"']/g, function (c) {
+      return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
     });
+  }
 
-    // 拖曳中：只更新浮動泡泡，尚未定案
-    ageIndexInput.addEventListener('input', () => {
-        ageTouched = true;
-        ageBubble.textContent = formatAge(ageValueFromIndex(Number(ageIndexInput.value)));
-        positionBubble();
-        ageBubble.classList.add('is-visible');
-    });
+  function renderSuccess(p) {
+    formView.hidden = true;
+    successView.hidden = false;
 
-    // 放開手指／滑鼠（或鍵盤操作完成一步）：定案並顯示於下方
-    ageIndexInput.addEventListener('change', () => {
-        ageTouched = true;
-        ageOut.textContent = formatAge(ageValueFromIndex(Number(ageIndexInput.value)));
-        ageBubble.classList.remove('is-visible');
-        clearFieldError('age');
-    });
+    $('successLede').textContent =
+      '我們知道' + p.nickname + '現在的狀況了，接下來會依照這些資訊調整陪伴方式。';
+    $('codeDigits').textContent = p.code;
+    $('codeExpiry').textContent = formatExpiry(p.expiresAt);
 
-    window.addEventListener('resize', positionBubble);
+    var html =
+      row('暱稱', p.nickname) +
+      row('年紀', ageLabel(p.age)) +
+      row('性別', p.gender === '男' ? '男孩' : '女孩') +
+      row('對抽血的害怕程度', LEVEL_TEXT[p.fearLevel] + '（' + p.fearLevel + '／5）') +
+      row('家長的擔心程度', LEVEL_TEXT[p.worryLevel] + '（' + p.worryLevel + '／5）');
+    if (p.specialNeeds) html += row('特別注意', p.specialNeeds, true);
+    $('summaryCard').innerHTML = html;
 
-    // ---------- 表情量表（害怕程度／擔心程度） ----------
-    const FACE_LEVELS = [
-        { value: 1, mouth: 'M7.5 13.5c1.8 2.4 7.2 2.4 9 0', brow: 'M7.5 8.3q1.5-1 3 0M13.5 8.3q1.5-1 3 0' },
-        { value: 2, mouth: 'M8 14c1.3 1.3 6.7 1.3 8 0', brow: 'M7.5 8.2q1.5-.6 3 0M13.5 8.2q1.5-.6 3 0' },
-        { value: 3, mouth: 'M8 15h8', brow: 'M7.5 8.3h3M13.5 8.3h3' },
-        { value: 4, mouth: 'M8 16.3c1.3-1.3 6.7-1.3 8 0', brow: 'M7.3 8.6 10.3 9.4M16.7 8.6 13.7 9.4' },
-        { value: 5, mouth: 'M7.5 17c1.8-2.4 7.2-2.4 9 0', brow: 'M7 8.8 10.4 9.8M17 8.8 13.6 9.8' },
-    ];
+    $('successHeading').focus();
+  }
 
-    function faceSvg(level) {
-        return `<svg viewBox="0 0 24 24" aria-hidden="true">
-            <circle cx="12" cy="12" r="9.25"></circle>
-            <circle class="pupil" cx="9" cy="10.4" r="1"></circle>
-            <circle class="pupil" cx="15" cy="10.4" r="1"></circle>
-            <path d="${level.brow}"></path>
-            <path d="${level.mouth}"></path>
-        </svg>`;
+  function announce(msg) {
+    live.textContent = '';
+    window.setTimeout(function () { live.textContent = msg; }, 60);
+  }
+
+  /* ─────────────────────────────────────────────────────────────
+     送出
+     ───────────────────────────────────────────────────────────── */
+
+  form.addEventListener('submit', function (ev) {
+    ev.preventDefault();
+    var errors = validate();
+
+    if (errors.length) {
+      showSummary(errors);
+      announce('表單還有 ' + errors.length + ' 個地方需要補上');
+      return;
     }
 
-    function buildFaceScale(container, groupName, describedById) {
-        container.innerHTML = FACE_LEVELS.map((level) => `
-            <label class="face-option">
-                <input type="radio" name="${groupName}" value="${level.value}" required aria-describedby="${describedById}">
-                <span class="face-icon-wrap">${faceSvg(level)}</span>
-                <span class="face-num">${level.value}</span>
-            </label>
-        `).join('');
-    }
+    errorSummary.hidden = true;
+    var now = Date.now();
+    var nickname = $('nickname').value.trim();
+    var age = indexToAge(Number(ageInput.value));
+    var gender = form.querySelector('[name="gender"]:checked').value;
 
-    buildFaceScale(fearScaleEl, 'fearLevel', 'fearLevel-error');
-    buildFaceScale(worryScaleEl, 'worryLevel', 'worryLevel-error');
-
-    form.querySelectorAll('input[type="radio"]').forEach((input) => {
-        input.addEventListener('change', () => clearFieldError(input.name));
-    });
-
-    // ---------- 欄位錯誤顯示／清除 ----------
-    function showFieldError(key, message) {
-        const errorEl = document.getElementById(`${key}-error`);
-        if (!errorEl) return;
-        errorEl.textContent = message;
-        errorEl.hidden = false;
-        const field = errorEl.closest('.field');
-        if (field) field.classList.add('has-error');
-    }
-
-    function clearFieldError(key) {
-        const errorEl = document.getElementById(`${key}-error`);
-        if (!errorEl) return;
-        errorEl.hidden = true;
-        errorEl.textContent = '';
-        const field = errorEl.closest('.field');
-        if (field) field.classList.remove('has-error');
-    }
-
-    nicknameInput.addEventListener('blur', () => {
-        if (nicknameInput.value.trim() === '') {
-            showFieldError('nickname', '請填寫小孩的暱稱');
-        } else {
-            clearFieldError('nickname');
-        }
-    });
-    nicknameInput.addEventListener('input', () => {
-        if (nicknameInput.value.trim() !== '') clearFieldError('nickname');
-    });
-
-    // ---------- 送出驗證 ----------
-    const FIELD_LABELS = {
-        nickname: '小孩的暱稱',
-        age: '小孩的年紀',
-        gender: '小孩的性別',
-        fearLevel: '小孩會害怕抽血嗎',
-        worryLevel: '家長會擔心小孩嗎',
+    var profile = {
+      nickname: nickname,
+      age: age,
+      gender: gender,
+      fearLevel: Number(form.querySelector('[name="fearLevel"]:checked').value),
+      worryLevel: Number(form.querySelector('[name="worryLevel"]:checked').value),
+      specialNeeds: needs.value.trim(),
+      code: makeCode(nickname + '|' + age + '|' + gender + '|' + now),
+      createdAt: now,
+      expiresAt: now + TTL_MS
     };
 
-    function focusFieldByKey(key) {
-        let el = null;
-        if (key === 'nickname') el = nicknameInput;
-        else if (key === 'age') el = ageIndexInput;
-        else el = form.querySelector(`input[name="${key}"]`);
-        if (el) {
-            el.focus();
-            el.scrollIntoView({ behavior: 'smooth', block: 'center' });
-        }
-    }
+    save(profile);
+    renderSuccess(profile);
+    announce('已完成，您的暫時代碼是 ' + profile.code.split('').join(' '));
+  });
 
-    function validateForm() {
-        const errors = [];
-        if (nicknameInput.value.trim() === '') {
-            errors.push({ key: 'nickname', message: '請填寫小孩的暱稱' });
-        }
-        if (!ageTouched) {
-            errors.push({ key: 'age', message: '請拖曳滑桿選擇小孩的年紀' });
-        }
-        if (!form.querySelector('input[name="gender"]:checked')) {
-            errors.push({ key: 'gender', message: '請選擇小孩的性別' });
-        }
-        if (!form.querySelector('input[name="fearLevel"]:checked')) {
-            errors.push({ key: 'fearLevel', message: '請選擇小孩害怕抽血的程度' });
-        }
-        if (!form.querySelector('input[name="worryLevel"]:checked')) {
-            errors.push({ key: 'worryLevel', message: '請選擇家長擔心的程度' });
-        }
-        return errors;
-    }
-
-    form.addEventListener('submit', (event) => {
-        event.preventDefault();
-        const errors = validateForm();
-
-        Object.keys(FIELD_LABELS).forEach((key) => {
-            const hit = errors.find((error) => error.key === key);
-            if (hit) showFieldError(key, hit.message);
-            else clearFieldError(key);
-        });
-
-        if (errors.length > 0) {
-            errorList.innerHTML = errors
-                .map((error) => `<li><a href="#" data-key="${error.key}">${FIELD_LABELS[error.key]}：${error.message}</a></li>`)
-                .join('');
-            errorList.querySelectorAll('a').forEach((a) => {
-                a.addEventListener('click', (e) => {
-                    e.preventDefault();
-                    focusFieldByKey(a.dataset.key);
-                });
-            });
-            errorSummary.hidden = false;
-            errorSummary.focus();
-            return;
-        }
-
-        errorSummary.hidden = true;
-        submitForm();
-    });
-
-    // ---------- 暫時代碼（簡易雜湊，4 碼十進位） ----------
-    function generateTempCode() {
-        const raw = `${Date.now()}-${Math.random()}-${navigator.userAgent}`;
-        let hash = 0;
-        for (let i = 0; i < raw.length; i++) {
-            hash = (hash << 5) - hash + raw.charCodeAt(i);
-            hash |= 0;
-        }
-        const code = Math.abs(hash) % 10000;
-        return String(code).padStart(4, '0');
-    }
-
-    function saveSession(session) {
-        try {
-            localStorage.setItem(STORAGE_KEY, JSON.stringify(session));
-        } catch (err) {
-            console.warn('無法儲存到 localStorage，本次僅在畫面上顯示結果。', err);
-        }
-    }
-
-    function loadSession() {
-        try {
-            const raw = localStorage.getItem(STORAGE_KEY);
-            if (!raw) return null;
-            const session = JSON.parse(raw);
-            if (!session.expiresAt || Date.now() > session.expiresAt) {
-                localStorage.removeItem(STORAGE_KEY);
-                return null;
-            }
-            return session;
-        } catch (err) {
-            return null;
-        }
-    }
-
-    function submitForm() {
-        const session = {
-            code: generateTempCode(),
-            nickname: nicknameInput.value.trim(),
-            age: ageValueFromIndex(Number(ageIndexInput.value)),
-            gender: form.querySelector('input[name="gender"]:checked').value,
-            fearLevel: Number(form.querySelector('input[name="fearLevel"]:checked').value),
-            worryLevel: Number(form.querySelector('input[name="worryLevel"]:checked').value),
-            specialNeeds: specialNeedsInput.value.trim(),
-            createdAt: Date.now(),
-            expiresAt: Date.now() + DAY_MS,
-        };
-        saveSession(session);
-        showSuccess(session);
-    }
-
-    // ---------- 完成畫面 ----------
-    const GENDER_LABEL = { 男: '男孩', 女: '女孩' };
-    const LEVEL_LABEL = { 1: '1（最不會）', 2: '2', 3: '3（普通）', 4: '4', 5: '5（最會）' };
-
-    function escapeHtml(str) {
-        const div = document.createElement('div');
-        div.textContent = str;
-        return div.innerHTML;
-    }
-
-    function showSuccess(session) {
-        formView.hidden = true;
-        successView.hidden = false;
-
-        successHeading.textContent = `${session.nickname}，準備好了`;
-        codeDigits.textContent = session.code;
-
-        const expiry = new Date(session.expiresAt);
-        const hh = String(expiry.getHours()).padStart(2, '0');
-        const mm = String(expiry.getMinutes()).padStart(2, '0');
-        codeExpiry.textContent = `有效至 ${expiry.getMonth() + 1}/${expiry.getDate()} ${hh}:${mm}`;
-
-        const rows = [
-            ['暱稱', session.nickname],
-            ['年紀', formatAge(session.age)],
-            ['性別', GENDER_LABEL[session.gender] || session.gender],
-            ['害怕抽血程度', LEVEL_LABEL[session.fearLevel]],
-            ['家長擔心程度', LEVEL_LABEL[session.worryLevel]],
-        ];
-        if (session.specialNeeds) rows.push(['特殊需求', session.specialNeeds]);
-
-        summaryCard.innerHTML = rows
-            .map(([label, value]) => `
-                <div class="summary-row">
-                    <dt>${escapeHtml(label)}</dt>
-                    <dd>${escapeHtml(String(value))}</dd>
-                </div>
-            `)
-            .join('');
-
-        successHeading.focus();
-    }
-
-    restartBtn.addEventListener('click', () => {
-        try {
-            localStorage.removeItem(STORAGE_KEY);
-        } catch (err) {
-            /* ignore */
-        }
-        form.reset();
-        ageTouched = false;
-        ageOut.textContent = '尚未選擇，請拖曳滑桿';
-        ageBubble.classList.remove('is-visible');
-        form.querySelectorAll('.field-error').forEach((el) => {
-            el.hidden = true;
-            el.textContent = '';
-        });
-        form.querySelectorAll('.field').forEach((el) => el.classList.remove('has-error'));
-        errorSummary.hidden = true;
-
-        successView.hidden = true;
-        formView.hidden = false;
-        nicknameInput.focus();
-    });
-
-    // ---------- 初始化 ----------
+  $('restartBtn').addEventListener('click', function () {
+    try { localStorage.removeItem(STORE_KEY); } catch (e) { /* 忽略 */ }
+    form.reset();
+    ageTouched = false;
+    ageInput.value = 10;
+    ageBubble.textContent = '？';
+    ageBubble.setAttribute('data-empty', 'true');
+    ageOut.textContent = '尚未選擇';
+    ageOut.setAttribute('data-empty', 'true');
+    ageInput.removeAttribute('aria-valuetext');
+    ageDown.disabled = false;
+    ageUp.disabled = false;
+    needsCount.textContent = '還可以輸入 ' + NEEDS_MAX + ' 字';
+    Object.keys(FIELDS).forEach(clearError);
+    errorSummary.hidden = true;
+    successView.hidden = true;
+    formView.hidden = false;
     positionBubble();
-    const existingSession = loadSession();
-    if (existingSession) {
-        showSuccess(existingSession);
-    }
+    $('nickname').focus();
+  });
+
+  /* ─────────────────────────────────────────────────────────────
+     初始化
+     ───────────────────────────────────────────────────────────── */
+
+  ageOut.setAttribute('data-empty', 'true');
+  positionBubble();
+
+  var saved = load();
+  if (saved) renderSuccess(saved);
 })();

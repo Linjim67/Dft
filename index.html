@@ -1,150 +1,216 @@
 <!DOCTYPE html>
-<html lang="zh-TW">
+<html lang="zh-Hant-TW">
 
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="description" content="安心陪伴 — 開始之前，先簡單認識您的孩子，幫助我們提供更貼心的陪伴內容。">
-    <title>安心陪伴 · 開始之前</title>
-    <!-- 拉丁字與數字使用無障礙字體 Atkinson Hyperlegible；中文交回系統 CJK 字體 -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link rel="stylesheet"
-        href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&display=swap">
-    <link rel="stylesheet" href="styles.css">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="color-scheme" content="light dark">
+  <meta name="theme-color" content="#ECFEFF" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#0B1F26" media="(prefers-color-scheme: dark)">
+  <meta name="description" content="安心陪伴：抽血前的暖身。花一分鐘告訴我們孩子的狀況，我們會準備適合的陪伴方式。">
+  <title>安心陪伴 · 開始之前</title>
+
+  <!-- 拉丁字母與數字使用 Atkinson Hyperlegible（專為易讀性設計）；中文交由系統 CJK 字體 -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet"
+    href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&display=swap">
+  <link rel="stylesheet" href="styles.css">
 </head>
 
 <body>
-    <a class="skip-link" href="#main">跳到主要內容</a>
+  <a class="skip-link" href="#main">跳到主要內容</a>
 
-    <header class="site-header">
-        <div class="wrap header-inner">
-            <div class="brand">
-                <span class="brand-mark" aria-hidden="true">
-                    <svg class="icon icon-lg" viewBox="0 0 24 24" role="img">
-                        <path
-                            d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z" />
-                    </svg>
-                </span>
-                <div class="brand-text">
-                    <h1>安心陪伴</h1>
-                    <p class="tagline">開始之前，先簡單認識您的孩子</p>
-                </div>
-            </div>
-        </div>
-    </header>
+  <!-- ══ 頁首 ══ -->
+  <header class="site-header">
+    <div class="wrap header-inner">
+      <span class="brand-mark" aria-hidden="true">
+        <svg viewBox="0 0 24 24" class="icon icon-lg">
+          <path d="M12 20.5s-7.2-4.35-7.2-9.4A4.3 4.3 0 0 1 12 8.6a4.3 4.3 0 0 1 7.2 2.5c0 5.05-7.2 9.4-7.2 9.4Z" />
+          <path d="M9.4 6.2a2.6 2.6 0 1 1 5.2 0" />
+        </svg>
+      </span>
+      <div class="brand-text">
+        <p class="brand-name">安心陪伴</p>
+        <p class="brand-tagline">抽血前的暖身</p>
+      </div>
+    </div>
+  </header>
 
-    <main id="main" class="wrap">
+  <main id="main" class="wrap">
 
-        <!-- 表單畫面 -->
-        <div id="formView">
-            <div class="intro-note">
-                <svg class="icon" viewBox="0 0 24 24" aria-hidden="true">
-                    <circle cx="12" cy="12" r="9" />
-                    <path d="M12 8v5M12 16h.01" />
-                </svg>
-                <p>不需要註冊，只需要花 1 分鐘。這些資訊只用來讓陪伴內容更貼近您孩子的狀況，24 小時後會自動失效。</p>
-            </div>
+    <!-- ══════════ 畫面 A：填寫表單 ══════════ -->
+    <div id="formView">
 
-            <div id="errorSummary" class="error-summary" role="alert" tabindex="-1" hidden>
-                <h2 id="errorSummaryTitle">請確認以下欄位</h2>
-                <ul id="errorList"></ul>
-            </div>
+      <section class="welcome" aria-labelledby="welcomeTitle">
+        <h1 id="welcomeTitle">先讓我們認識您的孩子</h1>
+        <p class="welcome-lede">
+          等待的時候最難熬。花一分鐘填寫，我們就能為您和孩子準備<strong>剛好合適</strong>的安撫方式。
+        </p>
+        <ul class="assurance-list">
+          <li>
+            <svg viewBox="0 0 24 24" class="icon" aria-hidden="true">
+              <path d="M12 3.5 5 6.2v5c0 4.2 2.9 7.6 7 8.8 4.1-1.2 7-4.6 7-8.8v-5L12 3.5Z" />
+              <path d="M9.2 11.9 11.3 14l3.6-3.8" />
+            </svg>
+            <span>不需要註冊，也不會問到姓名或病歷號</span>
+          </li>
+          <li>
+            <svg viewBox="0 0 24 24" class="icon" aria-hidden="true">
+              <circle cx="12" cy="12" r="8.2" />
+              <path d="M12 7.6V12l2.9 1.8" />
+            </svg>
+            <span>資料只留在這支手機，24 小時後自動失效</span>
+          </li>
+        </ul>
+      </section>
 
-            <form id="personalInfoForm" novalidate>
+      <!-- 送出失敗時的錯誤總覽：可聚焦、每項連到對應欄位 -->
+      <div id="errorSummary" class="error-summary" role="alert" tabindex="-1"
+        aria-labelledby="errorSummaryTitle" hidden>
+        <p class="error-summary-head">
+          <svg viewBox="0 0 24 24" class="icon" aria-hidden="true">
+            <circle cx="12" cy="12" r="8.2" />
+            <path d="M12 8v4.6M12 15.8h.01" />
+          </svg>
+          <span id="errorSummaryTitle">還有幾個地方需要補上</span>
+        </p>
+        <ul id="errorList"></ul>
+      </div>
 
-                <!-- 1. 暱稱 -->
-                <div class="field">
-                    <label for="nickname">小孩的暱稱 <span class="req">*</span></label>
-                    <input type="text" id="nickname" name="nickname" maxlength="20" autocomplete="off"
-                        placeholder="例如：小恩" aria-describedby="nickname-error">
-                    <p class="field-error" id="nickname-error" hidden></p>
-                </div>
+      <form id="infoForm" novalidate>
 
-                <!-- 2. 年紀 -->
-                <fieldset class="field field-age">
-                    <legend>小孩的年紀 <span class="req">*</span></legend>
-                    <div class="age-slider-wrap">
-                        <div class="age-bubble" id="ageBubble" aria-hidden="true">5 歲</div>
-                        <input type="range" id="ageIndex" min="0" max="24" step="1" value="10"
-                            aria-label="小孩的年紀" aria-describedby="ageOut age-error">
-                    </div>
-                    <p class="age-scale-caption"><span>0 歲</span><span>18 歲</span></p>
-                    <p class="age-readout">目前選擇：<output id="ageOut" for="ageIndex">尚未選擇，請拖曳滑桿</output></p>
-                    <p class="field-error" id="age-error" hidden></p>
-                </fieldset>
-
-                <!-- 3. 性別 -->
-                <fieldset class="field">
-                    <legend>小孩的性別 <span class="req">*</span></legend>
-                    <div class="segmented" role="radiogroup" aria-label="小孩的性別">
-                        <label class="segmented-option">
-                            <input type="radio" name="gender" value="男" required>
-                            <span>男</span>
-                        </label>
-                        <label class="segmented-option">
-                            <input type="radio" name="gender" value="女">
-                            <span>女</span>
-                        </label>
-                    </div>
-                    <p class="field-error" id="gender-error" hidden></p>
-                </fieldset>
-
-                <!-- 4. 害怕程度 -->
-                <fieldset class="field">
-                    <legend>小孩會害怕抽血嗎？ <span class="req">*</span></legend>
-                    <div class="face-scale" role="radiogroup" aria-label="小孩害怕抽血的程度，1 為最不會，5 為最會" id="fearScale">
-                    </div>
-                    <p class="scale-caption"><span>最不會</span><span>最會</span></p>
-                    <p class="field-error" id="fearLevel-error" hidden></p>
-                </fieldset>
-
-                <!-- 5. 家長擔心程度 -->
-                <fieldset class="field">
-                    <legend>家長會擔心小孩嗎？ <span class="req">*</span></legend>
-                    <div class="face-scale" role="radiogroup" aria-label="家長擔心小孩的程度，1 為最不會，5 為最會" id="worryScale">
-                    </div>
-                    <p class="scale-caption"><span>最不會</span><span>最會</span></p>
-                    <p class="field-error" id="worryLevel-error" hidden></p>
-                </fieldset>
-
-                <!-- 6. 特殊需求 -->
-                <div class="field">
-                    <label for="specialNeeds">小孩的特殊需求（選填）</label>
-                    <textarea id="specialNeeds" name="specialNeeds" maxlength="200"
-                        placeholder="例如：對某些藥物過敏、特殊病史、其他提醒事項…"></textarea>
-                </div>
-
-                <button class="btn btn-primary" type="submit">完成，開始使用</button>
-            </form>
+        <!-- ── 1. 暱稱 ── -->
+        <div class="field">
+          <label class="field-label" for="nickname">
+            孩子的暱稱 <span class="req">必填</span>
+          </label>
+          <p class="field-hint" id="nickname-hint">平常怎麼叫他／她就好，我們會用這個稱呼跟孩子說話。</p>
+          <input type="text" id="nickname" name="nickname" maxlength="20" autocomplete="off"
+            enterkeyhint="next" placeholder="例如：小恩" aria-required="true" aria-describedby="nickname-hint nickname-error">
+          <p class="field-error" id="nickname-error" hidden></p>
         </div>
 
-        <!-- 完成畫面 -->
-        <section id="successView" class="success-view" aria-live="polite" hidden>
-            <div class="success-icon" aria-hidden="true">
-                <svg class="icon" viewBox="0 0 24 24">
-                    <path d="M20 6 9 17l-5-5" />
-                </svg>
+        <!-- ── 2. 年紀 ── -->
+        <fieldset class="field">
+          <legend class="field-label">
+            孩子的年紀 <span class="req">必填</span>
+          </legend>
+          <p class="field-hint" id="age-hint">可以拖曳滑桿，或用左右兩側的按鈕一格一格調整。</p>
+
+          <p class="age-readout">
+            <output id="ageOut" for="ageIndex">尚未選擇</output>
+          </p>
+
+          <div class="slider-row">
+            <button class="stepper" type="button" id="ageDown" aria-label="年紀減少一格">
+              <svg viewBox="0 0 24 24" class="icon" aria-hidden="true"><path d="M6 12h12" /></svg>
+            </button>
+
+            <div class="slider-track-wrap">
+              <span class="age-bubble" id="ageBubble" aria-hidden="true" data-empty="true">？</span>
+              <input type="range" id="ageIndex" name="ageIndex" min="0" max="24" step="1" value="10" aria-required="true"
+                aria-describedby="age-hint age-error">
             </div>
-            <h2 id="successHeading" tabindex="-1">已經準備好了</h2>
-            <p>資料已安全保存在這台裝置上，24 小時內有效。</p>
 
-            <div class="code-card">
-                <p class="code-label">您的暫時代碼</p>
-                <p class="code-digits" id="codeDigits">0000</p>
-                <p class="code-expiry" id="codeExpiry"></p>
-            </div>
+            <button class="stepper" type="button" id="ageUp" aria-label="年紀增加一格">
+              <svg viewBox="0 0 24 24" class="icon" aria-hidden="true"><path d="M12 6v12M6 12h12" /></svg>
+            </button>
+          </div>
 
-            <dl class="summary-card" id="summaryCard"></dl>
+          <p class="scale-ends" aria-hidden="true"><span>剛出生</span><span>18 歲</span></p>
+          <p class="field-error" id="age-error" hidden></p>
+        </fieldset>
 
-            <div class="success-actions">
-                <button class="btn btn-ghost" type="button" id="restartBtn">重新填寫</button>
-            </div>
-        </section>
+        <!-- ── 3. 性別 ── -->
+        <fieldset class="field">
+          <legend class="field-label">
+            孩子的性別 <span class="req">必填</span>
+          </legend>
+          <div class="segmented">
+            <label class="segmented-option">
+              <input type="radio" name="gender" value="男" aria-required="true" aria-describedby="gender-error">
+              <span class="segmented-face">男孩</span>
+            </label>
+            <label class="segmented-option">
+              <input type="radio" name="gender" value="女" aria-required="true" aria-describedby="gender-error">
+              <span class="segmented-face">女孩</span>
+            </label>
+          </div>
+          <p class="field-error" id="gender-error" hidden></p>
+        </fieldset>
 
-    </main>
+        <!-- ── 4. 孩子害怕程度 ── -->
+        <fieldset class="field">
+          <legend class="field-label">
+            孩子會害怕抽血嗎？ <span class="req">必填</span>
+          </legend>
+          <p class="field-hint" id="fear-hint">沒有標準答案，選最接近的就好。</p>
+          <div class="face-scale" id="fearScale" data-name="fearLevel"
+            data-describedby="fear-hint fearLevel-error"></div>
+          <p class="field-error" id="fearLevel-error" hidden></p>
+        </fieldset>
 
-    <script src="script.js"></script>
+        <!-- ── 5. 家長擔心程度 ── -->
+        <fieldset class="field">
+          <legend class="field-label">
+            您自己會擔心嗎？ <span class="req">必填</span>
+          </legend>
+          <p class="field-hint" id="worry-hint">家長的緊張孩子會感覺到，所以這題同樣重要。</p>
+          <div class="face-scale" id="worryScale" data-name="worryLevel"
+            data-describedby="worry-hint worryLevel-error"></div>
+          <p class="field-error" id="worryLevel-error" hidden></p>
+        </fieldset>
+
+        <!-- ── 6. 特殊需求 ── -->
+        <div class="field">
+          <label class="field-label" for="specialNeeds">
+            有什麼需要我們特別注意的嗎？ <span class="opt">選填</span>
+          </label>
+          <p class="field-hint" id="needs-hint">例如：怕打雷聲、有自閉症特質、上次抽血暈針、只給媽媽抱。</p>
+          <textarea id="specialNeeds" name="specialNeeds" maxlength="200" rows="3"
+            placeholder="沒有的話可以留空" aria-describedby="needs-hint needs-count"></textarea>
+          <p class="char-count" id="needs-count" aria-live="polite">還可以輸入 200 字</p>
+        </div>
+
+        <button class="btn btn-primary" type="submit" id="submitBtn">
+          <span class="btn-label">完成，開始陪伴</span>
+        </button>
+        <p class="form-foot">送出後會拿到一組 4 位數代碼，方便隨時回到這個頁面。</p>
+      </form>
+    </div>
+
+    <!-- ══════════ 畫面 B：完成 ══════════ -->
+    <section id="successView" class="success-view" hidden aria-labelledby="successHeading">
+      <div class="success-badge" aria-hidden="true">
+        <svg viewBox="0 0 24 24" class="icon"><path d="M6 12.4 10.2 16.6 18 8.8" /></svg>
+      </div>
+
+      <h1 id="successHeading" tabindex="-1">都準備好了</h1>
+      <p class="success-lede" id="successLede"></p>
+
+      <div class="code-card">
+        <p class="code-label">您的暫時代碼</p>
+        <p class="code-digits" id="codeDigits">0000</p>
+        <p class="code-expiry" id="codeExpiry"></p>
+      </div>
+
+      <h2 class="summary-title">我們記下的資訊</h2>
+      <dl class="summary-card" id="summaryCard"></dl>
+
+      <button class="btn btn-quiet" type="button" id="restartBtn">
+        <svg viewBox="0 0 24 24" class="icon" aria-hidden="true">
+          <path d="M20 11.5a8 8 0 1 1-2.5-5.8" />
+          <path d="M20 4.5v4.2h-4.2" />
+        </svg>
+        <span>重新填寫</span>
+      </button>
+    </section>
+
+  </main>
+
+  <div class="live-region" id="liveRegion" role="status" aria-live="polite"></div>
+  <script src="script.js"></script>
 </body>
 
 </html>
