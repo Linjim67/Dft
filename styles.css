@@ -382,12 +382,18 @@ button {
     opacity var(--t-base) var(--ease);
 }
 
-/* 說明緊貼題目：只留行距的自然留白，不再額外加 margin */
+/* 說明緊貼題目：負 margin 抵銷行距留白，不動 line-height，
+   這樣說明文字換行時的可讀性不受影響。 */
 .field-hint {
   font-size: .9rem;
   line-height: 1.6;
   color: var(--fg-muted);
-  margin: 0 0 var(--sp-3);
+  margin: -4px 0 var(--sp-3);
+}
+
+/* 題目後面直接接控制項（沒有說明文字）時反而要留呼吸空間 */
+.field-label+textarea {
+  margin-top: var(--sp-3);
 }
 
 .field-error {
@@ -448,10 +454,17 @@ textarea::placeholder {
   opacity: .7;
 }
 
+/* 焦點只留「一圈」：拿掉外層光暈，並把 outline 貼齊邊框，
+   讓 2px border + 3px outline 併成一條連續的橘色環，而不是三圈同心圓。 */
 input[type="text"]:focus,
 textarea:focus {
   border-color: var(--primary-deep);
-  box-shadow: var(--sh-inset), 0 0 0 4px var(--primary-wash);
+  box-shadow: var(--sh-inset);
+}
+
+input[type="text"]:focus-visible,
+textarea:focus-visible {
+  outline-offset: 0;
 }
 
 [aria-invalid="true"] {
@@ -570,7 +583,6 @@ input[type="range"]:active::-webkit-slider-thumb {
   margin-top: 0;
 }
 
-/* 並排時輸入框吃掉剩餘寬度；min-width:0 才能在窄螢幕縮小而不撐破版面 */
 .field-inline input[type="text"] {
   flex: 1 1 9rem;
   width: auto;
