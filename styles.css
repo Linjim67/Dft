@@ -635,11 +635,12 @@ input[type="range"]:active::-webkit-slider-thumb {
     color var(--t-fast) var(--ease);
 }
 
+/* 與表情卡的選取樣式一致：淡橘底＋深橘框，不用飽和橘填滿 */
 .segmented-option input:checked+.segmented-face {
-  background: var(--primary);
-  color: var(--primary-ink);
+  background: var(--primary-wash);
+  color: var(--primary-deep);
   border-color: var(--primary-deep);
-  box-shadow: var(--sh-orange);
+  box-shadow: var(--sh-md), inset 0 0 0 var(--line-w) var(--primary-deep);
 }
 
 .segmented-option input:focus-visible+.segmented-face {
@@ -759,10 +760,13 @@ input[type="range"]:active::-webkit-slider-thumb {
     background-color var(--t-fast) var(--ease);
 }
 
+/* 淡橘底對頁面底色只有 1.08:1，單靠填色看不出按鈕範圍，
+   因此保留 2px 深橘外框來界定形狀（對頁面 4.88:1）。 */
 .btn-primary {
-  background: var(--primary);
-  color: var(--primary-ink);
-  box-shadow: var(--sh-orange);
+  background: var(--primary-wash);
+  color: var(--primary-deep);
+  border-color: var(--primary-deep);
+  box-shadow: var(--sh-md);
 }
 
 /* 送出鈕不是一題，要比題目之間更疏離，否則會被讀成最後一題的一部分 */
@@ -772,7 +776,7 @@ form .btn-primary {
 
 .btn-primary:active {
   transform: translateY(2px);
-  box-shadow: 0 1px 4px rgba(194, 65, 12, .3);
+  box-shadow: none;
 }
 
 .btn-quiet {
@@ -949,7 +953,7 @@ form .btn-primary {
 @media (hover: hover) and (pointer: fine) {
 
   .btn-primary:hover {
-    background: #FB8A3C;
+    background: #FFE2C4;
   }
 
   .btn-quiet:hover {
