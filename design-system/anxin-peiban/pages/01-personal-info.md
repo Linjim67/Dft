@@ -9,6 +9,20 @@ how much is left. Single scroll with spacious grouping is faster and shows the w
 up front — which is itself reassuring ("只要一分鐘" is verifiable at a glance).
 Revisit only if the field count grows past ~8.
 
+## Inline question rows
+
+暱稱, 年紀 and 性別 put the question and its answer on **one line** (`.field-inline`), so the form
+scans as a list of settled facts rather than a stack of blocks. The answer is right-aligned, which
+gives a consistent edge for the eye to run down.
+
+Two constraints this creates:
+- `<legend>` cannot be laid out inline reliably, so 性別 is a `role="radiogroup"` +
+  `aria-labelledby` and 年紀 is a plain `<label for>`. Neither loses grouping semantics.
+- `.age-readout` carries a fixed `min-height`, because 「尚未選擇」 (1rem) and 「1 歲半」 (1.4rem)
+  are different type sizes and the row would otherwise jump on first answer.
+
+Rows wrap rather than crush below ~340px.
+
 ## Age slider — non-linear index
 
 Spec: 0.5 increments for 0–6, 1 increment for 6–18. Implemented as a **linear index 0–24** mapped
@@ -36,8 +50,12 @@ as wide at the young end — the bar lied about the scale.
   ("7") instead of the age ("3 歲半").
 - Labels: `0 → 未滿 6 個月` · `0.5 → 6 個月` · `n.5 → n 歲半` · `n → n 歲`
 - `touch-action: pan-y` so a horizontal drag adjusts the slider while the page still scrolls.
-- −/+ steppers flank the track: no precision dragging required, and they satisfy
-  `dragging-alternative` beyond the range input's native keyboard support.
+- No stepper buttons and no end labels (removed by product owner). WCAG 2.2 `dragging-alternative`
+  is still met: a native `<input type="range">` is keyboard-operable by arrow keys on its own.
+  The steppers were precision convenience, not a compliance dependency.
+- The field has **one** control, so it uses a plain `<label for="ageIndex">` rather than
+  `fieldset`/`legend` — a group wrapper for a single input is the wrong semantic, and the label
+  also gives the range a proper accessible name.
 - The track fills orange behind the thumb (`--fill`, set from JS). It is gated on `ageEngaged`,
   so an untouched slider shows an **empty** track — a filled track would imply a value the
   parent never chose, exactly like a pre-positioned thumb does.
@@ -50,6 +68,19 @@ djb2 over `nickname|age|gender|timestamp`, `% 10000`, zero-padded. **Not authent
 lets a parent return to their own record on the same device. Stored in `localStorage` with a 24h
 `expiresAt`; a valid record short-circuits straight to the success view on load.
 All storage access is `try/catch` — private browsing throws rather than returning null.
+
+## Chunking
+
+Each question+answer is one chunk, separated by a 1px rule. The grouping is carried by
+**proximity, not chrome**: 4–12px inside a chunk against 65px (32 + rule + 32) between them —
+a 5.4× ratio, so the units form on their own without cards or boxes.
+
+- The divider is `--rule #C09A72` at **2.44:1**. The previous `#F0DCC4` measured 1.26:1 and was
+  effectively invisible, which is why the chunks did not read as separated.
+  It stays lighter than the 3.27:1 input border so a separator never competes with a control.
+- The submit button carries `margin-top: 32px` on top of the chunk's own 32px. Without it the
+  button sat 32px from the last question while questions sat 65px apart — closer to 特殊需求
+  than the questions were to each other, so it read as part of that chunk.
 
 ## Progressive dimming
 

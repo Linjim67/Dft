@@ -72,8 +72,8 @@
 
       <form id="infoForm" novalidate>
 
-        <!-- ── 1. 暱稱 ── -->
-        <div class="field">
+        <!-- ── 1. 暱稱（題目與作答同一行） ── -->
+        <div class="field field-inline">
           <label class="field-label" for="nickname">
             孩子的暱稱 <span class="req">必填</span>
           </label>
@@ -82,34 +82,24 @@
           <p class="field-error" id="nickname-error" hidden></p>
         </div>
 
-        <!-- ── 2. 年紀 ── -->
-        <fieldset class="field">
-          <legend class="field-label">
+        <!-- ── 2. 年紀（結果與題目同一行，滑桿獨占下一行） ──
+             只有一個控制項，改用 label 直接關聯，比 fieldset/legend 更精準。 -->
+        <div class="field field-inline field-age">
+          <label class="field-label" for="ageIndex">
             孩子的年紀 <span class="req">必填</span>
-          </legend>
+          </label>
           <p class="age-readout">
             <output id="ageOut" for="ageIndex">尚未選擇</output>
           </p>
 
-          <div class="slider-row">
-            <button class="stepper" type="button" id="ageDown" aria-label="年紀減少一格">
-              <svg viewBox="0 0 24 24" class="icon" aria-hidden="true"><path d="M6 12h12" /></svg>
-            </button>
-
-            <div class="slider-track-wrap">
-              <span class="age-bubble" id="ageBubble" aria-hidden="true" data-empty="true">？</span>
-              <input type="range" id="ageIndex" name="ageIndex" min="0" max="36" step="1" value="12" aria-required="true"
-                aria-describedby="age-error">
-            </div>
-
-            <button class="stepper" type="button" id="ageUp" aria-label="年紀增加一格">
-              <svg viewBox="0 0 24 24" class="icon" aria-hidden="true"><path d="M12 6v12M6 12h12" /></svg>
-            </button>
+          <div class="slider-track-wrap">
+            <span class="age-bubble" id="ageBubble" aria-hidden="true" data-empty="true">？</span>
+            <input type="range" id="ageIndex" name="ageIndex" min="0" max="36" step="1" value="12" aria-required="true"
+              aria-describedby="age-error">
           </div>
 
-          <p class="scale-ends" aria-hidden="true"><span>剛出生</span><span>18 歲</span></p>
           <p class="field-error" id="age-error" hidden></p>
-        </fieldset>
+        </div>
 
         <!-- ── 3. 性別（題目與選項同一行） ── -->
         <div class="field field-inline" role="radiogroup" aria-labelledby="gender-label">

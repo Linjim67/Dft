@@ -53,8 +53,6 @@
   var ageInput = $('ageIndex');
   var ageBubble = $('ageBubble');
   var ageOut = $('ageOut');
-  var ageDown = $('ageDown');
-  var ageUp = $('ageUp');
   var ageIdx = 12;
   var ageTouched = false;
   /* engaged：使用者是否已經碰過滑桿。未碰過就不填色，
@@ -92,26 +90,11 @@
     var label = ageLabel(indexToAge(ageIdx));
     ageOut.textContent = label;
     ageOut.removeAttribute('data-empty');
-    ageDown.disabled = ageIdx <= AGE_MIN_IDX;
-    ageUp.disabled = ageIdx >= AGE_MAX_IDX;
     clearError('age');
-  }
-
-  function nudgeAge(delta) {
-    var next = ageIdx + delta;
-    if (!isSelectable(next)) next += delta;
-    next = Math.min(AGE_MAX_IDX, Math.max(AGE_MIN_IDX, next));
-    if (next === ageIdx) return;
-    ageInput.value = next;
-    paintBubble();
-    commitAge();
-    announce('年紀 ' + ageOut.textContent);
   }
 
   ageInput.addEventListener('input', paintBubble);
   ageInput.addEventListener('change', commitAge);
-  ageDown.addEventListener('click', function () { nudgeAge(-1); });
-  ageUp.addEventListener('click', function () { nudgeAge(1); });
   window.addEventListener('resize', positionBubble);
 
   /* ─────────────────────────────────────────────────────────────
@@ -341,8 +324,8 @@
       row('暱稱', p.nickname) +
       row('年紀', ageLabel(p.age)) +
       row('性別', p.gender === '男' ? '男孩' : '女孩') +
-      row('對抽血的害怕程度', LEVEL_TEXT[p.fearLevel] + '（' + p.fearLevel + '／5）') +
-      row('家長的擔心程度', LEVEL_TEXT[p.worryLevel] + '（' + p.worryLevel + '／5）');
+      row('對抽血的害怕程度', LEVEL_TEXT[p.fearLevel] + '（' + p.fearLevel + ' / 5）') +
+      row('家長的擔心程度', LEVEL_TEXT[p.worryLevel] + '（' + p.worryLevel + ' / 5）');
     if (p.specialNeeds) html += row('特別注意', p.specialNeeds, true);
     $('summaryCard').innerHTML = html;
 
@@ -409,8 +392,6 @@
     ageOut.setAttribute('data-empty', 'true');
     ageInput.removeAttribute('aria-valuetext');
     ageEngaged = false;
-    ageDown.disabled = false;
-    ageUp.disabled = false;
     needsCount.textContent = '還可以輸入 ' + NEEDS_MAX + ' 字';
     Object.keys(FIELDS).forEach(clearError);
     Array.prototype.forEach.call(

@@ -8,7 +8,7 @@
   color-scheme: light;
 
   /* — 表面 — */
-  --bg: #FFF7ED;
+  --bg: #FFF7F0;
   /* 暖奶油底 */
   --bg-sunk: #FFF1E0;
   /* 凹陷軌道／輸入底 */
@@ -44,8 +44,8 @@
   /* 3.48:1 on card · 3.27:1 on bg */
   --hairline: #F5E3CE;
   /* 裝飾用，不作控制項邊界 */
-  --rule: #F0DCC4;
-  /* 題目之間的分隔線 */
+  --rule: #C09A72;
+  /* 題目之間的分隔線 — 2.44:1，看得見但比輸入框邊界(3.27:1)輕 */
   --idle: #78716C;
   /* 未作答的表情／說明灰 — 4.80:1 on card */
 
@@ -314,16 +314,18 @@ button {
 
 /* ═══ Fields ═════════════════════════════════════════════════ */
 
+/* 每一題（問題＋作答）是一個 chunk。
+   內部間距 4–12px，chunk 之間 32+32px，靠距離差讓群組自然成形。 */
 .field {
-  margin: 0 0 var(--sp-5);
+  margin: 0 0 var(--sp-6);
   padding: 0;
   border: 0;
 }
 
-/* 每一題之間畫一條分隔線 */
+/* chunk 之間隔一條線 */
 .field+.field {
   border-top: 1px solid var(--rule);
-  padding-top: var(--sp-5);
+  padding-top: var(--sp-6);
 }
 
 .field-label {
@@ -458,12 +460,16 @@ textarea:focus {
 
 /* ═══ Age slider ═════════════════════════════════════════════ */
 
+/* 讀數與題目並排，靠右對齊；固定高度讓「尚未選擇」換成年齡時列高不跳動 */
 .age-readout {
-  min-height: 2.6rem;
-  margin-bottom: var(--sp-3);
-  font-size: 1.62rem;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  min-height: 2.1rem;
+  margin: 0;
+  font-size: 1.4rem;
   font-weight: 700;
-  line-height: 1.5;
+  line-height: 1.4;
   letter-spacing: -.01em;
   color: var(--primary-deep);
   font-variant-numeric: tabular-nums;
@@ -476,45 +482,9 @@ textarea:focus {
   color: var(--fg-muted);
 }
 
-.slider-row {
-  display: flex;
-  align-items: center;
-  gap: var(--sp-3);
-}
-
-.stepper {
-  display: grid;
-  place-items: center;
-  flex: none;
-  width: var(--tap);
-  height: var(--tap);
-  border-radius: var(--r-md);
-  background: var(--card);
-  color: var(--primary-deep);
-  border: 2px solid var(--line);
-  box-shadow: var(--sh-sm);
-  transition: transform var(--t-fast) var(--ease),
-    box-shadow var(--t-fast) var(--ease),
-    border-color var(--t-fast) var(--ease),
-    background-color var(--t-fast) var(--ease);
-}
-
-.stepper:active:not(:disabled) {
-  transform: translateY(2px);
-  box-shadow: none;
-  background: var(--primary-wash);
-  border-color: var(--primary-deep);
-}
-
-.stepper:disabled {
-  opacity: .4;
-  cursor: not-allowed;
-  box-shadow: none;
-}
-
 .slider-track-wrap {
   position: relative;
-  flex: 1 1 auto;
+  flex: 1 0 100%;
   min-width: 0;
   padding-top: 44px;
 }
@@ -615,15 +585,6 @@ input[type="range"]:active::-webkit-slider-thumb {
   transform: scale(1.1);
 }
 
-.scale-ends {
-  display: flex;
-  justify-content: space-between;
-  margin-top: var(--sp-2);
-  padding-inline: calc(var(--tap) + var(--sp-3));
-  font-size: .82rem;
-  color: var(--fg-muted);
-}
-
 /* ═══ Segmented (gender) ═════════════════════════════════════ */
 
 /* 題目與選項並排；空間不足時自然換行，不擠壓選項 */
@@ -642,6 +603,17 @@ input[type="range"]:active::-webkit-slider-thumb {
 .field-inline .field-error {
   flex: 1 0 100%;
   margin-top: 0;
+}
+
+/* 並排時輸入框吃掉剩餘寬度；min-width:0 才能在窄螢幕縮小而不撐破版面 */
+.field-inline input[type="text"] {
+  flex: 1 1 9rem;
+  width: auto;
+  min-width: 0;
+}
+
+.field-age .field-label {
+  flex: 0 1 auto;
 }
 
 .segmented {
@@ -837,6 +809,11 @@ input[type="range"]:active::-webkit-slider-thumb {
   box-shadow: var(--sh-orange);
 }
 
+/* 送出鈕不是一題，要比題目之間更疏離，否則會被讀成最後一題的一部分 */
+form .btn-primary {
+  margin-top: var(--sp-6);
+}
+
 .btn-primary:active {
   transform: translateY(2px);
   box-shadow: 0 1px 4px rgba(194, 65, 12, .3);
@@ -1019,8 +996,7 @@ input[type="range"]:active::-webkit-slider-thumb {
     background: #FB8A3C;
   }
 
-  .btn-quiet:hover,
-  .stepper:hover:not(:disabled) {
+  .btn-quiet:hover {
     background: var(--primary-wash);
     border-color: var(--primary-deep);
   }
@@ -1055,7 +1031,6 @@ input[type="range"]:active::-webkit-slider-thumb {
   }
 
   .btn:active,
-  .stepper:active:not(:disabled),
   .face-option input:active+.face-body,
   .segmented-option input:active+.segmented-face {
     transform: none;
