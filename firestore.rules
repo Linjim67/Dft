@@ -1,9 +1,5 @@
 rules_version = '2';
 
-// Firestore 安全規則 —「安心陪伴」討論區
-// 部署：firebase deploy --only firestore:rules
-// 原則：公開可讀；寫入需匿名登入（request.auth != null）；並在伺服器端驗證欄位，
-//       避免前端被繞過後寫入異常資料。counters 只允許以遞增方式更新。
 
 service cloud.firestore {
   match /databases/{database}/documents {
