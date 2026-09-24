@@ -1,59 +1,63 @@
 /* ═══════════════════════════════════════════════════════════════
-   安心陪伴 — Design tokens
-   Style      : Restrained Claymorphism (soft 3D, chunky, rounded)
-   Palette    : Healthcare "calm cyan + health green"
-   Contrast   : every text pair ≥ 4.5:1, every control border ≥ 3:1
+   安心陪伴 — 明亮暖橘（bright mode only）
+   Palette : ui-ux-pro-max #23 "Pet Tech App" — playful orange
+   Contrast: 內文 ≥ 4.5:1，控制項邊界 ≥ 3:1（皆經實測）
    ═══════════════════════════════════════════════════════════════ */
 
 :root {
-  /* — surfaces & text — */
-  --bg: #ECFEFF;
-  --bg-deep: #D9F5FA;
+  color-scheme: light;
+
+  /* — 表面 — */
+  --bg: #FFF7ED;
+  /* 暖奶油底 */
+  --bg-sunk: #FFF1E0;
+  /* 凹陷軌道／輸入底 */
   --card: #FFFFFF;
-  --fg: #164E63;
-  /* 8.76:1 on bg */
-  --fg-muted: #475569;
-  /* 7.28:1 on bg */
 
-  /* — brand — */
-  --primary: #0891B2;
-  /* 3.68:1 → borders & non-text only */
-  --primary-strong: #0E7490;
-  /* 5.36:1 with white → fills */
-  --primary-ink: #FFFFFF;
-  --primary-wash: #E0F7FC;
+  /* — 文字 — */
+  --fg: #7C2D12;
+  /* 8.83:1 on bg · 9.37:1 on card */
+  --fg-muted: #57534E;
+  /* 7.19:1 on bg · 7.63:1 on card */
 
-  /* — semantic — */
-  --accent: #047857;
-  /* 5.48:1 with white */
-  --accent-wash: #DCFCE7;
+  /* — 品牌橘 — */
+  --primary: #F97316;
+  /* 填色 */
+  --primary-ink: #1C1917;
+  /* 橘底上的字 */
+  --primary-deep: #C2410C;
+  /* 5.18:1 on card — 邊界／選取／連結 */
+  --primary-fill: #EA580C;
+  /* 3.21:1 vs 未填色軌道 — 滑桿已選區段 */
+  --primary-wash: #FFEDD5;
+
+  /* — 語意 — */
+  --success: #15803D;
+  /* 5.02:1 on card */
+  --success-wash: #F0FDF4;
   --danger: #B91C1C;
   /* 6.47:1 on card */
   --danger-wash: #FEF2F2;
-  --danger-line: #DC2626;
 
-  /* — lines — */
-  --control-line: #0891B2;
-  /* 3.54:1 on bg — WCAG non-text */
-  --divider: #A5F3FC;
-  /* decorative only */
+  /* — 線條 — */
+  --line: #9C8578;
+  /* 3.48:1 on card · 3.27:1 on bg */
+  --hairline: #F5E3CE;
+  /* 裝飾用，不作控制項邊界 */
 
-  /* — claymorphism depth — */
-  --clay-lift:
-    0 6px 0 0 #CBEFF6,
-    0 10px 22px -8px rgba(22, 78, 99, .28);
-  --clay-press:
-    0 2px 0 0 #CBEFF6,
-    0 4px 10px -6px rgba(22, 78, 99, .26);
-  --clay-inset: inset 0 2px 5px rgba(22, 78, 99, .09);
-  --card-shadow: 0 2px 14px -6px rgba(22, 78, 99, .18);
+  /* — 暖色陰影（取代硬邊，質感較軟） — */
+  --sh-sm: 0 1px 2px rgba(124, 45, 18, .05), 0 2px 8px -2px rgba(124, 45, 18, .08);
+  --sh-md: 0 2px 4px rgba(124, 45, 18, .04), 0 8px 20px -6px rgba(124, 45, 18, .13);
+  --sh-lg: 0 4px 10px -2px rgba(124, 45, 18, .07), 0 18px 34px -12px rgba(124, 45, 18, .20);
+  --sh-orange: 0 2px 6px rgba(194, 65, 12, .18), 0 10px 22px -8px rgba(194, 65, 12, .38);
+  --sh-inset: inset 0 1px 3px rgba(124, 45, 18, .07);
 
-  /* — geometry (spacious: density 3/10) — */
+  /* — 幾何 — */
   --r-sm: 12px;
-  --r-md: 18px;
-  --r-lg: 24px;
+  --r-md: 16px;
+  --r-lg: 22px;
+  --r-xl: 28px;
   --r-pill: 999px;
-  --line-w: 2px;
 
   --sp-1: 4px;
   --sp-2: 8px;
@@ -63,7 +67,7 @@
   --sp-6: 32px;
   --sp-7: 48px;
 
-  /* — motion (subtle: 3/10) — */
+  /* — 動態（subtle 3/10） — */
   --t-fast: 140ms;
   --t-base: 220ms;
   --ease: cubic-bezier(.22, .78, .35, 1);
@@ -73,45 +77,6 @@
 
   --font: "Atkinson Hyperlegible", "PingFang TC", "Noto Sans TC",
     "Microsoft JhengHei", system-ui, sans-serif;
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --bg: #0B1F26;
-    --bg-deep: #081920;
-    --card: #12313B;
-    --fg: #E6F6FA;
-    /* 12.39:1 on card */
-    --fg-muted: #A9C6D1;
-    /* 7.65:1 on card */
-
-    --primary: #22D3EE;
-    --primary-strong: #22D3EE;
-    --primary-ink: #06202A;
-    /* 9.31:1 */
-    --primary-wash: #10323D;
-
-    --accent: #34D399;
-    --accent-wash: #0E3A31;
-    --danger: #FCA5A5;
-    /* 7.24:1 on card */
-    --danger-wash: #3A1A1A;
-    --danger-line: #F87171;
-
-    --control-line: #5B96A8;
-    /* 4.17:1 on card */
-    --divider: #2F5F6E;
-
-    /* Clay depth reads as haze in the dark — swap lift for a light-catching rim */
-    --clay-lift:
-      0 5px 0 0 #0A2029,
-      0 10px 20px -10px rgba(0, 0, 0, .6);
-    --clay-press:
-      0 2px 0 0 #0A2029,
-      0 4px 10px -8px rgba(0, 0, 0, .6);
-    --clay-inset: inset 0 2px 5px rgba(0, 0, 0, .35);
-    --card-shadow: 0 2px 16px -8px rgba(0, 0, 0, .65);
-  }
 }
 
 /* ═══ Reset & base ═══════════════════════════════════════════ */
@@ -166,7 +131,7 @@ button {
 }
 
 :focus-visible {
-  outline: 3px solid var(--primary-strong);
+  outline: 3px solid var(--primary-deep);
   outline-offset: 3px;
   border-radius: var(--r-sm);
 }
@@ -198,8 +163,8 @@ button {
   position: absolute;
   left: -9999px;
   top: var(--sp-2);
-  background: var(--primary-strong);
-  color: var(--primary-ink);
+  background: var(--primary-deep);
+  color: #FFFFFF;
   padding: var(--sp-3) var(--sp-4);
   border-radius: var(--r-sm);
   text-decoration: none;
@@ -222,7 +187,7 @@ button {
 /* ═══ Header ═════════════════════════════════════════════════ */
 
 .site-header {
-  padding-block: calc(var(--sp-5) + env(safe-area-inset-top)) var(--sp-4);
+  padding-block: calc(var(--sp-5) + env(safe-area-inset-top)) var(--sp-5);
 }
 
 .header-inner {
@@ -231,26 +196,27 @@ button {
   gap: var(--sp-3);
 }
 
+/* 品牌記號用實心橘，比白底描邊乾淨得多 */
 .brand-mark {
   display: grid;
   place-items: center;
-  width: 52px;
-  height: 52px;
+  width: 50px;
+  height: 50px;
   border-radius: var(--r-md);
-  background: var(--card);
-  color: var(--primary-strong);
-  border: var(--line-w) solid var(--control-line);
-  box-shadow: var(--clay-lift);
+  background: var(--primary);
+  color: var(--primary-ink);
+  box-shadow: var(--sh-orange);
 }
 
 .brand-name {
-  font-size: 1.22rem;
+  font-size: 1.2rem;
   font-weight: 700;
   letter-spacing: .01em;
+  line-height: 1.3;
 }
 
 .brand-tagline {
-  font-size: .9rem;
+  font-size: .88rem;
   color: var(--fg-muted);
   line-height: 1.4;
 }
@@ -262,9 +228,10 @@ button {
 }
 
 .welcome h1 {
-  font-size: 1.68rem;
-  line-height: 1.4;
+  font-size: 1.85rem;
+  line-height: 1.35;
   font-weight: 700;
+  letter-spacing: -.01em;
   text-wrap: balance;
   margin-bottom: var(--sp-3);
 }
@@ -275,30 +242,31 @@ button {
 }
 
 .welcome-lede strong {
-  color: var(--fg);
+  color: var(--primary-deep);
+  font-weight: 700;
 }
 
+/* 卡片靠陰影浮起，不再加描邊 */
 .assurance-list {
   display: grid;
   gap: var(--sp-3);
-  padding: var(--sp-4) var(--sp-4) var(--sp-4) var(--sp-4);
+  padding: var(--sp-4);
   background: var(--card);
-  border: var(--line-w) solid var(--divider);
   border-radius: var(--r-lg);
-  box-shadow: var(--card-shadow);
+  box-shadow: var(--sh-md);
 }
 
 .assurance-list li {
   display: flex;
   align-items: flex-start;
   gap: var(--sp-3);
-  font-size: .95rem;
+  font-size: .94rem;
   line-height: 1.6;
   color: var(--fg-muted);
 }
 
 .assurance-list .icon {
-  color: var(--accent);
+  color: var(--success);
   margin-top: 3px;
 }
 
@@ -308,8 +276,9 @@ button {
   margin-bottom: var(--sp-5);
   padding: var(--sp-4);
   background: var(--danger-wash);
-  border: var(--line-w) solid var(--danger-line);
-  border-radius: var(--r-lg);
+  border-left: 5px solid var(--danger);
+  border-radius: var(--r-md);
+  box-shadow: var(--sh-sm);
 }
 
 .error-summary-head {
@@ -328,7 +297,7 @@ button {
 
 .error-summary a {
   color: var(--danger);
-  font-size: .95rem;
+  font-size: .94rem;
   display: inline-block;
   padding-block: var(--sp-1);
 }
@@ -343,7 +312,7 @@ button {
 
 .field-label {
   display: block;
-  font-size: 1.06rem;
+  font-size: 1.08rem;
   font-weight: 700;
   line-height: 1.5;
   padding: 0;
@@ -357,21 +326,19 @@ button {
   margin-inline-start: var(--sp-2);
   font-size: .72rem;
   font-weight: 700;
-  padding: 2px var(--sp-2);
+  padding: 1px var(--sp-2);
   border-radius: var(--r-pill);
   white-space: nowrap;
 }
 
 .req {
-  color: var(--danger);
-  background: var(--danger-wash);
-  border: 1px solid var(--danger-line);
+  color: var(--primary-deep);
+  background: var(--primary-wash);
 }
 
 .opt {
   color: var(--fg-muted);
-  background: var(--bg-deep);
-  border: 1px solid var(--divider);
+  background: var(--bg-sunk);
 }
 
 .field-hint {
@@ -391,17 +358,17 @@ button {
   color: var(--danger);
 }
 
+/* 錯誤不單靠顏色：另加警示圖示 */
 .field-error::before {
+  --warn-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M12 2 1.5 21h21L12 2Zm0 6.2v6M12 17.6h.01' fill='none' stroke='%23000' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
   content: "";
   flex: none;
   width: 18px;
   height: 18px;
   margin-top: 4px;
   background: currentColor;
-  /* 警示圖示以遮罩呈現，避免以顏色單獨傳達錯誤 */
   -webkit-mask: var(--warn-mask) center / contain no-repeat;
   mask: var(--warn-mask) center / contain no-repeat;
-  --warn-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M12 2 1.5 21h21L12 2Zm0 6.2v6M12 17.6h.01' fill='none' stroke='%23000' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
 }
 
 .char-count {
@@ -421,9 +388,9 @@ textarea {
   min-height: var(--tap);
   padding: var(--sp-3) var(--sp-4);
   background: var(--card);
-  border: var(--line-w) solid var(--control-line);
+  border: 2px solid var(--line);
   border-radius: var(--r-md);
-  box-shadow: var(--clay-inset);
+  box-shadow: var(--sh-inset);
   transition: border-color var(--t-fast) var(--ease),
     box-shadow var(--t-fast) var(--ease);
 }
@@ -436,16 +403,17 @@ textarea {
 input::placeholder,
 textarea::placeholder {
   color: var(--fg-muted);
-  opacity: .75;
+  opacity: .7;
 }
 
-input[type="text"]:hover,
-textarea:hover {
-  border-color: var(--primary-strong);
+input[type="text"]:focus,
+textarea:focus {
+  border-color: var(--primary-deep);
+  box-shadow: var(--sh-inset), 0 0 0 4px var(--primary-wash);
 }
 
 [aria-invalid="true"] {
-  border-color: var(--danger-line) !important;
+  border-color: var(--danger) !important;
   background: var(--danger-wash);
 }
 
@@ -454,16 +422,18 @@ textarea:hover {
 .age-readout {
   min-height: 2.6rem;
   margin-bottom: var(--sp-3);
-  font-size: 1.5rem;
+  font-size: 1.62rem;
   font-weight: 700;
   line-height: 1.5;
-  color: var(--primary-strong);
+  letter-spacing: -.01em;
+  color: var(--primary-deep);
   font-variant-numeric: tabular-nums;
 }
 
 .age-readout output[data-empty="true"] {
   font-size: 1rem;
   font-weight: 400;
+  letter-spacing: 0;
   color: var(--fg-muted);
 }
 
@@ -481,20 +451,24 @@ textarea:hover {
   height: var(--tap);
   border-radius: var(--r-md);
   background: var(--card);
-  color: var(--primary-strong);
-  border: var(--line-w) solid var(--control-line);
-  box-shadow: var(--clay-lift);
+  color: var(--primary-deep);
+  border: 2px solid var(--line);
+  box-shadow: var(--sh-sm);
   transition: transform var(--t-fast) var(--ease),
-    box-shadow var(--t-fast) var(--ease);
+    box-shadow var(--t-fast) var(--ease),
+    border-color var(--t-fast) var(--ease),
+    background-color var(--t-fast) var(--ease);
 }
 
 .stepper:active:not(:disabled) {
-  transform: translateY(4px);
-  box-shadow: var(--clay-press);
+  transform: translateY(2px);
+  box-shadow: none;
+  background: var(--primary-wash);
+  border-color: var(--primary-deep);
 }
 
 .stepper:disabled {
-  opacity: .42;
+  opacity: .4;
   cursor: not-allowed;
   box-shadow: none;
 }
@@ -503,7 +477,7 @@ textarea:hover {
   position: relative;
   flex: 1 1 auto;
   min-width: 0;
-  padding-top: 42px;
+  padding-top: 44px;
 }
 
 .age-bubble {
@@ -511,15 +485,15 @@ textarea:hover {
   top: 0;
   left: 0;
   transform: translateX(-50%);
-  padding: var(--sp-1) var(--sp-3);
+  padding: 3px var(--sp-3);
   border-radius: var(--r-pill);
-  background: var(--primary-strong);
-  color: var(--primary-ink);
+  background: var(--primary-deep);
+  color: #FFFFFF;
   font-size: .92rem;
   font-weight: 700;
   white-space: nowrap;
   font-variant-numeric: tabular-nums;
-  box-shadow: 0 4px 10px -4px rgba(22, 78, 99, .5);
+  box-shadow: var(--sh-orange);
   transition: left var(--t-fast) var(--ease);
 }
 
@@ -527,7 +501,7 @@ textarea:hover {
   content: "";
   position: absolute;
   left: 50%;
-  bottom: -5px;
+  bottom: -4px;
   width: 10px;
   height: 10px;
   transform: translateX(-50%) rotate(45deg);
@@ -537,9 +511,12 @@ textarea:hover {
 
 .age-bubble[data-empty="true"] {
   background: var(--fg-muted);
+  box-shadow: var(--sh-sm);
 }
 
+/* --fill 由 JS 更新，讓已選範圍填成橘色 */
 input[type="range"] {
+  --fill: 0%;
   -webkit-appearance: none;
   appearance: none;
   display: block;
@@ -556,45 +533,47 @@ input[type="range"]:active {
 }
 
 input[type="range"]::-webkit-slider-runnable-track {
-  height: 14px;
+  height: 12px;
   border-radius: var(--r-pill);
-  background: var(--primary-wash);
-  border: var(--line-w) solid var(--control-line);
-  box-shadow: var(--clay-inset);
+  background:
+    linear-gradient(90deg, var(--primary-fill) var(--fill), var(--bg-sunk) var(--fill));
+  border: 1px solid var(--line);
+  box-shadow: var(--sh-inset);
 }
 
 input[type="range"]::-moz-range-track {
-  height: 14px;
+  height: 12px;
   border-radius: var(--r-pill);
-  background: var(--primary-wash);
-  border: var(--line-w) solid var(--control-line);
-  box-shadow: var(--clay-inset);
+  background:
+    linear-gradient(90deg, var(--primary-fill) var(--fill), var(--bg-sunk) var(--fill));
+  border: 1px solid var(--line);
+  box-shadow: var(--sh-inset);
 }
 
 input[type="range"]::-webkit-slider-thumb {
   -webkit-appearance: none;
   appearance: none;
-  width: 34px;
-  height: 34px;
-  margin-top: -11px;
+  width: 32px;
+  height: 32px;
+  margin-top: -13px;
   border-radius: 50%;
   background: var(--card);
-  border: 3px solid var(--primary-strong);
-  box-shadow: 0 3px 0 0 rgba(14, 116, 144, .35), 0 6px 12px -4px rgba(22, 78, 99, .4);
+  border: 4px solid var(--primary-deep);
+  box-shadow: var(--sh-md);
   transition: transform var(--t-fast) var(--ease);
 }
 
 input[type="range"]::-moz-range-thumb {
-  width: 34px;
-  height: 34px;
+  width: 32px;
+  height: 32px;
   border-radius: 50%;
   background: var(--card);
-  border: 3px solid var(--primary-strong);
-  box-shadow: 0 3px 0 0 rgba(14, 116, 144, .35), 0 6px 12px -4px rgba(22, 78, 99, .4);
+  border: 4px solid var(--primary-deep);
+  box-shadow: var(--sh-md);
 }
 
 input[type="range"]:active::-webkit-slider-thumb {
-  transform: scale(1.12);
+  transform: scale(1.1);
 }
 
 .scale-ends {
@@ -633,39 +612,39 @@ input[type="range"]:active::-webkit-slider-thumb {
 .segmented-face {
   display: grid;
   place-items: center;
-  min-height: 60px;
+  min-height: 62px;
   padding: var(--sp-3);
   font-weight: 700;
   border-radius: var(--r-md);
   background: var(--card);
-  border: var(--line-w) solid var(--control-line);
-  box-shadow: var(--clay-lift);
+  border: 2px solid var(--line);
+  box-shadow: var(--sh-sm);
   transition: transform var(--t-fast) var(--ease),
     box-shadow var(--t-fast) var(--ease),
     background-color var(--t-fast) var(--ease),
+    border-color var(--t-fast) var(--ease),
     color var(--t-fast) var(--ease);
 }
 
 .segmented-option input:checked+.segmented-face {
-  background: var(--primary-strong);
+  background: var(--primary);
   color: var(--primary-ink);
-  border-color: var(--primary-strong);
-  transform: translateY(4px);
-  box-shadow: var(--clay-press);
+  border-color: var(--primary-deep);
+  box-shadow: var(--sh-orange);
 }
 
 .segmented-option input:focus-visible+.segmented-face {
-  outline: 3px solid var(--primary-strong);
+  outline: 3px solid var(--primary-deep);
   outline-offset: 3px;
 }
 
 .segmented-option input:active+.segmented-face {
-  transform: translateY(4px);
-  box-shadow: var(--clay-press);
+  transform: translateY(2px);
 }
 
 /* ═══ Face scale (1–5) ═══════════════════════════════════════ */
 
+/* 表情一律同色：刻度由「嘴型 + 文字」承載，不靠彩虹色階 */
 .face-scale {
   display: grid;
   grid-template-columns: repeat(5, 1fr);
@@ -692,25 +671,27 @@ input[type="range"]:active::-webkit-slider-thumb {
   display: grid;
   justify-items: center;
   gap: var(--sp-1);
-  padding: var(--sp-2) 2px var(--sp-3);
-  min-height: 92px;
+  padding: var(--sp-3) 2px var(--sp-3);
+  min-height: 94px;
   border-radius: var(--r-md);
   background: var(--card);
-  border: var(--line-w) solid var(--control-line);
-  box-shadow: var(--clay-lift);
+  border: 2px solid var(--line);
+  box-shadow: var(--sh-sm);
   transition: transform var(--t-fast) var(--ease),
     box-shadow var(--t-fast) var(--ease),
-    background-color var(--t-fast) var(--ease);
+    background-color var(--t-fast) var(--ease),
+    border-color var(--t-fast) var(--ease);
 }
 
 .face-body svg {
-  width: 38px;
-  height: 38px;
+  width: 36px;
+  height: 36px;
   fill: none;
-  stroke: var(--face-tint, var(--primary-strong));
+  stroke: var(--fg);
   stroke-width: 1.8;
   stroke-linecap: round;
   stroke-linejoin: round;
+  transition: stroke var(--t-fast) var(--ease);
 }
 
 .face-caption {
@@ -723,25 +704,26 @@ input[type="range"]:active::-webkit-slider-thumb {
 }
 
 .face-option input:checked+.face-body {
-  background: var(--face-wash, var(--primary-wash));
-  border-color: var(--face-tint, var(--primary-strong));
-  border-width: 3px;
-  transform: translateY(4px);
-  box-shadow: var(--clay-press);
+  background: var(--primary-wash);
+  border-color: var(--primary-deep);
+  box-shadow: var(--sh-md);
+}
+
+.face-option input:checked+.face-body svg {
+  stroke: var(--primary-deep);
 }
 
 .face-option input:checked+.face-body .face-caption {
-  color: var(--fg);
+  color: var(--primary-deep);
 }
 
 .face-option input:focus-visible+.face-body {
-  outline: 3px solid var(--primary-strong);
+  outline: 3px solid var(--primary-deep);
   outline-offset: 3px;
 }
 
 .face-option input:active+.face-body {
-  transform: translateY(4px);
-  box-shadow: var(--clay-press);
+  transform: translateY(2px);
 }
 
 /* 選取標記：不單靠顏色傳達狀態 */
@@ -754,14 +736,9 @@ input[type="range"]:active::-webkit-slider-thumb {
   width: 22px;
   height: 22px;
   border-radius: 50%;
-  background: var(--accent);
+  background: var(--primary-deep);
   color: #FFFFFF;
-}
-
-@media (prefers-color-scheme: dark) {
-  .face-check {
-    color: #052E25;
-  }
+  box-shadow: var(--sh-sm);
 }
 
 .face-check svg {
@@ -785,37 +762,37 @@ input[type="range"]:active::-webkit-slider-thumb {
   width: 100%;
   min-height: 58px;
   padding: var(--sp-3) var(--sp-5);
-  font-size: 1.08rem;
+  font-size: 1.1rem;
   font-weight: 700;
-  border-radius: var(--r-lg);
-  border: var(--line-w) solid transparent;
+  letter-spacing: .01em;
+  border-radius: var(--r-pill);
+  border: 2px solid transparent;
   transition: transform var(--t-fast) var(--ease),
     box-shadow var(--t-fast) var(--ease),
     background-color var(--t-fast) var(--ease);
 }
 
 .btn-primary {
-  background: var(--primary-strong);
+  background: var(--primary);
   color: var(--primary-ink);
-  border-color: var(--primary-strong);
-  box-shadow: var(--clay-lift);
+  box-shadow: var(--sh-orange);
 }
 
 .btn-primary:active {
-  transform: translateY(5px);
-  box-shadow: var(--clay-press);
+  transform: translateY(2px);
+  box-shadow: 0 1px 4px rgba(194, 65, 12, .3);
 }
 
 .btn-quiet {
   background: var(--card);
   color: var(--fg);
-  border-color: var(--control-line);
-  box-shadow: var(--clay-lift);
+  border-color: var(--line);
+  box-shadow: var(--sh-sm);
 }
 
 .btn-quiet:active {
-  transform: translateY(4px);
-  box-shadow: var(--clay-press);
+  transform: translateY(2px);
+  box-shadow: none;
 }
 
 .form-foot {
@@ -836,26 +813,26 @@ input[type="range"]:active::-webkit-slider-thumb {
 .success-badge {
   display: grid;
   place-items: center;
-  width: 78px;
-  height: 78px;
+  width: 76px;
+  height: 76px;
   margin: 0 auto var(--sp-4);
   border-radius: 50%;
-  background: var(--accent-wash);
-  color: var(--accent);
-  border: 3px solid var(--accent);
-  box-shadow: var(--clay-lift);
+  background: var(--success-wash);
+  color: var(--success);
+  box-shadow: var(--sh-md);
 }
 
 .success-badge .icon {
-  width: 36px;
-  height: 36px;
+  width: 34px;
+  height: 34px;
   stroke-width: 2.6;
 }
 
 .success-view h1 {
-  font-size: 1.62rem;
+  font-size: 1.7rem;
   font-weight: 700;
   line-height: 1.4;
+  letter-spacing: -.01em;
   text-wrap: balance;
 }
 
@@ -873,9 +850,9 @@ input[type="range"]:active::-webkit-slider-thumb {
   padding: var(--sp-5) var(--sp-4);
   margin-bottom: var(--sp-6);
   background: var(--card);
-  border: 3px dashed var(--control-line);
-  border-radius: var(--r-lg);
-  box-shadow: var(--card-shadow);
+  border: 2px dashed var(--line);
+  border-radius: var(--r-xl);
+  box-shadow: var(--sh-md);
 }
 
 .code-label {
@@ -885,12 +862,12 @@ input[type="range"]:active::-webkit-slider-thumb {
 
 .code-digits {
   margin-block: var(--sp-2);
-  font-size: 3rem;
+  font-size: 3.1rem;
   font-weight: 700;
   line-height: 1.2;
-  letter-spacing: .22em;
-  text-indent: .22em;
-  color: var(--primary-strong);
+  letter-spacing: .2em;
+  text-indent: .2em;
+  color: var(--primary-deep);
   font-variant-numeric: tabular-nums;
 }
 
@@ -910,9 +887,8 @@ input[type="range"]:active::-webkit-slider-thumb {
   display: grid;
   margin-bottom: var(--sp-6);
   background: var(--card);
-  border: var(--line-w) solid var(--divider);
   border-radius: var(--r-lg);
-  box-shadow: var(--card-shadow);
+  box-shadow: var(--sh-md);
   overflow: hidden;
   text-align: start;
 }
@@ -924,7 +900,7 @@ input[type="range"]:active::-webkit-slider-thumb {
   justify-content: space-between;
   align-items: baseline;
   padding: var(--sp-3) var(--sp-4);
-  border-top: 1px solid var(--divider);
+  border-top: 1px solid var(--hairline);
 }
 
 .summary-row:first-child {
@@ -962,7 +938,7 @@ input[type="range"]:active::-webkit-slider-thumb {
   }
 
   .welcome h1 {
-    font-size: 2rem;
+    font-size: 2.15rem;
   }
 
   .face-caption {
@@ -973,6 +949,36 @@ input[type="range"]:active::-webkit-slider-thumb {
     width: auto;
     min-width: 16rem;
     margin-inline: auto;
+  }
+}
+
+/* ═══ Hover — 只在真正有游標時 ═══════════════════════════════ */
+
+@media (hover: hover) and (pointer: fine) {
+
+  .btn-primary:hover {
+    background: #FB8A3C;
+  }
+
+  .btn-quiet:hover,
+  .stepper:hover:not(:disabled) {
+    background: var(--primary-wash);
+    border-color: var(--primary-deep);
+  }
+
+  input[type="text"]:hover,
+  textarea:hover {
+    border-color: var(--primary-deep);
+  }
+
+  .segmented-option input:not(:checked)+.segmented-face:hover,
+  .face-option input:not(:checked)+.face-body:hover {
+    background: var(--primary-wash);
+    border-color: var(--primary-deep);
+  }
+
+  .error-summary a:hover {
+    text-decoration-thickness: 2px;
   }
 }
 
@@ -991,64 +997,8 @@ input[type="range"]:active::-webkit-slider-thumb {
 
   .btn:active,
   .stepper:active:not(:disabled),
-  .segmented-option input:checked+.segmented-face,
-  .face-option input:checked+.face-body,
   .face-option input:active+.face-body,
   .segmented-option input:active+.segmented-face {
     transform: none;
-  }
-}
-
-/* ═══ Face-scale tints (1 calm → 5 tense, never the error red) ═ */
-
-:root {
-  --tint-1: #047857;
-  --tint-2: #0E7490;
-  --tint-3: #475569;
-  --tint-4: #C2410C;
-  --tint-5: #9A3412;
-  --wash-1: #DCFCE7;
-  --wash-2: #E0F7FC;
-  --wash-3: #EEF2F6;
-  --wash-4: #FFEDD5;
-  --wash-5: #FFE4D0;
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --tint-1: #34D399;
-    --tint-2: #22D3EE;
-    --tint-3: #CBD5E1;
-    --tint-4: #FDBA74;
-    --tint-5: #FCA5A5;
-    --wash-1: #0E3A31;
-    --wash-2: #10323D;
-    --wash-3: #26333D;
-    --wash-4: #40281A;
-    --wash-5: #45231F;
-  }
-}
-
-/* ═══ Hover — only where a real pointer exists ════════════════ */
-
-@media (hover: hover) and (pointer: fine) {
-
-  .btn-primary:hover {
-    background: var(--primary);
-    border-color: var(--primary);
-  }
-
-  .btn-quiet:hover,
-  .stepper:hover:not(:disabled) {
-    background: var(--primary-wash);
-  }
-
-  .segmented-option input:not(:checked)+.segmented-face:hover,
-  .face-option input:not(:checked)+.face-body:hover {
-    background: var(--primary-wash);
-  }
-
-  .error-summary a:hover {
-    text-decoration-thickness: 2px;
   }
 }

@@ -41,18 +41,25 @@
   var ageDown = $('ageDown');
   var ageUp = $('ageUp');
   var ageTouched = false;
+  /* engaged：使用者是否已經碰過滑桿。未碰過就不填色，
+     否則軌道會暗示一個家長沒有選過的值。 */
+  var ageEngaged = false;
 
   /* 氣泡跟著滑桿頭走：扣掉頭的寬度，端點才不會超出軌道 */
   function positionBubble() {
     var idx = Number(ageInput.value);
     var ratio = (idx - AGE_MIN_IDX) / (AGE_MAX_IDX - AGE_MIN_IDX);
-    var thumb = 34;
+    var thumb = 32;
     var usable = ageInput.offsetWidth - thumb;
     ageBubble.style.left = (thumb / 2 + ratio * usable) + 'px';
+    /* 軌道已選區段填成橘色（--fill 由 CSS 的 linear-gradient 取用） */
+    ageInput.style.setProperty(
+      '--fill', ageEngaged ? (ratio * 100).toFixed(2) + '%' : '0%');
   }
 
   /* 拖曳中即時更新氣泡；放開後才把值寫進 output（「完整捲動後顯示」） */
   function paintBubble() {
+    ageEngaged = true;
     var label = ageLabel(indexToAge(Number(ageInput.value)));
     ageBubble.textContent = label;
     ageBubble.removeAttribute('data-empty');
@@ -112,8 +119,7 @@
         '<label class="face-option">' +
         '<input type="radio" name="' + name + '" value="' + v + '"' +
         ' aria-required="true" aria-describedby="' + describedby + '">' +
-        '<span class="face-body" style="--face-tint:var(--tint-' + v + ');' +
-        '--face-wash:var(--wash-' + v + ')">' +
+        '<span class="face-body">' +
         '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/>' +
         FACES[i] + '</svg>' +
         '<span class="face-caption">' + captions[i] + '</span>' +
@@ -361,6 +367,7 @@
     ageOut.textContent = '尚未選擇';
     ageOut.setAttribute('data-empty', 'true');
     ageInput.removeAttribute('aria-valuetext');
+    ageEngaged = false;
     ageDown.disabled = false;
     ageUp.disabled = false;
     needsCount.textContent = '還可以輸入 ' + NEEDS_MAX + ' 字';
