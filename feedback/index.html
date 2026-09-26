@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="zh-Hant-TW">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="color-scheme" content="light">
+  <meta name="theme-color" content="#FFF7ED">
+  <title>安心陪伴 · 給我們建議</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet"
+    href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&display=swap">
+  <link rel="stylesheet" href="/styles.css">
+  <link rel="stylesheet" href="/shared/page.css">
+  <link rel="stylesheet" href="/feedback/feedback.css">
+  <script src="/shared/app.js"></script>
+  <script>Anxin.requireProfile();</script>
+</head>
+
+<body>
+  <a class="skip-link" href="#main">跳到主要內容</a>
+
+  <header class="wrap topbar">
+    <a class="back-link" href="/home/">
+      <svg viewBox="0 0 24 24" class="icon" aria-hidden="true"><path d="M15 5 8 12l7 7" /></svg>
+      <span>回主頁</span>
+    </a>
+  </header>
+
+  <main id="main" class="wrap">
+
+    <!-- ══════════ 填寫回饋 ══════════ -->
+    <div id="formView">
+      <section class="welcome" aria-labelledby="fbTitle">
+        <h1 id="fbTitle">可以給我們一些建議嗎？</h1>
+        <p class="welcome-lede">只要一分鐘。您的回答會幫助我們，讓下一個孩子更安心。</p>
+      </section>
+
+      <div id="errorSummary" class="error-summary" role="alert" tabindex="-1"
+        aria-labelledby="errorSummaryTitle" hidden>
+        <p class="error-summary-head">
+          <svg viewBox="0 0 24 24" class="icon" aria-hidden="true">
+            <circle cx="12" cy="12" r="8.2" />
+            <path d="M12 8v4.6M12 15.8h.01" />
+          </svg>
+          <span id="errorSummaryTitle">還有幾個地方需要補上</span>
+        </p>
+        <ul id="errorList"></ul>
+      </div>
+
+      <form id="feedbackForm" novalidate>
+
+        <!-- ── 1. 對醫護人員的滿意度 ── -->
+        <fieldset class="field">
+          <legend class="field-label">
+            您對醫護人員的滿意度？ <span class="req">必填</span>
+          </legend>
+          <div class="face-scale" id="satisfactionScale" data-name="satisfaction"
+            data-describedby="satisfaction-error"></div>
+          <p class="field-error" id="satisfaction-error" hidden></p>
+        </fieldset>
+
+        <!-- ── 2. 滿意度的原因（題目會帶入上一題的選擇） ── -->
+        <div class="field">
+          <label class="field-label" for="reason">
+            <span id="reasonLabelText">選擇這個滿意度的原因為何？</span> <span class="opt">選填</span>
+          </label>
+          <textarea id="reason" name="reason" maxlength="500" rows="3"
+            aria-describedby="reason-count"></textarea>
+          <p class="char-count" id="reason-count" aria-live="polite">還可以輸入 500 字</p>
+        </div>
+
+        <!-- ── 3. 孩子實際的哭鬧程度 ── -->
+        <fieldset class="field">
+          <legend class="field-label">
+            孩子實際的哭鬧程度如何？ <span class="req">必填</span>
+          </legend>
+          <div class="face-scale" id="cryScale" data-name="cryLevel"
+            data-describedby="cryLevel-error"></div>
+          <p class="field-error" id="cryLevel-error" hidden></p>
+        </fieldset>
+
+        <!-- ── 4. 是否有效緩解緊張 ── -->
+        <fieldset class="field">
+          <legend class="field-label">
+            您覺得我們團隊，是否有效緩解了緊張？ <span class="req">必填</span>
+          </legend>
+          <div class="face-scale" id="effectivenessScale" data-name="effectiveness"
+            data-describedby="effectiveness-error"></div>
+          <p class="field-error" id="effectiveness-error" hidden></p>
+        </fieldset>
+
+        <!-- ── 5. 建議 ── -->
+        <div class="field">
+          <label class="field-label" for="suggestion">
+            有什麼建議，或孩子想要卻沒有達成的目標，可以告訴我們嗎？ <span class="opt">選填</span>
+          </label>
+          <textarea id="suggestion" name="suggestion" maxlength="1000" rows="4"
+            aria-describedby="suggestion-count"></textarea>
+          <p class="char-count" id="suggestion-count" aria-live="polite">還可以輸入 1000 字</p>
+        </div>
+
+        <button class="btn btn-primary" type="submit" id="sendBtn">
+          <span class="btn-label" id="sendLabel">送出回饋</span>
+        </button>
+        <p class="field-error" id="send-error" role="alert" hidden></p>
+        <!-- 研究用資料：誠實說明上傳了什麼 -->
+        <p class="form-foot">
+          送出時會一併附上孩子的年紀、性別與先前的填答，<strong>不包含暱稱</strong>；文字裡提到的暱稱也會自動換成「孩子」。
+        </p>
+      </form>
+    </div>
+
+    <!-- ══════════ 已送出 ══════════ -->
+    <section id="sentView" class="success-view" hidden aria-labelledby="sentTitle">
+      <div class="success-badge" aria-hidden="true">
+        <svg viewBox="0 0 24 24" class="icon"><path d="M6 12.4 10.2 16.6 18 8.8" /></svg>
+      </div>
+      <h1 id="sentTitle" tabindex="-1">已收到您的回饋</h1>
+      <p class="success-lede">謝謝您願意花時間告訴我們。</p>
+      <div class="sent-actions">
+        <a class="btn btn-primary" href="/discussion/">前往討論區</a>
+        <a class="btn btn-quiet" href="/thanks/">離開</a>
+      </div>
+    </section>
+  </main>
+
+  <!-- 規格：送出後的感謝視窗 → 前往討論區（#04）或離開 -->
+  <dialog class="dlg" id="sentDlg" aria-labelledby="sentDlgTitle" aria-describedby="sentDlgBody">
+    <h2 class="dlg-title" id="sentDlgTitle">謝謝您！</h2>
+    <p class="dlg-body" id="sentDlgBody">
+      您今天的陪伴很不容易。您的每一則回饋，都會變成下一個孩子的安心。<br>
+      也歡迎到討論區，和其他家長分享您的安撫方法。
+    </p>
+    <div class="dlg-actions">
+      <a class="btn btn-primary" href="/discussion/">前往討論區</a>
+      <a class="btn btn-quiet" href="/thanks/">離開</a>
+    </div>
+  </dialog>
+
+  <div class="live-region" id="liveRegion" role="status" aria-live="polite"></div>
+  <!-- Firebase 是 module（deferred）；feedback.js 透過 Anxin.whenFirebase() 等它 -->
+  <script type="module" src="/shared/firebase.js"></script>
+  <script src="/feedback/feedback.js"></script>
+</body>
+
+</html>

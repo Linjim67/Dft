@@ -1,0 +1,27 @@
+/* ═══ 感謝頁 ═══════════════════════════════════════════════════ */
+
+.thanks {
+  padding-top: var(--sp-7);
+}
+
+.thanks .success-badge {
+  background: var(--primary-wash);
+  color: var(--primary-deep);
+}
+
+.thanks-note {
+  display: grid;
+  gap: var(--sp-3);
+  margin-bottom: var(--sp-5);
+  padding: var(--sp-5) var(--sp-4);
+  text-align: start;
+  background: var(--card);
+  border-radius: var(--r-lg);
+  box-shadow: var(--sh-md);
+  color: var(--fg-muted);
+}
+
+.thanks-note p:first-child {
+  color: var(--fg);
+  font-weight: 700;
+}

@@ -14,7 +14,12 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet"
     href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&display=swap">
-  <link rel="stylesheet" href="styles.css">
+  <link rel="stylesheet" href="/styles.css">
+  <script src="/shared/app.js"></script>
+  <script>
+    /* 24 小時內已填過：直接進主頁面，表單不會先閃出來 */
+    if (Anxin.profile.load()) window.location.replace('/home/');
+  </script>
 </head>
 
 <body>
@@ -154,41 +159,16 @@
         <button class="btn btn-primary" type="submit" id="submitBtn">
           <span class="btn-label">完成，開始陪伴</span>
         </button>
+        <p class="field-error" id="storage-error" role="alert" hidden></p>
         <p class="form-foot">送出後會拿到一組 4 位數代碼，到時候要交給醫檢師。</p>
       </form>
     </div>
 
-    <!-- ══════════ 畫面 B：完成 ══════════ -->
-    <section id="successView" class="success-view" hidden aria-labelledby="successHeading">
-      <div class="success-badge" aria-hidden="true">
-        <svg viewBox="0 0 24 24" class="icon"><path d="M6 12.4 10.2 16.6 18 8.8" /></svg>
-      </div>
-
-      <h1 id="successHeading" tabindex="-1">都準備好了</h1>
-      <p class="success-lede" id="successLede"></p>
-
-      <div class="code-card">
-        <p class="code-label">您的暫時代碼</p>
-        <p class="code-digits" id="codeDigits">0000</p>
-        <p class="code-expiry" id="codeExpiry"></p>
-      </div>
-
-      <h2 class="summary-title">我們記下的資訊</h2>
-      <dl class="summary-card" id="summaryCard"></dl>
-
-      <button class="btn btn-quiet" type="button" id="restartBtn">
-        <svg viewBox="0 0 24 24" class="icon" aria-hidden="true">
-          <path d="M20 11.5a8 8 0 1 1-2.5-5.8" />
-          <path d="M20 4.5v4.2h-4.2" />
-        </svg>
-        <span>重新填寫</span>
-      </button>
-    </section>
 
   </main> 
 
   <div class="live-region" id="liveRegion" role="status" aria-live="polite"></div>
-  <script src="script.js"></script>
+  <script src="/script.js"></script>
 </body>
 
 </html>

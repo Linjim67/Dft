@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="zh-Hant-TW">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="color-scheme" content="light">
+  <meta name="theme-color" content="#FFF7ED">
+  <title>安心陪伴 · 主頁面</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet"
+    href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&display=swap">
+  <link rel="stylesheet" href="/styles.css">
+  <link rel="stylesheet" href="/shared/page.css">
+  <link rel="stylesheet" href="/home/home.css">
+  <script src="/shared/app.js"></script>
+  <script>Anxin.requireProfile();</script>
+</head>
+
+<body>
+  <a class="skip-link" href="#main">跳到主要內容</a>
+
+  <header class="site-header">
+    <div class="wrap header-inner">
+      <span class="brand-mark" aria-hidden="true">
+        <svg viewBox="0 0 24 24" class="icon icon-lg">
+          <path d="M12 20.5s-7.2-4.35-7.2-9.4A4.3 4.3 0 0 1 12 8.6a4.3 4.3 0 0 1 7.2 2.5c0 5.05-7.2 9.4-7.2 9.4Z" />
+          <path d="M9.4 6.2a2.6 2.6 0 1 1 5.2 0" />
+        </svg>
+      </span>
+      <div class="brand-text">
+        <p class="brand-name">安心陪伴</p>
+        <p class="brand-tagline">暖身？</p>
+      </div>
+    </div>
+  </header>
+
+  <main id="main" class="wrap">
+
+    <!-- ── 1. 個人資訊簡介 ── -->
+    <section class="brief" aria-labelledby="briefTitle">
+      <h1 id="briefTitle" class="brief-title">小檔案</h1>
+
+      <div class="code-card">
+        <p class="code-label">暫時代碼</p>
+        <p class="code-digits" id="codeDigits">----</p>
+        <p class="code-expiry" id="codeExpiry"></p>
+        <p class="code-note">打針時，請把這組代碼交給醫檢師</p>
+      </div>
+
+      <dl class="summary-card" id="summaryCard"></dl>
+
+      <p class="center">
+        <button class="quiet-link" type="button" id="restartBtn">重新填寫</button>
+      </p>
+    </section>
+
+    <!-- ── 2–4. 等待時的功能 ── -->
+    <h2 class="section-title">等待的時候</h2>
+
+    <div class="card-list">
+      <a class="nav-card" href="/guide/">
+        <span class="card-icon" aria-hidden="true">
+          <svg viewBox="0 0 24 24" class="icon">
+            <path d="M12 6.5C10.2 5.1 7.7 4.5 5 4.5v13c2.7 0 5.2.6 7 2 1.8-1.4 4.3-2 7-2v-13c-2.7 0-5.2.6-7 2Z" />
+            <path d="M12 6.5v13" />
+          </svg>
+        </span>
+        <span>
+          <span class="card-title">家長安慰指南</span>
+          <span class="card-desc">陪孩子度過打針的小方法</span>
+        </span>
+        <svg viewBox="0 0 24 24" class="icon card-chevron" aria-hidden="true"><path d="m9 5 7 7-7 7" /></svg>
+      </a>
+
+      <a class="nav-card" href="/cheer/">
+        <span class="card-icon" aria-hidden="true">
+          <svg viewBox="0 0 24 24" class="icon">
+            <path d="M12 20s-7-4.3-7-9.4A4 4 0 0 1 12 8a4 4 0 0 1 7 2.6C19 15.7 12 20 12 20Z" />
+          </svg>
+        </span>
+        <span>
+          <span class="card-title">給家長的鼓勵</span>
+          <span class="card-desc">您也辛苦了，給自己喘口氣</span>
+        </span>
+        <svg viewBox="0 0 24 24" class="icon card-chevron" aria-hidden="true"><path d="m9 5 7 7-7 7" /></svg>
+      </a>
+
+      <!-- 小遊戲：同一個 chunk，拆成單機／雙機兩顆按鈕 -->
+      <section class="chunk-card" aria-labelledby="gamesTitle">
+        <div class="chunk-head">
+          <span class="card-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" class="icon">
+              <rect x="3" y="7.5" width="18" height="10" rx="5" />
+              <path d="M8 10.5v4M6 12.5h4M15.5 11.5h.01M17.5 13.5h.01" />
+            </svg>
+          </span>
+          <span>
+            <h3 id="gamesTitle" class="card-title">小遊戲</h3>
+            <span class="card-desc">轉移注意力，時間會過得快一點</span>
+          </span>
+        </div>
+        <div class="card-actions">
+          <a class="btn btn-quiet game-btn" href="/games/solo/">
+            <span class="game-btn-label">單機</span>
+            <span class="game-btn-sub">一支手機</span>
+          </a>
+          <a class="btn btn-quiet game-btn" href="/games/duo/">
+            <span class="game-btn-label">雙機</span>
+            <span class="game-btn-sub">兩支手機一起玩</span>
+          </a>
+        </div>
+      </section>
+    </div>
+
+    <!-- ── 5. 開始打針（#03） ── -->
+    <a class="btn btn-primary start-btn" href="/shot/">
+      <span>開始打針</span>
+      <svg viewBox="0 0 24 24" class="icon" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6" /></svg>
+    </a>
+  </main>
+
+  <!-- 重新填寫會清掉資料與代碼，先確認；預設焦點在「取消」 -->
+  <dialog class="dlg" id="restartDlg" aria-labelledby="restartTitle" aria-describedby="restartBody">
+    <h2 class="dlg-title" id="restartTitle">要重新填寫嗎？</h2>
+    <p class="dlg-body" id="restartBody">目前的資料和暫時代碼都會被清除，需要再填一次。</p>
+    <div class="dlg-actions">
+      <button class="btn btn-danger" type="button" id="restartConfirm">清除並重新填寫</button>
+      <button class="btn btn-quiet" type="button" data-close autofocus>取消</button>
+    </div>
+  </dialog>
+
+  <script src="/home/home.js"></script>
+</body>
+
+</html>

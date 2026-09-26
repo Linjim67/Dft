@@ -14,7 +14,7 @@
 | Language | zh-Hant-TW |
 | Platform | Mobile-first web (375px target) |
 | Theme | **Bright mode only.** No dark mode — deliberate, per product owner. |
-| Stack | Vanilla HTML/CSS/JS, no build step, static on Vercel |
+| Stack | Vanilla HTML/CSS/JS, no build step, static on Vercel. Cross-page logic in `/shared/app.js` (`window.Anxin`); Firestore only for #03 feedback and #04 discussion |
 
 ## Colour — warm orange ("Playful orange")
 

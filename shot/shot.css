@@ -1,0 +1,53 @@
+/* ═══ #03 開始打針 ═════════════════════════════════════════════
+   打針當下家長一手抱孩子，一手拿手機：畫面只留一件事可做。
+   ═══════════════════════════════════════════════════════════════ */
+
+.shot-stage {
+  display: grid;
+  justify-items: center;
+  text-align: center;
+  padding-block: var(--sp-6) var(--sp-7);
+}
+
+.shot-badge {
+  display: grid;
+  place-items: center;
+  width: 84px;
+  height: 84px;
+  margin-bottom: var(--sp-5);
+  border-radius: 50%;
+  background: var(--primary-wash);
+  color: var(--primary-deep);
+  box-shadow: var(--sh-md);
+}
+
+.shot-badge .icon {
+  width: 40px;
+  height: 40px;
+}
+
+.shot-title {
+  font-size: 1.85rem;
+  line-height: 1.35;
+  font-weight: 700;
+  letter-spacing: -.01em;
+  text-wrap: balance;
+}
+
+.shot-lede {
+  margin-top: var(--sp-3);
+  color: var(--fg-muted);
+}
+
+/* 單手也按得到：比一般按鈕更高 */
+.shot-done {
+  margin-top: var(--sp-7);
+  min-height: 68px;
+  font-size: 1.25rem;
+}
+
+.dlg .quiet-link {
+  background: none;
+  border: 0;
+  font-size: .95rem;
+}

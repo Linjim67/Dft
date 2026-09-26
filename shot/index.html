@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="zh-Hant-TW">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="color-scheme" content="light">
+  <meta name="theme-color" content="#FFF7ED">
+  <title>安心陪伴 · 開始打針</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet"
+    href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&display=swap">
+  <link rel="stylesheet" href="/styles.css">
+  <link rel="stylesheet" href="/shared/page.css">
+  <link rel="stylesheet" href="/shot/shot.css">
+  <script src="/shared/app.js"></script>
+  <script>Anxin.requireProfile();</script>
+</head>
+
+<body>
+  <a class="skip-link" href="#main">跳到主要內容</a>
+
+  <header class="wrap topbar">
+    <a class="back-link" href="/home/">
+      <svg viewBox="0 0 24 24" class="icon" aria-hidden="true"><path d="M15 5 8 12l7 7" /></svg>
+      <span>回主頁</span>
+    </a>
+  </header>
+
+  <main id="main" class="wrap">
+    <div class="shot-stage">
+      <div class="shot-badge" aria-hidden="true">
+        <svg viewBox="0 0 24 24" class="icon">
+          <path d="M12 20.5s-7.2-4.35-7.2-9.4A4.3 4.3 0 0 1 12 8.6a4.3 4.3 0 0 1 7.2 2.5c0 5.05-7.2 9.4-7.2 9.4Z" />
+        </svg>
+      </div>
+      <h1 class="shot-title" id="shotTitle">我們一起加油</h1>
+      <p class="shot-lede">深呼吸，很快就結束了。<br>打完之後，按下面的按鈕。</p>
+
+      <button class="btn btn-primary shot-done" type="button" id="doneBtn">打針完畢</button>
+    </div>
+  </main>
+
+  <!-- 規格：打針完畢 → 給建議，或離開（前往感謝頁） -->
+  <dialog class="dlg" id="doneDlg" aria-labelledby="doneTitle" aria-describedby="doneBody">
+    <h2 class="dlg-title" id="doneTitle">辛苦了！</h2>
+    <p class="dlg-body" id="doneBody">可以給我們團隊一些建議嗎？</p>
+    <div class="dlg-actions">
+      <a class="btn btn-primary" href="/feedback/">好，給建議</a>
+      <a class="btn btn-quiet" href="/thanks/">不用了，離開</a>
+      <!-- 手機沒有 Esc 鍵：誤按時要有路可退 -->
+      <button class="quiet-link" type="button" data-close>還沒打完</button>
+    </div>
+  </dialog>
+
+  <script src="/shot/shot.js"></script>
+</body>
+
+</html>

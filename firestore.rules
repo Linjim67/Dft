@@ -30,6 +30,15 @@ service cloud.firestore {
         allow update, delete: if false;
       }
     }
+
+    // 回饋（#03）：只能新增；任何人都不能讀、改、刪。
+    // keys().hasOnly 是白名單：帶有 nickname（或任何多出來的欄位）的文件
+    // 會在伺服器端直接被拒絕，不只是前端「沒送」而已。
+    match /feedback/{feedbackId} {
+      allow create: if request.auth != null
+        && validFeedback(request.resource.data);
+      allow read, update, delete: if false;
+    }
   }
 
   function validThread(d) {
@@ -39,6 +48,38 @@ service cloud.firestore {
       && d.members is list && d.members.size() >= 1 && d.members.size() <= 8
       && d.hashtags is list && d.hashtags.size() <= 5
       && d.clicks == 0 && d.replyCount == 0 && d.dwellMs == 0;
+  }
+
+  function isLevel(v) {
+    return v is int && v >= 1 && v <= 5;
+  }
+
+  // 欄位必須與 Anxin.buildFeedbackPayload（shared/app.js）完全一致
+  function validFeedback(d) {
+    return d.keys().hasOnly(['satisfaction', 'satisfactionReason', 'cryLevel',
+        'effectiveness', 'suggestion', 'profile', 'scaleVersion', 'createdAt'])
+      && d.keys().hasAll(['satisfaction', 'satisfactionReason', 'cryLevel',
+        'effectiveness', 'suggestion', 'profile', 'scaleVersion', 'createdAt'])
+      && isLevel(d.satisfaction)
+      && isLevel(d.cryLevel)
+      && isLevel(d.effectiveness)
+      && d.satisfactionReason is string && d.satisfactionReason.size() <= 500
+      && d.suggestion is string && d.suggestion.size() <= 1000
+      && d.scaleVersion in ['balanced-v1']
+      && d.createdAt == request.time
+      && validFeedbackProfile(d.profile);
+  }
+
+  // 個人資料：不含暱稱、不含暫時代碼
+  function validFeedbackProfile(p) {
+    return p is map
+      && p.keys().hasOnly(['age', 'gender', 'fearLevel', 'worryLevel', 'specialNeeds'])
+      && p.keys().hasAll(['age', 'gender', 'fearLevel', 'worryLevel', 'specialNeeds'])
+      && p.age is number && p.age >= 0 && p.age <= 18
+      && p.gender in ['男', '女']
+      && isLevel(p.fearLevel)
+      && isLevel(p.worryLevel)
+      && p.specialNeeds is string && p.specialNeeds.size() <= 200;
   }
 
   // 只有 clicks / dwellMs / replyCount / lastActivityAt 這幾個欄位可被更新

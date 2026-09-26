@@ -1,0 +1,305 @@
+/* ═══════════════════════════════════════════════════════════════
+   安心陪伴 — 子頁外框（載入順序：/styles.css → 本檔 → 各頁 css）
+   只用 /styles.css 已定義的 token，不另開色票。
+   ═══════════════════════════════════════════════════════════════ */
+
+a.btn {
+  text-decoration: none;
+}
+
+/* ═══ 頂列：回主頁 + 開始打針（規格：任何子頁都能直接開始打針） ═══ */
+
+.topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--sp-3);
+  padding-block: calc(var(--sp-3) + env(safe-area-inset-top)) var(--sp-3);
+}
+
+.back-link {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-1);
+  min-height: var(--tap);
+  padding-inline: var(--sp-1) var(--sp-2);
+  margin-inline-start: calc(var(--sp-1) * -1);
+  color: var(--fg-muted);
+  font-weight: 700;
+  text-decoration: none;
+  border-radius: var(--r-sm);
+}
+
+.back-link .icon {
+  width: 20px;
+  height: 20px;
+}
+
+/* 不放針筒圖示：這些頁面就在緊張的孩子眼前 */
+.pill-cta {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-1);
+  min-height: var(--tap);
+  padding-inline: var(--sp-4) var(--sp-3);
+  border-radius: var(--r-pill);
+  background: var(--primary-wash);
+  color: var(--primary-deep);
+  border: 2px solid var(--primary-deep);
+  font-weight: 700;
+  text-decoration: none;
+  white-space: nowrap;
+  transition: transform var(--t-fast) var(--ease),
+    background-color var(--t-fast) var(--ease);
+}
+
+.pill-cta .icon {
+  width: 18px;
+  height: 18px;
+}
+
+.pill-cta:active {
+  transform: translateY(2px);
+}
+
+/* ═══ 頁首標題 ════════════════════════════════════════════════ */
+
+.page-head {
+  margin-block: var(--sp-4) var(--sp-5);
+}
+
+.page-head h1 {
+  font-size: 1.75rem;
+  line-height: 1.35;
+  font-weight: 700;
+  letter-spacing: -.01em;
+  text-wrap: balance;
+}
+
+.page-lede {
+  margin-top: var(--sp-2);
+  color: var(--fg-muted);
+}
+
+.section-title {
+  font-size: 1.02rem;
+  font-weight: 700;
+  color: var(--fg-muted);
+  margin: var(--sp-6) 0 var(--sp-3);
+}
+
+/* ═══ 功能卡片 ════════════════════════════════════════════════ */
+
+.card-list {
+  display: grid;
+  gap: var(--sp-3);
+}
+
+/* 整張卡片就是連結：大面積好點，也不會在卡片裡藏第二個按鈕 */
+.nav-card {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: var(--sp-3) var(--sp-4);
+  min-height: 76px;
+  padding: var(--sp-4);
+  background: var(--card);
+  color: var(--fg);
+  text-decoration: none;
+  border-radius: var(--r-lg);
+  box-shadow: var(--sh-md);
+  transition: transform var(--t-fast) var(--ease),
+    box-shadow var(--t-fast) var(--ease),
+    background-color var(--t-fast) var(--ease);
+}
+
+.nav-card:active {
+  transform: translateY(2px);
+  box-shadow: var(--sh-sm);
+}
+
+.card-icon {
+  display: grid;
+  place-items: center;
+  width: 46px;
+  height: 46px;
+  border-radius: var(--r-md);
+  background: var(--primary-wash);
+  color: var(--primary-deep);
+}
+
+.card-title {
+  display: block;
+  font-size: 1.08rem;
+  font-weight: 700;
+  line-height: 1.4;
+}
+
+.card-desc {
+  display: block;
+  font-size: .9rem;
+  line-height: 1.55;
+  color: var(--fg-muted);
+}
+
+.card-chevron {
+  color: var(--idle);
+}
+
+/* 小遊戲：一個 chunk，裡面兩顆按鈕 */
+.chunk-card {
+  padding: var(--sp-4);
+  background: var(--card);
+  border-radius: var(--r-lg);
+  box-shadow: var(--sh-md);
+}
+
+.chunk-head {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  align-items: center;
+  gap: var(--sp-3) var(--sp-4);
+}
+
+.card-actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--sp-3);
+  margin-top: var(--sp-4);
+}
+
+/* 卡片／對話框裡的按鈕不套用大螢幕的「置中 + min-width」 */
+.card-actions .btn,
+.dlg .btn {
+  width: 100%;
+  min-width: 0;
+  margin: 0;
+  min-height: 52px;
+  font-size: 1rem;
+}
+
+/* ═══ 開發中的空狀態 ══════════════════════════════════════════ */
+
+.empty-state {
+  display: grid;
+  justify-items: center;
+  gap: var(--sp-2);
+  padding: var(--sp-6) var(--sp-4);
+  text-align: center;
+  background: var(--card);
+  border: 2px dashed var(--line);
+  border-radius: var(--r-xl);
+  color: var(--fg-muted);
+}
+
+.empty-state .icon {
+  width: 32px;
+  height: 32px;
+  color: var(--idle);
+}
+
+.empty-state strong {
+  color: var(--fg);
+  font-size: 1.05rem;
+}
+
+/* ═══ 對話框（原生 <dialog>） ═════════════════════════════════ */
+
+.dlg {
+  width: min(26rem, calc(100% - 2 * var(--sp-4)));
+  padding: var(--sp-5);
+  border: 0;
+  border-radius: var(--r-xl);
+  background: var(--card);
+  color: var(--fg);
+  box-shadow: var(--sh-lg);
+}
+
+.dlg[open] {
+  animation: dlg-in var(--t-base) var(--ease);
+}
+
+.dlg::backdrop {
+  background: rgba(28, 25, 23, .45);
+}
+
+@keyframes dlg-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px) scale(.98);
+  }
+}
+
+.dlg-title {
+  font-size: 1.3rem;
+  font-weight: 700;
+  line-height: 1.4;
+  text-wrap: balance;
+}
+
+.dlg-body {
+  margin-top: var(--sp-2);
+  color: var(--fg-muted);
+}
+
+.dlg-actions {
+  display: grid;
+  gap: var(--sp-3);
+  margin-top: var(--sp-5);
+}
+
+.btn-danger {
+  background: var(--danger-wash);
+  color: var(--danger);
+  border-color: var(--danger);
+}
+
+.btn-danger:active {
+  transform: translateY(2px);
+}
+
+/* ═══ 次要文字連結（回主頁等） ═══════════════════════════════ */
+
+.quiet-link {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: var(--tap);
+  padding-inline: var(--sp-3);
+  color: var(--fg-muted);
+  font-weight: 700;
+}
+
+.center {
+  text-align: center;
+}
+
+@media (hover: hover) and (pointer: fine) {
+
+  .nav-card:hover {
+    background: var(--primary-wash);
+  }
+
+  /* 不加深底色：17px 字屬一般字級，#FFE2C4 底只有 4.17:1。改用浮起陰影。 */
+  .pill-cta:hover {
+    box-shadow: var(--sh-md);
+  }
+
+  .back-link:hover,
+  .quiet-link:hover {
+    color: var(--primary-deep);
+  }
+
+  .btn-danger:hover {
+    background: #FEE2E2;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+
+  .nav-card:active,
+  .pill-cta:active,
+  .btn-danger:active {
+    transform: none;
+  }
+}

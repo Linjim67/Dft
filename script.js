@@ -1,24 +1,35 @@
 /* ═══════════════════════════════════════════════════════════════
    安心陪伴 — 01 個人資訊
    單次使用、不需註冊。資料只存在本機，24 小時後失效。
+   共用邏輯（個人資料、表情量表、表單錯誤）在 /shared/app.js。
    ═══════════════════════════════════════════════════════════════ */
 (function () {
   'use strict';
 
-  var STORE_KEY = 'anxin.profile.v1';
-  var TTL_MS = 24 * 60 * 60 * 1000;
-
   var $ = function (id) { return document.getElementById(id); };
 
-  var formView = $('formView');
-  var successView = $('successView');
   var form = $('infoForm');
   var live = $('liveRegion');
 
   /* ─────────────────────────────────────────────────────────────
-     年紀：非線性刻度
-     索引 0–12  → 0 至 6 歲，每格 0.5 歲
-     索引 13–24 → 7 至 18 歲，每格 1 歲
+     驗證：行內錯誤 + 可聚焦的錯誤總覽（兩者並存）
+     ───────────────────────────────────────────────────────────── */
+
+  var errors = Anxin.createFormErrors({
+    form: form,
+    summary: $('errorSummary'),
+    list: $('errorList'),
+    fields: {
+      nickname: { label: '孩子的暱稱', focus: 'nickname', invalid: 'nickname' },
+      age: { label: '孩子的年紀', focus: 'ageIndex' },
+      gender: { label: '孩子的性別' },
+      fearLevel: { label: '孩子會害怕抽血嗎' },
+      worryLevel: { label: '您自己會擔心嗎' }
+    }
+  });
+
+  /* ─────────────────────────────────────────────────────────────
+     年紀：36 格線性刻度
      ───────────────────────────────────────────────────────────── */
 
   var AGE_MIN_IDX = 0;
@@ -43,13 +54,6 @@
     return Math.min(AGE_MAX_IDX, Math.max(AGE_MIN_IDX, out));
   }
 
-  function ageLabel(v) {
-    if (v === 0) return '未滿 6 個月';
-    if (v === 0.5) return '6 個月';
-    var whole = Math.floor(v);
-    return whole + ' 歲' + (v % 1 === 0.5 ? '半' : '');
-  }
-
   var ageInput = $('ageIndex');
   var ageOut = $('ageOut');
   var ageIdx = 12;
@@ -64,7 +68,7 @@
       '--fill', ageTouched ? (ratio * 100).toFixed(2) + '%' : '0%');
   }
 
-  /* 氣泡已移除，改由題目那一行的 output 直接即時同步滑桿。
+  /* 題目那一行的 output 即時同步滑桿。
      input（拖曳中）與 change（放開）都走同一條路徑，兩者必定一致。 */
   function updateAge() {
     ageTouched = true;
@@ -72,13 +76,13 @@
     if (snapped !== Number(ageInput.value)) ageInput.value = snapped;
     ageIdx = snapped;
 
-    var label = ageLabel(indexToAge(snapped));
+    var label = Anxin.ageLabel(indexToAge(snapped));
     ageOut.textContent = label;
     ageOut.removeAttribute('data-empty');
     ageInput.setAttribute('aria-valuetext', label);
 
-    setAnswered(ageInput, true);
-    clearError('age');
+    Anxin.setAnswered(ageInput, true);
+    errors.clearError('age');
     paintFill();
   }
 
@@ -87,47 +91,23 @@
 
   /* ─────────────────────────────────────────────────────────────
      1–5 表情量表
-     圖示只是輔助，語意由文字說明承擔（不單靠顏色或圖形）
      ───────────────────────────────────────────────────────────── */
 
-  var FACES = [
-    '<path d="M9 10.3h.01M15 10.3h.01"/><path d="M8 13.9c1.1 2 6.9 2 8 0"/>',
-    '<path d="M9 10.3h.01M15 10.3h.01"/><path d="M8.7 14.3c1 1.1 5.6 1.1 6.6 0"/>',
-    '<path d="M9 10.3h.01M15 10.3h.01"/><path d="M8.7 14.8h6.6"/>',
-    '<path d="M9 10.3h.01M15 10.3h.01"/><path d="M8.7 15.6c1-1.1 5.6-1.1 6.6 0"/>',
-    '<path d="M7.7 8.5 10.1 9.6M16.3 8.5 13.9 9.6"/><path d="M9 11.2h.01M15 11.2h.01"/>' +
-    '<ellipse cx="12" cy="15.6" rx="2.3" ry="1.7"/>'
-  ];
-
-  function buildScale(host, captions) {
-    var name = host.dataset.name;
-    var describedby = host.dataset.describedby;
-    var html = '';
-    for (var i = 0; i < 5; i++) {
-      var v = i + 1;
-      html +=
-        '<label class="face-option">' +
-        '<input type="radio" name="' + name + '" value="' + v + '"' +
-        ' aria-required="true" aria-describedby="' + describedby + '">' +
-        '<span class="face-body">' +
-        '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/>' +
-        FACES[i] + '</svg>' +
-        '<span class="face-caption">' + captions[i] + '</span>' +
-        '</span>' +
-        '</label>';
-    }
-    host.innerHTML = html;
-    host.addEventListener('change', function () {
-      clearError(name);
-      setAnswered(host, true);
+  function scale(hostId, key, captions) {
+    var host = $(hostId);
+    Anxin.buildFaceScale(host, captions, {
+      onChange: function () {
+        errors.clearError(key);
+        Anxin.setAnswered(host, true);
+      }
     });
   }
 
-  buildScale($('fearScale'), ['完全不會', '有一點', '普通', '蠻害怕', '非常害怕']);
-  buildScale($('worryScale'), ['完全不會', '有一點', '普通', '蠻擔心', '非常擔心']);
+  scale('fearScale', 'fearLevel', ['完全不會', '有一點', '普通', '蠻害怕', '非常害怕']);
+  scale('worryScale', 'worryLevel', ['完全不會', '有一點', '普通', '蠻擔心', '非常擔心']);
 
   /* ─────────────────────────────────────────────────────────────
-     字數提示
+     字數提示與作答狀態
      ───────────────────────────────────────────────────────────── */
 
   var needs = $('specialNeeds');
@@ -136,99 +116,47 @@
 
   needs.addEventListener('input', function () {
     needsCount.textContent = '還可以輸入 ' + (NEEDS_MAX - needs.value.length) + ' 字';
-    setAnswered(needs, needs.value.trim());
+    Anxin.setAnswered(needs, needs.value.trim());
   });
 
   $('nickname').addEventListener('input', function () {
-    setAnswered($('nickname'), $('nickname').value.trim());
-  });
-
-  form.addEventListener('change', function (ev) {
-    if (ev.target.name === 'gender') setAnswered(ev.target, true);
-  });
-
-  /* ─────────────────────────────────────────────────────────────
-     驗證：行內錯誤 + 可聚焦的錯誤總覽（兩者並存）
-     ───────────────────────────────────────────────────────────── */
-
-  var errorSummary = $('errorSummary');
-  var errorList = $('errorList');
-
-  var FIELDS = {
-    nickname: { label: '孩子的暱稱', focus: 'nickname' },
-    age: { label: '孩子的年紀', focus: 'ageIndex' },
-    gender: { label: '孩子的性別', focus: null },
-    fearLevel: { label: '孩子會害怕抽血嗎', focus: null },
-    worryLevel: { label: '您自己會擔心嗎', focus: null }
-  };
-
-  function setError(key, message) {
-    var el = $(key + '-error');
-    el.textContent = message;
-    el.hidden = false;
-    if (key === 'nickname') $('nickname').setAttribute('aria-invalid', 'true');
-  }
-
-  function clearError(key) {
-    var el = $(key + '-error');
-    if (!el) return;
-    el.textContent = '';
-    el.hidden = true;
-    if (key === 'nickname') $('nickname').removeAttribute('aria-invalid');
-  }
-
-  function firstFocusable(key) {
-    if (FIELDS[key].focus) return $(FIELDS[key].focus);
-    return form.querySelector('[name="' + key + '"]');
-  }
-
-  function validate() {
-    var errors = [];
-    Object.keys(FIELDS).forEach(clearError);
-
-    if (!$('nickname').value.trim()) {
-      errors.push({ key: 'nickname', msg: '請填寫孩子的暱稱，我們會用它跟孩子說話。' });
-    }
-    if (!ageTouched) {
-      errors.push({ key: 'age', msg: '請拖曳滑桿或按 +／− 選擇孩子的年紀。' });
-    }
-    if (!form.querySelector('[name="gender"]:checked')) {
-      errors.push({ key: 'gender', msg: '請選擇孩子的性別。' });
-    }
-    if (!form.querySelector('[name="fearLevel"]:checked')) {
-      errors.push({ key: 'fearLevel', msg: '請選一個最接近的程度。' });
-    }
-    if (!form.querySelector('[name="worryLevel"]:checked')) {
-      errors.push({ key: 'worryLevel', msg: '請選一個最接近的程度。' });
-    }
-
-    errors.forEach(function (e) { setError(e.key, e.msg); });
-    return errors;
-  }
-
-  function showSummary(errors) {
-    errorList.innerHTML = errors.map(function (e) {
-      return '<li><a href="#' + (FIELDS[e.key].focus || '') + '" data-key="' + e.key + '">' +
-        FIELDS[e.key].label + '：' + e.msg + '</a></li>';
-    }).join('');
-    errorSummary.hidden = false;
-    errorSummary.focus();
-  }
-
-  errorList.addEventListener('click', function (ev) {
-    var link = ev.target.closest('a');
-    if (!link) return;
-    ev.preventDefault();
-    var target = firstFocusable(link.dataset.key);
-    if (target) {
-      target.focus();
-      target.scrollIntoView({ block: 'center', behavior: 'smooth' });
-    }
+    Anxin.setAnswered($('nickname'), $('nickname').value.trim());
   });
 
   $('nickname').addEventListener('blur', function () {
-    if ($('nickname').value.trim()) clearError('nickname');
+    if ($('nickname').value.trim()) errors.clearError('nickname');
   });
+
+  form.addEventListener('change', function (ev) {
+    if (ev.target.name === 'gender') {
+      Anxin.setAnswered(ev.target, true);
+      errors.clearError('gender');
+    }
+  });
+
+  function validate() {
+    var list = [];
+    errors.clearAll();
+
+    if (!$('nickname').value.trim()) {
+      list.push({ key: 'nickname', msg: '請填寫孩子的暱稱，我們會用它跟孩子說話。' });
+    }
+    if (!ageTouched) {
+      list.push({ key: 'age', msg: '請拖曳滑桿選擇孩子的年紀。' });
+    }
+    if (!form.querySelector('[name="gender"]:checked')) {
+      list.push({ key: 'gender', msg: '請選擇孩子的性別。' });
+    }
+    if (!form.querySelector('[name="fearLevel"]:checked')) {
+      list.push({ key: 'fearLevel', msg: '請選一個最接近的程度。' });
+    }
+    if (!form.querySelector('[name="worryLevel"]:checked')) {
+      list.push({ key: 'worryLevel', msg: '請選一個最接近的程度。' });
+    }
+
+    list.forEach(function (e) { errors.setError(e.key, e.msg); });
+    return list;
+  }
 
   /* ─────────────────────────────────────────────────────────────
      暫時代碼：djb2 雜湊取 4 位十進位，24 小時後失效
@@ -243,112 +171,27 @@
     return String(h % 10000).padStart(4, '0');
   }
 
-  function save(profile) {
-    try {
-      localStorage.setItem(STORE_KEY, JSON.stringify(profile));
-    } catch (e) {
-      /* 無痕模式或儲存已滿：畫面照常顯示，只是重新整理後會消失 */
-    }
-  }
-
-  function load() {
-    try {
-      var raw = localStorage.getItem(STORE_KEY);
-      if (!raw) return null;
-      var p = JSON.parse(raw);
-      var intact = p && p.expiresAt && p.code &&
-        typeof p.nickname === 'string' && p.nickname &&
-        typeof p.age === 'number' &&
-        p.fearLevel >= 1 && p.fearLevel <= 5 &&
-        p.worryLevel >= 1 && p.worryLevel <= 5;
-      /* 過期或結構不完整（舊版本、手動竄改）一律丟棄，重新填寫比顯示壞掉的摘要好 */
-      if (!intact || Date.now() > p.expiresAt) {
-        localStorage.removeItem(STORE_KEY);
-        return null;
-      }
-      return p;
-    } catch (e) {
-      return null;
-    }
-  }
-
   /* ─────────────────────────────────────────────────────────────
-     完成畫面
-     ───────────────────────────────────────────────────────────── */
-
-  var LEVEL_TEXT = ['', '完全不會', '有一點', '普通', '蠻明顯的', '非常明顯'];
-
-  function formatExpiry(ts) {
-    var d = new Date(ts);
-    var hh = String(d.getHours()).padStart(2, '0');
-    var mm = String(d.getMinutes()).padStart(2, '0');
-    return '有效至 ' + (d.getMonth() + 1) + ' 月 ' + d.getDate() + ' 日 ' + hh + ':' + mm;
-  }
-
-  function row(term, detail, stacked) {
-    return '<div class="summary-row' + (stacked ? ' is-stacked' : '') + '">' +
-      '<dt>' + term + '</dt><dd>' + escapeHtml(detail) + '</dd></div>';
-  }
-
-  function escapeHtml(s) {
-    return String(s).replace(/[&<>"']/g, function (c) {
-      return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
-    });
-  }
-
-  function renderSuccess(p) {
-    formView.hidden = true;
-    successView.hidden = false;
-
-    $('successLede').textContent =
-      '我們知道' + p.nickname + '現在的狀況了，接下來會依照這些資訊調整陪伴方式。';
-    $('codeDigits').textContent = p.code;
-    $('codeExpiry').textContent = formatExpiry(p.expiresAt);
-
-    var html =
-      row('暱稱', p.nickname) +
-      row('年紀', ageLabel(p.age)) +
-      row('性別', p.gender === '男' ? '男孩' : '女孩') +
-      row('對抽血的害怕程度', LEVEL_TEXT[p.fearLevel] + '（' + p.fearLevel + ' / 5）') +
-      row('家長的擔心程度', LEVEL_TEXT[p.worryLevel] + '（' + p.worryLevel + ' / 5）');
-    if (p.specialNeeds) html += row('特別注意', p.specialNeeds, true);
-    $('summaryCard').innerHTML = html;
-
-    $('successHeading').focus();
-  }
-
-  /* 已作答的題目把標題調淡，讓還沒填的那題自然變成視線焦點 */
-  function setAnswered(el, yes) {
-    var field = el.closest('.field');
-    if (field) field.classList.toggle('is-answered', !!yes);
-  }
-
-  function announce(msg) {
-    live.textContent = '';
-    window.setTimeout(function () { live.textContent = msg; }, 60);
-  }
-
-  /* ─────────────────────────────────────────────────────────────
-     送出
+     送出 → 存到本機 → 前往主頁面（#02）
      ───────────────────────────────────────────────────────────── */
 
   form.addEventListener('submit', function (ev) {
     ev.preventDefault();
-    var errors = validate();
+    var list = validate();
 
-    if (errors.length) {
-      showSummary(errors);
-      announce('表單還有 ' + errors.length + ' 個地方需要補上');
+    if (list.length) {
+      errors.showSummary(list);
+      Anxin.announce(live, '表單還有 ' + list.length + ' 個地方需要補上');
       return;
     }
 
-    errorSummary.hidden = true;
+    $('errorSummary').hidden = true;
     var now = Date.now();
     var nickname = $('nickname').value.trim();
     var age = indexToAge(ageIdx);
     var gender = form.querySelector('[name="gender"]:checked').value;
 
-    var profile = {
+    Anxin.profile.save({
       nickname: nickname,
       age: age,
       gender: gender,
@@ -357,34 +200,21 @@
       specialNeeds: needs.value.trim(),
       code: makeCode(nickname + '|' + age + '|' + gender + '|' + now),
       createdAt: now,
-      expiresAt: now + TTL_MS
-    };
+      expiresAt: now + Anxin.profile.TTL_MS
+    });
 
-    save(profile);
-    renderSuccess(profile);
-    announce('已完成，您的暫時代碼是 ' + profile.code.split('').join(' '));
-  });
+    /* 主頁面靠本機資料運作。存不進去（封鎖儲存的無痕模式）就先別跳轉，
+       否則主頁找不到資料會把家長彈回空白表單，剛填的全部不見。 */
+    if (!Anxin.profile.load()) {
+      var storageError = $('storage-error');
+      storageError.textContent = '這個瀏覽器目前無法儲存資料，請關閉無痕模式或換個瀏覽器再試一次。';
+      storageError.hidden = false;
+      Anxin.announce(live, storageError.textContent);
+      return;
+    }
 
-  $('restartBtn').addEventListener('click', function () {
-    try { localStorage.removeItem(STORE_KEY); } catch (e) { /* 忽略 */ }
-    form.reset();
-    ageTouched = false;
-    ageIdx = 12;
-    ageInput.value = ageIdx;
-    ageOut.textContent = '尚未選擇';
-    ageOut.setAttribute('data-empty', 'true');
-    ageInput.removeAttribute('aria-valuetext');
-    ageTouched = false;
-    needsCount.textContent = '還可以輸入 ' + NEEDS_MAX + ' 字';
-    Object.keys(FIELDS).forEach(clearError);
-    Array.prototype.forEach.call(
-      form.querySelectorAll('.field.is-answered'),
-      function (f) { f.classList.remove('is-answered'); });
-    errorSummary.hidden = true;
-    successView.hidden = true;
-    formView.hidden = false;
-    paintFill();
-    $('nickname').focus();
+    /* replace：返回鍵不會回到這張表單又被導回主頁 */
+    window.location.replace('/home/');
   });
 
   /* ─────────────────────────────────────────────────────────────
@@ -393,7 +223,4 @@
 
   ageOut.setAttribute('data-empty', 'true');
   paintFill();
-
-  var saved = load();
-  if (saved) renderSuccess(saved);
 })();
