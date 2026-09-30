@@ -29,7 +29,12 @@
   if (window.fetch) {
     window.fetch('/games/whack-a-mole/questions.json')
       .then(function (r) { return r.ok ? r.json() : null; })
-      .then(function (b) { if (b && b.questions) bank = b; })
+      .then(function (b) {
+        if (!b || !b.questions) return;
+        bank = b;
+        if (S.view === 'intro') { renderCollection($('collection')); renderChallengeHint($('introChallenge')); }
+        if (S.view === 'summary') { renderCollection($('summaryCollection')); renderChallengeHint($('summaryChallenge')); }
+      })
       .catch(function () { /* 離線：略過 */ });
   }
 
@@ -70,8 +75,12 @@
     drag: null,
     quiz: null,
     unlocked: [],
-    leaving: false
+    leaving: false,
+    combo: 0,          /* 連續抓到的數量；有角色逃走就歸零 */
+    helperUntil: 0     /* 槌子幫手在這個時間（遊戲時鐘）之前有效 */
   };
+
+  var comboGoal = E.comboTarget(p.age);
 
   var views = { intro: $('introView'), play: $('playView'), quiz: $('quizView'), summary: $('summaryView') };
 
@@ -95,7 +104,8 @@
     '<span class="coat-badge"></span>' +
     '<svg class="mole-art"><use href="#ch-swab"></use></svg>' +
     '</span></span>' +
-    '<span class="hole-lip" aria-hidden="true"></span>';
+    '<span class="hole-lip" aria-hidden="true"></span>' +
+    '<span class="helper-hammer" aria-hidden="true"><svg><use href="#icon-hammer"></use></svg></span>';
 
   var LOCKED_HTML =
     '<span class="hole-pit" aria-hidden="true"></span>' +
@@ -140,7 +150,8 @@
     var hp = E.maxHp(variant);
     h.mole = {
       char: char, variant: variant, hp: hp, maxHp: hp,
-      downAt: S.clock + E.upMs(char, variant, S.round, S.stay),
+      upAt: S.clock,
+      downAt: S.clock + E.upMs(char, variant, progress.level[char], p.age, S.stay),
       lastWipe: -Infinity
     };
     setArt(h.use, char);
@@ -191,7 +202,7 @@
     window.setTimeout(function () { if (s.parentNode) s.parentNode.removeChild(s); }, 700);
   }
 
-  function knockOut(h) {
+  function knockOut(h, byHelper) {
     var m = h.mole;
     var pts = E.pointsFor(m.char, m.variant);
     S.runScore += pts;
@@ -202,6 +213,11 @@
     if (navigator.vibrate) { try { navigator.vibrate(12); } catch (e) { /* 忽略 */ } }
     lower(h, true);
     $('hudScore').textContent = fmt(S.runScore);
+    if (!byHelper && !helperOn()) {
+      S.combo++;
+      if (S.combo >= comboGoal) startHelper();
+      renderCombo();
+    }
   }
 
   function damage(h, amount) {
@@ -229,6 +245,64 @@
     hint.classList.add('is-flash');
     window.clearTimeout(hintTimer);
     hintTimer = window.setTimeout(function () { hint.classList.remove('is-flash'); }, 900);
+  }
+
+  /* ─────────────────────────────────────────────────────────────
+     連擊與槌子幫手
+     ───────────────────────────────────────────────────────────── */
+
+  var comboEl = $('combo');
+  var comboFill = $('comboFill');
+  var comboCount = $('comboCount');
+  var comboLabel = $('comboLabel');
+
+  function helperOn() { return S.clock < S.helperUntil; }
+
+  function renderCombo() {
+    if (helperOn()) {
+      var left = Math.max(0, S.helperUntil - S.clock);
+      comboFill.style.width = (100 * left / C.HELPER_MS).toFixed(1) + '%';
+      comboCount.textContent = Math.ceil(left / 1000) + ' 秒';
+      return;
+    }
+    comboFill.style.width = Math.round(100 * Math.min(S.combo, comboGoal) / comboGoal) + '%';
+    comboCount.textContent = S.combo + ' / ' + comboGoal;
+  }
+
+  function setHelperLook(on) {
+    comboEl.classList.toggle('is-helper', on);
+    board.classList.toggle('is-helper', on);
+    comboLabel.textContent = on ? '槌子幫手' : '連擊';
+  }
+
+  function startHelper() {
+    S.helperUntil = S.clock + C.HELPER_MS;
+    S.combo = 0;
+    setHelperLook(true);
+    renderCombo();
+    Anxin.announce(live, '連擊滿了！槌子幫手來幫忙 3 秒');
+  }
+
+  function stopHelper() {
+    S.helperUntil = 0;
+    setHelperLook(false);
+    renderCombo();
+  }
+
+  function breakCombo() {
+    if (helperOn() || !S.combo) return;
+    S.combo = 0;
+    renderCombo();
+  }
+
+  /* 幫手只打一般角色；病毒要用棉片擦，槌子幫不上忙 */
+  function helperTick() {
+    S.holes.forEach(function (h) {
+      var m = h.mole;
+      if (!m || E.BY_ID[m.char].wipe || S.clock < m.upAt + C.HELPER_DELAY_MS) return;
+      retrigger(h.el, 'is-smashed');
+      knockOut(h, true);
+    });
   }
 
   function tapHole(i) {
@@ -369,8 +443,16 @@
     S.clock += dt;
 
     S.holes.forEach(function (h) {
-      if (h.mole && S.clock >= h.mole.downAt) lower(h, false);
+      if (h.mole && S.clock >= h.mole.downAt) {
+        lower(h, false);
+        breakCombo(); /* 有角色逃走 → 連擊歸零 */
+      }
     });
+
+    if (S.helperUntil) {
+      if (helperOn()) { helperTick(); renderCombo(); }
+      else stopHelper();
+    }
 
     if (S.clock >= C.ROUND_MS) {
       endRound();
@@ -380,7 +462,7 @@
     var tLeft = (C.ROUND_MS - S.clock) / 1000;
     if (S.clock >= S.nextSpawnAt) {
       spawn();
-      S.nextSpawnAt = S.clock + E.spawnIntervalMs(tLeft, S.round);
+      S.nextSpawnAt = S.clock + E.spawnIntervalMs(tLeft, S.round, p.age);
     }
     renderTime(tLeft);
     S.rafId = window.requestAnimationFrame(frame);
@@ -419,7 +501,9 @@
     S.roundScore = 0;
     S.roundStartTotal = progress.totalPoints;
     S.shownSec = null;
+    S.combo = 0;
     buildBoard();
+    stopHelper();
     setArmed(false);
     $('hudRound').textContent = roundLabel(S.round);
     $('hudScore').textContent = fmt(S.runScore);
@@ -431,20 +515,16 @@
 
   function endRound() {
     halt();
+    stopHelper();
     S.holes.forEach(function (h) { lower(h, false); });
     setArmed(false);
     progress.bestScore = Math.max(progress.bestScore, S.runScore);
     progress.bestRound = Math.max(progress.bestRound, S.round);
     S.unlocked = E.newlyUnlocked(S.roundStartTotal, progress.totalPoints);
-
-    /* 收藏達到門檻 → 回合結束後進入小知識區域（一次一題，不打斷太久） */
-    var quiz = bank ? E.nextQuiz(progress, bank, band) : null;
-    if (quiz) progress.pending = { character: quiz.character, qid: quiz.question.id };
+    progress.roundsPlayed += 1;
     save();
     Anxin.announce(live, roundLabel(S.round) + '結束，這回合得到 ' + S.roundScore + ' 分');
-
-    if (quiz) showQuiz(quiz);
-    else showSummary();
+    showSummary();
   }
 
   /* ─────────────────────────────────────────────────────────────
@@ -496,15 +576,22 @@
       var pct = next ? Math.max(0, Math.min(100, Math.round(100 * (clicks - prev) / (next - prev)))) : 100;
       var stars = '';
       for (var i = 0; i < C.MAX_LEVEL; i++) stars += '<span class="star-slot' + (i < lv ? ' is-on' : '') + '">' + STAR + '</span>';
+      var locked = ready && E.isLocked(progress, c.id);
+      var canGo = ready && !locked && !!bank;
       var status = !next ? '已經滿級！'
-        : (ready ? '可以挑戰小知識！' : '再收集 ' + (next - clicks) + ' 個就能挑戰');
-      return '<li class="coll-item' + (ready ? ' is-ready' : '') + '">' +
+        : (locked ? '下一回合結束後可以再挑戰'
+          : (ready ? (bank ? '可以挑戰小知識！' : '題目載入中…') : '再收集 ' + (next - clicks) + ' 個就能挑戰'));
+      var action = canGo
+        ? '<button type="button" class="btn-challenge" data-char="' + c.id + '">挑戰小知識</button>'
+        : '';
+      return '<li class="coll-item' + (canGo ? ' is-ready' : '') + '">' +
         '<svg class="coll-art" aria-hidden="true"><use href="#ch-' + c.id + '"></use></svg>' +
         '<span class="coll-name">' + esc(c.name) + '</span>' +
         '<span class="coll-stars" role="img" aria-label="等級 ' + lv + ' / ' + C.MAX_LEVEL + '">' + stars + '</span>' +
         '<span class="coll-count">收集 ' + clicks + ' 個</span>' +
         '<span class="coll-bar" aria-hidden="true"><span style="width:' + pct + '%"></span></span>' +
         '<span class="coll-status">' + status + '</span>' +
+        action +
         '</li>';
     }).join('');
   }
@@ -529,9 +616,30 @@
     return a;
   }
 
-  function showQuiz(quiz) {
+  function openChallenge(charId, from) {
+    if (!bank || !E.canChallenge(progress, charId)) return;
+    var quiz = E.challengeFor(progress, bank, band, charId);
+    if (quiz) showQuiz(quiz, from);
+  }
+
+  function leaveQuiz() {
+    var from = S.quiz ? S.quiz.from : 'summary';
+    S.quiz = null;
+    if (from === 'intro') goIntro();
+    else showSummary();
+  }
+
+  /* 兩個收藏清單共用：點「挑戰小知識」 */
+  ['collection', 'summaryCollection'].forEach(function (id) {
+    $(id).addEventListener('click', function (ev) {
+      var b = ev.target.closest('.btn-challenge');
+      if (b) openChallenge(b.dataset.char, id === 'collection' ? 'intro' : 'summary');
+    });
+  });
+
+  function showQuiz(quiz, from) {
     var q = quiz.question;
-    S.quiz = { character: quiz.character, question: q, done: false };
+    S.quiz = { character: quiz.character, question: q, done: false, from: from };
     setArt($('quizArt'), quiz.character);
     $('quizCharName').textContent = E.BY_ID[quiz.character].name;
     $('quizParent').hidden = band !== 'little';
@@ -569,24 +677,23 @@
 
     var r = $('quizResult');
     var name = esc(E.BY_ID[charId].name);
+    E.recordAnswer(progress, charId, q.id, ok);
     if (ok) {
-      var lv = Math.min(C.MAX_LEVEL, (progress.level[charId] || 0) + 1);
-      progress.level[charId] = lv;
-      progress.pending = null;
+      var lv = progress.level[charId];
       r.className = 'quiz-result is-right';
       r.innerHTML = '<strong>答對了！</strong><span>' + esc(q.explain) + '</span>' +
         '<span class="quiz-levelup">' + name + ' 升級到 Lv ' + lv + '！' + COAT_NOTE[lv] + '</span>';
     } else {
       r.className = 'quiz-result is-wrong';
       r.innerHTML = '<strong>差一點點！</strong>' +
-        '<span>可以問問爸爸媽媽。下一回合結束後，還能再挑戰這一題。</span>';
+        '<span>可以問問爸爸媽媽。玩完下一回合，就能再挑戰這一題。</span>';
     }
     save();
     r.hidden = false;
     $('quizSkip').hidden = true;
     $('quizNext').hidden = false;
     $('quizNext').focus();
-    Anxin.announce(live, ok ? '答對了' : '差一點點，下一回合再挑戰');
+    Anxin.announce(live, ok ? '答對了' : '差一點點，玩完下一回合再挑戰');
   });
 
   $('hintBtn').addEventListener('click', function () {
@@ -594,12 +701,18 @@
     $('hintBtn').hidden = true;
   });
 
-  $('quizNext').addEventListener('click', showSummary);
-  $('quizSkip').addEventListener('click', showSummary); /* 題目保留在 pending */
+  $('quizNext').addEventListener('click', leaveQuiz);
+  $('quizSkip').addEventListener('click', leaveQuiz); /* 還沒作答就離開：不算答錯 */
 
   /* ─────────────────────────────────────────────────────────────
      回合結算
      ───────────────────────────────────────────────────────────── */
+
+  function renderChallengeHint(el) {
+    var n = bank ? E.CHARACTERS.filter(function (c) { return E.canChallenge(progress, c.id); }).length : 0;
+    el.textContent = n ? '有 ' + n + ' 位角色可以挑戰小知識，按下面的「挑戰小知識」！' : '';
+    el.hidden = !n;
+  }
 
   function unlockText(u) {
     if (u.track === 'holes') return '第 ' + u.value + ' 個洞修好了，可以打的洞變多了！';
@@ -622,6 +735,7 @@
     ul.hidden = !S.unlocked.length;
 
     renderCollection($('summaryCollection'));
+    renderChallengeHint($('summaryChallenge'));
     var goal = E.nextUnlock(progress.totalPoints);
     $('nextGoal').textContent = goal
       ? '再得 ' + fmt(goal.at - progress.totalPoints) + ' 分，就能解鎖「' + goal.label + '」'
@@ -649,6 +763,7 @@
     setArmed(false);
     save();
     renderCollection($('collection'));
+    renderChallengeHint($('introChallenge'));
     var best = $('bestLine');
     if (progress.bestScore > 0) {
       best.textContent = '最高分 ' + fmt(progress.bestScore) + ' 分・最遠到' + roundLabel(progress.bestRound).replace(' / ' + C.ROUNDS, '');
@@ -659,7 +774,87 @@
 
   $('startBtn').addEventListener('click', startRun);
 
+  /* ─────────────────────────────────────────────────────────────
+     第一次進入遊戲：教學對話框（每位小朋友一次；「怎麼玩？」可以再看）
+     ───────────────────────────────────────────────────────────── */
+
+  var TUTORIAL = [
+    {
+      art: ['ch-tourniquet', 'ch-swab', 'ch-syringe'],
+      title: '歡迎來玩打地鼠！',
+      body: '止血帶、酒精棉片、針筒跑出來的時候，點一下，把它們敲回洞裡。每一個 100 分！'
+    },
+    {
+      art: ['ch-virus', 'tool-swab'],
+      title: '病毒要用酒精棉片擦掉',
+      body: '把下面的酒精棉片拖到病毒身上擦一擦。也可以先點一下棉片，再點病毒。病毒 200 分！'
+    },
+    {
+      art: ['icon-star'],
+      title: '收集越多，就能挑戰',
+      body: '同一個角色收集到 10 個，就會出現「挑戰小知識」按鈕。答對了它就會升級！不會的話，可以問問爸爸媽媽。'
+    },
+    {
+      art: ['icon-pause'],
+      title: '累了就休息',
+      body: '按右上角的暫停鍵，隨時都可以休息。準備好了嗎？'
+    }
+  ];
+
+  var tutDlgEl = $('tutDlg');
+  var tutDlg = Anxin.wireDialog(tutDlgEl);
+  var tutStep = 0;
+
+  function renderTutorial() {
+    var st = TUTORIAL[tutStep];
+    var last = tutStep === TUTORIAL.length - 1;
+    $('tutStep').textContent = (tutStep + 1) + ' / ' + TUTORIAL.length;
+    $('tutArt').innerHTML = st.art.map(function (id) {
+      return '<svg><use href="#' + id + '"></use></svg>';
+    }).join('');
+    $('tutTitle').textContent = st.title;
+    $('tutBody').textContent = st.body;
+    $('tutDots').innerHTML = TUTORIAL.map(function (_, i) {
+      return '<span' + (i === tutStep ? ' class="is-on"' : '') + '></span>';
+    }).join('');
+    $('tutPrev').disabled = tutStep === 0;
+    $('tutNext').textContent = last ? '開始玩！' : '下一步';
+  }
+
+  function openTutorial() {
+    tutStep = 0;
+    renderTutorial();
+    tutDlg.open();
+  }
+
+  $('tutNext').addEventListener('click', function () {
+    if (tutStep < TUTORIAL.length - 1) {
+      tutStep++;
+      renderTutorial();
+      return;
+    }
+    tutDlgEl.close();
+    startRun();
+  });
+
+  $('tutPrev').addEventListener('click', function () {
+    if (tutStep > 0) { tutStep--; renderTutorial(); }
+  });
+
+  $('tutSkip').addEventListener('click', function () { tutDlgEl.close(); });
+
+  /* 不論怎麼關掉（略過、看完、Esc），都算看過了 */
+  tutDlgEl.addEventListener('close', function () {
+    if (!progress.tutorialSeen) {
+      progress.tutorialSeen = true;
+      save();
+    }
+  });
+
+  $('howBtn').addEventListener('click', openTutorial);
+
   goIntro();
+  if (!progress.tutorialSeen) openTutorial();
 
   /* 測試用：讓自動化測試能指定某個洞出現某個角色（一般遊玩不會用到） */
   window.__wam = {

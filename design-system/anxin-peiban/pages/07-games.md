@@ -29,15 +29,12 @@ and `(1 + #round/4)` makes later rounds **slower**. Read as a rate, everything t
 holds: calm start, faster through the countdown (peak at 20s in), a slight ease-off at the end,
 and harder every round.
 
-    rate      = (1 + min(round, 10)/4) · I(t)     spawns / second
-    interval  = max(250ms, 1000 / max(rate, 0.6))
+    rate      = (1 + min(round, 10)/4) · I(t)                     spawns / second
+    interval  = max(250ms, 1000 / max(rate, 0.6) × 27 / (1 + age^1.5))
 
-| interval (s) at t = 30 / 20 / 10 / 0 left | |
-|---|---|
-| round 1 | 1.67 / 1.07 / 0.80 / 1.07 |
-| round 6 | 1.67 / 0.53 / 0.40 / 0.53 |
-| round 10+ (cap) | 1.67 / 0.38 / 0.29 / 0.38 |
-
+The age factor `27 / (1 + age^1.5)` (product owner's rule) slows young children down sharply:
+×4.36 at age 3, ×1.72 at 6, ×0.96 at 9, ×0.35 at 18. It is 27 at age 0, so under ~3 the game is
+very slow (a 45s gap at the start of a round) — acceptable, since toddlers aren't the players.
 The `MIN_RATE` floor exists because `I(30) = 0`; without it each round opens with seconds of nothing.
 
 ## Rules as built
@@ -46,11 +43,16 @@ The `MIN_RATE` floor exists because `I(30) = 0`; without it each round opens wit
   character. Rarely-caught characters appear more — the game nudges children to collect all four.
 - **Collection** counts characters *caught* (an iron one counts once, not three times).
 - **Tiers** 10 / 50 / 100 make a character *eligible*; answering its 小知識 correctly is what
-  actually levels it up. **One quiz per round break** so play isn't interrupted for long.
-- **Wrong or skipped** → the *identical* question returns at the next break. **The answer is not
-  revealed on a wrong try**, or the retry would be meaningless. The explanation shows only on success.
-- **Coatings unlock by level**: Lv1 silver (×1.5, 75% visible time) · Lv2 + gold (×2, 60%) ·
-  Lv3 + iron (×2, 160% visible, 3 HP with a bar). Each also carries a text badge — never colour alone.
+  actually levels it up.
+- **Challenges are manual and unlimited.** As soon as a character reaches its threshold, a
+  「挑戰小知識」 button appears on it — on the start screen and the round summary — and any number
+  can be challenged in one break. (Replaced the earlier "one automatic quiz per round".)
+- **Wrong** → that character is locked until *the next round ends*, then the *identical* question
+  returns. Tracked with lifetime `roundsPlayed`, so it survives closing the page. Other characters
+  stay challengeable. **The answer is not revealed on a wrong try**, or the retry would be
+  meaningless. Leaving without answering (「先不要」) is not a failure.
+- **Coatings unlock by level**: Lv1 silver · Lv2 + gold · Lv3 + iron. Each carries a text badge
+  (×1.5 / ×2) — never colour alone.
 - **Point rewards** unlock automatically at lifetime-point thresholds (the same "reach a
   threshold" rule as collections): 停留更久 1.5k / 10k / 24k · 更多洞 4k / 16k · 更強的槌子 14k / 32k.
   Tuned by simulation so a perfect player earns about one reward per round through round 6,
@@ -58,6 +60,54 @@ The `MIN_RATE` floor exists because `I(30) = 0`; without it each round opens wit
 - The hammer affects **taps** only; each swab wipe deals 1 HP.
 - Infinity mode = rounds continue past 6, difficulty capped at round 10.
 - No penalty for misses.
+
+## Stay time — the formula, and why it needs attention
+
+    stay = STAY_BASE_S / max(age, 1) × (1 + level) ÷ coat      coat: normal 1 · silver 2 · gold 3
+    病毒 ×2 · iron ×1.6 (not in the formula; keeps the original "stays longer" rule)
+    × 「停留更久」 reward · floor MIN_UP_MS = 350ms
+
+Coatings only unlock at the level that cancels their divisor (silver Lv1 → 2/2, gold Lv2 → 3/3), so
+**no character is ever shorter than `STAY_BASE_S / age`**. `max(age, 1)` avoids `3 / 0`.
+
+**⚠️ With the specified `STAY_BASE_S = 3` the game deadlocks.** `3/age` is shorter than a child's
+see-and-tap time at every age, so normal characters are almost never caught; only the virus (×2) is.
+Levelling is what lengthens stays, but levelling needs 10 catches first — so three of the four
+characters stay at Lv0 forever. Simulated over six rounds (realistic reaction time per age,
+1 tap in 4 missed, so ~75% is the ceiling):
+
+| age | `3/age` (as specified) | `6/age` | `9/age` |
+|---|---|---|---|
+| 3 | 44% · 1/4 levelled | 76% · 3/4 | 76% · 3/4 |
+| 5 | 21% · 1/4 | 78% · 4/4 | 78% · 4/4 |
+| 7 | 16% · 1/4 | 79% · 4/4 | 79% · 4/4 |
+| 10 | 15% · 1/4 | 76% · 4/4 | 76% · 4/4 |
+| 14 | **0%** · 0/4 | 69% · 4/4 | 77% · 4/4 |
+| 18 | **0%** · 0/4 | 68% · 4/4 | 76% · 4/4 |
+
+**Adopted: `STAY_BASE_S = 6`** (product owner, after the simulation). 9 adds almost nothing.
+The 350ms floor now only touches age 17+ (6/18 = 333ms).
+
+## Combo bar + helper hammer
+
+Consecutive catches fill the bar; **a character escaping resets it** (tapping an empty hole does
+not — young children tap freely). Target by age band, because a 3-year-old sees a fraction of the
+characters a teen does: little 4 · kid 6 · junior 8 · teen 10.
+
+Full bar → **槌子幫手** for 3s of *game* time (pauses with the game, ends with the round): every
+normal character is smashed 180ms after it appears (long enough to be seen), iron in one blow,
+with points and collection credit. **It leaves 病毒 alone** — hammers don't clean germs, so the
+swab rule stays meaningful. Catches during the helper don't pre-fill the next combo.
+The bar shows text (「3 / 6」, then 「2 秒」) and the board gets an outline — never colour alone.
+
+Soak, six rounds per age: the hammer triggers 4–10 times (≈ once a round); hit rates 63–75%.
+
+## First-visit tutorial
+
+A 4-step `<dialog>` opens once per child (`tutorialSeen`, keyed to the profile code): tapping,
+wiping the virus, collecting + 挑戰, pausing. 上一步 / 下一步 with a step count and dots (the active
+dot is wider, not only darker); the last step's 「開始玩！」 closes it and starts the game.
+略過教學 or Esc also mark it seen. 「怎麼玩？」 on the start screen reopens it.
 
 ## 病毒 — drag, with a single-pointer alternative
 
@@ -71,11 +121,14 @@ Keyboard: `1`–`6` hit holes, `S` picks up the swab, `Esc` pauses; Ctrl/Cmd com
 
 ## 小知識 bank
 
-`questions.json`: 4 characters × 4 age bands × 3 questions (one per upgrade level) = 48.
+`questions.json` (v2, **easy edition**): 4 characters × 4 age bands × 3 questions = 48.
 Bands: `little` <6 (shows 「請爸爸媽媽念題目給你聽」), `kid` 6–8, `junior` 9–12, `teen` 13+.
 
-- **True/false is balanced at 11 / 12.** The first draft was 18 of 23 「對」 — a child could score
-  78% without reading.
+- **Deliberately easy** (product owner: 「大幅度調低」). Everyday habits over science facts, and
+  distractors that are obviously wrong (打針前護理師會用什麼擦你的手？ 酒精棉片 / 蛋糕 / 蠟筆). The
+  `little` band's multiple choice has only 2 options. Removed: venous vs arterial flow, needle gauge,
+  why 75% alcohol beats 100%, viral replication.
+- **True/false is balanced at 16 / 16.** (An early draft was 78% 「對」 — guessable without reading.)
 - Multiple-choice answers are stored at a fixed index for easy editing and **shuffled on screen**.
 - Injection facts are phrased honestly (「可能會有一點點痛，但很快就過去了」), never "it won't hurt":
   a broken promise makes the next visit harder.

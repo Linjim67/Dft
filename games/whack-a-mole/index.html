@@ -107,6 +107,20 @@
       <rect x="3" y="18.5" width="18" height="3" rx="1.5" fill="#C2410C" />
     </symbol>
 
+    <!-- 槌子幫手：木柄 + 圓圓的橘色槌頭 -->
+    <symbol id="icon-hammer" viewBox="0 0 64 64">
+      <g transform="rotate(-35 32 32)">
+        <rect x="28.5" y="24" width="7" height="36" rx="3.5" fill="#D6A066" stroke="#92400E" stroke-width="2" />
+        <rect x="10" y="8" width="44" height="20" rx="8" fill="#FB923C" stroke="#C2410C" stroke-width="2.5" />
+        <rect x="15" y="11.5" width="9" height="13" rx="3.5" fill="#FED7AA" />
+      </g>
+    </symbol>
+
+    <symbol id="icon-pause" viewBox="0 0 24 24">
+      <rect x="6" y="5" width="4" height="14" rx="1.5" fill="#57534E" />
+      <rect x="14" y="5" width="4" height="14" rx="1.5" fill="#57534E" />
+    </symbol>
+
     <symbol id="icon-star" viewBox="0 0 24 24">
       <path d="M12 3.2l2.7 5.5 6 .9-4.35 4.25 1 6L12 17l-5.35 2.85 1-6L3.3 9.6l6-.9Z" />
     </symbol>
@@ -154,11 +168,13 @@
       </ul>
 
       <h2 class="section-title">我的收藏</h2>
+      <p class="challenge-hint" id="introChallenge" hidden></p>
       <ul class="collection" id="collection"></ul>
 
       <p class="wam-best" id="bestLine" hidden></p>
 
       <button class="btn btn-primary wam-start" type="button" id="startBtn">開始遊戲</button>
+      <p class="center"><button class="quiet-link how-link" type="button" id="howBtn">怎麼玩？</button></p>
     </section>
 
     <!-- ══════════ 遊戲中 ══════════ -->
@@ -170,6 +186,14 @@
         <button class="hud-pause" type="button" id="pauseBtn" aria-label="暫停">
           <svg viewBox="0 0 24 24" class="icon" aria-hidden="true"><path d="M9 6v12M15 6v12" /></svg>
         </button>
+      </div>
+
+      <!-- 連擊條：文字「3 / 6」＋長度，不只靠顏色；幫手出現時改顯示剩餘秒數 -->
+      <div class="combo" id="combo">
+        <span class="combo-label" id="comboLabel">連擊</span>
+        <span class="combo-bar" aria-hidden="true"><span class="combo-fill" id="comboFill"></span></span>
+        <span class="combo-count" id="comboCount">0 / 6</span>
+        <svg class="combo-hammer" aria-hidden="true"><use href="#icon-hammer" /></svg>
       </div>
 
       <div class="board" id="board"></div>
@@ -204,7 +228,7 @@
 
       <div class="quiz-actions">
         <button class="btn btn-primary" type="button" id="quizNext" hidden>繼續</button>
-        <button class="quiet-link" type="button" id="quizSkip">先跳過，下一回合再挑戰</button>
+        <button class="quiet-link" type="button" id="quizSkip">先不要，回去</button>
       </div>
     </section>
 
@@ -224,6 +248,7 @@
       <ul class="unlock-list" id="unlockList" hidden></ul>
 
       <h2 class="section-title">我的收藏</h2>
+      <p class="challenge-hint" id="summaryChallenge" hidden></p>
       <ul class="collection" id="summaryCollection"></ul>
       <p class="next-goal" id="nextGoal"></p>
 
@@ -233,6 +258,22 @@
       </div>
     </section>
   </main>
+
+  <!-- 第一次進來自動顯示；之後按「怎麼玩？」可以再看 -->
+  <dialog class="dlg tut" id="tutDlg" aria-labelledby="tutTitle" aria-describedby="tutBody">
+    <p class="tut-step" id="tutStep">1 / 4</p>
+    <div aria-live="polite">
+      <div class="tut-art" id="tutArt" aria-hidden="true"></div>
+      <h2 class="dlg-title" id="tutTitle"></h2>
+      <p class="dlg-body" id="tutBody"></p>
+    </div>
+    <div class="tut-dots" id="tutDots" aria-hidden="true"></div>
+    <div class="tut-actions">
+      <button class="btn btn-quiet" type="button" id="tutPrev">上一步</button>
+      <button class="btn btn-primary" type="button" id="tutNext" autofocus>下一步</button>
+    </div>
+    <p class="center"><button class="quiet-link" type="button" id="tutSkip">略過教學</button></p>
+  </dialog>
 
   <dialog class="dlg" id="pauseDlg" aria-labelledby="pauseTitle">
     <h2 class="dlg-title" id="pauseTitle">暫停中</h2>

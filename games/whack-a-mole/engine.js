@@ -20,17 +20,25 @@
     ROUND_CAP: 10,          /* 無限模式的難度到第 10 回合就不再上升 */
 
     /* 出現頻率的下限：I(t) 在每回合開頭是 0，沒有下限會空等好幾秒 */
-    MIN_RATE: 0.6,          /* 每秒至少 0.6 次（最長間隔約 1.7 秒） */
+    MIN_RATE: 0.6,          /* 每秒至少 0.6 次（年齡係數之前，最長間隔約 1.7 秒） */
     MIN_INTERVAL_MS: 250,
+
+    /* 出現週期再乘上年齡係數 K / (1 + age^1.5)：年紀越小越慢 */
+    SPAWN_AGE_K: 27,
 
     HOLES_TOTAL: 6,
     HOLES_START: 4,         /* 另外兩個「維修中」，靠分數升級打開 */
 
-    /* 角色停留在洞外的時間 */
-    UP_MS_BASE: 1400,
-    UP_MS_PER_ROUND: 60,    /* 每回合縮短 60ms */
-    UP_MS_MIN: 800,
-    VIRUS_UP_FACTOR: 1.7,   /* 病毒要拖曳，給久一點 */
+    /* 停留時間（秒）= STAY_BASE_S / age × (1 + level) ÷ 鍍層除數；病毒 ×2
+       age < 1 以 1 計（6 / 0 會除以零）。
+       原本是 3 / age：比小朋友「看到→點」的時間還短，只抓得到病毒、其他角色永遠升不了級。
+       模擬 6 回合：3/age 命中 0–44%，6/age 命中約 70–79%，四個角色都能升級。 */
+    STAY_BASE_S: 6,
+    STAY_MIN_AGE: 1,
+    VIRUS_STAY_FACTOR: 2,
+    /* 下限：公式在 10 歲以上會低於人的反應時間（18 歲只有 167ms），
+       那不是「難」，是根本點不到。設成 0 就完全照公式。 */
+    MIN_UP_MS: 350,
 
     /* 收藏：點擊次數達到門檻 → 可以挑戰小知識；答對才真的升級 */
     TIERS: [10, 50, 100],
@@ -41,12 +49,13 @@
     WEIGHT_FLOOR: 10,
     UPGRADE_WEIGHT_BONUS: 0.05,
 
-    /* 鍍層：銀／金 分數高但停留短；鐵 停留長但要打好幾下 */
+    /* 鍍層：div 是停留時間的除數（一般 1、銀 2、金 3）。
+       鐵甲不在公式裡，沿用原規格「停留較久」：除以 0.625 = ×1.6，要打 3 下。 */
     VARIANTS: {
-      normal: { points: 1, up: 1, hp: 1 },
-      silver: { points: 1.5, up: 0.75, hp: 1 },
-      gold: { points: 2, up: 0.6, hp: 1 },
-      iron: { points: 2, up: 1.6, hp: 3 }
+      normal: { points: 1, div: 1, hp: 1 },
+      silver: { points: 1.5, div: 2, hp: 1 },
+      gold: { points: 2, div: 3, hp: 1 },
+      iron: { points: 2, div: 0.625, hp: 3 }
     },
     /* 依收藏等級解鎖：Lv1 銀、Lv2 金、Lv3 鐵（沒抽中就是一般） */
     VARIANT_ODDS: [
@@ -65,7 +74,14 @@
       hammer: { label: '更強的槌子', start: 1, stages: [{ at: 14000, value: 2 }, { at: 32000, value: 3 }] }
     },
 
-    WIPE_COOLDOWN_MS: 250   /* 同一隻病毒連續擦拭的最短間隔 */
+    WIPE_COOLDOWN_MS: 250,  /* 同一隻病毒連續擦拭的最短間隔 */
+
+    /* 連擊：連續抓到 N 個（有角色逃走就歸零）→ 槌子幫手自動打 3 秒。
+       N 依年齡：小小孩一回合看到的角色少很多，固定門檻對他們遙不可及。
+       槌子不打病毒——病毒還是要用酒精棉片擦。 */
+    COMBO_TARGET: { little: 4, kid: 6, junior: 8, teen: 10 },
+    HELPER_MS: 3000,
+    HELPER_DELAY_MS: 180    /* 角色冒出來後等一下下再打，小朋友才看得到它被敲 */
   };
 
   var BY_ID = {};
@@ -92,9 +108,13 @@
     return (1 + r / 4) * intensity(tLeftSec);
   }
 
-  function spawnIntervalMs(tLeftSec, round) {
+  function ageFactor(age) {
+    return CONFIG.SPAWN_AGE_K / (1 + Math.pow(Math.max(Number(age) || 0, 0), 1.5));
+  }
+
+  function spawnIntervalMs(tLeftSec, round, age) {
     var rate = Math.max(spawnRate(tLeftSec, round), CONFIG.MIN_RATE);
-    return Math.max(CONFIG.MIN_INTERVAL_MS, 1000 / rate);
+    return Math.max(CONFIG.MIN_INTERVAL_MS, 1000 / rate * ageFactor(age));
   }
 
   /* ─────────────────────────────────────────────────────────────
@@ -149,11 +169,14 @@
      單次出現的參數
      ───────────────────────────────────────────────────────────── */
 
-  function upMs(charId, variant, round, stayFactor) {
-    var r = clamp(round, 1, CONFIG.ROUND_CAP);
-    var base = Math.max(CONFIG.UP_MS_MIN, CONFIG.UP_MS_BASE - CONFIG.UP_MS_PER_ROUND * (r - 1));
-    if (BY_ID[charId].wipe) base *= CONFIG.VIRUS_UP_FACTOR;
-    return Math.round(base * CONFIG.VARIANTS[variant].up * (stayFactor || 1));
+  /* 3 / age × (1 + level) ÷ 鍍層除數；病毒 ×2；再乘分數獎勵「停留更久」 */
+  function upMs(charId, variant, level, age, stayFactor) {
+    var a = Math.max(Number(age) || 0, CONFIG.STAY_MIN_AGE);
+    var ms = 1000 * CONFIG.STAY_BASE_S / a * (1 + clamp(level || 0, 0, CONFIG.MAX_LEVEL)) /
+      CONFIG.VARIANTS[variant].div;
+    if (BY_ID[charId].wipe) ms *= CONFIG.VIRUS_STAY_FACTOR;
+    ms *= stayFactor || 1;
+    return Math.round(Math.max(CONFIG.MIN_UP_MS, ms));
   }
 
   function pointsFor(charId, variant) {
@@ -220,6 +243,10 @@
     return 'teen';
   }
 
+  function comboTarget(age) {
+    return CONFIG.COMBO_TARGET[ageBand(Number(age) || 0)];
+  }
+
   function questionsFor(bank, charId, band) {
     return bank.questions.filter(function (q) {
       return q.character === charId && q.band === band;
@@ -233,18 +260,37 @@
     return null;
   }
 
-  function nextQuiz(progress, bank, band) {
-    if (progress.pending) {
-      var q = questionById(bank, progress.pending.qid);
-      if (q) return { character: progress.pending.character, question: q };
+  /* 答錯的角色要等「下一回合結束」才能再挑戰同一題：
+     記下答錯當時已完成的回合數，roundsPlayed 超過它才解鎖 */
+  function isLocked(progress, charId) {
+    var f = progress.pending && progress.pending[charId];
+    return !!f && progress.roundsPlayed <= f.round;
+  }
+
+  function canChallenge(progress, charId) {
+    return eligible(progress).indexOf(charId) !== -1 && !isLocked(progress, charId);
+  }
+
+  function challengeFor(progress, bank, band, charId) {
+    var f = progress.pending && progress.pending[charId];
+    if (f) {
+      var same = questionById(bank, f.qid);
+      if (same) return { character: charId, question: same };
     }
-    var list = eligible(progress);
-    if (!list.length) return null;
-    var charId = list[0];
     var pool = questionsFor(bank, charId, band);
     if (!pool.length) return null;
     var target = (progress.level[charId] || 0) + 1;
     return { character: charId, question: pool[Math.min(target, pool.length) - 1] };
+  }
+
+  function recordAnswer(progress, charId, qid, correct) {
+    if (!progress.pending) progress.pending = {};
+    if (correct) {
+      progress.level[charId] = Math.min(CONFIG.MAX_LEVEL, (progress.level[charId] || 0) + 1);
+      delete progress.pending[charId];
+    } else {
+      progress.pending[charId] = { qid: qid, round: progress.roundsPlayed };
+    }
   }
 
   function isCorrect(question, choice) {
@@ -265,17 +311,28 @@
 
   function newProgress(code) {
     return {
-      v: 1, code: code, clicks: zeroMap(), level: zeroMap(),
-      pending: null, totalPoints: 0, bestScore: 0, bestRound: 0
+      v: 2, code: code, clicks: zeroMap(), level: zeroMap(),
+      pending: {}, roundsPlayed: 0, tutorialSeen: false,
+      totalPoints: 0, bestScore: 0, bestRound: 0
     };
   }
 
   function loadProgress(storage, code) {
     try {
       var p = JSON.parse(storage.getItem(STORE_KEY) || 'null');
-      var ok = p && p.v === 1 && p.code === code && p.clicks && p.level &&
+      var ok = p && (p.v === 1 || p.v === 2) && p.code === code && p.clicks && p.level &&
         typeof p.totalPoints === 'number';
       if (!ok) return newProgress(code);
+      if (p.v === 1) {
+        /* v1 只有一筆 pending，而且答錯後隔一回合就能重考 → 直接開放 */
+        var old = p.pending;
+        p.pending = {};
+        if (old && old.character && old.qid) p.pending[old.character] = { qid: old.qid, round: -1 };
+        p.v = 2;
+      }
+      if (!p.pending || typeof p.pending !== 'object') p.pending = {};
+      p.roundsPlayed = Math.max(0, Number(p.roundsPlayed) || 0);
+      p.tutorialSeen = !!p.tutorialSeen;
       CHARACTERS.forEach(function (c) {
         p.clicks[c.id] = Math.max(0, Number(p.clicks[c.id]) || 0);
         p.level[c.id] = clamp(Number(p.level[c.id]) || 0, 0, CONFIG.MAX_LEVEL);
@@ -312,7 +369,12 @@
     ageBand: ageBand,
     questionsFor: questionsFor,
     questionById: questionById,
-    nextQuiz: nextQuiz,
+    ageFactor: ageFactor,
+    comboTarget: comboTarget,
+    isLocked: isLocked,
+    canChallenge: canChallenge,
+    challengeFor: challengeFor,
+    recordAnswer: recordAnswer,
     isCorrect: isCorrect,
     newProgress: newProgress,
     loadProgress: loadProgress,
