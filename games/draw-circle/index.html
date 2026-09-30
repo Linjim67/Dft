@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="zh-Hant-TW">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="color-scheme" content="light">
+  <meta name="theme-color" content="#FFF7ED">
+  <title>安心陪伴 · 畫圓圈</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet"
+    href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&display=swap">
+  <link rel="stylesheet" href="/styles.css">
+  <link rel="stylesheet" href="/shared/page.css">
+  <link rel="stylesheet" href="/games/draw-circle/draw-circle.css">
+  <script src="/shared/app.js"></script>
+  <script>Anxin.requireProfile();</script>
+</head>
+
+<body>
+  <a class="skip-link" href="#main">跳到主要內容</a>
+
+  <svg class="sprite" aria-hidden="true" focusable="false">
+    <symbol id="icon-star" viewBox="0 0 24 24">
+      <path d="M12 3.2l2.7 5.5 6 .9-4.35 4.25 1 6L12 17l-5.35 2.85 1-6L3.3 9.6l6-.9Z" />
+    </symbol>
+  </svg>
+
+  <header class="wrap topbar">
+    <a class="back-link" href="/games/solo/">
+      <svg viewBox="0 0 24 24" class="icon" aria-hidden="true"><path d="M15 5 8 12l7 7" /></svg>
+      <span>小遊戲</span>
+    </a>
+    <a class="pill-cta" href="/shot/">
+      <span>開始打針</span>
+      <svg viewBox="0 0 24 24" class="icon" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6" /></svg>
+    </a>
+  </header>
+
+  <main id="main" class="wrap dc">
+
+    <!-- ══════════ 開始畫面 ══════════ -->
+    <section id="introView" aria-labelledby="introTitle">
+      <div class="page-head">
+        <h1 id="introTitle" tabindex="-1">畫圓圈</h1>
+        <p class="page-lede">一筆畫出一個圓，看看有多圓！每個人可以畫三次。</p>
+      </div>
+
+      <ol class="dc-steps">
+        <li><span class="dc-num" aria-hidden="true">1</span><span>用一根手指，<strong>一筆</strong>畫一個圓</span></li>
+        <li><span class="dc-num" aria-hidden="true">2</span><span>畫完放開手指，馬上就會算分數</span></li>
+        <li><span class="dc-num" aria-hidden="true">3</span><span>三次裡面<strong>最高分</strong>的那一次算數</span></li>
+      </ol>
+
+      <fieldset class="field dc-mode">
+        <legend class="field-label">要怎麼玩？</legend>
+        <div class="segmented dc-segmented">
+          <label class="segmented-option">
+            <input type="radio" name="mode" value="1" checked>
+            <span class="segmented-face">自己玩</span>
+          </label>
+          <label class="segmented-option">
+            <input type="radio" name="mode" value="2">
+            <span class="segmented-face">和爸爸媽媽比賽</span>
+          </label>
+        </div>
+        <p class="field-hint dc-mode-hint">比賽時用同一支手機，輪流畫。</p>
+      </fieldset>
+
+      <p class="dc-best" id="bestLine" hidden></p>
+
+      <button class="btn btn-primary" type="button" id="startBtn">開始畫</button>
+    </section>
+
+    <!-- ══════════ 畫畫 ══════════ -->
+    <section id="drawView" hidden aria-labelledby="turnTitle">
+      <div class="dc-turn">
+        <h1 class="dc-turn-title" id="turnTitle" tabindex="-1">第 1 / 3 次</h1>
+        <p class="dc-turn-hint" id="turnHint">用一根手指，一筆畫一個圓</p>
+      </div>
+
+      <!-- 手繪是這個遊戲的本質（WCAG 2.5.7 的「必要」例外）；分數另外以文字播報 -->
+      <div class="pad-wrap">
+        <canvas class="pad" id="pad" role="img" aria-label="畫圓圈的畫布：用手指一筆畫一個圓"></canvas>
+        <p class="pad-empty" id="padEmpty" aria-hidden="true">在這裡畫</p>
+      </div>
+
+      <div class="dc-result" id="resultBox" hidden>
+        <p class="dc-score"><strong id="scoreNum">0</strong><span>分</span></p>
+        <p class="dc-stars" id="scoreStars"></p>
+        <p class="dc-rating" id="scoreText"></p>
+        <p class="dc-legend"><span class="legend-line" aria-hidden="true"></span>虛線是最完美的圓</p>
+      </div>
+
+      <p class="dc-warn" id="warnBox" role="alert" hidden></p>
+
+      <div class="dc-actions">
+        <button class="btn btn-primary" type="button" id="nextBtn" hidden>下一次</button>
+        <button class="btn btn-quiet" type="button" id="retryBtn" hidden>再畫一次</button>
+      </div>
+    </section>
+
+    <!-- ══════════ 結果 ══════════ -->
+    <section id="resultsView" hidden aria-labelledby="resultsTitle">
+      <h1 class="dc-results-title" id="resultsTitle" tabindex="-1">結果出爐！</h1>
+      <p class="dc-winner" id="winnerLine"></p>
+      <ul class="dc-board" id="scoreBoard"></ul>
+      <p class="dc-record" id="recordLine" hidden></p>
+      <div class="dc-actions">
+        <button class="btn btn-primary" type="button" id="againBtn">再玩一次</button>
+        <a class="quiet-link" href="/games/solo/">回小遊戲選單</a>
+      </div>
+    </section>
+  </main>
+
+  <div class="live-region" id="liveRegion" role="status" aria-live="polite"></div>
+
+  <script src="/games/draw-circle/circle.js"></script>
+  <script src="/games/draw-circle/draw-circle.js"></script>
+</body>
+
+</html>

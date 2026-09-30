@@ -1,0 +1,314 @@
+/* ═══ #07 畫圓圈（單機）═══════════════════════════════════════
+   沿用 /styles.css 的 token 與表單元件。
+   ═══════════════════════════════════════════════════════════════ */
+
+.sprite {
+  position: absolute;
+  width: 0;
+  height: 0;
+  overflow: hidden;
+}
+
+/* ═══ 開始畫面 ════════════════════════════════════════════════ */
+
+.dc-steps {
+  display: grid;
+  gap: var(--sp-3);
+  margin: 0 0 var(--sp-5);
+  padding: var(--sp-4);
+  list-style: none;
+  background: var(--card);
+  border-radius: var(--r-lg);
+  box-shadow: var(--sh-md);
+}
+
+.dc-steps li {
+  display: grid;
+  grid-template-columns: 32px 1fr;
+  align-items: center;
+  gap: var(--sp-3);
+  line-height: 1.55;
+}
+
+.dc-steps strong {
+  color: var(--primary-deep);
+}
+
+.dc-num {
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: var(--primary-wash);
+  color: var(--primary-deep);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.dc-mode {
+  margin-bottom: var(--sp-4);
+}
+
+/* 全域的 .segmented 是給 #01「男孩／女孩」的 68px 兩欄；這裡的字比較長 */
+.dc-segmented {
+  grid-template-columns: 1fr 1fr;
+  margin-top: var(--sp-2);
+}
+
+.dc-mode-hint {
+  margin: var(--sp-2) 0 0;
+}
+
+.dc-best {
+  margin-bottom: var(--sp-4);
+  text-align: center;
+  font-weight: 700;
+  color: var(--fg-muted);
+}
+
+/* ═══ 畫畫 ═══════════════════════════════════════════════════ */
+
+#drawView {
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-touch-callout: none;
+}
+
+.dc-turn {
+  margin-block: var(--sp-2) var(--sp-3);
+  text-align: center;
+}
+
+.dc-turn-title {
+  font-size: 1.4rem;
+  line-height: 1.35;
+  font-weight: 700;
+}
+
+.dc-turn-hint {
+  margin-top: var(--sp-1);
+  color: var(--fg-muted);
+}
+
+.pad-wrap {
+  position: relative;
+  width: 100%;
+  max-width: 420px;
+  margin-inline: auto;
+}
+
+/* touch-action:none：手指在畫布上移動時不要捲動頁面 */
+.pad {
+  display: block;
+  width: 100%;
+  height: auto;
+  aspect-ratio: 1 / 1;
+  background: var(--card);
+  border-radius: var(--r-xl);
+  box-shadow: var(--sh-md), inset 0 0 0 var(--line-w) var(--hairline);
+  touch-action: none;
+  cursor: crosshair;
+}
+
+.pad-empty {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--idle);
+  pointer-events: none;
+}
+
+.dc-result {
+  display: grid;
+  justify-items: center;
+  gap: var(--sp-1);
+  margin-top: var(--sp-4);
+  text-align: center;
+}
+
+.dc-score {
+  display: flex;
+  align-items: baseline;
+  gap: var(--sp-1);
+  line-height: 1;
+}
+
+.dc-score strong {
+  font-size: 3rem;
+  color: var(--primary-deep);
+  font-variant-numeric: tabular-nums;
+}
+
+.dc-score span {
+  font-weight: 700;
+  color: var(--fg-muted);
+}
+
+.dc-stars {
+  display: flex;
+  gap: 4px;
+}
+
+.dc-star {
+  display: block;
+  width: 28px;
+  height: 28px;
+  fill: none;
+  stroke: var(--line);
+  stroke-width: 1.8;
+}
+
+.dc-star-slot.is-on .dc-star {
+  fill: #F59E0B;
+  stroke: #B45309;
+}
+
+.dc-rating {
+  font-size: 1.2rem;
+  font-weight: 700;
+}
+
+.dc-legend {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  font-size: .85rem;
+  color: var(--fg-muted);
+}
+
+.legend-line {
+  width: 28px;
+  border-top: 3px dashed #15803D;
+}
+
+.dc-warn {
+  margin-top: var(--sp-4);
+  padding: var(--sp-3) var(--sp-4);
+  border-radius: var(--r-md);
+  background: var(--primary-wash);
+  border-left: 5px solid var(--primary-deep);
+  font-weight: 700;
+  line-height: 1.55;
+}
+
+.dc-actions {
+  display: grid;
+  justify-items: center;
+  gap: var(--sp-2);
+  margin-top: var(--sp-5);
+}
+
+.dc-actions .btn {
+  width: 100%;
+}
+
+/* ═══ 結果 ═══════════════════════════════════════════════════ */
+
+.dc-results-title {
+  margin-top: var(--sp-4);
+  font-size: 1.6rem;
+  font-weight: 700;
+  text-align: center;
+}
+
+.dc-winner {
+  margin-block: var(--sp-2) var(--sp-5);
+  text-align: center;
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: var(--primary-deep);
+  text-wrap: balance;
+}
+
+.dc-board {
+  display: grid;
+  gap: var(--sp-3);
+}
+
+.dc-row {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  grid-template-areas:
+    "name best"
+    "tries tries";
+  gap: var(--sp-2) var(--sp-3);
+  padding: var(--sp-4);
+  background: var(--card);
+  border-radius: var(--r-lg);
+  box-shadow: var(--sh-md);
+}
+
+.dc-name {
+  grid-area: name;
+  font-weight: 700;
+  font-size: 1.05rem;
+}
+
+.dc-best-score {
+  grid-area: best;
+  color: var(--fg-muted);
+}
+
+.dc-best-score strong {
+  font-size: 1.5rem;
+  color: var(--primary-deep);
+  font-variant-numeric: tabular-nums;
+}
+
+.dc-tries {
+  grid-area: tries;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: var(--sp-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.dc-tries li {
+  display: grid;
+  justify-items: center;
+  padding: var(--sp-2);
+  border-radius: var(--r-md);
+  background: var(--bg-sunk);
+  font-variant-numeric: tabular-nums;
+  color: var(--fg-muted);
+}
+
+/* 最高分：粗體 + 外框 + 「最高」文字 */
+.dc-tries li.is-best {
+  background: var(--primary-wash);
+  box-shadow: inset 0 0 0 2px var(--primary-deep);
+  color: var(--fg);
+  font-weight: 700;
+}
+
+.best-tag {
+  font-size: .72rem;
+  color: var(--primary-deep);
+}
+
+.dc-record {
+  margin-top: var(--sp-4);
+  padding: var(--sp-3) var(--sp-4);
+  border-radius: var(--r-md);
+  background: var(--bg-sunk);
+  text-align: center;
+  font-weight: 700;
+  color: var(--fg-muted);
+}
+
+.dc-record.is-new {
+  background: var(--success-wash);
+  color: var(--success);
+}
+
+@media (min-width: 40rem) {
+  .dc-actions .btn {
+    width: auto;
+  }
+}
