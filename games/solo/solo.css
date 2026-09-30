@@ -1,3 +1,33 @@
-/* ═══ 小遊戲・單機 ═══════════════════════════════════════════════
-   頁面專用樣式。內容準備中，版面目前完全沿用 /shared/page.css。
-   ═══════════════════════════════════════════════════════════════ */
+/* ═══ 小遊戲・單機：遊戲選單 ═══════════════════════════════════ */
+
+/* 還沒做好的遊戲：看得到、但不能點；除了淡化，還有「即將推出」文字 */
+.nav-card.is-soon {
+  grid-template-columns: auto 1fr auto;
+  cursor: default;
+  box-shadow: var(--sh-sm);
+}
+
+.nav-card.is-soon .card-icon {
+  background: var(--bg-sunk);
+  color: var(--idle);
+}
+
+.nav-card.is-soon .card-title {
+  color: var(--fg-muted);
+}
+
+.soon-badge {
+  padding: 2px var(--sp-2);
+  border-radius: var(--r-pill);
+  background: var(--bg-sunk);
+  color: var(--fg-muted);
+  font-size: .75rem;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .nav-card.is-soon:hover {
+    background: var(--card);
+  }
+}

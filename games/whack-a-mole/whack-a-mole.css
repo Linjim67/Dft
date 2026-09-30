@@ -1,0 +1,855 @@
+/* ═══ #07 打地鼠（單機）═══════════════════════════════════════
+   沿用 /styles.css 的 token；遊戲專用色（土、洞、鍍層）集中在這裡。
+   ═══════════════════════════════════════════════════════════════ */
+
+.wam-page {
+  --earth-lip: #E9BD8C;
+  --earth-lip-dark: #C98B55;
+  --pit: #4A2410;
+  --pit-deep: #2E1406;
+  --sand-1: #FFF1E0;
+  --sand-2: #FCE1BF;
+}
+
+.sprite {
+  position: absolute;
+  width: 0;
+  height: 0;
+  overflow: hidden;
+}
+
+/* ═══ 開始畫面 ════════════════════════════════════════════════ */
+
+.howto {
+  display: grid;
+  gap: var(--sp-3);
+  padding: var(--sp-4);
+  background: var(--card);
+  border-radius: var(--r-lg);
+  box-shadow: var(--sh-md);
+}
+
+.howto li {
+  display: grid;
+  grid-template-columns: 88px 1fr;
+  align-items: center;
+  gap: var(--sp-3);
+  font-size: .95rem;
+  line-height: 1.55;
+}
+
+.howto strong {
+  color: var(--primary-deep);
+}
+
+.howto-art {
+  display: flex;
+  justify-content: center;
+}
+
+.howto-art svg {
+  width: 32px;
+  height: 32px;
+  margin-inline: -3px;
+}
+
+.howto-star {
+  fill: #F59E0B;
+}
+
+.wam-best {
+  margin-top: var(--sp-4);
+  text-align: center;
+  font-weight: 700;
+  color: var(--fg-muted);
+}
+
+.wam-start {
+  margin-top: var(--sp-5);
+}
+
+/* ═══ 收藏 ═══════════════════════════════════════════════════ */
+
+.collection {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--sp-3);
+}
+
+.coll-item {
+  display: grid;
+  grid-template-columns: 44px 1fr;
+  grid-template-areas:
+    "art name"
+    "art stars"
+    "count count"
+    "bar bar"
+    "status status";
+  column-gap: var(--sp-2);
+  padding: var(--sp-3);
+  background: var(--card);
+  border-radius: var(--r-md);
+  box-shadow: var(--sh-sm);
+}
+
+/* 可以挑戰：除了顏色，還有外框與文字 */
+.coll-item.is-ready {
+  box-shadow: var(--sh-sm), inset 0 0 0 2px var(--primary-deep);
+}
+
+.coll-art {
+  grid-area: art;
+  width: 44px;
+  height: 44px;
+}
+
+.coll-name {
+  grid-area: name;
+  font-weight: 700;
+  line-height: 1.3;
+  align-self: end;
+}
+
+.coll-stars {
+  grid-area: stars;
+  display: flex;
+  gap: 2px;
+}
+
+.star-slot .star {
+  display: block;
+  width: 16px;
+  height: 16px;
+  fill: none;
+  stroke: var(--line);
+  stroke-width: 1.8;
+}
+
+.star-slot.is-on .star {
+  fill: #F59E0B;
+  stroke: #B45309;
+}
+
+.coll-count {
+  grid-area: count;
+  margin-top: var(--sp-2);
+  font-size: .82rem;
+  color: var(--fg-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.coll-bar {
+  grid-area: bar;
+  display: block;
+  height: 6px;
+  margin-top: var(--sp-1);
+  border-radius: var(--r-pill);
+  background: var(--bg-sunk);
+  overflow: hidden;
+}
+
+.coll-bar span {
+  display: block;
+  height: 100%;
+  background: var(--primary-fill);
+  border-radius: inherit;
+}
+
+.coll-status {
+  grid-area: status;
+  margin-top: var(--sp-1);
+  font-size: .78rem;
+  line-height: 1.4;
+  color: var(--fg-muted);
+}
+
+.coll-item.is-ready .coll-status {
+  color: var(--primary-deep);
+  font-weight: 700;
+}
+
+/* ═══ 遊戲中：HUD ════════════════════════════════════════════ */
+
+.play {
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-touch-callout: none;
+}
+
+.hud {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr auto;
+  align-items: center;
+  gap: var(--sp-2);
+  margin-block: var(--sp-2) var(--sp-3);
+}
+
+.hud-round {
+  font-size: .88rem;
+  font-weight: 700;
+  color: var(--fg-muted);
+  line-height: 1.3;
+}
+
+.hud-time {
+  display: flex;
+  align-items: baseline;
+  gap: 2px;
+  font-size: 1.9rem;
+  font-weight: 700;
+  line-height: 1;
+  color: var(--fg);
+  font-variant-numeric: tabular-nums;
+}
+
+/* 最後五秒：字變深橘並加粗外框——不只靠顏色 */
+.hud-time.is-low {
+  color: var(--primary-deep);
+  text-decoration: underline;
+  text-decoration-thickness: 3px;
+  text-underline-offset: 4px;
+}
+
+.hud-unit {
+  font-size: .8rem;
+  font-weight: 700;
+  color: var(--fg-muted);
+}
+
+.hud-score {
+  display: grid;
+  justify-items: end;
+  line-height: 1.2;
+  font-size: 1.15rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.hud-pause {
+  display: grid;
+  place-items: center;
+  width: var(--tap);
+  height: var(--tap);
+  border-radius: var(--r-md);
+  background: var(--card);
+  color: var(--fg);
+  border: var(--line-w) solid var(--line);
+  box-shadow: var(--sh-sm);
+}
+
+/* ═══ 棋盤 ═══════════════════════════════════════════════════ */
+
+.board {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: var(--sp-2) var(--sp-3);
+  padding: var(--sp-3) var(--sp-3) var(--sp-2);
+  border-radius: var(--r-xl);
+  background: linear-gradient(180deg, var(--sand-1), var(--sand-2));
+  box-shadow: var(--sh-md);
+  touch-action: manipulation;
+}
+
+.hole {
+  position: relative;
+  display: block;
+  width: 100%;
+  aspect-ratio: 1 / 1.08;
+  padding: 0;
+  margin: 0;
+  border: 0;
+  background: none;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+}
+
+.hole-pit {
+  position: absolute;
+  left: 7%;
+  right: 7%;
+  bottom: 9%;
+  height: 30%;
+  border-radius: 50%;
+  background: radial-gradient(ellipse at 50% 35%, var(--pit), var(--pit-deep) 75%);
+}
+
+/* 角色從洞裡冒出來：裁切框的底部落在洞口中線 */
+.mole-clip {
+  position: absolute;
+  left: 13%;
+  right: 13%;
+  top: 0;
+  bottom: 23%;
+  overflow: hidden;
+}
+
+.mole {
+  position: absolute;
+  inset: 0;
+  transform: translateY(105%);
+  transition: transform 130ms cubic-bezier(.2, .9, .3, 1.25);
+  will-change: transform;
+}
+
+.hole.is-up .mole {
+  transform: translateY(4%);
+}
+
+/* 被打到：壓扁後縮回去（比冒出來快） */
+.hole.is-hit .mole {
+  transform: translateY(105%) scaleY(.7);
+  transition-duration: 90ms;
+  transition-timing-function: ease-in;
+}
+
+.mole-art {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+/* 洞口前緣蓋住角色下半身，看起來像從洞裡探出頭 */
+.hole-lip {
+  position: absolute;
+  left: 3%;
+  right: 3%;
+  bottom: 2%;
+  height: 22%;
+  border-radius: 0 0 50% 50% / 0 0 100% 100%;
+  background: linear-gradient(180deg, var(--earth-lip), var(--earth-lip-dark));
+  box-shadow: 0 -2px 0 rgba(255, 255, 255, .35) inset;
+}
+
+.hole-key {
+  display: none;
+  position: absolute;
+  bottom: 4%;
+  inset-inline-end: 8%;
+  font-size: .72rem;
+  font-weight: 700;
+  color: #2E1406; /* 洞口前緣下半部較深，#5B3212 只有 3.83:1 */
+}
+
+/* 維修中的洞 */
+.hole.is-locked {
+  cursor: default;
+}
+
+.hole.is-locked .hole-pit {
+  background: repeating-linear-gradient(-45deg, #FDBA74 0 8px, #FFF7ED 8px 16px);
+  opacity: .75;
+}
+
+.locked-sign {
+  position: absolute;
+  inset: 12% 0 auto;
+  display: grid;
+  justify-items: center;
+  gap: 2px;
+  font-size: .82rem;
+  font-weight: 700;
+  color: var(--fg-muted);
+}
+
+.locked-sign svg {
+  width: 30px;
+  height: 30px;
+}
+
+/* ═══ 鍍層：顏色 + 角標文字 + 血條，不單靠顏色 ═════════════ */
+
+.coat-badge {
+  position: absolute;
+  top: 2%;
+  inset-inline-end: 0;
+  z-index: 2;
+  padding: 0 5px;
+  border-radius: var(--r-pill);
+  font-size: .72rem;
+  font-weight: 700;
+  line-height: 1.5;
+  color: #fff;
+  background: #57534E;
+}
+
+.coat-badge:empty {
+  display: none;
+}
+
+.v-silver .mole-art {
+  filter: grayscale(1) brightness(1.2) contrast(1.05) drop-shadow(0 0 4px #fff);
+}
+
+.v-silver .coat-badge {
+  background: #52525B;
+}
+
+.v-gold .mole-art {
+  filter: sepia(1) saturate(3.2) hue-rotate(-12deg) brightness(1.05) drop-shadow(0 0 5px #FCD34D);
+}
+
+.v-gold .coat-badge {
+  background: #92400E;
+}
+
+.v-iron .mole-art {
+  filter: grayscale(1) brightness(.72) contrast(1.25);
+}
+
+.v-iron .coat-badge {
+  background: #292524;
+}
+
+.hp {
+  display: none;
+  position: absolute;
+  top: 0;
+  left: 12%;
+  right: 12%;
+  z-index: 2;
+  height: 8px;
+  border-radius: var(--r-pill);
+  background: rgba(28, 25, 23, .55);
+  overflow: hidden;
+}
+
+.hole.has-hp .hp {
+  display: block;
+}
+
+.hp-fill {
+  display: block;
+  height: 100%;
+  background: #4ADE80;
+  transition: width 120ms ease-out;
+}
+
+/* ═══ 打擊回饋 ═══════════════════════════════════════════════ */
+
+.pop-score {
+  position: absolute;
+  left: 50%;
+  top: 18%;
+  z-index: 3;
+  transform: translateX(-50%);
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: var(--primary-deep);
+  text-shadow: 0 0 3px #fff, 0 0 3px #fff, 0 1px 0 #fff;
+  pointer-events: none;
+  animation: pop-rise 650ms ease-out forwards;
+}
+
+.pop-score.is-gold,
+.pop-score.is-iron {
+  font-size: 1.35rem;
+}
+
+@keyframes pop-rise {
+  from {
+    opacity: 1;
+    transform: translate(-50%, 0) scale(.9);
+  }
+
+  to {
+    opacity: 0;
+    transform: translate(-50%, -34px) scale(1.1);
+  }
+}
+
+.hole.is-hurt .mole {
+  animation: hurt 180ms ease-in-out;
+}
+
+@keyframes hurt {
+  50% {
+    transform: translateY(10%) scale(.94);
+  }
+}
+
+/* 直接點病毒：搖頭表示「要用棉片喔」 */
+.hole.is-nope .mole-art {
+  animation: nope 320ms ease-in-out;
+}
+
+@keyframes nope {
+
+  25%,
+  75% {
+    transform: rotate(-8deg);
+  }
+
+  50% {
+    transform: rotate(8deg);
+  }
+}
+
+/* ═══ 工具列：酒精棉片 ═══════════════════════════════════════ */
+
+.tray {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  align-items: center;
+  gap: var(--sp-3);
+  margin-top: var(--sp-3);
+}
+
+.swab-tool {
+  display: grid;
+  place-items: center;
+  width: 76px;
+  height: 76px;
+  border-radius: var(--r-lg);
+  background: var(--card);
+  border: 2px dashed var(--line);
+  box-shadow: var(--sh-sm);
+  cursor: grab;
+  touch-action: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.swab-tool svg {
+  width: 58px;
+  height: 58px;
+}
+
+/* 拿起棉片（點選模式）：實線框 + 淡底 + 文字狀態（aria-pressed） */
+.swab-tool.is-armed {
+  background: var(--primary-wash);
+  border-style: solid;
+  border-color: var(--primary-deep);
+  box-shadow: var(--sh-md);
+}
+
+.tray-hint {
+  font-size: .86rem;
+  line-height: 1.55;
+  color: var(--fg-muted);
+}
+
+.tray-hint strong {
+  color: var(--fg);
+}
+
+.tray-hint.is-flash {
+  color: var(--primary-deep);
+  font-weight: 700;
+}
+
+.drag-ghost {
+  position: fixed;
+  top: 0;
+  left: 0;
+  z-index: 60;
+  width: 72px;
+  height: 72px;
+  pointer-events: none;
+  filter: drop-shadow(0 6px 8px rgba(124, 45, 18, .3));
+}
+
+.drag-ghost svg {
+  width: 100%;
+  height: 100%;
+}
+
+.is-dragging,
+.is-dragging * {
+  cursor: grabbing;
+}
+
+/* ═══ 小知識 ═════════════════════════════════════════════════ */
+
+.quiz {
+  padding-top: var(--sp-3);
+  text-align: center;
+}
+
+.quiz-kicker {
+  display: inline-block;
+  padding: 2px var(--sp-3);
+  border-radius: var(--r-pill);
+  background: var(--primary-wash);
+  color: var(--primary-deep);
+  font-size: .85rem;
+  font-weight: 700;
+}
+
+.quiz-art svg {
+  display: block;
+  width: 84px;
+  height: 84px;
+  margin: var(--sp-3) auto var(--sp-2);
+}
+
+.quiz-title {
+  font-size: 1.3rem;
+  line-height: 1.4;
+  font-weight: 700;
+  text-wrap: balance;
+}
+
+.quiz-parent {
+  margin-top: var(--sp-2);
+  font-size: .9rem;
+  font-weight: 700;
+  color: var(--primary-deep);
+}
+
+.quiz-prompt {
+  margin: var(--sp-5) 0 var(--sp-4);
+  padding: var(--sp-4);
+  background: var(--card);
+  border-radius: var(--r-lg);
+  box-shadow: var(--sh-md);
+  font-size: 1.15rem;
+  font-weight: 700;
+  line-height: 1.6;
+  text-align: start;
+}
+
+.quiz-options {
+  display: grid;
+  gap: var(--sp-3);
+}
+
+.quiz-options.is-tf {
+  grid-template-columns: 1fr 1fr;
+}
+
+.quiz-opt {
+  min-height: 56px;
+  padding: var(--sp-3) var(--sp-4);
+  border-radius: var(--r-md);
+  background: var(--card);
+  border: var(--line-w) solid var(--line);
+  box-shadow: var(--sh-sm);
+  font-weight: 700;
+  line-height: 1.45;
+  text-align: start;
+  transition: background-color var(--t-fast) var(--ease), border-color var(--t-fast) var(--ease);
+}
+
+.quiz-opt.is-tf {
+  text-align: center;
+  font-size: 1.15rem;
+}
+
+.quiz-opt:disabled {
+  cursor: default;
+  opacity: .55;
+}
+
+/* 選到的答案不淡化，並用粗框＋結果文字標示（不只靠紅綠） */
+.quiz-opt.is-right,
+.quiz-opt.is-wrong {
+  opacity: 1;
+  box-shadow: inset 0 0 0 2px currentColor;
+}
+
+.quiz-opt.is-right {
+  background: var(--success-wash);
+  color: var(--success);
+  border-color: var(--success);
+}
+
+.quiz-opt.is-wrong {
+  background: var(--danger-wash);
+  color: var(--danger);
+  border-color: var(--danger);
+}
+
+.quiz-help {
+  margin-top: var(--sp-4);
+}
+
+.quiz-ask {
+  font-size: .9rem;
+  color: var(--fg-muted);
+}
+
+.quiz-help .quiet-link,
+.quiz-actions .quiet-link,
+.summary-actions .quiet-link {
+  background: none;
+  border: 0;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.quiz-hint {
+  margin-top: var(--sp-2);
+  padding: var(--sp-3) var(--sp-4);
+  border-radius: var(--r-md);
+  background: var(--bg-sunk);
+  text-align: start;
+}
+
+.quiz-result {
+  display: grid;
+  gap: var(--sp-1);
+  margin-top: var(--sp-4);
+  padding: var(--sp-4);
+  border-radius: var(--r-lg);
+  text-align: start;
+}
+
+.quiz-result strong {
+  font-size: 1.15rem;
+}
+
+.quiz-result.is-right {
+  background: var(--success-wash);
+  color: var(--fg);
+}
+
+.quiz-result.is-right strong {
+  color: var(--success);
+}
+
+.quiz-result.is-wrong {
+  background: var(--primary-wash);
+  color: var(--fg);
+}
+
+.quiz-result.is-wrong strong {
+  color: var(--primary-deep);
+}
+
+.quiz-levelup {
+  margin-top: var(--sp-2);
+  font-weight: 700;
+  color: var(--primary-deep);
+}
+
+.quiz-actions {
+  display: grid;
+  justify-items: center;
+  gap: var(--sp-2);
+  margin-top: var(--sp-5);
+}
+
+/* ═══ 回合結算 ═══════════════════════════════════════════════ */
+
+.summary {
+  padding-top: var(--sp-4);
+}
+
+.summary-heading {
+  font-size: 1.6rem;
+  line-height: 1.35;
+  font-weight: 700;
+  text-align: center;
+  text-wrap: balance;
+}
+
+.score-card {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--sp-3);
+  margin-top: var(--sp-4);
+}
+
+.score-card p {
+  display: grid;
+  justify-items: center;
+  padding: var(--sp-4) var(--sp-2);
+  background: var(--card);
+  border-radius: var(--r-lg);
+  box-shadow: var(--sh-md);
+}
+
+.score-label {
+  font-size: .85rem;
+  color: var(--fg-muted);
+}
+
+.score-card strong {
+  font-size: 1.7rem;
+  color: var(--primary-deep);
+  font-variant-numeric: tabular-nums;
+}
+
+.infinity-note {
+  margin-top: var(--sp-4);
+  padding: var(--sp-4);
+  border-radius: var(--r-lg);
+  background: var(--primary-wash);
+  line-height: 1.6;
+}
+
+.infinity-note strong {
+  color: var(--primary-deep);
+}
+
+.unlock-list {
+  display: grid;
+  gap: var(--sp-2);
+  margin-top: var(--sp-4);
+}
+
+.unlock-list li {
+  display: grid;
+  gap: 2px;
+  padding: var(--sp-3) var(--sp-4);
+  border-radius: var(--r-md);
+  background: var(--success-wash);
+  border-left: 5px solid var(--success);
+}
+
+.unlock-list strong {
+  color: var(--success);
+}
+
+.next-goal {
+  margin-top: var(--sp-3);
+  text-align: center;
+  font-size: .9rem;
+  color: var(--fg-muted);
+}
+
+.summary-actions {
+  display: grid;
+  justify-items: center;
+  gap: var(--sp-2);
+  margin-top: var(--sp-5);
+}
+
+.summary-actions .btn,
+.quiz-actions .btn {
+  width: 100%;
+}
+
+/* ═══ 游標裝置：顯示鍵盤數字、hover ══════════════════════════ */
+
+@media (hover: hover) and (pointer: fine) {
+  .hole-key {
+    display: block;
+  }
+
+  .hud-pause:hover,
+  .swab-tool:hover,
+  .quiz-opt:not(:disabled):hover {
+    background: var(--primary-wash);
+    border-color: var(--primary-deep);
+  }
+}
+
+@media (min-width: 40rem) {
+
+  .summary-actions .btn,
+  .quiz-actions .btn {
+    width: auto;
+  }
+}
+
+/* ═══ 減少動態：角色直接出現／消失；分數文字留著、不飄 ═══════ */
+
+@media (prefers-reduced-motion: reduce) {
+
+  .pop-score,
+  .hole.is-hurt .mole,
+  .hole.is-nope .mole-art {
+    animation: none;
+  }
+}

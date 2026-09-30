@@ -35,7 +35,7 @@ Protected pages guard in `<head>` with `Anxin.requireProfile()` → `location.re
 - Top bar: 「‹ 回主頁」 + a persistent 「開始打針」 pill (spec: reachable from any subsection).
   Not shown on `/shot/` itself.
 - **No needle or syringe imagery anywhere.** These screens sit in front of anxious children; the CTA uses
-  a neutral arrow.
+  a neutral arrow. *Exception: the 打地鼠 game, by spec — see `07-games.md` (medical play, no tip ever shown).*
 - 重新填寫 is destructive (wipes profile + code), so it confirms in a `<dialog>` with **autofocus on
   取消** — an accidental Enter must not wipe data.
 
