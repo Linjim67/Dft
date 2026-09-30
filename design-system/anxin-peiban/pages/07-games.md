@@ -88,6 +88,24 @@ characters stay at Lv0 forever. Simulated over six rounds (realistic reaction ti
 **Adopted: `STAY_BASE_S = 6`** (product owner, after the simulation). 9 adds almost nothing.
 The 350ms floor now only touches age 17+ (6/18 = 333ms).
 
+## Staged introduction — 病毒 & 酒精棉片 from round 3
+
+Rounds 1–2 use only 止血帶 and 針筒 (`CHARACTERS[].from`), and the swab tray is hidden and
+inert (tap and the `S` key are ignored). The **酒精棉片 character** waits too, read literally from
+「病毒和酒精棉片」 — the swab arrives as both a character and the tool that beats the virus.
+
+Entering round 3 opens a `<dialog>` **before the clock starts**: a looping 3.2s animation in a
+fixed 240×200 stage — a fingertip presses the swab in the tray, drags it up 102px (tool centre
+158 → virus centre 56, checked arithmetically), scrubs, and the virus spins away with 「+200」 —
+plus three numbered steps for parents. 「我知道了，開始！」 or Esc starts the round.
+**Shown every run** at round 3, since that is where the mechanic arrives each time.
+Reduced motion shows a deliberate still (swab resting on the virus) rather than the global rule's
+end frame, where the virus has already vanished.
+
+Soak after this change: teens' hit rate fell from ~63% to 40–45%. Their normal-character window
+(429ms at 14) sits right at reaction time, and the long-staying viruses that used to lift it are
+absent for two rounds. Still playable and still levelling; it reads as "harder for teens".
+
 ## Combo bar + helper hammer
 
 Consecutive catches fill the bar; **a character escaping resets it** (tapping an empty hole does
@@ -149,3 +167,53 @@ four characters have friendly faces. Outside the game, the rule still stands.
 - `localStorage` blocked → an in-memory fallback, so the game still plays.
 - A finger tap fires `pointerdown` *and* `click`; hits are taken from `pointerdown`, and `click` is
   handled only when keyboard-generated (`detail === 0`), so nothing double-counts.
+
+---
+
+# (S) 畫圓圈 — `/games/draw-circle/`
+
+| File | Role |
+|---|---|
+| `circle.js` | `window.CircleScore` — **pure** scoring, no DOM; every tunable in `CONFIG` |
+| `draw-circle.js` | Canvas, turn-taking, views, record |
+
+## Scoring algorithm
+
+1. **Resample** the stroke to 64 points evenly spaced *along the path*. Without this, slow-drawn
+   stretches carry extra points and bias both the fit and the error.
+2. **Fit the best circle** by least squares (Kåsa algebraic fit, solved after centring on the
+   centroid for numerical stability) → centre + radius.
+3. **Roundness** = `1 − RMS(|p − c| − r) / r ÷ 0.22`, clamped 0–1.
+4. **Completeness** = degrees swept around the centre ÷ 360, capped at 1. **This is what rejects a
+   straight line**: a line fits a huge circle with tiny relative error, but sweeps almost no angle.
+5. **Score = 100 × roundness × completeness²** (squared so an open "C" is clearly penalised).
+
+Not scored, with a friendly retry that doesn't use up an attempt: fewer than 8 points (`short`),
+drawing under 60px (`small`), or less than half a turn (`open`).
+
+Calibration on synthetic shapes:
+
+| shape | score | shape | score |
+|---|---|---|---|
+| perfect circle | 100 ★★★ | octagon | 88 ★★★ |
+| careful hand (0.8% RMS) | 97 ★★★ | ellipse 1.3 : 1 | 58 ★ |
+| decent hand (2.4%) | 89 ★★★ | square | 49 |
+| wobbly (6.9%) | 69 ★ | C-shape (270°) | 56 ★ |
+| spiral, 2 turns | 23 | ellipse 2 : 1 / triangle | 0 |
+
+Stars: ≥ 88 ★★★ 超級圓！ · ≥ 72 ★★ 好圓喔！ · ≥ 55 ★ 有圓的樣子了 · below 再試一次看看.
+Tested invariant to position, size, direction, starting point and drawing speed.
+
+After each try the fitted circle is drawn **dashed** over the child's stroke — they can see where
+it bulged, rather than only receiving a number.
+
+## Play
+
+- **自己玩** or **和爸爸媽媽比賽** (one phone, turns alternate child → parent, with a
+  「把手機交給…」 prompt). Three tries each; the best counts. The multi-phone (M) version waits
+  on the QR pairing.
+- Only one finger is tracked; a second touch is ignored. `pointercancel` (a call, a system
+  gesture) discards the stroke. `getCoalescedEvents` keeps fast strokes smooth.
+- The record is the child's own best only, keyed to the profile code.
+- Freehand drawing is the activity itself — the "essential" exception to WCAG 2.5.7 — so there is
+  no keyboard alternative; scores are still announced as text.

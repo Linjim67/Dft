@@ -287,6 +287,223 @@
   font-size: .9rem;
 }
 
+/* ═══ 第 3 回合：病毒登場教學（拖曳動畫）═══════════════════════
+   幾何固定在 240×200px，拖曳距離才能精準對到病毒：
+   工具中心 y = 200 − 10 − 32 = 158；病毒中心 y = 20 + 36 = 56 → 往上 102px */
+
+.vir {
+  text-align: center;
+}
+
+.vir-kicker {
+  display: inline-block;
+  padding: 2px var(--sp-3);
+  border-radius: var(--r-pill);
+  background: var(--primary-wash);
+  color: var(--primary-deep);
+  font-size: .82rem;
+  font-weight: 700;
+}
+
+.vir .dlg-title {
+  margin-top: var(--sp-2);
+}
+
+.vir-stage {
+  position: relative;
+  display: block;
+  width: 240px;
+  height: 200px;
+  margin: var(--sp-4) auto var(--sp-3);
+  border-radius: var(--r-lg);
+  background: linear-gradient(180deg, var(--sand-1), var(--sand-2));
+  overflow: hidden;
+}
+
+.vir-hole {
+  position: absolute;
+  top: 14px;
+  left: 50%;
+  width: 104px;
+  height: 104px;
+  margin-left: -52px;
+}
+
+.vir-pit {
+  position: absolute;
+  left: 8px;
+  right: 8px;
+  bottom: 14px;
+  height: 28px;
+  border-radius: 50%;
+  background: radial-gradient(ellipse at 50% 35%, var(--pit), var(--pit-deep) 75%);
+}
+
+.vir-virus {
+  position: absolute;
+  left: 16px;
+  bottom: 26px;
+  width: 72px;
+  height: 72px;
+  animation: vir-virus 3.2s ease-in-out infinite;
+}
+
+.vir-lip {
+  position: absolute;
+  left: 2px;
+  right: 2px;
+  bottom: 4px;
+  height: 22px;
+  border-radius: 0 0 50% 50% / 0 0 100% 100%;
+  background: linear-gradient(180deg, var(--earth-lip), var(--earth-lip-dark));
+}
+
+.vir-sparkle {
+  position: absolute;
+  top: 26px;
+  left: 50%;
+  width: 60px;
+  height: 60px;
+  margin-left: -30px;
+  opacity: 0;
+  animation: vir-sparkle 3.2s ease-out infinite;
+}
+
+.vir-sparkle svg {
+  width: 100%;
+  height: 100%;
+  fill: none;
+  stroke: #F59E0B;
+  stroke-width: 2;
+  stroke-linecap: round;
+}
+
+.vir-points {
+  position: absolute;
+  top: 18px;
+  left: 50%;
+  transform: translateX(-50%);
+  font-weight: 700;
+  color: var(--primary-deep);
+  text-shadow: 0 0 3px #fff, 0 0 3px #fff;
+  opacity: 0;
+  animation: vir-points 3.2s ease-out infinite;
+}
+
+.vir-tray,
+.vir-drag {
+  position: absolute;
+  bottom: 10px;
+  left: 50%;
+  width: 64px;
+  height: 64px;
+  margin-left: -32px;
+}
+
+.vir-tray {
+  display: grid;
+  place-items: center;
+  border-radius: var(--r-md);
+  border: 2px dashed var(--line);
+  background: rgba(255, 255, 255, .6);
+}
+
+.vir-tray svg {
+  width: 44px;
+  height: 44px;
+  opacity: .35;
+}
+
+.vir-drag {
+  display: grid;
+  place-items: center;
+  animation: vir-drag 3.2s ease-in-out infinite;
+}
+
+.vir-swab {
+  width: 50px;
+  height: 50px;
+  filter: drop-shadow(0 4px 5px rgba(124, 45, 18, .3));
+}
+
+/* 指尖：半透明圓點加白框，看得出「手指壓著」 */
+.vir-finger {
+  position: absolute;
+  right: 2px;
+  bottom: 0;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  background: rgba(28, 25, 23, .28);
+  box-shadow: 0 0 0 2px rgba(255, 255, 255, .9);
+}
+
+@keyframes vir-drag {
+  0% { opacity: 0; transform: translate(0, 0); }
+  8% { opacity: 1; transform: translate(0, 0); }
+  16% { opacity: 1; transform: translate(0, 0) scale(.9); }
+  44% { transform: translate(0, -102px) scale(.9); }
+  51% { transform: translate(-14px, -102px) scale(.9); }
+  58% { transform: translate(14px, -102px) scale(.9); }
+  65% { transform: translate(-10px, -102px) scale(.9); }
+  72% { opacity: 1; transform: translate(0, -102px) scale(.9); }
+  84% { opacity: 0; transform: translate(0, -102px); }
+  100% { opacity: 0; transform: translate(0, 0); }
+}
+
+@keyframes vir-virus {
+  0%, 62% { opacity: 1; transform: scale(1) rotate(0); }
+  74% { opacity: 0; transform: scale(.2) rotate(50deg); }
+  92% { opacity: 0; transform: scale(.2); }
+  100% { opacity: 1; transform: scale(1); }
+}
+
+@keyframes vir-sparkle {
+  0%, 64% { opacity: 0; transform: scale(.4); }
+  74% { opacity: 1; transform: scale(1); }
+  88%, 100% { opacity: 0; transform: scale(1.3); }
+}
+
+@keyframes vir-points {
+  0%, 68% { opacity: 0; transform: translate(-50%, 0); }
+  76% { opacity: 1; }
+  92%, 100% { opacity: 0; transform: translate(-50%, -22px); }
+}
+
+.vir-steps {
+  display: grid;
+  gap: var(--sp-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  text-align: start;
+}
+
+.vir-steps li {
+  display: grid;
+  grid-template-columns: 26px 1fr;
+  align-items: center;
+  gap: var(--sp-2);
+  font-weight: 700;
+}
+
+.vir-steps span {
+  display: grid;
+  place-items: center;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  background: var(--primary-wash);
+  color: var(--primary-deep);
+  font-size: .85rem;
+}
+
+.vir .dlg-body {
+  margin-top: var(--sp-3);
+  text-align: start;
+  font-size: .9rem;
+}
+
 /* ═══ 遊戲中：HUD ════════════════════════════════════════════ */
 
 .play {
@@ -1091,5 +1308,18 @@
   .hole.is-nope .mole-art,
   .combo.is-helper .combo-hammer {
     animation: none;
+  }
+
+  /* 教學動畫改成一張靜態示意：棉片停在病毒上（不是停在最後一格——那時病毒已經消失了） */
+  .vir-drag,
+  .vir-virus,
+  .vir-sparkle,
+  .vir-points {
+    animation: none;
+  }
+
+  .vir-drag {
+    opacity: 1;
+    transform: translate(0, -102px) scale(.9);
   }
 }

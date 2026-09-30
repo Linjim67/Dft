@@ -149,15 +149,15 @@
       <ul class="howto">
         <li>
           <span class="howto-art" aria-hidden="true">
-            <svg><use href="#ch-tourniquet" /></svg><svg><use href="#ch-swab" /></svg><svg><use href="#ch-syringe" /></svg>
+            <svg><use href="#ch-tourniquet" /></svg><svg><use href="#ch-syringe" /></svg>
           </span>
           <span>看到它們就<strong>點一下</strong>，每個 100 分</span>
         </li>
         <li>
           <span class="howto-art" aria-hidden="true">
-            <svg><use href="#ch-virus" /></svg><svg><use href="#tool-swab" /></svg>
+            <svg><use href="#ch-swab" /></svg><svg><use href="#ch-virus" /></svg>
           </span>
-          <span><strong>病毒</strong>要把下面的酒精棉片<strong>拖過去擦掉</strong>，200 分</span>
+          <span><strong>第 3 回合</strong>起，酒精棉片和<strong>病毒</strong>登場！病毒要用酒精棉片<strong>擦掉</strong>，200 分</span>
         </li>
         <li>
           <span class="howto-art" aria-hidden="true">
@@ -273,6 +273,41 @@
       <button class="btn btn-primary" type="button" id="tutNext" autofocus>下一步</button>
     </div>
     <p class="center"><button class="quiet-link" type="button" id="tutSkip">略過教學</button></p>
+  </dialog>
+
+  <!-- 第 3 回合開始前：病毒與酒精棉片登場，用動畫示範拖曳 -->
+  <dialog class="dlg vir" id="virusDlg" aria-labelledby="virTitle" aria-describedby="virBody">
+    <p class="vir-kicker">第 3 回合・新角色登場</p>
+    <h2 class="dlg-title" id="virTitle">病毒來了！用酒精棉片擦掉它</h2>
+
+    <div class="vir-stage" aria-hidden="true">
+      <span class="vir-hole">
+        <span class="vir-pit"></span>
+        <svg class="vir-virus"><use href="#ch-virus" /></svg>
+        <span class="vir-lip"></span>
+      </span>
+      <span class="vir-sparkle">
+        <svg viewBox="0 0 24 24"><path d="M12 2v5M12 17v5M2 12h5M17 12h5M4.9 4.9l3.5 3.5M15.6 15.6l3.5 3.5M4.9 19.1l3.5-3.5M15.6 8.4l3.5-3.5" /></svg>
+      </span>
+      <span class="vir-points">+200</span>
+      <span class="vir-tray"><svg><use href="#tool-swab" /></svg></span>
+      <span class="vir-drag">
+        <svg class="vir-swab"><use href="#tool-swab" /></svg>
+        <span class="vir-finger"></span>
+      </span>
+    </div>
+
+    <ol class="vir-steps">
+      <li><span>1</span>按住下面的酒精棉片</li>
+      <li><span>2</span>拖到病毒身上</li>
+      <li><span>3</span>擦一擦，病毒就不見了！</li>
+    </ol>
+    <p class="dlg-body" id="virBody">
+      也可以先點一下棉片、再點病毒。酒精棉片自己跑出來的時候，一樣點一下就好。
+    </p>
+    <div class="dlg-actions">
+      <button class="btn btn-primary" type="button" id="virGo" autofocus>我知道了，開始！</button>
+    </div>
   </dialog>
 
   <dialog class="dlg" id="pauseDlg" aria-labelledby="pauseTitle">

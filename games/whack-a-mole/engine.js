@@ -7,11 +7,12 @@
   'use strict';
 
   var CHARACTERS = [
-    { id: 'tourniquet', name: '止血帶', points: 100 },
-    { id: 'swab', name: '酒精棉片', points: 100 },
-    { id: 'syringe', name: '針筒', points: 100 },
+    /* from：第幾回合開始出現。病毒與酒精棉片第 3 回合才登場（開場會先播放教學動畫） */
+    { id: 'tourniquet', name: '止血帶', points: 100, from: 1 },
+    { id: 'swab', name: '酒精棉片', points: 100, from: 3 },
+    { id: 'syringe', name: '針筒', points: 100, from: 1 },
     /* 病毒要用酒精棉片擦掉，不能直接點 */
-    { id: 'virus', name: '病毒', points: 200, wipe: true }
+    { id: 'virus', name: '病毒', points: 200, wipe: true, from: 3 }
   ];
 
   var CONFIG = {
@@ -75,6 +76,7 @@
     },
 
     WIPE_COOLDOWN_MS: 250,  /* 同一隻病毒連續擦拭的最短間隔 */
+    TOOLS_FROM_ROUND: 3,    /* 酒精棉片工具列跟著病毒一起出現 */
 
     /* 連擊：連續抓到 N 個（有角色逃走就歸零）→ 槌子幫手自動打 3 秒。
        N 依年齡：小小孩一回合看到的角色少很多，固定門檻對他們遙不可及。
@@ -132,17 +134,23 @@
       (1 + CONFIG.UPGRADE_WEIGHT_BONUS * level);
   }
 
-  function pickCharacter(progress, rng) {
-    var ws = CHARACTERS.map(function (c) {
+  /* 這一回合已經登場的角色 */
+  function availableAt(round) {
+    return CHARACTERS.filter(function (c) { return (c.from || 1) <= round; });
+  }
+
+  function pickCharacter(progress, rng, round) {
+    var pool = availableAt(round || Infinity);
+    var ws = pool.map(function (c) {
       return weightOf(progress.clicks[c.id] || 0, progress.level[c.id] || 0);
     });
     var total = ws.reduce(function (a, b) { return a + b; }, 0);
     var r = rng() * total;
     for (var i = 0; i < ws.length; i++) {
       r -= ws[i];
-      if (r < 0) return CHARACTERS[i].id;
+      if (r < 0) return pool[i].id;
     }
-    return CHARACTERS[CHARACTERS.length - 1].id;
+    return pool[pool.length - 1].id;
   }
 
   function pickVariant(level, rng) {
@@ -358,6 +366,7 @@
     tierOf: tierOf,
     weightOf: weightOf,
     pickCharacter: pickCharacter,
+    availableAt: availableAt,
     pickVariant: pickVariant,
     eligible: eligible,
     upMs: upMs,

@@ -179,7 +179,7 @@
     var free = S.holes.filter(function (h) { return h.open && !h.mole && S.clock >= h.freeAt; });
     if (!free.length) return;
     var h = free[Math.floor(Math.random() * free.length)];
-    var char = E.pickCharacter(progress, Math.random);
+    var char = E.pickCharacter(progress, Math.random, S.round);
     raise(h, char, E.pickVariant(progress.level[char], Math.random));
   }
 
@@ -337,6 +337,10 @@
 
   var swab = $('swabTool');
   var ghost = $('dragGhost');
+  var tray = document.querySelector('.tray');
+
+  /* 病毒還沒登場的回合，棉片工具列不出現、也不能拿起 */
+  function toolsOn() { return S.round >= C.TOOLS_FROM_ROUND; }
 
   function setArmed(on) {
     S.armed = !!on;
@@ -364,7 +368,7 @@
   }
 
   swab.addEventListener('pointerdown', function (ev) {
-    if (!S.running) return;
+    if (!S.running || !toolsOn()) return;
     ev.preventDefault();
     try { swab.setPointerCapture(ev.pointerId); } catch (e) { /* 忽略 */ }
     S.drag = { id: ev.pointerId, x0: ev.clientX, y0: ev.clientY, moved: false };
@@ -398,7 +402,7 @@
   swab.addEventListener('pointerup', finishDrag);
   swab.addEventListener('pointercancel', finishDrag);
   swab.addEventListener('click', function (ev) {
-    if (ev.detail === 0 && S.running) setArmed(!S.armed);
+    if (ev.detail === 0 && S.running && toolsOn()) setArmed(!S.armed);
   });
 
   /* ─────────────────────────────────────────────────────────────
@@ -410,7 +414,7 @@
     if (ev.key >= '1' && ev.key <= '6') {
       ev.preventDefault();
       tapHole(Number(ev.key) - 1);
-    } else if (ev.key === 's' || ev.key === 'S') {
+    } else if ((ev.key === 's' || ev.key === 'S') && toolsOn()) {
       ev.preventDefault();
       setArmed(!S.armed);
     } else if (ev.key === 'Escape') {
@@ -508,7 +512,17 @@
     $('hudRound').textContent = roundLabel(S.round);
     $('hudScore').textContent = fmt(S.runScore);
     renderTime(C.ROUND_MS / 1000);
+    tray.hidden = !toolsOn();
     show('play', $('pauseBtn'));
+    /* 第 3 回合：病毒和酒精棉片登場。先示範怎麼拖曳，按下「開始」才計時 */
+    if (S.round === C.TOOLS_FROM_ROUND) {
+      virusDlg.open();
+      return;
+    }
+    beginRound();
+  }
+
+  function beginRound() {
     Anxin.announce(live, roundLabel(S.round) + '開始');
     resume();
   }
@@ -530,6 +544,16 @@
   /* ─────────────────────────────────────────────────────────────
      暫停
      ───────────────────────────────────────────────────────────── */
+
+  var virusDlgEl = $('virusDlg');
+  var virusDlg = Anxin.wireDialog(virusDlgEl);
+
+  $('virGo').addEventListener('click', function () { virusDlgEl.close(); });
+
+  /* 不論按按鈕或 Esc 關掉，都開始這一回合 */
+  virusDlgEl.addEventListener('close', function () {
+    if (S.view === 'play' && !S.running && S.round === C.TOOLS_FROM_ROUND && S.clock === 0) beginRound();
+  });
 
   var pauseDlgEl = $('pauseDlg');
   var pauseDlg = Anxin.wireDialog(pauseDlgEl);
@@ -580,7 +604,9 @@
       var canGo = ready && !locked && !!bank;
       var status = !next ? '已經滿級！'
         : (locked ? '下一回合結束後可以再挑戰'
-          : (ready ? (bank ? '可以挑戰小知識！' : '題目載入中…') : '再收集 ' + (next - clicks) + ' 個就能挑戰'));
+          : (ready ? (bank ? '可以挑戰小知識！' : '題目載入中…')
+            : (clicks === 0 && (c.from || 1) > 1 ? '第 ' + c.from + ' 回合登場'
+              : '再收集 ' + (next - clicks) + ' 個就能挑戰')));
       var action = canGo
         ? '<button type="button" class="btn-challenge" data-char="' + c.id + '">挑戰小知識</button>'
         : '';
@@ -780,14 +806,14 @@
 
   var TUTORIAL = [
     {
-      art: ['ch-tourniquet', 'ch-swab', 'ch-syringe'],
+      art: ['ch-tourniquet', 'ch-syringe'],
       title: '歡迎來玩打地鼠！',
-      body: '止血帶、酒精棉片、針筒跑出來的時候，點一下，把它們敲回洞裡。每一個 100 分！'
+      body: '止血帶和針筒跑出來的時候，點一下，把它們敲回洞裡。每一個 100 分！'
     },
     {
-      art: ['ch-virus', 'tool-swab'],
-      title: '病毒要用酒精棉片擦掉',
-      body: '把下面的酒精棉片拖到病毒身上擦一擦。也可以先點一下棉片，再點病毒。病毒 200 分！'
+      art: ['ch-swab', 'ch-virus'],
+      title: '第 3 回合：新角色登場',
+      body: '從第 3 回合開始，酒精棉片和病毒也會跑出來。病毒要用酒精棉片擦掉——到時候會再示範一次給你看！'
     },
     {
       art: ['icon-star'],
@@ -861,6 +887,7 @@
     state: S,
     progress: function () { return progress; },
     raise: function (i, char, variant) { raise(S.holes[i], char, variant || 'normal'); },
-    setBank: function (b) { bank = b; }
+    setBank: function (b) { bank = b; },
+    jumpToRound: function (n) { halt(); S.round = n; startRound(); }
   };
 })();
