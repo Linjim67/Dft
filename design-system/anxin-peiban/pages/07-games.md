@@ -88,6 +88,70 @@ characters stay at Lv0 forever. Simulated over six rounds (realistic reaction ti
 **Adopted: `STAY_BASE_S = 6`** (product owner, after the simulation). 9 adds almost nothing.
 The 350ms floor now only touches age 17+ (6/18 = 333ms).
 
+## Visual design — verified in a real browser
+
+Earlier rounds were built blind. This pass used headless Chromium screenshots at 375×667 and at
+iPhone SE Safari's real visible height (375×548), which exposed problems code review never would:
+characters ~63px with ~170px of empty space below, the 「開始打針」 pill as the loudest element
+mid-game, 「開始遊戲」 / 「下一回合」 ~1,700px down the page, landscape showing only one row of holes,
+and every 0 rendering as 「Ø」.
+
+**Holes, redrawn from references.** Two openly licensed arcade photos on Wikimedia Commons — a
+Taiwanese 打地鼠 machine (CC BY-SA 3.0) and Cedar Point's Whac-A-Mole (CC BY 2.0) — plus Playable's
+hit-a-mole guide (hole artwork specified at 250×50, a flat 5:1 ellipse). Takeaways, drawn as our own SVG:
+- a **flat opening** (3.6:1) with a lighter back wall and a darker depth, instead of a deep dark pit;
+- a **lumpy raised dirt mound** around it, echoing the Taiwanese machine's dirt splash;
+- the mound's **front lip drawn over the character** (`hole-back` → character → `hole-front`), so it
+  genuinely emerges;
+- **grass tufts**, for the arcade's outdoor cheerfulness — but the field itself stays warm, because a
+  green lawn would swallow the green virus.
+Locked holes are boarded over with two planks. Geometry: viewBox 100×48 at the hole's bottom; the
+opening's centre line sits 24% up, which is where the character clip ends.
+
+**Layout.** The board fills whatever space remains (`board-wrap` is a size container; each cell is the
+smaller of what fits by width and by height). Portrait → **2 × 3** (holes ~150px, characters ~110px,
+up from ~85 / ~63px); wide/landscape → 3 × 2 with the tray in a side column. Play view is a 100dvh
+flex column and the page cannot scroll.
+- **Top bar hidden during play** (`body.is-playing`): a child mashing the top of the screen could
+  navigate out mid-round. 小遊戲選單 and 開始打針 move into the pause dialog — one tap deeper, never
+  unreachable.
+- **Sticky bottom CTA** (`.cta-bar`) for 開始遊戲 and 下一回合 — visible on the first screen.
+- **Rounded numerals** (`--font-num`: ui-rounded / SF Rounded → Noto Sans) for the whole game page.
+  Atkinson Hyperlegible's slashed zero read as 「Ø」 to children.
+- The redundant 「可以挑戰小知識！」 line is dropped when the 挑戰 button is shown.
+
+## Rewards
+
+- **Streak multiplier** — consecutive catches with no escape: ×1.5 from 5, ×2 from 10; hammer hits ×2.
+  Shown as a 「×1.5」 chip on the combo row and a centre callout 「5 連擊！×1.5」 (taps pass through it).
+  Points round to tens (150, 200, 300).
+- **Round medal** by catch rate (caught ÷ appeared): gold ≥ 80% +500, silver ≥ 60% +300,
+  bronze ≥ 40% +100; no medal under 3 appearances. The bonus counts toward rewards.
+- **Sticker book** (8, kept per child): 第一次敲到 · 病毒清潔員 · 槌子幫手 · 10 連擊 · 鐵甲剋星 ·
+  小博士 · 金牌選手 · 六回合完成. Earned = solid ring + 「已獲得」; unearned = greyed, dashed, with
+  how-to-earn text. New ones are listed on the round summary.
+
+## Difficulty — tuned by simulation
+
+Simulated child: per-age see-and-tap time with σ = 25% variance, **one finger** (a move/re-aim delay
+between taps, so busy rounds cost misses), and 1 tap in 4 missed outright (≈ 75% ceiling).
+
+Finding: with the 350ms floor, **14- and 18-year-olds scored 0% in rounds 1–2** — 6/14 = 429ms is
+shorter than their ~430ms reaction — and could not catch anything until 「停留更久」 unlocked.
+
+Changes: `MIN_UP_MS` 350 → **550** (affects only age ≥ 11); **warm-up** stay ×1.3 in round 1,
+×1.15 in round 2, so the first impression is success. Result, hit rate per round:
+
+| age | R1 | R2 | R3 | R4 | R5 | R6 |
+|---|---|---|---|---|---|---|
+| 3 | 86% | 75% | 100% | 60% | 58% | 62% |
+| 7 | 76% | 68% | 72% | 64% | 72% | 73% |
+| 10 | 69% | 74% | 73% | 76% | 60% | 61% |
+| 14 | 74% | 69% | 66% | 66% | 58% | 62% |
+| 18 | 68% | 67% | 65% | 59% | 64% | 57% |
+
+Every age in 57–86% with a gentle ramp; no cliffs. (Age 3's round 3 is a small sample.)
+
 ## Staged introduction — 病毒 & 酒精棉片 from round 3
 
 Rounds 1–2 use only 止血帶 and 針筒 (`CHARACTERS[].from`), and the swab tray is hidden and

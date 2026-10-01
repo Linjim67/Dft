@@ -3,12 +3,20 @@
    ═══════════════════════════════════════════════════════════════ */
 
 .wam-page {
+  /* 數字用圓體：iOS 走 SF Rounded；Android 走 Noto Sans。
+     Atkinson Hyperlegible 的 0 有斜線，「分數 0」會被看成「分數 Ø」。 */
+  --font-num: ui-rounded, "SF Pro Rounded", "Arial Rounded MT Bold", "PingFang TC", "Noto Sans TC", system-ui, sans-serif;
   --earth-lip: #E9BD8C;
   --earth-lip-dark: #C98B55;
   --pit: #4A2410;
   --pit-deep: #2E1406;
   --sand-1: #FFF1E0;
   --sand-2: #FCE1BF;
+}
+
+/* 遊戲頁全面用圓體：拉丁字與數字比較可愛，0 也不會帶斜線；中文照樣走系統 CJK */
+.wam-page {
+  font-family: var(--font-num);
 }
 
 .sprite {
@@ -58,14 +66,50 @@
 }
 
 .wam-best {
+  font-family: var(--font-num);
   margin-top: var(--sp-4);
   text-align: center;
   font-weight: 700;
   color: var(--fg-muted);
 }
 
-.wam-start {
-  margin-top: var(--sp-5);
+/* 主要按鈕固定在畫面底部：內容再長，「開始」都看得到 */
+.cta-bar {
+  position: sticky;
+  bottom: 0;
+  z-index: 5;
+  display: grid;
+  justify-items: center;
+  gap: var(--sp-1);
+  margin: var(--sp-5) calc(var(--sp-5) * -1) 0;
+  padding: var(--sp-4) var(--sp-5) calc(var(--sp-3) + env(safe-area-inset-bottom));
+  background: linear-gradient(180deg, rgba(255, 247, 237, 0), var(--bg) 34%);
+}
+
+.cta-bar .btn {
+  width: 100%;
+  min-width: 0;
+  margin: 0;
+}
+
+.cta-bar .quiet-link {
+  background: none;
+  border: 0;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.dlg-links {
+  display: flex;
+  justify-content: center;
+  gap: var(--sp-4);
+  margin-top: var(--sp-3);
+}
+
+.dlg-links .quiet-link {
+  font-size: .92rem;
+  text-decoration: underline;
+  text-underline-offset: 3px;
 }
 
 /* ═══ 收藏 ═══════════════════════════════════════════════════ */
@@ -131,6 +175,7 @@
 }
 
 .coll-count {
+  font-family: var(--font-num);
   grid-area: count;
   margin-top: var(--sp-2);
   font-size: .82rem;
@@ -506,10 +551,33 @@
 
 /* ═══ 遊戲中：HUD ════════════════════════════════════════════ */
 
+/* 遊戲中：頂列收起來、整個畫面給遊戲，不會捲動 */
+body.is-playing {
+  padding-bottom: 0;
+  overflow: hidden;
+}
+
+body.is-playing .topbar {
+  display: none;
+}
+
 .play {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  height: 100dvh;
+  padding-block: calc(var(--sp-2) + env(safe-area-inset-top)) calc(var(--sp-3) + env(safe-area-inset-bottom));
   -webkit-user-select: none;
   user-select: none;
   -webkit-touch-callout: none;
+}
+
+.play-main {
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-3);
 }
 
 .hud {
@@ -517,10 +585,11 @@
   grid-template-columns: 1fr auto 1fr auto;
   align-items: center;
   gap: var(--sp-2);
-  margin-block: var(--sp-2) var(--sp-3);
+  margin-block: 0 var(--sp-2);
 }
 
 .hud-round {
+  font-family: var(--font-num);
   font-size: .88rem;
   font-weight: 700;
   color: var(--fg-muted);
@@ -528,6 +597,7 @@
 }
 
 .hud-time {
+  font-family: var(--font-num);
   display: flex;
   align-items: baseline;
   gap: 2px;
@@ -553,6 +623,7 @@
 }
 
 .hud-score {
+  font-family: var(--font-num);
   display: grid;
   justify-items: end;
   line-height: 1.2;
@@ -576,8 +647,7 @@
 /* ═══ 連擊條 ═════════════════════════════════════════════════ */
 
 .combo {
-  display: grid;
-  grid-template-columns: auto 1fr auto auto;
+  display: flex;
   align-items: center;
   gap: var(--sp-2);
   margin-bottom: var(--sp-3);
@@ -591,6 +661,8 @@
 }
 
 .combo-bar {
+  flex: 1 1 auto;
+  min-width: 0;
   display: block;
   height: 12px;
   border-radius: var(--r-pill);
@@ -609,11 +681,22 @@
 }
 
 .combo-count {
+  font-family: var(--font-num);
   min-width: 3.2em;
   font-size: .9rem;
   font-weight: 700;
   text-align: end;
   font-variant-numeric: tabular-nums;
+}
+
+/* 連續抓到一定數量：分數加成（文字「×1.5」，不只靠顏色） */
+.combo-mult {
+  padding: 1px var(--sp-2);
+  border-radius: var(--r-pill);
+  background: var(--primary-deep);
+  color: #fff;
+  font: 700 .8rem/1.5 var(--font-num);
+  white-space: nowrap;
 }
 
 .combo-hammer {
@@ -644,50 +727,95 @@
   }
 }
 
-/* ═══ 棋盤 ═══════════════════════════════════════════════════ */
+/* ═══ 棋盤：洞的大小依剩餘空間決定 ═══════════════════════════
+   board-wrap 是 size container；格子取「寬能放下」和「高能放下」的較小值。
+   直向畫面 2 欄 × 3 列（洞比 3 欄大很多），橫向 3 欄 × 2 列。 */
+
+.board-wrap {
+  position: relative;
+  flex: 1 1 auto;
+  min-height: 0;
+  container: board / size;
+}
 
 .board {
+  --cols: 3;
+  --rows: 2;
+  --gap: var(--sp-2);
+  --pad: var(--sp-3);
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: var(--sp-2) var(--sp-3);
-  padding: var(--sp-3) var(--sp-3) var(--sp-2);
+  grid-template-columns: repeat(var(--cols), minmax(0, 1fr));
+  gap: var(--gap);
+  height: 100%;
+  padding: var(--pad);
   border-radius: var(--r-xl);
-  background: linear-gradient(180deg, var(--sand-1), var(--sand-2));
+  background: linear-gradient(180deg, #FFF4DD, #FCE3BE);
   box-shadow: var(--sh-md);
   touch-action: manipulation;
+  align-content: center;
+}
+
+@supports (width: 1cqw) {
+  .board {
+    --cell: min(calc((100cqw - 2 * var(--pad) - (var(--cols) - 1) * var(--gap)) / var(--cols)),
+        calc((100cqh - 2 * var(--pad) - (var(--rows) - 1) * var(--gap)) / var(--rows)));
+    grid-template-columns: repeat(var(--cols), var(--cell));
+    grid-auto-rows: var(--cell);
+    justify-content: center;
+  }
+
+  @container board (max-aspect-ratio: 9 / 10) {
+    .board {
+      --cols: 2;
+      --rows: 3;
+    }
+  }
 }
 
 .hole {
   position: relative;
   display: block;
   width: 100%;
-  aspect-ratio: 1 / 1.08;
+  aspect-ratio: 1;
   padding: 0;
   margin: 0;
   border: 0;
+  border-radius: var(--r-lg);
   background: none;
   cursor: pointer;
   -webkit-tap-highlight-color: transparent;
   touch-action: manipulation;
 }
 
-.hole-pit {
+/* 洞的圖分兩層：back 在角色後面，front（前緣＋草）蓋在角色前面。
+   SVG viewBox 100×48 → 高度是洞寬的 48%；洞口中線在底部往上 24%。 */
+.hole-back,
+.hole-front,
+.hole-boards {
   position: absolute;
-  left: 7%;
-  right: 7%;
-  bottom: 9%;
-  height: 30%;
-  border-radius: 50%;
-  background: radial-gradient(ellipse at 50% 35%, var(--pit), var(--pit-deep) 75%);
+  left: 0;
+  bottom: 0;
+  width: 100%;
+  height: 48%;
+  pointer-events: none;
 }
 
-/* 角色從洞裡冒出來：裁切框的底部落在洞口中線 */
+.hole-boards {
+  z-index: 1;
+}
+
+.hole-front {
+  z-index: 2;
+}
+
+/* 裁切框：左右對齊洞口（12%–88%），底部在洞口中線 */
 .mole-clip {
   position: absolute;
-  left: 13%;
-  right: 13%;
+  left: 12%;
+  right: 12%;
   top: 0;
-  bottom: 23%;
+  bottom: 24%;
+  z-index: 1;
   overflow: hidden;
 }
 
@@ -700,7 +828,7 @@
 }
 
 .hole.is-up .mole {
-  transform: translateY(4%);
+  transform: translateY(6%);
 }
 
 /* 被打到：壓扁後縮回去（比冒出來快） */
@@ -716,41 +844,28 @@
   height: 100%;
 }
 
-/* 洞口前緣蓋住角色下半身，看起來像從洞裡探出頭 */
-.hole-lip {
-  position: absolute;
-  left: 3%;
-  right: 3%;
-  bottom: 2%;
-  height: 22%;
-  border-radius: 0 0 50% 50% / 0 0 100% 100%;
-  background: linear-gradient(180deg, var(--earth-lip), var(--earth-lip-dark));
-  box-shadow: 0 -2px 0 rgba(255, 255, 255, .35) inset;
-}
-
 .hole-key {
   display: none;
   position: absolute;
-  bottom: 4%;
-  inset-inline-end: 8%;
-  font-size: .72rem;
-  font-weight: 700;
-  color: #2E1406; /* 洞口前緣下半部較深，#5B3212 只有 3.83:1 */
+  bottom: 3%;
+  inset-inline-end: 6%;
+  z-index: 3;
+  padding: 0 5px;
+  border-radius: var(--r-pill);
+  /* 土堆前緣是漸層，最深處 #A5653A 上只有 3.71:1 → 墊一個淺色底 */
+  background: rgba(255, 247, 237, .9);
+  font: 700 .72rem/1.5 var(--font-num);
+  color: #2E1406;
 }
 
-/* 維修中的洞 */
+/* 維修中：木板封住洞口 + 三角錐 + 文字 */
 .hole.is-locked {
   cursor: default;
 }
 
-.hole.is-locked .hole-pit {
-  background: repeating-linear-gradient(-45deg, #FDBA74 0 8px, #FFF7ED 8px 16px);
-  opacity: .75;
-}
-
 .locked-sign {
   position: absolute;
-  inset: 12% 0 auto;
+  inset: 8% 0 auto;
   display: grid;
   justify-items: center;
   gap: 2px;
@@ -762,6 +877,37 @@
 .locked-sign svg {
   width: 30px;
   height: 30px;
+}
+
+/* 連擊里程碑、槌子幫手：大字從棋盤中間跳出來（不擋點擊） */
+.callout {
+  position: absolute;
+  left: 50%;
+  top: 44%;
+  z-index: 6;
+  margin: 0;
+  opacity: 0;
+  transform: translate(-50%, -50%) scale(.6);
+  pointer-events: none;
+  white-space: nowrap;
+  font: 700 1.9rem/1.2 var(--font-num);
+  color: var(--primary-deep);
+  text-shadow: 3px 3px 0 #fff, -3px -3px 0 #fff, 3px -3px 0 #fff, -3px 3px 0 #fff,
+    0 3px 0 #fff, 0 -3px 0 #fff, 0 8px 16px rgba(124, 45, 18, .35);
+}
+
+.callout.is-on {
+  opacity: 1;
+  transform: translate(-50%, -50%);
+  animation: callout 1000ms cubic-bezier(.2, .9, .3, 1.2) forwards;
+}
+
+@keyframes callout {
+  0% { opacity: 0; transform: translate(-50%, -50%) scale(.6); }
+  18% { opacity: 1; transform: translate(-50%, -50%) scale(1.08); }
+  30% { transform: translate(-50%, -50%) scale(1); }
+  78% { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+  100% { opacity: 0; transform: translate(-50%, -64%) scale(1); }
 }
 
 /* ═══ 鍍層：顏色 + 角標文字 + 血條，不單靠顏色 ═════════════ */
@@ -880,6 +1026,7 @@
 /* ═══ 打擊回饋 ═══════════════════════════════════════════════ */
 
 .pop-score {
+  font-family: var(--font-num);
   position: absolute;
   left: 50%;
   top: 18%;
@@ -940,11 +1087,15 @@
 /* ═══ 工具列：酒精棉片 ═══════════════════════════════════════ */
 
 .tray {
+  flex: 0 0 auto;
   display: grid;
   grid-template-columns: auto 1fr;
   align-items: center;
   gap: var(--sp-3);
-  margin-top: var(--sp-3);
+}
+
+.tray-hint-short {
+  display: none;
 }
 
 .swab-tool {
@@ -1121,8 +1272,7 @@
 }
 
 .quiz-help .quiet-link,
-.quiz-actions .quiet-link,
-.summary-actions .quiet-link {
+.quiz-actions .quiet-link {
   background: none;
   border: 0;
   text-decoration: underline;
@@ -1217,6 +1367,7 @@
 }
 
 .score-card strong {
+  font-family: var(--font-num);
   font-size: 1.7rem;
   color: var(--primary-deep);
   font-variant-numeric: tabular-nums;
@@ -1260,16 +1411,162 @@
   color: var(--fg-muted);
 }
 
-.summary-actions {
-  display: grid;
-  justify-items: center;
-  gap: var(--sp-2);
-  margin-top: var(--sp-5);
-}
-
-.summary-actions .btn,
 .quiz-actions .btn {
   width: 100%;
+}
+
+/* ═══ 回合獎牌 ═══════════════════════════════════════════════ */
+
+.medal {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: var(--sp-3);
+  margin-top: var(--sp-4);
+  padding: var(--sp-3) var(--sp-4);
+  border-radius: var(--r-lg);
+  background: var(--card);
+  box-shadow: var(--sh-md);
+}
+
+.medal-art {
+  width: 56px;
+  height: 56px;
+}
+
+.medal-gold .medal-art { color: #F59E0B; }
+.medal-silver .medal-art { color: #A8A29E; }
+.medal-bronze .medal-art { color: #C2763A; }
+
+.medal-gold { box-shadow: var(--sh-md), inset 0 0 0 2px #F59E0B; }
+
+.medal-name {
+  font-size: 1.25rem;
+  font-weight: 700;
+}
+
+.medal-rate {
+  font-family: var(--font-num);
+  font-size: .88rem;
+  color: var(--fg-muted);
+}
+
+.medal-bonus {
+  font: 700 1.1rem var(--font-num);
+  color: var(--success);
+  white-space: nowrap;
+}
+
+.streak-line {
+  margin-top: var(--sp-3);
+  text-align: center;
+  font-family: var(--font-num);
+  font-weight: 700;
+  color: var(--primary-deep);
+}
+
+/* ═══ 貼紙簿 ═════════════════════════════════════════════════ */
+
+.sticker-count {
+  font-family: var(--font-num);
+  font-size: .85rem;
+  color: var(--fg-muted);
+}
+
+.stickers {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: var(--sp-2);
+}
+
+.sticker {
+  display: grid;
+  justify-items: center;
+  gap: 2px;
+  padding: var(--sp-2) 2px;
+  text-align: center;
+}
+
+.sticker-art {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  background: var(--bg-sunk);
+  border: 2px dashed var(--line);
+}
+
+.sticker-art svg {
+  width: 36px;
+  height: 36px;
+  filter: grayscale(1);
+  opacity: .45;
+}
+
+.sticker-art b {
+  position: absolute;
+  font: 700 .75rem var(--font-num);
+  color: #fff;
+}
+
+/* 已獲得：彩色＋實線框＋「已獲得」文字（不只靠顏色） */
+.sticker.is-earned .sticker-art {
+  background: #fff;
+  border: 3px solid var(--primary-deep);
+  box-shadow: var(--sh-sm);
+}
+
+.sticker.is-earned .sticker-art svg {
+  filter: none;
+  opacity: 1;
+}
+
+.sticker-iron.sticker-art svg { filter: grayscale(1) brightness(.72) contrast(1.25); }
+.sticker.is-earned .sticker-iron svg { filter: grayscale(1) brightness(.72) contrast(1.25); }
+.sticker-streak10 svg { fill: #F59E0B; }
+.sticker-gold svg { color: #F59E0B; }
+
+.sticker-name {
+  font-size: .76rem;
+  font-weight: 700;
+  line-height: 1.3;
+}
+
+.sticker-hint {
+  font-size: .7rem;
+  line-height: 1.3;
+  color: var(--fg-muted);
+}
+
+.sticker.is-earned .sticker-hint {
+  color: var(--success);
+  font-weight: 700;
+}
+
+.new-stickers {
+  margin-top: var(--sp-4);
+  padding: var(--sp-3);
+  border-radius: var(--r-lg);
+  background: var(--success-wash);
+}
+
+.new-stickers .stickers {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.new-stickers .sticker {
+  width: 88px;
+}
+
+.new-stickers-title {
+  margin-bottom: var(--sp-2);
+  text-align: center;
+  font-weight: 700;
+  color: var(--success);
 }
 
 /* ═══ 游標裝置：顯示鍵盤數字、hover ══════════════════════════ */
@@ -1293,9 +1590,51 @@
 
 @media (min-width: 40rem) {
 
-  .summary-actions .btn,
+  .cta-bar .btn,
   .quiz-actions .btn {
     width: auto;
+    min-width: 16rem;
+  }
+}
+
+/* ═══ 橫向手機：狀態列 + 棋盤 + 側邊工具列，一畫面放得下 ════════ */
+
+@media (orientation: landscape) and (max-height: 540px) {
+  body.is-playing .wrap {
+    max-width: 64rem;
+  }
+
+  .hud {
+    margin-bottom: var(--sp-1);
+  }
+
+  .combo {
+    margin-bottom: var(--sp-2);
+  }
+
+  .play-main {
+    flex-direction: row;
+  }
+
+  .tray {
+    width: 96px;
+    grid-template-columns: 1fr;
+    justify-items: center;
+    align-content: center;
+    gap: var(--sp-2);
+  }
+
+  .tray-hint {
+    display: none;
+  }
+
+  .tray-hint-short {
+    display: block;
+    font-size: .8rem;
+    font-weight: 700;
+    line-height: 1.4;
+    text-align: center;
+    color: var(--fg-muted);
   }
 }
 
@@ -1306,7 +1645,8 @@
   .pop-score,
   .hole.is-hurt .mole,
   .hole.is-nope .mole-art,
-  .combo.is-helper .combo-hammer {
+  .combo.is-helper .combo-hammer,
+  .callout.is-on {
     animation: none;
   }
 

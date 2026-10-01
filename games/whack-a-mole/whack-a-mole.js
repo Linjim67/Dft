@@ -76,8 +76,15 @@
     quiz: null,
     unlocked: [],
     leaving: false,
-    combo: 0,          /* 連續抓到的數量；有角色逃走就歸零 */
-    helperUntil: 0     /* 槌子幫手在這個時間（遊戲時鐘）之前有效 */
+    combo: 0,          /* 槌子量表：連續抓到的數量；集滿或有角色逃走就歸零 */
+    helperUntil: 0,    /* 槌子幫手在這個時間（遊戲時鐘）之前有效 */
+    streak: 0,         /* 連擊：自己連續抓到、沒有角色逃走（決定分數倍率） */
+    roundBestStreak: 0,
+    appeared: 0,       /* 這一回合出現幾個（算獎牌用） */
+    caught: 0,
+    medal: null,
+    medalBonus: 0,
+    newStickers: []
   };
 
   var comboGoal = E.comboTarget(p.age);
@@ -87,6 +94,7 @@
   function show(name, focusEl) {
     Object.keys(views).forEach(function (k) { views[k].hidden = k !== name; });
     S.view = name;
+    document.body.classList.toggle('is-playing', name === 'play');
     window.scrollTo(0, 0);
     if (focusEl) focusEl.focus();
   }
@@ -98,18 +106,19 @@
   var board = $('board');
 
   var HOLE_HTML =
-    '<span class="hole-pit" aria-hidden="true"></span>' +
+    '<svg class="hole-back" aria-hidden="true"><use href="#hole-back"></use></svg>' +
     '<span class="mole-clip" aria-hidden="true"><span class="mole">' +
     '<span class="hp"><span class="hp-fill"></span></span>' +
     '<span class="coat-badge"></span>' +
     '<svg class="mole-art"><use href="#ch-swab"></use></svg>' +
     '</span></span>' +
-    '<span class="hole-lip" aria-hidden="true"></span>' +
+    '<svg class="hole-front" aria-hidden="true"><use href="#hole-front"></use></svg>' +
     '<span class="helper-hammer" aria-hidden="true"><svg><use href="#icon-hammer"></use></svg></span>';
 
   var LOCKED_HTML =
-    '<span class="hole-pit" aria-hidden="true"></span>' +
-    '<span class="hole-lip" aria-hidden="true"></span>' +
+    '<svg class="hole-back" aria-hidden="true"><use href="#hole-back"></use></svg>' +
+    '<svg class="hole-boards" aria-hidden="true"><use href="#hole-boards"></use></svg>' +
+    '<svg class="hole-front" aria-hidden="true"><use href="#hole-front"></use></svg>' +
     '<span class="locked-sign"><svg aria-hidden="true"><use href="#icon-cone"></use></svg>維修中</span>';
 
   function buildBoard() {
@@ -148,10 +157,11 @@
 
   function raise(h, char, variant) {
     var hp = E.maxHp(variant);
+    S.appeared++;
     h.mole = {
       char: char, variant: variant, hp: hp, maxHp: hp,
       upAt: S.clock,
-      downAt: S.clock + E.upMs(char, variant, progress.level[char], p.age, S.stay),
+      downAt: S.clock + E.upMs(char, variant, progress.level[char], p.age, S.stay, S.round),
       lastWipe: -Infinity
     };
     setArt(h.use, char);
@@ -204,7 +214,21 @@
 
   function knockOut(h, byHelper) {
     var m = h.mole;
-    var pts = E.pointsFor(m.char, m.variant);
+    if (!byHelper) {
+      S.streak++;
+      S.roundBestStreak = Math.max(S.roundBestStreak, S.streak);
+      if (S.streak === 10) award('streak10');
+      E.CONFIG.STREAK_TIERS.forEach(function (t) {
+        if (S.streak === t.at) callout(t.at + ' 連擊！×' + t.mult);
+      });
+    }
+    var mult = E.catchMult(S.streak, helperOn());
+    /* 取到十位數，分數比較好看（150、200、300…） */
+    var pts = Math.round(E.pointsFor(m.char, m.variant) * mult / 10) * 10;
+    S.caught++;
+    award('first');
+    if (m.char === 'virus') award('virus');
+    if (m.variant === 'iron') award('iron');
     S.runScore += pts;
     S.roundScore += pts;
     progress.totalPoints += pts;
@@ -216,8 +240,8 @@
     if (!byHelper && !helperOn()) {
       S.combo++;
       if (S.combo >= comboGoal) startHelper();
-      renderCombo();
     }
+    renderCombo();
   }
 
   function damage(h, amount) {
@@ -256,9 +280,29 @@
   var comboCount = $('comboCount');
   var comboLabel = $('comboLabel');
 
+  var comboMult = $('comboMult');
+  var calloutEl = $('callout');
+  var calloutTimer = null;
+
   function helperOn() { return S.clock < S.helperUntil; }
 
+  /* 大字從棋盤中間跳出來：連擊里程碑、槌子幫手 */
+  function callout(text) {
+    calloutEl.textContent = text;
+    retrigger(calloutEl, 'is-on');
+    window.clearTimeout(calloutTimer);
+    calloutTimer = window.setTimeout(function () { calloutEl.classList.remove('is-on'); }, 1000);
+    Anxin.announce(live, text);
+  }
+
+  function renderMult() {
+    var m = E.catchMult(S.streak, helperOn());
+    comboMult.hidden = m <= 1;
+    comboMult.textContent = '×' + m;
+  }
+
   function renderCombo() {
+    renderMult();
     if (helperOn()) {
       var left = Math.max(0, S.helperUntil - S.clock);
       comboFill.style.width = (100 * left / C.HELPER_MS).toFixed(1) + '%';
@@ -280,7 +324,8 @@
     S.combo = 0;
     setHelperLook(true);
     renderCombo();
-    Anxin.announce(live, '連擊滿了！槌子幫手來幫忙 3 秒');
+    award('helper');
+    callout('槌子幫手來了！');
   }
 
   function stopHelper() {
@@ -289,9 +334,10 @@
     renderCombo();
   }
 
+  /* 有角色逃走：連擊歸零、倍率消失；幫手期間槌子量表不受影響 */
   function breakCombo() {
-    if (helperOn() || !S.combo) return;
-    S.combo = 0;
+    S.streak = 0;
+    if (!helperOn()) S.combo = 0;
     renderCombo();
   }
 
@@ -303,6 +349,10 @@
       retrigger(h.el, 'is-smashed');
       knockOut(h, true);
     });
+  }
+
+  function award(id) {
+    if (E.earnSticker(progress, id)) S.newStickers.push(id);
   }
 
   function tapHole(i) {
@@ -506,6 +556,11 @@
     S.roundStartTotal = progress.totalPoints;
     S.shownSec = null;
     S.combo = 0;
+    S.streak = 0;
+    S.roundBestStreak = 0;
+    S.appeared = 0;
+    S.caught = 0;
+    S.newStickers = [];
     buildBoard();
     stopHelper();
     setArmed(false);
@@ -534,6 +589,19 @@
     setArmed(false);
     progress.bestScore = Math.max(progress.bestScore, S.runScore);
     progress.bestRound = Math.max(progress.bestRound, S.round);
+    /* 回合獎牌：抓到 ÷ 出現；獎勵分數也算進總分（可能因此解鎖新獎勵） */
+    S.medal = E.medalFor(S.caught, S.appeared);
+    S.medalBonus = S.medal ? S.medal.bonus : 0;
+    if (S.medalBonus) {
+      S.runScore += S.medalBonus;
+      S.roundScore += S.medalBonus;
+      progress.totalPoints += S.medalBonus;
+    }
+    if (S.medal && S.medal.id === 'gold') award('gold');
+    if (S.round === C.ROUNDS) award('round6');
+    progress.bestStreak = Math.max(progress.bestStreak || 0, S.roundBestStreak);
+    progress.bestScore = Math.max(progress.bestScore, S.runScore);
+
     S.unlocked = E.newlyUnlocked(S.roundStartTotal, progress.totalPoints);
     progress.roundsPlayed += 1;
     save();
@@ -616,10 +684,37 @@
         '<span class="coll-stars" role="img" aria-label="等級 ' + lv + ' / ' + C.MAX_LEVEL + '">' + stars + '</span>' +
         '<span class="coll-count">收集 ' + clicks + ' 個</span>' +
         '<span class="coll-bar" aria-hidden="true"><span style="width:' + pct + '%"></span></span>' +
-        '<span class="coll-status">' + status + '</span>' +
+        (canGo ? '' : '<span class="coll-status">' + status + '</span>') +
         action +
         '</li>';
     }).join('');
+  }
+
+  /* ─────────────────────────────────────────────────────────────
+     貼紙簿
+     ───────────────────────────────────────────────────────────── */
+
+  function stickerHtml(st, earned) {
+    return '<li class="sticker' + (earned ? ' is-earned' : '') + '">' +
+      '<span class="sticker-art sticker-' + st.id + '" aria-hidden="true"><svg><use href="#' + st.art + '"></use></svg>' +
+      (st.id === 'streak10' ? '<b>10</b>' : '') + '</span>' +
+      '<span class="sticker-name">' + esc(st.name) + '</span>' +
+      '<span class="sticker-hint">' + (earned ? '已獲得' : esc(st.hint)) + '</span></li>';
+  }
+
+  function renderStickerBook() {
+    var got = progress.stickers || {};
+    var n = E.STICKERS.filter(function (st) { return got[st.id]; }).length;
+    $('stickerCount').textContent = n + ' / ' + E.STICKERS.length;
+    $('stickerBook').innerHTML = E.STICKERS.map(function (st) { return stickerHtml(st, !!got[st.id]); }).join('');
+  }
+
+  function renderNewStickers() {
+    var list = S.newStickers.map(function (id) {
+      return E.STICKERS.filter(function (st) { return st.id === id; })[0];
+    }).filter(Boolean);
+    $('newStickerList').innerHTML = list.map(function (st) { return stickerHtml(st, true); }).join('');
+    $('newStickers').hidden = !list.length;
   }
 
   /* ─────────────────────────────────────────────────────────────
@@ -704,6 +799,7 @@
     var r = $('quizResult');
     var name = esc(E.BY_ID[charId].name);
     E.recordAnswer(progress, charId, q.id, ok);
+    if (ok) award('quiz');
     if (ok) {
       var lv = progress.level[charId];
       r.className = 'quiz-result is-right';
@@ -752,6 +848,21 @@
       : (r === C.ROUNDS ? '六個回合都完成了！' : '無限模式・第 ' + r + ' 回合完成！');
     $('roundScore').textContent = fmt(S.roundScore);
     $('runScore').textContent = fmt(S.runScore);
+
+    var mc = $('medalCard');
+    if (S.medal) {
+      mc.className = 'medal medal-' + S.medal.id;
+      $('medalName').textContent = S.medal.name;
+      $('medalRate').textContent = '抓到 ' + S.caught + ' / ' + S.appeared + ' 個';
+      $('medalBonus').textContent = '+' + fmt(S.medalBonus) + ' 分';
+      mc.hidden = false;
+    } else {
+      mc.hidden = true;
+    }
+    var sl = $('streakLine');
+    sl.textContent = '這回合最高連擊 ' + S.roundBestStreak + (S.roundBestStreak >= 5 ? '，好厲害！' : '');
+    sl.hidden = S.roundBestStreak < 2;
+    renderNewStickers();
     $('infinityNote').hidden = r !== C.ROUNDS;
 
     var ul = $('unlockList');
@@ -790,6 +901,7 @@
     save();
     renderCollection($('collection'));
     renderChallengeHint($('introChallenge'));
+    renderStickerBook();
     var best = $('bestLine');
     if (progress.bestScore > 0) {
       best.textContent = '最高分 ' + fmt(progress.bestScore) + ' 分・最遠到' + roundLabel(progress.bestRound).replace(' / ' + C.ROUNDS, '');

@@ -101,6 +101,46 @@
       <path d="M80 12v10M75 17h10M18 80v8M14 84h8" stroke="#38BDF8" stroke-width="2.5" stroke-linecap="round" />
     </symbol>
 
+    <!-- ══ 洞：參考台灣打地鼠機台與街機——扁平洞口＋凸起的土堆＋草 ══
+         back 在角色後面；front（前緣）蓋在角色前面，角色才像從洞裡探出頭 -->
+    <defs>
+      <linearGradient id="g-mound" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0" stop-color="#E2AE78" /><stop offset=".55" stop-color="#C98B55" /><stop offset="1" stop-color="#A9693A" />
+      </linearGradient>
+      <linearGradient id="g-lip" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0" stop-color="#D9A06A" /><stop offset="1" stop-color="#A5653A" />
+      </linearGradient>
+      <clipPath id="c-open"><ellipse cx="50" cy="24" rx="38" ry="10.5" /></clipPath>
+    </defs>
+    <symbol id="hole-back" viewBox="0 0 100 48">
+      <path d="M99.0 26.0 L99.7 27.9 L98.4 29.6 L96.8 31.4 L95.4 33.0 L93.2 34.6 L90.2 35.9 L87.5 37.2 L86.2 39.0 L85.3 41.1 L82.7 42.7 L78.3 43.3 L73.5 43.4 L69.5 43.8 L66.0 44.8 L62.3 45.6 L58.3 46.1 L54.2 46.6 L50.0 47.2 L45.6 47.4 L41.5 46.5 L38.1 45.0 L34.6 44.1 L30.3 44.1 L25.5 44.1 L21.4 43.5 L18.4 42.1 L15.7 40.6 L13.0 39.2 L10.9 37.7 L9.8 35.9 L8.6 34.3 L5.6 32.9 L1.8 31.5 L-0.2 29.8 L0.8 27.8 L3.0 26.0 L4.1 24.3 L3.9 22.5 L4.1 20.7 L5.1 19.0 L6.2 17.3 L7.0 15.4 L8.8 13.7 L12.7 12.6 L17.4 12.1 L21.0 11.3 L23.3 9.7 L25.5 7.9 L28.9 6.7 L33.2 6.3 L37.5 6.0 L41.6 5.7 L45.8 5.7 L50.0 6.2 L54.0 6.5 L58.2 6.1 L62.9 5.4 L67.4 5.6 L70.9 6.9 L73.5 8.6 L76.4 9.9 L80.1 10.7 L83.6 11.6 L86.6 12.9 L89.6 14.2 L93.0 15.4 L95.6 16.9 L95.8 18.9 L94.6 20.9 L94.4 22.7 L96.5 24.3Z" fill="url(#g-mound)" stroke="#8A5530" stroke-width="1.2" stroke-linejoin="round" />
+      <ellipse cx="30" cy="12.5" rx="5" ry="1.8" fill="#EEC394" opacity=".8" />
+      <ellipse cx="66" cy="11" rx="6" ry="2" fill="#EEC394" opacity=".8" />
+      <circle cx="18" cy="17" r="1.3" fill="#8A5530" opacity=".6" />
+      <circle cx="82" cy="16" r="1.1" fill="#8A5530" opacity=".6" />
+      <ellipse cx="50" cy="24" rx="38" ry="10.5" fill="#6B3618" />
+      <g clip-path="url(#c-open)"><ellipse cx="50" cy="27.2" rx="37" ry="9.0" fill="#24100A" /></g>
+      <ellipse cx="50" cy="24" rx="38" ry="10.5" fill="none" stroke="#5A2D12" stroke-width="1.4" />
+    </symbol>
+    <symbol id="hole-front" viewBox="0 0 100 48">
+      <path d="M12.0 24.0 L12.1 24.9 L12.6 25.8 L13.3 26.7 L14.3 27.6 L15.6 28.4 L17.1 29.2 L18.9 30.0 L20.9 30.7 L23.1 31.4 L25.6 32.0 L28.2 32.6 L31.0 33.1 L33.9 33.5 L37.0 33.9 L40.2 34.1 L43.4 34.3 L46.7 34.5 L50.0 34.5 L53.3 34.5 L56.6 34.3 L59.8 34.1 L63.0 33.9 L66.1 33.5 L69.0 33.1 L71.8 32.6 L74.4 32.0 L76.9 31.4 L79.1 30.7 L81.1 30.0 L82.9 29.3 L84.4 28.4 L85.7 27.6 L86.7 26.7 L87.4 25.8 L87.9 24.9 L88.0 24.0 L99.0 26.0 L99.7 27.9 L98.4 29.6 L96.8 31.4 L95.4 33.0 L93.2 34.6 L90.2 35.9 L87.5 37.2 L86.2 39.0 L85.3 41.1 L82.7 42.7 L78.3 43.3 L73.5 43.4 L69.5 43.8 L66.0 44.8 L62.3 45.6 L58.3 46.1 L54.2 46.6 L50.0 47.2 L45.6 47.4 L41.5 46.5 L38.1 45.0 L34.6 44.1 L30.3 44.1 L25.5 44.1 L21.4 43.5 L18.4 42.1 L15.7 40.6 L13.0 39.2 L10.9 37.7 L9.8 35.9 L8.6 34.3 L5.6 32.9 L1.8 31.5 L-0.2 29.8 L0.8 27.8 L3.0 26.0Z" fill="url(#g-lip)" stroke="#8A5530" stroke-width="1.2" stroke-linejoin="round" />
+      <path d="M14 25.2Q50 39.0 86 25.2" fill="none" stroke="#EEC394" stroke-width="1.6" stroke-linecap="round" opacity=".9" />
+      <circle cx="34" cy="40" r="1.4" fill="#8A5530" opacity=".55" />
+      <circle cx="63" cy="42" r="1.1" fill="#8A5530" opacity=".55" />
+      <g stroke="#16A34A" stroke-width="2.2" stroke-linecap="round" fill="none">
+        <path d="M7 41q-1-6-4-9M9.5 41q0-7 2.5-11M12 41q1-5 4-7" />
+        <path d="M88 42q-1-6-4-8.5M90.5 42q0-7 2.5-10.5M93 42q1-5 3.5-6.5" />
+      </g>
+    </symbol>
+    <!-- 維修中：木板封住洞口 -->
+    <symbol id="hole-boards" viewBox="0 0 100 48">
+      <g stroke="#92400E" stroke-width="1.4" stroke-linejoin="round">
+        <rect x="14" y="16" width="72" height="8" rx="2.5" fill="#E7B477" transform="rotate(-7 50 20)" />
+        <rect x="14" y="25" width="72" height="8" rx="2.5" fill="#D9A066" transform="rotate(6 50 29)" />
+      </g>
+      <g fill="#92400E"><circle cx="20" cy="20.5" r="1.2" /><circle cx="80" cy="13" r="1.2" /><circle cx="20" cy="25.5" r="1.2" /><circle cx="80" cy="33" r="1.2" /></g>
+    </symbol>
+
     <symbol id="icon-cone" viewBox="0 0 24 24">
       <path d="M9 4h6l4 15H5Z" fill="#FB923C" stroke="#C2410C" stroke-width="1.5" stroke-linejoin="round" />
       <path d="M8.2 9h7.6M7 14h10" stroke="#fff" stroke-width="2" />
@@ -119,6 +159,22 @@
     <symbol id="icon-pause" viewBox="0 0 24 24">
       <rect x="6" y="5" width="4" height="14" rx="1.5" fill="#57534E" />
       <rect x="14" y="5" width="4" height="14" rx="1.5" fill="#57534E" />
+    </symbol>
+
+    <!-- 貼紙與獎牌用的圖 -->
+    <symbol id="icon-bulb" viewBox="0 0 24 24">
+      <path d="M12 3a6 6 0 0 0-3.6 10.8c.7.6 1.1 1.4 1.1 2.2h5c0-.8.4-1.6 1.1-2.2A6 6 0 0 0 12 3Z" fill="#FDE68A" stroke="#B45309" stroke-width="1.5" stroke-linejoin="round" />
+      <path d="M9.6 18.5h4.8M10.4 21h3.2" stroke="#B45309" stroke-width="1.5" stroke-linecap="round" />
+      <path d="M10 9.5a2.2 2.2 0 0 1 2-1.5" stroke="#fff" stroke-width="1.5" stroke-linecap="round" fill="none" />
+    </symbol>
+    <symbol id="icon-medal" viewBox="0 0 24 24">
+      <path d="M7 2h4l2 6H9ZM17 2h-4l-2 6h4Z" fill="#60A5FA" stroke="#1D4ED8" stroke-width="1.2" stroke-linejoin="round" />
+      <circle cx="12" cy="15" r="6.5" fill="currentColor" stroke="rgba(0,0,0,.35)" stroke-width="1.2" />
+      <path d="m12 11.6 1 2.1 2.3.3-1.7 1.6.4 2.3-2-1.1-2 1.1.4-2.3-1.7-1.6 2.3-.3Z" fill="#fff" opacity=".9" />
+    </symbol>
+    <symbol id="icon-flag" viewBox="0 0 24 24">
+      <path d="M6 21V3.5" stroke="#57534E" stroke-width="1.8" stroke-linecap="round" />
+      <path d="M6 4h11l-2.5 3.5L17 11H6Z" fill="#F97316" stroke="#C2410C" stroke-width="1.3" stroke-linejoin="round" />
     </symbol>
 
     <symbol id="icon-star" viewBox="0 0 24 24">
@@ -171,10 +227,16 @@
       <p class="challenge-hint" id="introChallenge" hidden></p>
       <ul class="collection" id="collection"></ul>
 
+      <h2 class="section-title">我的貼紙 <span class="sticker-count" id="stickerCount"></span></h2>
+      <ul class="stickers" id="stickerBook"></ul>
+
       <p class="wam-best" id="bestLine" hidden></p>
 
-      <button class="btn btn-primary wam-start" type="button" id="startBtn">開始遊戲</button>
-      <p class="center"><button class="quiet-link how-link" type="button" id="howBtn">怎麼玩？</button></p>
+      <!-- 主要按鈕固定在畫面底部：不用捲三個畫面才找得到「開始」 -->
+      <div class="cta-bar">
+        <button class="btn btn-primary" type="button" id="startBtn">開始遊戲</button>
+        <button class="quiet-link how-link" type="button" id="howBtn">怎麼玩？</button>
+      </div>
     </section>
 
     <!-- ══════════ 遊戲中 ══════════ -->
@@ -193,18 +255,26 @@
         <span class="combo-label" id="comboLabel">連擊</span>
         <span class="combo-bar" aria-hidden="true"><span class="combo-fill" id="comboFill"></span></span>
         <span class="combo-count" id="comboCount">0 / 6</span>
+        <span class="combo-mult" id="comboMult" hidden>×1.5</span>
         <svg class="combo-hammer" aria-hidden="true"><use href="#icon-hammer" /></svg>
       </div>
 
-      <div class="board" id="board"></div>
+      <div class="play-main">
+        <!-- board-wrap 是 container：洞的大小依剩餘空間決定（直向 2×3、橫向 3×2） -->
+        <div class="board-wrap">
+          <div class="board" id="board"></div>
+          <p class="callout" id="callout" aria-hidden="true"></p>
+        </div>
 
-      <div class="tray">
+        <div class="tray">
         <!-- 拖曳，或點一下再點病毒（單指操作的替代方式） -->
         <button class="swab-tool" type="button" id="swabTool" aria-pressed="false"
           aria-label="酒精棉片：拖到病毒上擦掉它，或點一下再點病毒">
           <svg aria-hidden="true"><use href="#tool-swab" /></svg>
         </button>
         <p class="tray-hint" id="trayHint">病毒要用<strong>酒精棉片</strong>擦掉：拖過去，或點一下棉片再點病毒</p>
+          <p class="tray-hint-short" aria-hidden="true">拖到病毒上</p>
+        </div>
       </div>
     </section>
 
@@ -236,6 +306,16 @@
     <section id="summaryView" class="summary" hidden aria-labelledby="summaryTitle">
       <h1 class="summary-heading" id="summaryTitle" tabindex="-1">第 1 回合完成！</h1>
 
+      <!-- 回合獎牌：依「抓到 ÷ 出現」頒發，文字＋圖，不只靠金銀銅的顏色 -->
+      <div class="medal" id="medalCard" hidden>
+        <svg class="medal-art" id="medalArt" aria-hidden="true"><use href="#icon-medal" /></svg>
+        <div class="medal-text">
+          <p class="medal-name" id="medalName">金牌</p>
+          <p class="medal-rate" id="medalRate"></p>
+        </div>
+        <p class="medal-bonus" id="medalBonus"></p>
+      </div>
+
       <div class="score-card">
         <p><span class="score-label">這一回合</span><strong id="roundScore">0</strong></p>
         <p><span class="score-label">目前總分</span><strong id="runScore">0</strong></p>
@@ -245,6 +325,13 @@
         六個回合都挑戰完了！接下來是<strong>無限模式</strong>：回合會一直繼續，看看你能撐到第幾回合。
       </p>
 
+      <p class="streak-line" id="streakLine" hidden></p>
+
+      <div class="new-stickers" id="newStickers" hidden>
+        <p class="new-stickers-title">拿到新貼紙！</p>
+        <ul class="stickers" id="newStickerList"></ul>
+      </div>
+
       <ul class="unlock-list" id="unlockList" hidden></ul>
 
       <h2 class="section-title">我的收藏</h2>
@@ -252,7 +339,7 @@
       <ul class="collection" id="summaryCollection"></ul>
       <p class="next-goal" id="nextGoal"></p>
 
-      <div class="summary-actions">
+      <div class="cta-bar">
         <button class="btn btn-primary" type="button" id="nextRoundBtn">下一回合</button>
         <button class="quiet-link" type="button" id="endBtn">先玩到這裡</button>
       </div>
@@ -317,6 +404,11 @@
       <button class="btn btn-primary" type="button" data-close autofocus>繼續玩</button>
       <button class="btn btn-quiet" type="button" id="restartBtn">回到開始畫面</button>
     </div>
+    <!-- 遊戲中頂列收起來（小朋友亂點不會跑出遊戲），離開的路放在暫停裡 -->
+    <p class="dlg-links">
+      <a class="quiet-link" href="/games/solo/">小遊戲選單</a>
+      <a class="quiet-link" href="/shot/">開始打針</a>
+    </p>
   </dialog>
 
   <div class="drag-ghost" id="dragGhost" hidden aria-hidden="true"><svg><use href="#tool-swab" /></svg></div>

@@ -37,9 +37,12 @@
     STAY_BASE_S: 6,
     STAY_MIN_AGE: 1,
     VIRUS_STAY_FACTOR: 2,
-    /* 下限：公式在 10 歲以上會低於人的反應時間（18 歲只有 167ms），
-       那不是「難」，是根本點不到。設成 0 就完全照公式。 */
-    MIN_UP_MS: 350,
+    /* 下限：6/age 在 11 歲以上會短於「看到→點下去」的時間。
+       模擬顯示 350ms 時 14、18 歲在第 1–2 回合命中率是 0%（一隻都點不到），
+       要等到「停留更久」解鎖才有得玩；550ms 讓他們回到 65–78%，年紀小的完全不受影響。 */
+    MIN_UP_MS: 550,
+    /* 暖身：前兩回合停留久一點，讓小朋友一開始就有成功的感覺 */
+    WARMUP_STAY: [1.3, 1.15],
 
     /* 收藏：點擊次數達到門檻 → 可以挑戰小知識；答對才真的升級 */
     TIERS: [10, 50, 100],
@@ -83,8 +86,32 @@
        槌子不打病毒——病毒還是要用酒精棉片擦。 */
     COMBO_TARGET: { little: 4, kid: 6, junior: 8, teen: 10 },
     HELPER_MS: 3000,
-    HELPER_DELAY_MS: 180    /* 角色冒出來後等一下下再打，小朋友才看得到它被敲 */
+    HELPER_DELAY_MS: 180,   /* 角色冒出來後等一下下再打，小朋友才看得到它被敲 */
+    HELPER_MULT: 2,         /* 槌子幫手期間分數 ×2 */
+
+    /* 連續抓到（沒有角色逃走）→ 分數加成；有角色逃走就歸零 */
+    STREAK_TIERS: [{ at: 5, mult: 1.5 }, { at: 10, mult: 2 }],
+
+    /* 回合獎牌：這一回合「抓到 ÷ 出現」的比例；出現太少（<3）不頒獎 */
+    MEDALS: [
+      { id: 'gold', name: '金牌', min: 0.8, bonus: 500 },
+      { id: 'silver', name: '銀牌', min: 0.6, bonus: 300 },
+      { id: 'bronze', name: '銅牌', min: 0.4, bonus: 100 }
+    ],
+    MEDAL_MIN_APPEARED: 3
   };
+
+  /* 貼紙簿：拿到就一直留著（跟著暫時代碼） */
+  var STICKERS = [
+    { id: 'first', name: '第一次敲到', hint: '敲到任何一個角色', art: 'ch-tourniquet' },
+    { id: 'virus', name: '病毒清潔員', hint: '用酒精棉片擦掉病毒', art: 'ch-virus' },
+    { id: 'helper', name: '槌子幫手', hint: '集滿連擊條', art: 'icon-hammer' },
+    { id: 'streak10', name: '10 連擊', hint: '連續抓到 10 個都沒漏掉', art: 'icon-star' },
+    { id: 'iron', name: '鐵甲剋星', hint: '打倒鐵甲角色', art: 'ch-syringe' },
+    { id: 'quiz', name: '小博士', hint: '答對一題小知識', art: 'icon-bulb' },
+    { id: 'gold', name: '金牌選手', hint: '一回合拿到金牌', art: 'icon-medal' },
+    { id: 'round6', name: '六回合完成', hint: '玩完 6 個回合', art: 'icon-flag' }
+  ];
 
   var BY_ID = {};
   CHARACTERS.forEach(function (c) { BY_ID[c.id] = c; });
@@ -177,13 +204,14 @@
      單次出現的參數
      ───────────────────────────────────────────────────────────── */
 
-  /* 3 / age × (1 + level) ÷ 鍍層除數；病毒 ×2；再乘分數獎勵「停留更久」 */
-  function upMs(charId, variant, level, age, stayFactor) {
+  /* 6 / age × (1 + level) ÷ 鍍層除數；病毒 ×2；再乘分數獎勵「停留更久」與前兩回合的暖身 */
+  function upMs(charId, variant, level, age, stayFactor, round) {
     var a = Math.max(Number(age) || 0, CONFIG.STAY_MIN_AGE);
     var ms = 1000 * CONFIG.STAY_BASE_S / a * (1 + clamp(level || 0, 0, CONFIG.MAX_LEVEL)) /
       CONFIG.VARIANTS[variant].div;
     if (BY_ID[charId].wipe) ms *= CONFIG.VIRUS_STAY_FACTOR;
     ms *= stayFactor || 1;
+    ms *= CONFIG.WARMUP_STAY[(round || 99) - 1] || 1;
     return Math.round(Math.max(CONFIG.MIN_UP_MS, ms));
   }
 
@@ -249,6 +277,34 @@
     if (age < 9) return 'kid';
     if (age < 13) return 'junior';
     return 'teen';
+  }
+
+  function streakMult(streak) {
+    var m = 1;
+    CONFIG.STREAK_TIERS.forEach(function (t) { if (streak >= t.at) m = t.mult; });
+    return m;
+  }
+
+  /* 這次抓到的倍率：幫手期間 ×2，否則看連擊 */
+  function catchMult(streak, helperOn) {
+    return helperOn ? Math.max(CONFIG.HELPER_MULT, streakMult(streak)) : streakMult(streak);
+  }
+
+  function medalFor(caught, appeared) {
+    if (appeared < CONFIG.MEDAL_MIN_APPEARED) return null;
+    var rate = caught / appeared;
+    for (var i = 0; i < CONFIG.MEDALS.length; i++) {
+      if (rate >= CONFIG.MEDALS[i].min) return CONFIG.MEDALS[i];
+    }
+    return null;
+  }
+
+  /* 第一次拿到才回傳 true（介面用來顯示「新貼紙！」） */
+  function earnSticker(progress, id) {
+    if (!progress.stickers) progress.stickers = {};
+    if (progress.stickers[id]) return false;
+    progress.stickers[id] = Date.now();
+    return true;
   }
 
   function comboTarget(age) {
@@ -320,7 +376,7 @@
   function newProgress(code) {
     return {
       v: 2, code: code, clicks: zeroMap(), level: zeroMap(),
-      pending: {}, roundsPlayed: 0, tutorialSeen: false,
+      pending: {}, roundsPlayed: 0, tutorialSeen: false, stickers: {}, bestStreak: 0,
       totalPoints: 0, bestScore: 0, bestRound: 0
     };
   }
@@ -341,6 +397,8 @@
       if (!p.pending || typeof p.pending !== 'object') p.pending = {};
       p.roundsPlayed = Math.max(0, Number(p.roundsPlayed) || 0);
       p.tutorialSeen = !!p.tutorialSeen;
+      if (!p.stickers || typeof p.stickers !== 'object') p.stickers = {};
+      p.bestStreak = Math.max(0, Number(p.bestStreak) || 0);
       CHARACTERS.forEach(function (c) {
         p.clicks[c.id] = Math.max(0, Number(p.clicks[c.id]) || 0);
         p.level[c.id] = clamp(Number(p.level[c.id]) || 0, 0, CONFIG.MAX_LEVEL);
@@ -380,6 +438,11 @@
     questionById: questionById,
     ageFactor: ageFactor,
     comboTarget: comboTarget,
+    STICKERS: STICKERS,
+    streakMult: streakMult,
+    catchMult: catchMult,
+    medalFor: medalFor,
+    earnSticker: earnSticker,
     isLocked: isLocked,
     canChallenge: canChallenge,
     challengeFor: challengeFor,
