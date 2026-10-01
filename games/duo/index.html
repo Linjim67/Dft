@@ -37,19 +37,59 @@
   <main id="main" class="wrap">
     <div class="page-head">
       <h1>小遊戲・雙機</h1>
-      <p class="page-lede">兩支手機連線，和孩子一起玩。</p>
+      <p class="page-lede">兩支手機連線：孩子用他的手機玩，你用這支手機放角色、搗蛋。</p>
     </div>
 
-    <!-- 內容準備中：之後直接替換這一塊 -->
-    <div class="empty-state">
-      <svg viewBox="0 0 24 24" class="icon" aria-hidden="true">
-        <path d="M12 3v3M12 18v3M3 12h3M18 12h3M5.6 5.6l2.1 2.1M16.3 16.3l2.1 2.1M5.6 18.4l2.1-2.1M16.3 7.7l2.1-2.1" />
-      </svg>
-      <strong>內容準備中</strong>
-      <span>我們正在整理，很快就會放上來。</span>
-    </div>
+    <!-- 連線狀態（文字 + 圓點，不只靠顏色） -->
+    <p class="duo-status" id="duoStatus" role="status"><span class="dot" aria-hidden="true"></span><span id="duoStatusText">正在準備連線…</span></p>
+
+    <!-- 1. 還沒連線：給孩子的手機掃 -->
+    <section class="duo-card pair-card" id="pairCard" aria-labelledby="pairTitle">
+      <h2 class="duo-card-title" id="pairTitle">用孩子的手機掃描</h2>
+      <div class="qr" id="qrBox" aria-hidden="true"></div>
+      <p class="pair-code-label">或在孩子的手機輸入網址</p>
+      <p class="pair-url"><span id="joinUrl"></span></p>
+      <p class="pair-code" aria-label="配對代碼">代碼 <strong id="joinCode"></strong></p>
+      <button class="btn btn-quiet share-btn" type="button" id="shareBtn">分享連結給孩子的手機</button>
+    </section>
+
+    <!-- 2. 孩子選了遊戲：答應或拒絕 -->
+    <section class="duo-card request-card" id="requestCard" hidden aria-labelledby="requestTitle">
+      <p class="duo-kicker">孩子想玩</p>
+      <h2 class="duo-card-title" id="requestTitle"></h2>
+      <div class="card-actions">
+        <button class="btn btn-quiet" type="button" id="rejectBtn">等一下</button>
+        <button class="btn btn-primary" type="button" id="acceptBtn">好，開始</button>
+      </div>
+    </section>
+
+    <!-- 3. 正在玩：回到遙控器 -->
+    <section class="duo-card playing-card" id="playingCard" hidden aria-labelledby="playingTitle">
+      <p class="duo-kicker">正在玩</p>
+      <h2 class="duo-card-title" id="playingTitle">打地鼠</h2>
+      <div class="card-actions">
+        <button class="btn btn-quiet" type="button" id="endGameBtn">結束遊戲</button>
+        <a class="btn btn-primary" id="remoteLink" href="/games/duo/whack-a-mole/">打開遙控器</a>
+      </div>
+    </section>
+
+    <!-- 已連線：等孩子選遊戲 -->
+    <section class="duo-card waiting-card" id="waitingCard" hidden aria-labelledby="waitingTitle">
+      <h2 class="duo-card-title" id="waitingTitle">等孩子選遊戲</h2>
+      <p class="duo-card-body">孩子在他的手機上點一個遊戲，這裡就會問你要不要答應。</p>
+    </section>
+
+    <p class="center"><button class="quiet-link" type="button" id="unpairBtn" hidden>重新配對（換一支孩子的手機）</button></p>
+
+    <section class="duo-card error-card" id="errorCard" hidden role="alert">
+      <h2 class="duo-card-title" id="errorTitle"></h2>
+      <p class="duo-card-body" id="errorBody"></p>
+    </section>
   </main>
 
+  <script type="module" src="/shared/firebase.js"></script>
+  <script src="/games/duo/duo-core.js"></script>
+  <script src="/games/duo/duo-qr.js"></script>
   <script src="/games/duo/duo.js"></script>
 </body>
 

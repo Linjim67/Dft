@@ -1,11 +1,15 @@
 # 07 小遊戲 — page overrides
 
-Inherits MASTER. Covers `/games/solo/` (menu) and `/games/whack-a-mole/` — (S) 打地鼠.
+Inherits MASTER. Covers `/games/solo/` (menu), `/games/whack-a-mole/` — (S) 打地鼠, and the two-phone
+(M) 打地鼠: `/games/duo/` (pairing), `/games/<code>/` (child's menu), `/games/<code>/whack-a-mole/`
+(child's game) and `/games/duo/whack-a-mole/` (parent's remote).
 
 ## Routing
 
 Spec: `/games/(auth code if needed)/what-game`. Single-player needs no code, so the game is
-`/games/whack-a-mole/`; the multiplayer build will live at `/games/<code>/whack-a-mole/`.
+`/games/whack-a-mole/`; the child's phone in two-phone play uses `/games/<code>/whack-a-mole/`.
+Those code URLs are **Vercel rewrites** (`vercel.json`) onto the real pages — the address bar keeps
+the code, and the page reads it with `AnxinDuo.codeFromLocation` (local dev: `?code=1234`).
 `/games/solo/` is the menu children pick from. Unbuilt games show as non-link cards with a
 「即將推出」 badge (visible text, not only greyed-out).
 
@@ -19,6 +23,7 @@ Spec: `/games/(auth code if needed)/what-game`. Single-player needs no code, so 
 | `whack-a-mole.js` | Views, the rAF loop, pointer / hold-to-disinfect / keyboard input |
 | `questions.json` | 小知識 bank |
 | `index.html` | Views + an inline SVG sprite; characters are drawn once as `<symbol>`s |
+| `duo-child.js` | Two-phone only: joins the room, boots the game with the room's age, applies the parent's commands, reports state |
 
 ## The spawn formula — interpreted as a RATE
 
@@ -290,6 +295,105 @@ four characters have friendly faces. Outside the game, the rule still stands.
 - `localStorage` blocked → an in-memory fallback, so the game still plays.
 - A finger tap fires `pointerdown` *and* `click`; hits are taken from `pointerdown`, and `click` is
   handled only when keyboard-generated (`detail === 0`), so nothing double-counts.
+
+---
+
+# (M) 打地鼠・雙機 — two phones
+
+Spec: the parent's phone (parent portal) shows a QR code carrying the 4-digit code; the child's
+phone (children portal) scans it and pairs; the child picks a game and the parent accepts or
+rejects. In (M) 打地鼠 the parent **places characters** (or switches to automatic) and can trigger
+**disrupting events**.
+
+## Flow
+
+1. **Parent `/games/duo/`** creates `rooms/{code}` (code = the profile's 4-digit code) and shows a
+   QR of `https://…/games/{code}/`, the URL as text, the code, and a share/copy button (QR via
+   qrcode-generator 1.4.4 from jsDelivr with SRI; if it can't load, the text still works).
+2. **Child `/games/{code}/`** (no profile — no guard) signs in anonymously, writes its uid into
+   `childUid`, and lists the games (打地鼠 ready, the rest 「即將推出」). Tapping 打地鼠 sends a
+   `request`; a dialog says 「等爸爸媽媽按『好』…」.
+3. **Parent** sees 「孩子想玩「打地鼠」」 → **好，開始** (sets `game`, opens the remote) or **等一下**
+   (child is told and can pick again).
+4. Child → `/games/{code}/whack-a-mole/`; parent → `/games/duo/whack-a-mole/`.
+5. **結束遊戲** on the pairing page (or **重新配對**) — the child's game stops with a dialog
+   pointing back to the menu; a re-paired child is told to scan again.
+
+## Architecture: the child's phone owns the game
+
+The child's phone runs the **same game code as (S)** — boss, invasion, timed wiping, streaks,
+medals, quiz, stickers all work unchanged. `whack-a-mole.js` is wrapped in
+`WhackGame.boot(profile, duo)`; solo boots itself, duo waits for `duo-child.js` to connect and boot
+with `{ age, code }` from the room. Boot returns `{ snapshot, command, setMode, freeze }`.
+
+Firestore (`shared/firebase.js` → `AnxinFirebase.duo`):
+
+| Path | Writer | Content |
+|---|---|---|
+| `rooms/{code}` | parent creates; child joins / requests | `v, code, age, parentUid, childUid, mode, game, request, expiresAt, createdAt` — **no nickname** |
+| `rooms/{code}/cmds/{id}` | parent only | `{t:'place', h, c, v}` or `{t:'event', e}`, immutable |
+| `rooms/{code}/state/child` | child only | board (`holes[{o,c,v,b,p}]`), view, round, time, score, events, mode, last `ack` |
+
+- **Commands** are one document each (no write contention). The child ignores the first server
+  snapshot (stale commands from before it opened) and checks every command again: it answers in
+  `state.ack {id, ok, why}`, and the remote shows the reason as a toast.
+- **State** is one document, written on change but **at most every 600ms** (Firestore's ~1 write
+  per second per document), with a trailing write so the last change always lands, plus a **5s
+  heartbeat**. The remote warns 「好像斷線了」 after 12s of silence (measured on its own clock).
+- Measured on the emulators: parent tap → character on the child's screen ≈ **90ms**.
+
+## Rules (`firestore.rules`, tested on the emulator: 34 cases)
+
+- Rooms are readable by id only (the child must read before joining), never listable.
+- Create: the exact client shape (`keys().hasOnly`), `parentUid == me`, 4-digit id == `code`,
+  `childUid`/`game`/`request` empty, expiry in (now, now + 2 days).
+- Join: only an empty seat, only to my own uid, not by the parent. A third phone is refused.
+- Child may only send a `pending` request for a known game; parent may set mode, accept/reject,
+  end the game, unpair (`childUid → null`, never to someone else); nobody can change `parentUid`.
+- Commands: parent only, known types / holes 0–5 / characters / coats / events only.
+  State: the joined child only, only `state/child`, only whitelisted fields, ≤ 6 holes.
+- An **expired** room (another family's code from yesterday) can be re-created; an active one can't.
+  Expired rooms accept no more commands, state or joins.
+
+## Placing (我來放)
+
+Parent picks a **character** (止血帶 · 酒精棉片 · 針筒 · 病毒) and a **coat** (一般 · 銀色 · 鐵甲), then taps
+an empty hole on the **mirror board**. Placed characters follow the normal stay formula for the
+child's age and level. The child's phone refuses (and the remote explains): not playing, hole busy,
+hole 維修中, boss on the board, non-virus during an invasion, virus outside one (it couldn't be
+wiped), automatic mode. During 病毒入侵 the palette switches itself to 病毒 and back afterwards.
+In **我來放** nothing spawns on its own and there is no scheduled invasion (viruses still pour out
+during an invasion the parent starts). **自動出現** = exactly (S) behaviour; the palette hides, events
+stay available. The mirror tiles are created once and updated in place — re-rendering them would
+drop a tap that lands mid-update.
+
+## Events (game time; they pause with the game; cleared at round end)
+
+| | Event | Effect | Refused when |
+|---|---|---|---|
+| 搗蛋 | 病毒入侵 | the (S) 7s invasion, how-to dialog first time per run | already on · boss up · < 7s left |
+| 搗蛋 | 大魔王 | boss in a random open hole (never a virus), others duck | already up · invasion · < 8s left |
+| 搗蛋 | 地震 | board shakes 4s (reduced motion: tilted, still) | already shaking |
+| 搗蛋 | 泡泡 | 3 open holes covered 6s; first tap / finger pops the bubble, the next one hits | bubbles still floating |
+| 幫忙 | 雙倍分數 | catches ×2 for 6s (stacks with the streak), 「雙倍」 chip by the score | already on |
+
+Each button shows its hint, or the reason it can't be pressed (「進行中」 · 「大魔王在場」 ·
+「時間不夠了」 · 「遊戲中才能按」 · 「再等 N 秒」) — not just greyed out. Cooldowns 12–20s stop
+spamming; a refused event doesn't use its cooldown.
+
+## Screens
+
+- **Parent pairing:** status pill (dot + text), QR card, request card (orange inset ring),
+  playing card (結束遊戲 · 打開遙控器), 重新配對.
+- **Child menu:** no top bar (no profile, nowhere to go); the game cards are the buttons.
+- **Child game:** the (S) page with the back link → the menu, no 開始打針 (needs a profile), a
+  connection banner (「已連線・爸爸媽媽會幫你放角色」), callouts when the parent switches mode.
+- **Remote:** status · round / time / score + event chips · mode switch · palette + coats · mirror
+  board (same coat filters as the game) · 搗蛋 / 幫忙 buttons · toast for refusals.
+- Contrast measured in a real browser on every screen and state (178 text elements): all AA.
+
+⚠️ Production needs the updated `firestore.rules` **published in the Firebase Console** and
+**Anonymous sign-in enabled**; until then pairing shows 「連不上網路」.
 
 ---
 

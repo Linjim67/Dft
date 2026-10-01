@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="zh-Hant-TW">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="color-scheme" content="light">
+  <meta name="theme-color" content="#FFF7ED">
+  <title>安心陪伴 · 一起玩</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet"
+    href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&display=swap">
+  <link rel="stylesheet" href="/styles.css">
+  <link rel="stylesheet" href="/shared/page.css">
+  <link rel="stylesheet" href="/games/duo/duo.css">
+  <!-- 孩子的手機（網址 /games/1234/）：沒有個人資料，不套用「沒填資料就回首頁」的守衛 -->
+  <script src="/shared/app.js"></script>
+  <script src="/games/duo/duo-core.js"></script>
+</head>
+
+<body class="join-page">
+  <a class="skip-link" href="#main">跳到主要內容</a>
+
+  <main id="main" class="wrap">
+    <div class="page-head">
+      <h1>一起玩！</h1>
+      <p class="page-lede">選一個想玩的遊戲，爸爸媽媽答應了就開始。</p>
+    </div>
+
+    <p class="duo-status" id="duoStatus" role="status"><span class="dot" aria-hidden="true"></span><span id="duoStatusText">正在連線爸爸媽媽的手機…</span></p>
+
+    <!-- 規格：孩子自己選遊戲，家長的手機答應或拒絕 -->
+    <div class="card-list" id="gameList" hidden></div>
+
+    <!-- 等爸爸媽媽回答 -->
+    <dialog class="dlg wait-dlg" id="waitDlg" aria-labelledby="waitTitle">
+      <div class="wait-spinner" aria-hidden="true"></div>
+      <h2 class="dlg-title" id="waitTitle">等爸爸媽媽按「好」…</h2>
+      <p class="dlg-body">你選了 <strong id="waitGame"></strong>，爸爸媽媽的手機正在問他們。</p>
+    </dialog>
+
+    <section class="duo-card error-card" id="errorCard" hidden role="alert">
+      <h2 class="duo-card-title" id="errorTitle"></h2>
+      <p class="duo-card-body" id="errorBody"></p>
+    </section>
+  </main>
+
+  <script type="module" src="/shared/firebase.js"></script>
+  <script src="/games/duo/join/join.js"></script>
+</body>
+
+</html>

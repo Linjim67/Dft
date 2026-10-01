@@ -1,3 +1,247 @@
-/* ═══ 小遊戲・雙機 ═══════════════════════════════════════════════
-   頁面專用樣式。內容準備中，版面目前完全沿用 /shared/page.css。
+/* ═══ 小遊戲・雙機：配對（家長）、遊戲選單（孩子）、遙控器共用 ═══════
+   沿用 /shared/page.css 的卡片、按鈕、對話框；這裡只放雙機才有的東西。
    ═══════════════════════════════════════════════════════════════ */
+
+/* 連線狀態：圓點 + 文字（不只靠顏色） */
+.duo-status {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  margin: 0 0 var(--sp-4);
+  padding: var(--sp-2) var(--sp-3);
+  border-radius: var(--r-md);
+  background: var(--bg-sunk);
+  color: var(--fg-muted);
+  font-size: .95rem;
+  font-weight: 700;
+  line-height: 1.5;
+}
+
+.duo-status .dot {
+  flex: 0 0 auto;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: #B45309;
+}
+
+.duo-status.is-wait .dot {
+  animation: dot-wait 1200ms ease-in-out infinite;
+}
+
+.duo-status.is-ok,
+.duo-status.is-live {
+  background: #DCFCE7;
+  color: #14532D;
+}
+
+.duo-status.is-ok .dot,
+.duo-status.is-live .dot {
+  background: #15803D;
+}
+
+.duo-status.is-warn {
+  background: #FEF3C7;
+  color: #92400E;
+}
+
+.duo-status.is-error {
+  background: #FEE2E2;
+  color: #991B1B;
+}
+
+.duo-status.is-error .dot {
+  background: #B91C1C;
+}
+
+@keyframes dot-wait {
+  50% {
+    opacity: .3;
+  }
+}
+
+/* ═══ 卡片 ═══ */
+
+.duo-card {
+  margin-bottom: var(--sp-4);
+  padding: var(--sp-5) var(--sp-4);
+  background: var(--card);
+  border-radius: var(--r-lg);
+  box-shadow: var(--sh-md);
+}
+
+.duo-card-title {
+  font-size: 1.2rem;
+  font-weight: 700;
+  line-height: 1.4;
+}
+
+.duo-kicker {
+  font-size: .85rem;
+  font-weight: 700;
+  color: var(--fg-muted);
+}
+
+.duo-card-body {
+  margin-top: var(--sp-2);
+  color: var(--fg-muted);
+  line-height: 1.6;
+}
+
+.request-card {
+  box-shadow: var(--sh-md), inset 0 0 0 2px var(--primary-deep);
+}
+
+.request-card .duo-card-title {
+  font-size: 1.5rem;
+  color: var(--primary-deep);
+}
+
+.error-card {
+  box-shadow: var(--sh-md), inset 0 0 0 2px #B91C1C;
+}
+
+/* ═══ 配對：QR code、網址、代碼 ═══ */
+
+.pair-card {
+  text-align: center;
+}
+
+.qr {
+  width: min(220px, 70vw);
+  aspect-ratio: 1;
+  margin: var(--sp-4) auto var(--sp-3);
+  padding: 6px;
+  border-radius: var(--r-md);
+  background: #fff;
+  box-shadow: 0 0 0 1px var(--line);
+}
+
+.qr:empty {
+  background: var(--bg-sunk);
+}
+
+.qr svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.pair-code-label {
+  font-size: .88rem;
+  color: var(--fg-muted);
+}
+
+.pair-url {
+  margin-top: var(--sp-1);
+  font-weight: 700;
+  word-break: break-all;
+}
+
+.pair-code {
+  margin-top: var(--sp-2);
+  color: var(--fg-muted);
+  font-weight: 700;
+}
+
+.pair-code strong {
+  margin-inline-start: var(--sp-1);
+  font-size: 1.6rem;
+  letter-spacing: .2em;
+  color: var(--fg);
+  font-variant-numeric: tabular-nums;
+}
+
+.share-btn {
+  width: 100%;
+  margin-top: var(--sp-4);
+}
+
+/* ═══ 孩子的遊戲選單：卡片本身就是按鈕 ═══ */
+
+/* 孩子的手機沒有頂列（沒有主頁可回），標題往下留一點空間 */
+.join-page main {
+  padding-top: calc(var(--sp-6) + env(safe-area-inset-top));
+}
+
+button.nav-card {
+  width: 100%;
+  border: 0;
+  font: inherit;
+  text-align: start;
+  cursor: pointer;
+}
+
+.nav-card.is-current {
+  box-shadow: var(--sh-md), inset 0 0 0 2px var(--primary-deep);
+}
+
+.go-badge {
+  padding: 2px var(--sp-3);
+  border-radius: var(--r-pill);
+  background: var(--primary-deep);
+  color: #fff;
+  font-size: .85rem;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+/* 已經寫在 solo.css 的「即將推出」也用在這裡 */
+.nav-card.is-soon {
+  cursor: default;
+  box-shadow: var(--sh-sm);
+}
+
+.nav-card.is-soon .card-icon {
+  background: var(--bg-sunk);
+  color: var(--idle);
+}
+
+.nav-card.is-soon .card-title {
+  color: var(--fg-muted);
+}
+
+.soon-badge {
+  padding: 2px var(--sp-2);
+  border-radius: var(--r-pill);
+  background: var(--bg-sunk);
+  color: var(--fg-muted);
+  font-size: .75rem;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+/* 等爸爸媽媽回答 */
+.wait-dlg {
+  text-align: center;
+}
+
+.wait-spinner {
+  width: 40px;
+  height: 40px;
+  margin: 0 auto var(--sp-3);
+  border-radius: 50%;
+  border: 4px solid var(--primary-wash);
+  border-top-color: var(--primary-deep);
+  animation: spin 900ms linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .nav-card.is-soon:hover {
+    background: var(--card);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+
+  .duo-status.is-wait .dot,
+  .wait-spinner {
+    animation: none;
+  }
+}

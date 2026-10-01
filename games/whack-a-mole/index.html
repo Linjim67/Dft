@@ -16,7 +16,9 @@
   <link rel="stylesheet" href="/shared/page.css">
   <link rel="stylesheet" href="/games/whack-a-mole/whack-a-mole.css">
   <script src="/shared/app.js"></script>
-  <script>Anxin.requireProfile();</script>
+  <script src="/games/duo/duo-core.js"></script>
+  <!-- 雙機時這是孩子的手機（/games/1234/whack-a-mole/）：沒有個人資料，靠房間代碼連線 -->
+  <script>if (!AnxinDuo.codeFromLocation(location)) Anxin.requireProfile();</script>
 </head>
 
 <body class="wam-page">
@@ -244,7 +246,7 @@
         <p class="hud-round" id="hudRound">第 1 / 6 回合</p>
         <p class="hud-time" id="hudTimeWrap"><span id="hudTime">30</span><span class="hud-unit">秒</span></p>
         <!-- 連擊加成（×1.5／×2）就貼在分數旁邊：文字，不只靠顏色 -->
-        <p class="hud-score"><span class="hud-unit">分數</span><span class="hud-score-row"><span class="hud-mult" id="hudMult" hidden>×1.5</span><span id="hudScore">0</span></span></p>
+        <p class="hud-score"><span class="hud-unit">分數</span><span class="hud-score-row"><span class="hud-dbl" id="hudDouble" hidden>雙倍</span><span class="hud-mult" id="hudMult" hidden>×1.5</span><span id="hudScore">0</span></span></p>
         <button class="hud-pause" type="button" id="pauseBtn" aria-label="暫停">
           <svg viewBox="0 0 24 24" class="icon" aria-hidden="true"><path d="M9 6v12M15 6v12" /></svg>
         </button>
@@ -389,6 +391,8 @@
 
   <script src="/games/whack-a-mole/engine.js"></script>
   <script src="/games/whack-a-mole/whack-a-mole.js"></script>
+  <!-- 雙機（孩子的手機）才會動作：連上房間、收家長的指令、回報狀態 -->
+  <script src="/games/whack-a-mole/duo-child.js"></script>
 </body>
 
 </html>

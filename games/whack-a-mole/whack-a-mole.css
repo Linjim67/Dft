@@ -602,6 +602,16 @@ body.is-playing .topbar {
   white-space: nowrap;
 }
 
+/* 雙機：家長按了「雙倍分數」（文字，不只靠顏色） */
+.hud-dbl {
+  padding: 0 6px;
+  border-radius: var(--r-pill);
+  background: #15803D;
+  color: #fff;
+  font: 700 .78rem/1.5 var(--font-num);
+  white-space: nowrap;
+}
+
 /* 最後 5 秒：每一秒數字跳一下 */
 #hudTime.is-tick {
   display: inline-block;
@@ -1514,6 +1524,79 @@ body.is-playing .topbar {
 
 }
 
+/* ═══ 雙機（孩子的手機）：連線狀態、泡泡、地震 ═══════════════ */
+
+.duo-banner {
+  margin: 0 0 var(--sp-4);
+  padding: var(--sp-2) var(--sp-3);
+  border-radius: var(--r-md);
+  background: var(--bg-sunk);
+  color: var(--fg-muted);
+  font-size: .92rem;
+  font-weight: 700;
+  line-height: 1.5;
+}
+
+.duo-banner.is-ok {
+  background: #DCFCE7;
+  color: #14532D;
+}
+
+.duo-banner.is-warn {
+  background: #FEF3C7;
+  color: #92400E;
+}
+
+.duo-banner.is-error {
+  background: #FEE2E2;
+  color: #991B1B;
+}
+
+/* 泡泡：蓋住整個洞，點一下（或手指碰到）先破掉，下一下才打得到角色 */
+.bubble {
+  display: none;
+  position: absolute;
+  inset: 2% 6% 10%;
+  z-index: 4;
+  border-radius: 50%;
+  background: radial-gradient(circle at 32% 28%, rgba(255, 255, 255, .95) 0 7%, rgba(255, 255, 255, .4) 8% 28%,
+      rgba(186, 230, 253, .42) 58%, rgba(56, 189, 248, .5));
+  box-shadow: inset 0 0 0 3px rgba(255, 255, 255, .9), 0 0 0 2px rgba(3, 105, 161, .6), 0 6px 14px rgba(3, 105, 161, .25);
+  pointer-events: none;
+}
+
+.hole.is-popped .bubble {
+  display: block;
+  animation: bubble-pop 240ms ease-out forwards;
+}
+
+.hole.has-bubble .bubble {
+  display: block;
+  animation: bubble-float 1600ms ease-in-out infinite alternate;
+}
+
+@keyframes bubble-float {
+  to { transform: translateY(-4%) scale(1.03); }
+}
+
+@keyframes bubble-pop {
+  from { opacity: 1; transform: scale(1); }
+  to { opacity: 0; transform: scale(1.4); }
+}
+
+/* 地震：整個棋盤搖 4 秒（手指要跟著追） */
+.board.is-quake {
+  animation: quake 380ms linear infinite;
+}
+
+@keyframes quake {
+  0%, 100% { transform: translate(0, 0) rotate(0); }
+  20% { transform: translate(-6px, 2px) rotate(-1.2deg); }
+  40% { transform: translate(5px, -3px) rotate(1deg); }
+  60% { transform: translate(-4px, 3px) rotate(-.8deg); }
+  80% { transform: translate(6px, -1px) rotate(1.2deg); }
+}
+
 /* ═══ 減少動態：角色直接出現／消失；分數文字留著、不飄 ═══════ */
 
 @media (prefers-reduced-motion: reduce) {
@@ -1525,8 +1608,20 @@ body.is-playing .topbar {
   .hole.is-boss::before,
   .hole.is-wiping .mole-art,
   #hudTime.is-tick,
+  .hole.has-bubble .bubble,
+  .hole.is-popped .bubble,
+  .board.is-quake,
   .callout.is-on {
     animation: none;
+  }
+
+  /* 地震改成棋盤歪一邊（不搖），一樣看得出「地震了」 */
+  .board.is-quake {
+    transform: rotate(-2deg);
+  }
+
+  .hole.is-popped .bubble {
+    display: none;
   }
 
   /* 教學動畫改成一張靜態示意：手指按在第一隻病毒上、外圈亮著（不是停在最後一格——那時病毒都消失了） */

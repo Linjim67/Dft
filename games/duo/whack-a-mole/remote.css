@@ -1,0 +1,448 @@
+/* ═══ 打地鼠・遙控器（家長的手機） ═══════════════════════════════
+   棋盤的顏色、角色鍍層和孩子畫面一致，家長一眼就對得起來。
+   ═══════════════════════════════════════════════════════════════ */
+
+/* 從打地鼠頁面借來的 SVG sprite：只用來 <use>，不佔版面 */
+.sprite {
+  position: absolute;
+  width: 0;
+  height: 0;
+  overflow: hidden;
+}
+
+.remote-page .page-head {
+  margin-bottom: var(--sp-3);
+}
+
+/* ── 回合、時間、分數 ── */
+.remote-hud {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--sp-3);
+  font-family: ui-rounded, "SF Pro Rounded", "Arial Rounded MT Bold", "PingFang TC", "Noto Sans TC", system-ui, sans-serif;
+  font-variant-numeric: tabular-nums;
+  color: var(--fg-muted);
+  font-weight: 700;
+}
+
+.remote-hud strong {
+  font-size: 1.4rem;
+  color: var(--fg);
+}
+
+.rh-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--sp-1);
+  margin-top: var(--sp-2);
+}
+
+.rh-chip {
+  padding: 1px var(--sp-2);
+  border-radius: var(--r-pill);
+  font-size: .82rem;
+  font-weight: 700;
+  color: #fff;
+  background: #57534E;
+}
+
+.rh-chip.is-mult {
+  background: var(--primary-deep);
+}
+
+.rh-chip.is-help {
+  background: #15803D;
+}
+
+.rh-chip.is-trick {
+  background: #7C2D12;
+}
+
+/* ── 區塊 ── */
+.remote-section {
+  margin: var(--sp-5) 0 0;
+  padding: 0;
+  border: 0;
+  min-width: 0;
+}
+
+.remote-section > .section-title,
+.remote-section > legend {
+  margin-bottom: var(--sp-2);
+  padding: 0;
+}
+
+.help-title {
+  margin-top: var(--sp-4);
+}
+
+.remote-hint {
+  margin-top: var(--sp-2);
+  font-size: .88rem;
+  line-height: 1.55;
+  color: var(--fg-muted);
+}
+
+.mode-seg,
+.coat-seg {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--sp-2);
+}
+
+.coat-seg {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  margin-top: var(--sp-2);
+}
+
+.mode-seg .segmented-face,
+.coat-seg .segmented-face {
+  min-height: 48px;
+}
+
+/* ── 調色盤：四個角色（原生 radio 疊在卡片上，鍵盤也能選） ── */
+.palette {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: var(--sp-2);
+}
+
+.pal-option {
+  position: relative;
+  display: block;
+  cursor: pointer;
+}
+
+.pal-option input {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  opacity: 0;
+  cursor: pointer;
+}
+
+.pal-face {
+  display: grid;
+  justify-items: center;
+  gap: 2px;
+  min-height: 96px;
+  padding: var(--sp-2) 2px;
+  border-radius: var(--r-md);
+  background: var(--card);
+  border: var(--line-w) solid var(--line);
+  box-shadow: var(--sh-sm);
+  text-align: center;
+}
+
+.pal-art {
+  width: 44px;
+  height: 44px;
+}
+
+.pal-name {
+  font-size: .85rem;
+  font-weight: 700;
+  line-height: 1.3;
+}
+
+.pal-note {
+  font-size: .72rem;
+  line-height: 1.3;
+  color: var(--fg-muted);
+}
+
+/* 選中：與其他選擇題一致（淡橘底＋深橘框） */
+.pal-option input:checked + .pal-face {
+  background: var(--primary-wash);
+  border-color: var(--primary-deep);
+  box-shadow: var(--sh-md), inset 0 0 0 var(--line-w) var(--primary-deep);
+}
+
+.pal-option input:focus-visible + .pal-face {
+  outline: 3px solid var(--primary-deep);
+  outline-offset: 3px;
+}
+
+.pal-option input:disabled {
+  cursor: not-allowed;
+}
+
+.pal-option input:disabled + .pal-face {
+  background: var(--bg-sunk);
+  box-shadow: none;
+}
+
+.pal-option input:disabled + .pal-face .pal-art {
+  opacity: .4;
+}
+
+/* ── 孩子的棋盤（同步） ── */
+.mirror {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--sp-2);
+  margin-top: var(--sp-4);
+  padding: var(--sp-3);
+  border-radius: var(--r-xl);
+  background: linear-gradient(180deg, #FFF4DD, #FCE3BE);
+  box-shadow: var(--sh-md);
+}
+
+.mirror.is-invasion {
+  background: linear-gradient(180deg, #F0FDF4, #DCFCE7);
+  box-shadow: var(--sh-md), 0 0 0 3px #15803D;
+}
+
+.mirror.is-quake {
+  animation: mirror-quake 380ms linear infinite;
+}
+
+@keyframes mirror-quake {
+  25% { transform: translate(-3px, 1px) rotate(-.6deg); }
+  75% { transform: translate(3px, -1px) rotate(.6deg); }
+}
+
+.tile {
+  position: relative;
+  display: block;
+  width: 100%;
+  aspect-ratio: 1;
+  padding: 0;
+  margin: 0;
+  border: 0;
+  border-radius: var(--r-lg);
+  background: none;
+  font: inherit;
+  color: var(--fg);
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+}
+
+.tile-pit {
+  position: absolute;
+  left: 10%;
+  right: 10%;
+  bottom: 10%;
+  height: 24%;
+  border-radius: 50%;
+  background: radial-gradient(ellipse at 50% 35%, #4A2410, #2E1406 75%);
+  box-shadow: 0 0 0 4px #E9BD8C, 0 4px 0 4px #C98B55;
+}
+
+.tile-art {
+  position: absolute;
+  left: 50%;
+  bottom: 18%;
+  width: 62%;
+  height: 62%;
+  transform: translateX(-50%);
+  pointer-events: none;
+}
+
+/* 鍍層：和孩子畫面一樣的濾鏡 */
+.v-silver {
+  filter: grayscale(1) brightness(1.2) contrast(1.05) drop-shadow(0 0 3px #fff);
+}
+
+.v-iron {
+  filter: grayscale(1) brightness(.72) contrast(1.25);
+}
+
+.v-boss {
+  filter: sepia(1) saturate(3.2) hue-rotate(-12deg) brightness(1.05) drop-shadow(0 0 4px #FCD34D);
+}
+
+.tile-name {
+  position: absolute;
+  left: 50%;
+  bottom: 0;
+  transform: translateX(-50%);
+  padding: 0 6px;
+  border-radius: var(--r-pill);
+  background: rgba(255, 247, 237, .95);
+  font-size: .72rem;
+  font-weight: 700;
+  line-height: 1.6;
+  white-space: nowrap;
+  pointer-events: none;
+}
+
+.tile-hp {
+  position: absolute;
+  top: 4%;
+  left: 18%;
+  right: 18%;
+  height: 7px;
+  border-radius: var(--r-pill);
+  background: rgba(28, 25, 23, .55);
+  overflow: hidden;
+}
+
+.tile-hp span {
+  display: block;
+  height: 100%;
+  background: #4ADE80;
+}
+
+/* 空洞、可以放：只放一個大「＋」（不疊角色預覽，選了什麼看上面的調色盤） */
+.tile-plus {
+  position: absolute;
+  left: 50%;
+  top: 42%;
+  transform: translate(-50%, -50%);
+  font-size: 2rem;
+  font-weight: 700;
+  line-height: 1;
+  color: var(--primary-deep);
+  white-space: nowrap;
+}
+
+.is-pending .tile-plus {
+  font-size: .78rem;
+}
+
+/* 點了就可以放：虛線框（不只靠顏色） */
+.tile.can-place {
+  box-shadow: inset 0 0 0 2px rgba(194, 65, 12, .55);
+  outline: 2px dashed transparent;
+}
+
+.tile.can-place:active {
+  background: var(--primary-wash);
+}
+
+.tile.is-pending {
+  box-shadow: inset 0 0 0 2px var(--primary-deep);
+  animation: pending 900ms ease-in-out infinite;
+}
+
+@keyframes pending {
+  50% { background: rgba(255, 237, 213, .8); }
+}
+
+.tile.is-locked {
+  cursor: default;
+}
+
+.tile.is-locked .tile-pit {
+  background: repeating-linear-gradient(-12deg, #D6A066 0 10px, #C98B55 10px 13px);
+}
+
+.tile-lock {
+  position: absolute;
+  inset: auto 0 40% 0;
+  font-size: .78rem;
+  font-weight: 700;
+  color: var(--fg-muted);
+  text-align: center;
+}
+
+.tile-bubble {
+  position: absolute;
+  inset: 4% 8% 10%;
+  border-radius: 50%;
+  background: radial-gradient(circle at 32% 28%, rgba(255, 255, 255, .95) 0 7%, rgba(255, 255, 255, .4) 8% 28%,
+      rgba(186, 230, 253, .42) 58%, rgba(56, 189, 248, .5));
+  box-shadow: inset 0 0 0 2px rgba(255, 255, 255, .9), 0 0 0 2px rgba(3, 105, 161, .6);
+  pointer-events: none;
+}
+
+.tile-key {
+  position: absolute;
+  top: 6px;
+  inset-inline-start: 9px;
+  font-size: .72rem;
+  font-weight: 700;
+  color: var(--fg-muted);
+}
+
+/* ── 事件按鈕 ── */
+.event-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--sp-2);
+}
+
+.event-btn {
+  display: grid;
+  gap: 2px;
+  min-height: 64px;
+  padding: var(--sp-2) var(--sp-3);
+  border-radius: var(--r-md);
+  border: 2px solid #7C2D12;
+  background: var(--card);
+  color: #7C2D12;
+  font: inherit;
+  text-align: start;
+  cursor: pointer;
+  box-shadow: var(--sh-sm);
+}
+
+.event-btn.is-help {
+  border-color: #15803D;
+  color: #14532D;
+}
+
+.event-btn:active:not(:disabled) {
+  transform: translateY(1px);
+  background: var(--primary-wash);
+}
+
+.event-btn.is-help:active:not(:disabled) {
+  background: #DCFCE7;
+}
+
+.ev-name {
+  font-size: 1rem;
+  font-weight: 700;
+  line-height: 1.3;
+}
+
+.ev-note {
+  font-size: .8rem;
+  line-height: 1.35;
+  color: var(--fg-muted);
+}
+
+/* 不能按：灰底、虛線框，並寫出原因（.ev-note） */
+.event-btn:disabled {
+  cursor: not-allowed;
+  border-style: dashed;
+  border-color: var(--line);
+  background: var(--bg-sunk);
+  color: var(--fg-muted);
+  box-shadow: none;
+}
+
+/* ── 提示：孩子的手機說不行的時候 ── */
+.toast {
+  position: fixed;
+  left: 50%;
+  bottom: calc(var(--sp-4) + env(safe-area-inset-bottom));
+  z-index: 50;
+  width: max-content;
+  max-width: calc(100% - 2 * var(--sp-4));
+  padding: var(--sp-2) var(--sp-4);
+  transform: translateX(-50%);
+  border-radius: var(--r-pill);
+  background: #292524;
+  color: #fff;
+  font-weight: 700;
+  box-shadow: var(--sh-lg);
+}
+
+.remote-page main {
+  padding-bottom: calc(var(--sp-8, 4rem) + env(safe-area-inset-bottom));
+}
+
+@media (prefers-reduced-motion: reduce) {
+
+  .mirror.is-quake,
+  .tile.is-pending {
+    animation: none;
+  }
+}

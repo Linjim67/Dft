@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="zh-Hant-TW">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="color-scheme" content="light">
+  <meta name="theme-color" content="#FFF7ED">
+  <title>安心陪伴 · 打地鼠遙控器</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet"
+    href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&display=swap">
+  <link rel="stylesheet" href="/styles.css">
+  <link rel="stylesheet" href="/shared/page.css">
+  <link rel="stylesheet" href="/games/duo/duo.css">
+  <link rel="stylesheet" href="/games/duo/whack-a-mole/remote.css">
+  <script src="/shared/app.js"></script>
+  <script>Anxin.requireProfile();</script>
+</head>
+
+<body class="remote-page">
+  <a class="skip-link" href="#main">跳到主要內容</a>
+
+  <header class="wrap topbar">
+    <a class="back-link" href="/games/duo/">
+      <svg viewBox="0 0 24 24" class="icon" aria-hidden="true"><path d="M15 5 8 12l7 7" /></svg>
+      <span>雙機</span>
+    </a>
+    <a class="pill-cta" href="/shot/">
+      <span>開始打針</span>
+      <svg viewBox="0 0 24 24" class="icon" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6" /></svg>
+    </a>
+  </header>
+
+  <main id="main" class="wrap">
+    <div class="page-head">
+      <h1>打地鼠・遙控器</h1>
+    </div>
+
+    <!-- 孩子的手機現在在做什麼（文字 + 圓點） -->
+    <p class="duo-status" id="duoStatus" role="status"><span class="dot" aria-hidden="true"></span><span id="duoStatusText">正在連線…</span></p>
+
+    <!-- 孩子畫面上的回合、時間、分數，與正在進行的事件 -->
+    <div class="remote-hud" id="remoteHud">
+      <span class="rh-round" id="rRound">—</span>
+      <span class="rh-time"><strong id="rTime">—</strong> 秒</span>
+      <span class="rh-score"><strong id="rScore">0</strong> 分</span>
+    </div>
+    <p class="rh-chips" id="rChips"></p>
+
+    <!-- 規格：手動放置／自動出現 的切換 -->
+    <fieldset class="remote-section">
+      <legend class="section-title">角色怎麼出現</legend>
+      <div class="segmented mode-seg">
+        <label class="segmented-option">
+          <input type="radio" name="mode" value="manual">
+          <span class="segmented-face">我來放</span>
+        </label>
+        <label class="segmented-option">
+          <input type="radio" name="mode" value="auto">
+          <span class="segmented-face">自動出現</span>
+        </label>
+      </div>
+      <p class="remote-hint" id="modeHint"></p>
+    </fieldset>
+
+    <!-- 手動：先選角色和鍍層，再點下面的洞 -->
+    <fieldset class="remote-section" id="placeSection">
+      <legend class="section-title">選角色，再點一個洞</legend>
+      <div class="palette" id="palette"></div>
+      <div class="segmented coat-seg" id="coats"></div>
+    </fieldset>
+
+    <!-- 孩子的棋盤（同步顯示）；手動時點空洞就放進去 -->
+    <div class="mirror" id="mirror" role="group" aria-label="孩子的棋盤"></div>
+
+    <section class="remote-section" aria-labelledby="trickTitle">
+      <h2 class="section-title" id="trickTitle">搗蛋</h2>
+      <div class="event-grid" id="trickEvents"></div>
+      <h2 class="section-title help-title">幫忙</h2>
+      <div class="event-grid" id="helpEvents"></div>
+    </section>
+  </main>
+
+  <div class="toast" id="toast" role="status" aria-live="polite" hidden></div>
+
+  <script type="module" src="/shared/firebase.js"></script>
+  <script src="/games/duo/duo-core.js"></script>
+  <script src="/games/duo/whack-a-mole/remote.js"></script>
+</body>
+
+</html>

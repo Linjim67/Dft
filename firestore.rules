@@ -39,6 +39,154 @@ service cloud.firestore {
         && validFeedback(request.resource.data);
       allow read, update, delete: if false;
     }
+
+    // 雙機配對（#07）：房間 id = 個人資料的 4 位數暫時代碼
+    // 家長的手機建立房間；孩子的手機掃 QR code 後把自己的 uid 寫進 childUid。
+    // 房間只放遊戲需要的年齡，不放暱稱等個人資料（keys().hasOnly 白名單）。
+    match /rooms/{code} {
+      // 子集合（cmds、state）用：查房間文件看是不是家長／孩子
+      // （要放在這裡面：外層的函式看不到 database 這個變數）
+      function roomData() {
+        return get(/databases/$(database)/documents/rooms/$(code)).data;
+      }
+
+      function roomParent() {
+        return request.auth != null
+          && roomData().parentUid == request.auth.uid
+          && roomData().expiresAt > request.time;
+      }
+
+      function roomChild() {
+        return request.auth != null
+          && roomData().childUid == request.auth.uid
+          && roomData().expiresAt > request.time;
+      }
+
+      function roomMember() {
+        return request.auth != null
+          && (roomData().parentUid == request.auth.uid
+            || roomData().childUid == request.auth.uid);
+      }
+
+      // 孩子的手機要先讀到房間才能加入；只能用代碼讀單一房間，不能列出全部
+      allow get: if request.auth != null && code.matches('^[0-9]{4}$');
+      allow list: if false;
+
+      allow create: if request.auth != null
+        && validNewRoom(code, request.resource.data);
+
+      allow update: if request.auth != null && (
+           (resource.data.parentUid == request.auth.uid && parentEdit())
+        || (resource.data.childUid == request.auth.uid && childEdit())
+        || (resource.data.childUid == null && joinEdit())
+        // 過期的房間（別的家庭昨天用過同一組代碼）可以被重新建立
+        || (resource.data.expiresAt < request.time && validNewRoom(code, request.resource.data)));
+
+      allow delete: if request.auth != null && resource.data.parentUid == request.auth.uid;
+
+      // 家長 → 孩子：放角色、事件。只有家長能下指令，指令不能改
+      match /cmds/{cmdId} {
+        allow read: if roomMember();
+        allow create: if roomParent() && validCmd(request.resource.data);
+        allow update: if false;
+        allow delete: if roomParent();
+      }
+
+      // 孩子 → 家長：棋盤、分數、時間。只有已加入的孩子手機能寫
+      match /state/{stateId} {
+        allow read: if roomMember();
+        allow create, update: if stateId == 'child' && roomChild()
+          && validState(request.resource.data);
+        allow delete: if false;
+      }
+    }
+  }
+
+  function roomKeys() {
+    return ['v', 'code', 'age', 'parentUid', 'childUid', 'mode', 'game', 'request', 'expiresAt', 'createdAt'];
+  }
+
+  function validNewRoom(code, d) {
+    return code.matches('^[0-9]{4}$')
+      && d.keys().hasOnly(roomKeys()) && d.keys().hasAll(roomKeys())
+      && d.v == 1
+      && d.code == code
+      && d.age is number && d.age >= 0 && d.age <= 18
+      && d.parentUid == request.auth.uid
+      && d.childUid == null
+      && d.mode in ['manual', 'auto']
+      && d.game == null
+      && d.request == null
+      && d.expiresAt is timestamp
+      && d.expiresAt > request.time
+      && d.expiresAt < request.time + duration.value(2, 'd')
+      && d.createdAt == request.time;
+  }
+
+  function validRequest(r, statuses) {
+    return r is map
+      && r.keys().hasOnly(['game', 'status', 'at']) && r.keys().hasAll(['game', 'status', 'at'])
+      && r.game in ['whack-a-mole']
+      && r.status in statuses
+      && r.at == request.time;
+  }
+
+  // 家長：模式、答應／拒絕、換遊戲、解除配對（childUid 只能清掉，不能換成別人）
+  function parentEdit() {
+    let d = request.resource.data;
+    return d.diff(resource.data).affectedKeys().hasOnly(['mode', 'game', 'request', 'childUid', 'age', 'expiresAt'])
+      && d.mode in ['manual', 'auto']
+      && (d.game == null || d.game in ['whack-a-mole'])
+      && (d.childUid == resource.data.childUid || d.childUid == null)
+      && (d.request == null || d.request == resource.data.request
+        || validRequest(d.request, ['accepted', 'rejected']))
+      && d.age is number && d.age >= 0 && d.age <= 18
+      && d.expiresAt is timestamp && d.expiresAt < request.time + duration.value(2, 'd');
+  }
+
+  // 孩子：只能提出「想玩什麼」
+  function childEdit() {
+    let d = request.resource.data;
+    return d.diff(resource.data).affectedKeys().hasOnly(['request'])
+      && validRequest(d.request, ['pending'])
+      && resource.data.expiresAt > request.time;
+  }
+
+  // 加入：沒人加入的房間，只能把 childUid 寫成自己
+  function joinEdit() {
+    let d = request.resource.data;
+    return d.diff(resource.data).affectedKeys().hasOnly(['childUid'])
+      && d.childUid == request.auth.uid
+      && resource.data.parentUid != request.auth.uid
+      && resource.data.expiresAt > request.time;
+  }
+
+  function validCmd(c) {
+    return c.by == request.auth.uid
+      && c.at == request.time
+      && ((c.keys().hasOnly(['t', 'h', 'c', 'v', 'by', 'at']) && c.keys().hasAll(['t', 'h', 'c', 'v', 'by', 'at'])
+          && c.t == 'place'
+          && c.h is int && c.h >= 0 && c.h <= 5
+          && c.c in ['tourniquet', 'swab', 'syringe', 'virus']
+          && c.v in ['normal', 'silver', 'iron'])
+        || (c.keys().hasOnly(['t', 'e', 'by', 'at']) && c.keys().hasAll(['t', 'e', 'by', 'at'])
+          && c.t == 'event'
+          && c.e in ['invasion', 'boss', 'quake', 'bubbles', 'double']));
+  }
+
+  function validState(s) {
+    return s.keys().hasOnly(['v', 'view', 'running', 'round', 'time', 'score', 'mult', 'holes',
+        'inv', 'boss', 'quake', 'bubbles', 'dbl', 'mode', 'teach', 'ack', 'at'])
+      && s.v == 1
+      && s.view in ['intro', 'play', 'quiz', 'summary']
+      && s.running is bool
+      && s.round is int && s.round >= 1 && s.round <= 999
+      && s.time is int && s.time >= 0 && s.time <= 30
+      && s.score is int && s.score >= 0
+      && s.holes is list && s.holes.size() <= 6
+      && s.mode in ['manual', 'auto']
+      && (s.ack == null || (s.ack is map && s.ack.keys().hasOnly(['id', 'ok', 'why'])))
+      && s.at == request.time;
   }
 
   function validThread(d) {

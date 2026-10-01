@@ -1,0 +1,142 @@
+/* ═══════════════════════════════════════════════════════════════
+   安心陪伴 — 雙機共用（純函式：不碰 Firebase、不碰畫面）
+   家長的手機 = 遙控器（parent portal），孩子的手機 = 遊戲機（children portal）。
+   兩支手機透過 Firestore 的 rooms/{代碼} 連線；代碼就是個人資料的 4 位數暫時代碼。
+   ═══════════════════════════════════════════════════════════════ */
+(function (root) {
+  'use strict';
+
+  /* 孩子可以選的遊戲（ready = 雙機版做好了） */
+  var GAMES = [
+    { id: 'whack-a-mole', name: '打地鼠', desc: '爸爸媽媽放角色，你來敲！', ready: true },
+    { id: 'draw-circle', name: '畫圓圈', desc: '比比看誰畫得比較圓', ready: false },
+    { id: 'jump', name: '跳跳冒險', desc: '跳過障礙，往終點前進', ready: false }
+  ];
+
+  /* 家長可以放的角色與鍍層（大魔王用事件按鈕叫出來） */
+  var PLACEABLE = ['tourniquet', 'swab', 'syringe', 'virus'];
+  var COATS = ['normal', 'silver', 'iron'];
+  /* 家長的手機不載入遊戲引擎，名字放這裡（要和 engine.js 的 CHARACTERS 一致） */
+  var CHAR_NAMES = { tourniquet: '止血帶', swab: '酒精棉片', syringe: '針筒', virus: '病毒' };
+  var COAT_NAMES = { normal: '一般', silver: '銀色', iron: '鐵甲', boss: '大魔王' };
+
+  /* 家長的事件按鈕：trick = 搗蛋，help = 幫忙。cooldownMs：家長按了之後多久才能再按 */
+  var EVENTS = {
+    invasion: { name: '病毒入侵', kind: 'trick', cooldownMs: 15000, hint: '7 秒只出現病毒' },
+    boss: { name: '大魔王', kind: 'trick', cooldownMs: 15000, hint: '要連點很多下' },
+    quake: { name: '地震', kind: 'trick', cooldownMs: 12000, hint: '棋盤搖 4 秒' },
+    bubbles: { name: '泡泡', kind: 'trick', cooldownMs: 12000, hint: '先戳破才打得到' },
+    double: { name: '雙倍分數', kind: 'help', cooldownMs: 20000, hint: '6 秒分數 ×2' }
+  };
+
+  var MODES = ['manual', 'auto'];
+
+  /* 孩子的手機收到不能做的指令時回的原因 → 家長看到的話 */
+  var REASONS = {
+    'not-playing': '孩子現在不在遊戲中',
+    busy: '那個洞已經有角色了',
+    locked: '那個洞還在維修中',
+    boss: '大魔王在場，等它離開再放',
+    invasion: '病毒入侵中，只能放病毒',
+    'no-invasion': '病毒只能在「病毒入侵」時放',
+    active: '這個事件正在進行中',
+    'too-late': '這回合剩下的時間不夠了',
+    auto: '現在是自動模式，切到「我來放」才能放',
+    bad: '沒辦法執行'
+  };
+
+  /* 網址裡的代碼：/games/1234/…（Vercel 改寫到真正的頁面）；本機開發可用 ?code=1234 */
+  function codeFromLocation(loc) {
+    var m = /^\/games\/(\d{4})(?:\/|$)/.exec(loc.pathname || '');
+    if (m) return m[1];
+    var q = /[?&]code=(\d{4})(?:&|$)/.exec(loc.search || '');
+    return q ? q[1] : null;
+  }
+
+  function joinPath(code) { return '/games/' + code + '/'; }
+  function gamePath(code, game) { return '/games/' + code + '/' + game + '/'; }
+
+  /* 家長建立房間：只放遊戲需要的年齡（決定速度），不放暱稱等個人資料 */
+  function newRoom(profile, uid) {
+    return {
+      v: 1,
+      code: String(profile.code),
+      age: Math.min(18, Math.max(0, Number(profile.age) || 0)),
+      parentUid: uid,
+      childUid: null,
+      mode: 'manual',
+      game: null,
+      request: null,
+      expiresAt: Number(profile.expiresAt)
+    };
+  }
+
+  function roomUsable(room, now) {
+    return !!room && Number(room.expiresAt) > (now === undefined ? Date.now() : now);
+  }
+
+  /* 這支手機在房間裡的身分 */
+  function roleOf(room, uid) {
+    if (!room) return 'none';
+    if (room.parentUid === uid) return 'parent';
+    if (room.childUid === uid) return 'child';
+    return room.childUid ? 'taken' : 'free';
+  }
+
+  function gameById(id) {
+    for (var i = 0; i < GAMES.length; i++) if (GAMES[i].id === id) return GAMES[i];
+    return null;
+  }
+
+  /* 指令的形狀（孩子的手機執行前再檢查一次；伺服器規則也會檢查） */
+  function validCmd(c) {
+    if (!c || typeof c !== 'object') return false;
+    if (c.t === 'place') {
+      return c.h === Math.floor(c.h) && c.h >= 0 && c.h <= 5 &&
+        PLACEABLE.indexOf(c.c) !== -1 && COATS.indexOf(c.v) !== -1;
+    }
+    if (c.t === 'event') return Object.prototype.hasOwnProperty.call(EVENTS, c.e);
+    return false;
+  }
+
+  function reasonText(why) { return REASONS[why] || REASONS.bad; }
+
+  /* 家長看到的一句話：孩子現在在做什麼 */
+  function childStatus(state, stale) {
+    if (!state) return { tone: 'wait', text: '等孩子打開打地鼠…' };
+    if (stale) return { tone: 'warn', text: '孩子的手機好像斷線了，請確認它還開著遊戲' };
+    if (state.view === 'intro') return { tone: 'wait', text: '孩子在開始畫面，請他按「開始遊戲」' };
+    if (state.view === 'quiz') return { tone: 'wait', text: '孩子正在挑戰小知識' };
+    if (state.view === 'summary') return { tone: 'wait', text: '第 ' + state.round + ' 回合結束，孩子正在看成績' };
+    if (state.teach) return { tone: 'wait', text: '孩子正在看「病毒入侵」的教學' };
+    if (!state.running) return { tone: 'wait', text: '孩子按了暫停' };
+    return { tone: 'live', text: '遊戲中' };
+  }
+
+  var AnxinDuo = {
+    GAMES: GAMES,
+    PLACEABLE: PLACEABLE,
+    COATS: COATS,
+    CHAR_NAMES: CHAR_NAMES,
+    COAT_NAMES: COAT_NAMES,
+    EVENTS: EVENTS,
+    MODES: MODES,
+    REASONS: REASONS,
+    STALE_MS: 12000,       /* 這麼久沒收到孩子手機的狀態，就提醒家長可能斷線 */
+    HEARTBEAT_MS: 5000,    /* 孩子的手機至少這麼常回報一次（就算畫面沒變） */
+    STATE_THROTTLE_MS: 600, /* 狀態寫入的最短間隔（Firestore 單一文件每秒約 1 次寫入） */
+    codeFromLocation: codeFromLocation,
+    joinPath: joinPath,
+    gamePath: gamePath,
+    newRoom: newRoom,
+    roomUsable: roomUsable,
+    roleOf: roleOf,
+    gameById: gameById,
+    validCmd: validCmd,
+    reasonText: reasonText,
+    childStatus: childStatus
+  };
+
+  root.AnxinDuo = AnxinDuo;
+  if (typeof module !== 'undefined' && module.exports) module.exports = AnxinDuo;
+})(typeof window !== 'undefined' ? window : globalThis);
