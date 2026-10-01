@@ -233,7 +233,6 @@ button.coll-item {
   color: var(--fg-muted);
 }
 
-
 .challenge-hint {
   margin-bottom: var(--sp-3);
   padding: var(--sp-3) var(--sp-4);
@@ -243,95 +242,6 @@ button.coll-item {
   font-size: .92rem;
   font-weight: 700;
   line-height: 1.5;
-}
-
-.how-link {
-  margin-top: var(--sp-2);
-  background: none;
-  border: 0;
-  text-decoration: underline;
-  text-underline-offset: 3px;
-}
-
-/* ═══ 教學對話框 ═════════════════════════════════════════════ */
-
-.tut {
-  text-align: center;
-}
-
-.tut-step {
-  font-size: .8rem;
-  font-weight: 700;
-  color: var(--fg-muted);
-}
-
-.tut-art {
-  display: flex;
-  justify-content: center;
-  gap: var(--sp-1);
-  margin-block: var(--sp-3) var(--sp-2);
-}
-
-.tut-art svg {
-  width: 64px;
-  height: 64px;
-}
-
-.tut-art svg use[href="#icon-star"] {
-  fill: #F59E0B;
-}
-
-.tut .dlg-body {
-  text-align: start;
-  line-height: 1.7;
-}
-
-.tut-dots {
-  display: flex;
-  justify-content: center;
-  gap: 6px;
-  margin-top: var(--sp-4);
-}
-
-.tut-dots span {
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  background: var(--hairline);
-}
-
-/* 目前這一步：比較大、比較深——不只靠顏色 */
-.tut-dots span.is-on {
-  width: 22px;
-  border-radius: var(--r-pill);
-  background: var(--primary-deep);
-}
-
-.tut-actions {
-  display: grid;
-  grid-template-columns: 1fr 1.4fr;
-  gap: var(--sp-3);
-  margin-top: var(--sp-4);
-}
-
-.tut-actions .btn {
-  width: 100%;
-  min-width: 0;
-  margin: 0;
-  min-height: 52px;
-  font-size: 1rem;
-}
-
-.tut-actions .btn:disabled {
-  opacity: .45;
-  cursor: default;
-}
-
-.tut .quiet-link {
-  margin-top: var(--sp-2);
-  background: none;
-  border: 0;
-  font-size: .9rem;
 }
 
 /* ═══ 病毒入侵教學：按住不放就會一直消毒 ════════════════════

@@ -235,7 +235,6 @@
       <!-- 主要按鈕固定在畫面底部：不用捲三個畫面才找得到「開始」 -->
       <div class="cta-bar">
         <button class="btn btn-primary" type="button" id="startBtn">開始遊戲</button>
-        <button class="quiet-link how-link" type="button" id="howBtn">怎麼玩？</button>
       </div>
     </section>
 
@@ -340,22 +339,6 @@
       </div>
     </section>
   </main>
-
-  <!-- 第一次進來自動顯示；之後按「怎麼玩？」可以再看 -->
-  <dialog class="dlg tut" id="tutDlg" aria-labelledby="tutTitle" aria-describedby="tutBody">
-    <p class="tut-step" id="tutStep">1 / 4</p>
-    <div aria-live="polite">
-      <div class="tut-art" id="tutArt" aria-hidden="true"></div>
-      <h2 class="dlg-title" id="tutTitle"></h2>
-      <p class="dlg-body" id="tutBody"></p>
-    </div>
-    <div class="tut-dots" id="tutDots" aria-hidden="true"></div>
-    <div class="tut-actions">
-      <button class="btn btn-quiet" type="button" id="tutPrev">上一步</button>
-      <button class="btn btn-primary" type="button" id="tutNext" autofocus>下一步</button>
-    </div>
-    <p class="center"><button class="quiet-link" type="button" id="tutSkip">略過教學</button></p>
-  </dialog>
 
   <!-- 每一局第一次病毒入侵：時間停住，用動畫示範「按住不放就會一直消毒」 -->
   <dialog class="dlg vir" id="virusDlg" aria-labelledby="virTitle" aria-describedby="virSteps">

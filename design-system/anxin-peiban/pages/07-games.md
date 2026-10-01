@@ -201,7 +201,7 @@ the second virus, which disappears too. Geometry is checked arithmetically: viru
 「我知道了，開始消毒！」 or Esc starts the 7 seconds. Later invasions in the same run skip the dialog.
 It fits without scrolling on 375×548 (SE Safari, tightened spacing under 600px tall), 375×667 and 360×740.
 Reduced motion shows a still: the finger pressed on the first virus with the ring on.
-The first-visit tutorial only teases it: 「有時候還會突然『病毒入侵』——到時候會教你怎麼消毒！」.
+The start screen's rules card only teases it: 「還會突然病毒入侵 7 秒，到時候會教你怎麼消毒」.
 
 Keyboard: `1`–`6` hit holes; during the invasion they wipe, and holding a key down auto-repeats,
 which keeps disinfecting (same cooldown). `Esc` pauses; Ctrl/Cmd combos are left alone.
@@ -236,12 +236,13 @@ full 8s × 停留更久 is left, so the round end never swallows it.
   Spawning resumes 700ms after it leaves.
 - Reduced motion: no bob and no glow pulse (the glow stays, static).
 
-## First-visit tutorial
+## No first-visit tutorial
 
-A 4-step `<dialog>` opens once per child (`tutorialSeen`, keyed to the profile code): tapping,
-「小心病毒入侵」 (a teaser — the how-to comes at the first invasion), collecting + 挑戰, pausing. 上一步 / 下一步 with a step count and dots (the active
-dot is wider, not only darker); the last step's 「開始玩！」 closes it and starts the game.
-略過教學 or Esc also mark it seen. 「怎麼玩？」 on the start screen reopens it.
+The 4-step tutorial dialog that opened before round 1 (and the 「怎麼玩？」 button that reopened it)
+was **removed**: the start screen's rules card already explains the game, and the only mechanic
+that needs a demo — holding to disinfect — is taught in context at the first 病毒入侵.
+「開始遊戲」 goes straight into round 1. New saves no longer carry `tutorialSeen`; old saves that
+still have it load unchanged (the key is simply ignored).
 
 ## 小知識 bank
 

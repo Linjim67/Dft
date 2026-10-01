@@ -419,7 +419,7 @@
   function newProgress(code) {
     return {
       v: 2, code: code, clicks: zeroMap(), level: zeroMap(),
-      pending: {}, roundsPlayed: 0, tutorialSeen: false, stickers: {}, bestStreak: 0,
+      pending: {}, roundsPlayed: 0, stickers: {}, bestStreak: 0,
       totalPoints: 0, bestScore: 0, bestRound: 0
     };
   }
@@ -439,7 +439,6 @@
       }
       if (!p.pending || typeof p.pending !== 'object') p.pending = {};
       p.roundsPlayed = Math.max(0, Number(p.roundsPlayed) || 0);
-      p.tutorialSeen = !!p.tutorialSeen;
       if (!p.stickers || typeof p.stickers !== 'object') p.stickers = {};
       p.bestStreak = Math.max(0, Number(p.bestStreak) || 0);
       CHARACTERS.forEach(function (c) {
