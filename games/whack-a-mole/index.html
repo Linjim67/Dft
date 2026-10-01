@@ -213,7 +213,7 @@
           <span class="howto-art" aria-hidden="true">
             <svg><use href="#ch-swab" /></svg><svg><use href="#ch-virus" /></svg>
           </span>
-          <span><strong>第 3 回合</strong>起，酒精棉片和<strong>病毒</strong>登場！病毒要用酒精棉片<strong>擦掉</strong>，200 分</span>
+          <span><strong>第 3 回合</strong>起，酒精棉片也會出現；還會突然<strong>病毒入侵</strong> 7 秒，到時候會教你怎麼消毒</span>
         </li>
         <li>
           <span class="howto-art" aria-hidden="true">
@@ -251,7 +251,8 @@
       </div>
 
       <!-- 連擊條：文字「3 / 5」＋長度，不只靠顏色（離下一個加成還差幾個）。
-           大魔王在場時變成它的血條：標籤「大魔王」、數字「剩下 / 全部」 -->
+           大魔王在場時變成它的血條：標籤「大魔王」、數字「剩下 / 全部」；
+           病毒入侵時變成倒數：標籤「病毒入侵」、數字「5 秒」 -->
       <div class="combo" id="combo">
         <span class="combo-label" id="comboLabel">連擊</span>
         <span class="combo-bar" aria-hidden="true"><span class="combo-fill" id="comboFill"></span></span>
@@ -264,16 +265,10 @@
         <div class="board-wrap">
           <div class="board" id="board"></div>
           <p class="callout" id="callout" aria-hidden="true"></p>
-        </div>
-
-        <div class="tray">
-        <!-- 拖曳，或點一下再點病毒（單指操作的替代方式） -->
-        <button class="swab-tool" type="button" id="swabTool" aria-pressed="false"
-          aria-label="酒精棉片：拖到病毒上擦掉它，或點一下再點病毒">
-          <svg aria-hidden="true"><use href="#tool-swab" /></svg>
-        </button>
-        <p class="tray-hint" id="trayHint">病毒要用<strong>酒精棉片</strong>擦掉：拖過去，或點一下棉片再點病毒</p>
-          <p class="tray-hint-short" aria-hidden="true">拖到病毒上</p>
+          <!-- 病毒入侵時的提示（不擋點擊）：手指就是酒精棉片 -->
+          <p class="invasion-hint" id="invasionHint" hidden>
+            <svg aria-hidden="true"><use href="#tool-swab" /></svg>按住病毒，就會一直消毒
+          </p>
         </div>
       </div>
     </section>
@@ -362,38 +357,42 @@
     <p class="center"><button class="quiet-link" type="button" id="tutSkip">略過教學</button></p>
   </dialog>
 
-  <!-- 第 3 回合開始前：病毒與酒精棉片登場，用動畫示範拖曳 -->
-  <dialog class="dlg vir" id="virusDlg" aria-labelledby="virTitle" aria-describedby="virBody">
-    <p class="vir-kicker">第 3 回合・新角色登場</p>
-    <h2 class="dlg-title" id="virTitle">病毒來了！用酒精棉片擦掉它</h2>
+  <!-- 每一局第一次病毒入侵：時間停住，用動畫示範「按住不放就會一直消毒」 -->
+  <dialog class="dlg vir" id="virusDlg" aria-labelledby="virTitle" aria-describedby="virSteps">
+    <p class="vir-kicker">病毒入侵！</p>
+    <h2 class="dlg-title" id="virTitle">手指<em>按住</em>病毒，就會一直消毒</h2>
 
     <div class="vir-stage" aria-hidden="true">
-      <span class="vir-hole">
+      <span class="vir-hole vir-a">
         <span class="vir-pit"></span>
         <svg class="vir-virus"><use href="#ch-virus" /></svg>
         <span class="vir-lip"></span>
       </span>
-      <span class="vir-sparkle">
+      <span class="vir-hole vir-b">
+        <span class="vir-pit"></span>
+        <svg class="vir-virus"><use href="#ch-virus" /></svg>
+        <span class="vir-lip"></span>
+      </span>
+      <span class="vir-sparkle vir-a">
         <svg viewBox="0 0 24 24"><path d="M12 2v5M12 17v5M2 12h5M17 12h5M4.9 4.9l3.5 3.5M15.6 15.6l3.5 3.5M4.9 19.1l3.5-3.5M15.6 8.4l3.5-3.5" /></svg>
       </span>
-      <span class="vir-points">+200</span>
-      <span class="vir-tray"><svg><use href="#tool-swab" /></svg></span>
+      <span class="vir-sparkle vir-b">
+        <svg viewBox="0 0 24 24"><path d="M12 2v5M12 17v5M2 12h5M17 12h5M4.9 4.9l3.5 3.5M15.6 15.6l3.5 3.5M4.9 19.1l3.5-3.5M15.6 8.4l3.5-3.5" /></svg>
+      </span>
       <span class="vir-drag">
+        <span class="vir-press"></span>
         <svg class="vir-swab"><use href="#tool-swab" /></svg>
         <span class="vir-finger"></span>
       </span>
     </div>
 
-    <ol class="vir-steps">
-      <li><span>1</span>按住下面的酒精棉片</li>
-      <li><span>2</span>拖到病毒身上</li>
-      <li><span>3</span>擦一擦，病毒就不見了！</li>
+    <ol class="vir-steps" id="virSteps">
+      <li><span>1</span><p>這 7 秒只會出現病毒（一隻 200 分），你的手指就是酒精棉片</p></li>
+      <li><span>2</span><p><strong>手指按住病毒不要放開</strong>，就會一直消毒</p></li>
+      <li><span>3</span><p>按著滑到下一隻，也能一起擦掉</p></li>
     </ol>
-    <p class="dlg-body" id="virBody">
-      也可以先點一下棉片、再點病毒。酒精棉片自己跑出來的時候，一樣點一下就好。
-    </p>
     <div class="dlg-actions">
-      <button class="btn btn-primary" type="button" id="virGo" autofocus>我知道了，開始！</button>
+      <button class="btn btn-primary" type="button" id="virGo" autofocus>我知道了，開始消毒！</button>
     </div>
   </dialog>
 

@@ -7,11 +7,11 @@
   'use strict';
 
   var CHARACTERS = [
-    /* from：第幾回合開始出現。病毒與酒精棉片第 3 回合才登場（開場會先播放教學動畫） */
+    /* from：第幾回合開始出現。酒精棉片第 3 回合登場 */
     { id: 'tourniquet', name: '止血帶', points: 100, from: 1 },
     { id: 'swab', name: '酒精棉片', points: 100, from: 3 },
     { id: 'syringe', name: '針筒', points: 100, from: 1 },
-    /* 病毒要用酒精棉片擦掉，不能直接點 */
+    /* 病毒不會混在一般角色裡：只在「病毒入侵」的 7 秒出現（第 3 回合起），要按住消毒 */
     { id: 'virus', name: '病毒', points: 200, wipe: true, from: 3 }
   ];
 
@@ -55,7 +55,8 @@
 
     /* 鍍層：div 是停留時間的除數（一般 1、銀 2）。
        鐵甲不在公式裡，沿用原規格「停留較久」：除以 0.625 = ×1.6，要打 3 下。
-       金色大魔王也不在公式裡：要連點很多下，停留時間固定（見 BOSS_*）。 */
+       金色大魔王也不在公式裡：要連點很多下，停留時間固定（見 BOSS_*）。
+       病毒只在入侵時出現，入侵期間不會有大魔王（見 bossAllowed）。 */
     VARIANTS: {
       normal: { points: 1, div: 1, hp: 1 },
       silver: { points: 1.5, div: 2, hp: 1 },
@@ -73,10 +74,8 @@
     /* 金色大魔王：出現時其他角色先躲起來、暫停冒出新的，畫面上只剩它和血條。
        血量依年齡：各年齡層最快連點約 2–3／4／5／6–7 下每秒，都是 3–4 秒打得完。
        停留 8 秒、不受年齡和等級影響（套 6/age ÷ 3 會短到點不完）；「停留更久」仍然有效。
-       病毒大魔王要用棉片擦，每次擦有 250ms 冷卻（每秒最多 4 下）→ 血量減半。
-       每回合最多一隻；剩下時間不夠 8 秒就不出現（不讓它被回合結束硬生生收走）。 */
+       每回合最多一隻；剩下的時間、離病毒入侵的時間都要夠它整整停留，三者不會撞在一起。 */
     BOSS_HP: { little: 8, kid: 12, junior: 16, teen: 20 },
-    BOSS_WIPE_HP_FACTOR: 0.5,
     BOSS_STAY_MS: 8000,
     BOSS_PER_ROUND: 1,
     BOSS_REST_MS: 700,      /* 大魔王離開後，等一下下才繼續冒出角色 */
@@ -90,8 +89,19 @@
       hammer: { label: '更強的槌子', start: 1, stages: [{ at: 14000, value: 2 }, { at: 32000, value: 3 }] }
     },
 
-    WIPE_COOLDOWN_MS: 250,  /* 同一隻病毒連續擦拭的最短間隔 */
-    TOOLS_FROM_ROUND: 3,    /* 酒精棉片工具列跟著病毒一起出現 */
+    /* 按住消毒：手指停在病毒上，每 250ms 擦一次（同一隻病毒的冷卻），鐵甲病毒按住 0.5 秒就擦掉 */
+    WIPE_COOLDOWN_MS: 250,
+
+    /* 病毒入侵：第 3 回合起，每回合在隨機時間（第 6–20 秒之間開始）突然入侵 7 秒，
+       這 7 秒只出現病毒，冒出來的速度是平常的 2 倍；其他角色先躲起來。
+       每一局第一次入侵先跳出教學（時間停住），之後就直接開始。
+       入侵期間病毒跑掉不會中斷連擊（病毒很多、是加分時間）；結束時還在場的病毒直接退散、不算數。 */
+    INVASION_FROM_ROUND: 3,
+    INVASION_MS: 7000,
+    INVASION_START: [6000, 20000],
+    INVASION_SPAWN_FACTOR: 0.5,
+    INVASION_FIRST_MS: 300, /* 入侵開始後第一隻病毒多快出現 */
+    INVASION_REST_MS: 600,  /* 入侵結束後，等一下下才繼續出現一般角色 */
 
     /* 連續抓到（沒有角色逃走）→ 分數加成；有角色逃走就歸零。連擊條顯示離下一級還差幾個 */
     STREAK_TIERS: [{ at: 5, mult: 1.5 }, { at: 10, mult: 2 }],
@@ -170,8 +180,9 @@
     return CHARACTERS.filter(function (c) { return (c.from || 1) <= round; });
   }
 
+  /* 平常冒出來的角色：已登場、而且不是病毒（病毒只在入侵時出現） */
   function pickCharacter(progress, rng, round) {
-    var pool = availableAt(round || Infinity);
+    var pool = availableAt(round || Infinity).filter(function (c) { return !c.wipe; });
     var ws = pool.map(function (c) {
       return weightOf(progress.clicks[c.id] || 0, progress.level[c.id] || 0);
     });
@@ -225,18 +236,35 @@
     return Math.round(BY_ID[charId].points * CONFIG.VARIANTS[variant].points);
   }
 
-  /* 大魔王的血量依年齡；病毒大魔王用棉片擦（有冷卻）→ 減半 */
-  function maxHp(variant, charId, age) {
+  /* 大魔王的血量依年齡 */
+  function maxHp(variant, age) {
     if (!CONFIG.VARIANTS[variant].boss) return CONFIG.VARIANTS[variant].hp;
-    var hp = CONFIG.BOSS_HP[ageBand(Number(age) || 0)];
-    if (charId && BY_ID[charId].wipe) hp *= CONFIG.BOSS_WIPE_HP_FACTOR;
-    return Math.max(1, Math.round(hp));
+    return CONFIG.BOSS_HP[ageBand(Number(age) || 0)];
   }
 
-  /* 這一回合還能不能放大魔王：每回合一隻，而且剩下的時間要夠它整整停留 */
-  function bossAllowed(bossesThisRound, msLeft, stayFactor) {
-    return bossesThisRound < CONFIG.BOSS_PER_ROUND &&
-      msLeft >= CONFIG.BOSS_STAY_MS * (stayFactor || 1);
+  /* 這一回合還能不能放大魔王：每回合一隻，剩下的時間、離病毒入侵的時間都要夠它整整停留
+     （msToInvasion：入侵中傳 0，這回合沒有或已經入侵過傳 Infinity） */
+  function bossAllowed(bossesThisRound, msLeft, stayFactor, msToInvasion) {
+    var stay = CONFIG.BOSS_STAY_MS * (stayFactor || 1);
+    var gap = msToInvasion === undefined ? Infinity : msToInvasion;
+    return bossesThisRound < CONFIG.BOSS_PER_ROUND && msLeft >= stay && gap >= stay;
+  }
+
+  /* ─────────────────────────────────────────────────────────────
+     病毒入侵
+     ───────────────────────────────────────────────────────────── */
+
+  /* 這一回合幾毫秒時入侵；第 3 回合以前沒有（回傳 null） */
+  function invasionAt(round, rng) {
+    if (round < CONFIG.INVASION_FROM_ROUND) return null;
+    var lo = CONFIG.INVASION_START[0];
+    var hi = CONFIG.INVASION_START[1];
+    return Math.round(lo + rng() * (hi - lo));
+  }
+
+  /* 入侵時病毒冒出來的間隔：平常的一半（仍有 MIN_INTERVAL_MS 下限） */
+  function invasionSpawnMs(tLeftSec, round, age) {
+    return Math.max(CONFIG.MIN_INTERVAL_MS, spawnIntervalMs(tLeftSec, round, age) * CONFIG.INVASION_SPAWN_FACTOR);
   }
 
   /* ─────────────────────────────────────────────────────────────
@@ -446,6 +474,8 @@
     pointsFor: pointsFor,
     maxHp: maxHp,
     bossAllowed: bossAllowed,
+    invasionAt: invasionAt,
+    invasionSpawnMs: invasionSpawnMs,
     unlocks: unlocks,
     newlyUnlocked: newlyUnlocked,
     nextUnlock: nextUnlock,

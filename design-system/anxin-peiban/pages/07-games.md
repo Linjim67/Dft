@@ -16,7 +16,7 @@ Spec: `/games/(auth code if needed)/what-game`. Single-player needs no code, so 
 | File | Role |
 |---|---|
 | `engine.js` | `window.WhackEngine` — **pure** rules, no DOM: spawn rate, weights, tiers, coatings, rewards, quiz selection, save/load. **Every tunable number is in `CONFIG`.** |
-| `whack-a-mole.js` | Views, the rAF loop, pointer / drag / keyboard input |
+| `whack-a-mole.js` | Views, the rAF loop, pointer / hold-to-disinfect / keyboard input |
 | `questions.json` | 小知識 bank |
 | `index.html` | Views + an inline SVG sprite; characters are drawn once as `<symbol>`s |
 
@@ -44,9 +44,17 @@ The `MIN_RATE` floor exists because `I(30) = 0`; without it each round opens wit
 - **Collection** counts characters *caught* (an iron one counts once, not three times).
 - **Tiers** 10 / 50 / 100 make a character *eligible*; answering its 小知識 correctly is what
   actually levels it up.
-- **Challenges are manual and unlimited.** As soon as a character reaches its threshold, a
-  「挑戰小知識」 button appears on it — on the start screen and the round summary — and any number
-  can be challenged in one break. (Replaced the earlier "one automatic quiz per round".)
+- **Challenges are manual and unlimited.** As soon as a character reaches its threshold, **its
+  collection card itself becomes the button** — on the start screen and the round summary — and
+  any number can be challenged in one break. (Replaced the earlier "one automatic quiz per round",
+  and later the separate 「挑戰小知識」 button inside the card.)
+  - Ready card = a real `<button class="coll-item is-ready">`, **pale yellow #FEF9C3 + the 2px
+    #C2410C inset border** (not colour alone); `aria-label`「止血帶：挑戰小知識，答對就升級」. No extra
+    text in the card — the look is the hint. Contrast on the yellow: text 8.7:1, muted 7.1:1,
+    border 4.8:1.
+  - Cards that aren't ready (or are locked after a wrong answer, or waiting for the question bank)
+    stay plain `<div>`s with a status line, and do nothing when tapped.
+  - The line above the list says 「有 N 位角色可以挑戰小知識：點一下黃色的卡片！」.
 - **Wrong** → that character is locked until *the next round ends*, then the *identical* question
   returns. Tracked with lifetime `roundsPlayed`, so it survives closing the page. Other characters
   stay challengeable. **The answer is not revealed on a wrong try**, or the retry would be
@@ -111,15 +119,14 @@ opening's centre line sits 24% up, which is where the character clip ends.
 
 **Layout.** The board fills whatever space remains (`board-wrap` is a size container; each cell is the
 smaller of what fits by width and by height). Portrait → **2 × 3** (holes ~150px, characters ~110px,
-up from ~85 / ~63px); wide/landscape → 3 × 2 with the tray in a side column. Play view is a 100dvh
-flex column and the page cannot scroll.
+up from ~85 / ~63px); wide/landscape → 3 × 2. Play view is a 100dvh flex column and the page cannot
+scroll. **No swab tray** any more (see 病毒入侵): the board takes the whole area under the HUD.
 - **Top bar hidden during play** (`body.is-playing`): a child mashing the top of the screen could
   navigate out mid-round. 小遊戲選單 and 開始打針 move into the pause dialog — one tap deeper, never
   unreachable.
 - **Sticky bottom CTA** (`.cta-bar`) for 開始遊戲 and 下一回合 — visible on the first screen.
 - **Rounded numerals** (`--font-num`: ui-rounded / SF Rounded → Noto Sans) for the whole game page.
   Atkinson Hyperlegible's slashed zero read as 「Ø」 to children.
-- The redundant 「可以挑戰小知識！」 line is dropped when the 挑戰 button is shown.
 
 ## Rewards
 
@@ -153,23 +160,51 @@ Changes: `MIN_UP_MS` 350 → **550** (affects only age ≥ 11); **warm-up** stay
 
 Every age in 57–86% with a gentle ramp; no cliffs. (Age 3's round 3 is a small sample.)
 
-## Staged introduction — 病毒 & 酒精棉片 from round 3
+## Staged introduction — 酒精棉片 from round 3, 病毒 only in 病毒入侵
 
-Rounds 1–2 use only 止血帶 and 針筒 (`CHARACTERS[].from`), and the swab tray is hidden and
-inert (tap and the `S` key are ignored). The **酒精棉片 character** waits too, read literally from
-「病毒和酒精棉片」 — the swab arrives as both a character and the tool that beats the virus.
+Rounds 1–2 use only 止血帶 and 針筒 (`CHARACTERS[].from`). The **酒精棉片 character** joins the normal
+mix from round 3. **病毒 is never in the normal mix** (`pickCharacter` skips `wipe` characters).
 
-Entering round 3 opens a `<dialog>` **before the clock starts**: a looping 3.2s animation in a
-fixed 240×200 stage — a fingertip presses the swab in the tray, drags it up 102px (tool centre
-158 → virus centre 56, checked arithmetically), scrubs, and the virus spins away with 「+200」 —
-plus three numbered steps for parents. 「我知道了，開始！」 or Esc starts the round.
-**Shown every run** at round 3, since that is where the mechanic arrives each time.
-Reduced motion shows a deliberate still (swab resting on the virus) rather than the global rule's
-end frame, where the virus has already vanished.
+## 病毒入侵 — 7 seconds of viruses, hold to disinfect
 
-Soak after this change: teens' hit rate fell from ~63% to 40–45%. Their normal-character window
-(429ms at 14) sits right at reaction time, and the long-staying viruses that used to lift it are
-absent for two rounds. Still playable and still levelling; it reads as "harder for teens".
+From round 3 (infinity mode too), once per round at a random moment that **starts between 6s and
+20s** (`invasionAt`), so it always ends by 27s:
+
+- **Start:** everyone else ducks (not an escape, not counted in the medal's 「出現」). For 7s only
+  viruses appear, **twice as often** as normal spawns (`invasionSpawnMs`, 250ms floor); stays still
+  follow the formula (病毒 ×2). The streak bar becomes a **7-second countdown** — label 「病毒入侵」,
+  green fill, 「5 秒」 text — and the board turns pale green with a 3px #15803D ring. A pill at the
+  bottom of the board (taps pass through) says 「按住病毒，就會一直消毒」. Callout 「病毒入侵！」.
+- **The finger is the swab.** No tray, no pick-up step: pressing anywhere on the board starts a
+  hold (`setPointerCapture`), the swab ghost follows the finger, and the virus under it is wiped —
+  **on press, on every move, and on every frame while the finger stays still**. The 250ms per-virus
+  cooldown sets the pace (≈ 4 wipes/s), so an iron virus falls after ~0.5s of holding, and sliding
+  while held wipes each virus it passes. Lifting the finger (or `pointercancel`) stops it.
+  `touch-action: none` on the board during the invasion, so the browser doesn't treat the hold as
+  a scroll. Verified in Chromium: a 720ms motionless hold killed an iron virus; one slide over
+  two viruses wiped both.
+- **Escapes during the invasion don't break the streak** — viruses come thick and fast; it's a
+  bonus phase. They still count against the medal's catch rate.
+- **End:** viruses still up vanish (not counted), 「消毒完成！」, and normal spawns resume after 600ms.
+  If the round ends first, it is closed silently and the next round starts clean.
+- **No boss overlaps it:** a 大魔王 is only allowed if it can finish its 8s before the invasion
+  starts (`bossAllowed(…, msToInvasion)`), never during it, and never as a virus.
+- Pausing freezes the countdown (it runs on game time).
+
+**Teaching.** Nothing is taught on entering round 3. At the **first invasion of each run**, the board
+switches to 病毒入侵 and then a `<dialog>` opens with the clock frozen. Its title is
+「手指<u>按住</u>病毒，就會一直消毒」 and it has a looping 4.4s animation in a fixed 240×160 stage. A
+fingertip with the swab presses the first virus, and a pulsing ring shows it is still pressed. The
+virus shrinks while the finger holds still, then disappears. Without lifting, the finger slides to
+the second virus, which disappears too. Geometry is checked arithmetically: virus centres (64, 66) /
+(176, 66), finger start (120, 118). Three steps follow; step 2 is bold: 「手指按住病毒不要放開」.
+「我知道了，開始消毒！」 or Esc starts the 7 seconds. Later invasions in the same run skip the dialog.
+It fits without scrolling on 375×548 (SE Safari, tightened spacing under 600px tall), 375×667 and 360×740.
+Reduced motion shows a still: the finger pressed on the first virus with the ring on.
+The first-visit tutorial only teases it: 「有時候還會突然『病毒入侵』——到時候會教你怎麼消毒！」.
+
+Keyboard: `1`–`6` hit holes; during the invasion they wipe, and holding a key down auto-repeats,
+which keeps disinfecting (same cooldown). `Esc` pauses; Ctrl/Cmd combos are left alone.
 
 ## Streak bar
 
@@ -186,17 +221,17 @@ Rolled like a coat (Lv2 20%, Lv3 15%), but at most **one per round** and only wh
 full 8s × 停留更久 is left, so the round end never swallows it.
 
 - **Arrival:** everyone else ducks (not an escape — no streak loss, and not counted in the medal's
-  「出現」); no new spawns while it is up. Callout 「大魔王來了！」 (「病毒大魔王！」 for the virus).
+  「出現」); no new spawns while it is up. Callout 「大魔王來了！」.
 - **Look:** gold coat that bobs, a pulsing gold glow behind the hole, a 👑「大魔王」 badge under its
   own HP bar, and the board gets a 3px #B45309 ring.
 - **HP bar:** the streak bar turns into the boss bar — label 「大魔王」, red→orange fill on a pale
   track, 「9 / 12」 text. It is 16px (vs 12px) but still shorter than the text line, so nothing
   shifts. Text #9A3412 on the page 6.9:1; fill vs track 4.3:1; ring 4.7:1.
 - **HP by age:** little 8 · kid 12 · junior 16 · teen 20 — all ≈ 3–4s at that age's top tapping
-  speed (≈ 2.5 / 4 / 5 / 6.5 per second). 更強的槌子 takes 2–3 HP per tap. **病毒大魔王** is wiped,
-  not tapped, and wipes have a 250ms cooldown (≤ 4/s), so its HP is halved (4 / 6 / 8 / 10).
-- **Stay:** a fixed **8s** (× 停留更久), not age-, level- or virus-scaled.
-- **Knock-out:** 5× points (500; 病毒 1000) × the streak multiplier, +1 collection, sticker
+  speed (≈ 2.5 / 4 / 5 / 6.5 per second). 更強的槌子 takes 2–3 HP per tap. Never a virus (viruses
+  only come in 病毒入侵, where bosses are not allowed).
+- **Stay:** a fixed **8s** (× 停留更久), not age- or level-scaled.
+- **Knock-out:** 5× points (500) × the streak multiplier, +1 collection, sticker
   大魔王剋星, callout 「打倒大魔王！」. **Escape:** 「大魔王跑掉了！」 and the streak resets.
   Spawning resumes 700ms after it leaves.
 - Reduced motion: no bob and no glow pulse (the glow stays, static).
@@ -204,19 +239,9 @@ full 8s × 停留更久 is left, so the round end never swallows it.
 ## First-visit tutorial
 
 A 4-step `<dialog>` opens once per child (`tutorialSeen`, keyed to the profile code): tapping,
-wiping the virus, collecting + 挑戰, pausing. 上一步 / 下一步 with a step count and dots (the active
+「小心病毒入侵」 (a teaser — the how-to comes at the first invasion), collecting + 挑戰, pausing. 上一步 / 下一步 with a step count and dots (the active
 dot is wider, not only darker); the last step's 「開始玩！」 closes it and starts the game.
 略過教學 or Esc also mark it seen. 「怎麼玩？」 on the start screen reopens it.
-
-## 病毒 — drag, with a single-pointer alternative
-
-Drag the swab from the tray over a virus; hit-testing uses `elementFromPoint` under the finger
-(the ghost has `pointer-events: none`). A 250ms per-virus cooldown makes an iron virus need three
-real wipes, not three `pointermove` events from one swipe.
-
-**Alternative (WCAG 2.2 dragging-alternative):** tap the swab to pick it up (`aria-pressed`), then
-tap the virus. Movement under 8px counts as a tap, so a wobbly finger doesn't start a drag.
-Keyboard: `1`–`6` hit holes, `S` picks up the swab, `Esc` pauses; Ctrl/Cmd combos are left alone.
 
 ## 小知識 bank
 

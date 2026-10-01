@@ -71,8 +71,10 @@
     stay: 1,
     hammer: 1,
     holes: [],
-    armed: false,      /* 點選模式：已經拿起酒精棉片 */
-    drag: null,
+    scrub: null,       /* 病毒入侵時按住螢幕的手指：{ id, x, y } */
+    invasionAt: null,  /* 這回合幾毫秒時病毒入侵（null：沒有或已經入侵過） */
+    invasion: null,    /* 入侵中：{ until } */
+    invasionTaught: false, /* 這一局已經看過入侵教學 */
     quiz: null,
     unlocked: [],
     leaving: false,
@@ -167,7 +169,7 @@
       S.boss = h;
       S.bosses++;
     }
-    var hp = E.maxHp(variant, char, p.age);
+    var hp = E.maxHp(variant, p.age);
     S.appeared++;
     h.mole = {
       char: char, variant: variant, hp: hp, maxHp: hp,
@@ -187,7 +189,7 @@
     h.el.setAttribute('aria-label', holeLabel(h));
     if (boss) {
       setBossLook(true);
-      callout(E.BY_ID[char].wipe ? '病毒大魔王！' : '大魔王來了！');
+      callout('大魔王來了！');
     }
   }
 
@@ -207,14 +209,20 @@
     h.el.setAttribute('aria-label', holeLabel(h));
   }
 
+  function msToInvasion() {
+    if (S.invasion) return 0;
+    return S.invasionAt === null ? Infinity : S.invasionAt - S.clock;
+  }
+
   function spawn() {
     if (S.boss) return; /* 大魔王在場：專心打它 */
     var free = S.holes.filter(function (h) { return h.open && !h.mole && S.clock >= h.freeAt; });
     if (!free.length) return;
     var h = free[Math.floor(Math.random() * free.length)];
-    var char = E.pickCharacter(progress, Math.random, S.round);
+    /* 病毒入侵：只出現病毒 */
+    var char = S.invasion ? 'virus' : E.pickCharacter(progress, Math.random, S.round);
     var variant = E.pickVariant(progress.level[char], Math.random);
-    if (variant === 'boss' && !E.bossAllowed(S.bosses, C.ROUND_MS - S.clock, S.stay)) variant = 'normal';
+    if (variant === 'boss' && !E.bossAllowed(S.bosses, C.ROUND_MS - S.clock, S.stay, msToInvasion())) variant = 'normal';
     raise(h, char, variant);
   }
 
@@ -285,13 +293,13 @@
     damage(h, 1); /* 棉片擦一次扣一格；槌子升級只影響「點」 */
   }
 
-  var hintTimer = null;
+  function wipeHole(h) {
+    if (h && h.mole && E.BY_ID[h.mole.char].wipe) wipe(h);
+  }
+
+  /* 入侵以外的時間點到病毒（只有測試會發生）：搖頭表示「要用棉片喔」 */
   function nope(h) {
     retrigger(h.el, 'is-nope');
-    var hint = $('trayHint');
-    hint.classList.add('is-flash');
-    window.clearTimeout(hintTimer);
-    hintTimer = window.setTimeout(function () { hint.classList.remove('is-flash'); }, 900);
   }
 
   /* ─────────────────────────────────────────────────────────────
@@ -324,6 +332,12 @@
 
   function renderCombo() {
     renderMult();
+    if (S.invasion) {
+      var left = Math.max(0, S.invasion.until - S.clock);
+      comboFill.style.width = (100 * left / C.INVASION_MS).toFixed(1) + '%';
+      comboCount.textContent = Math.ceil(left / 1000) + ' 秒';
+      return;
+    }
     var b = S.boss && S.boss.mole;
     if (b) {
       comboFill.style.width = Math.round(100 * b.hp / b.maxHp) + '%';
@@ -348,6 +362,52 @@
     renderCombo();
   }
 
+  /* ─────────────────────────────────────────────────────────────
+     病毒入侵：7 秒只出現病毒；手指就是酒精棉片，按住就一直消毒
+     ───────────────────────────────────────────────────────────── */
+
+  var invasionHint = $('invasionHint');
+
+  function setInvasionLook(on) {
+    comboEl.classList.toggle('is-invasion', on);
+    board.classList.toggle('is-invasion', on);
+    invasionHint.hidden = !on;
+    comboLabel.textContent = on ? '病毒入侵' : '連擊';
+    renderCombo();
+  }
+
+  /* 其他角色先躲起來：不算逃走、也不算進獎牌的「出現」 */
+  function clearBoard() {
+    S.holes.forEach(function (h) {
+      if (h.mole) { lower(h, false); S.appeared--; }
+    });
+  }
+
+  function startInvasion() {
+    S.invasionAt = null;
+    clearBoard();
+    S.invasion = { until: S.clock + C.INVASION_MS };
+    S.nextSpawnAt = S.clock + C.INVASION_FIRST_MS;
+    setInvasionLook(true);
+    /* 這一局第一次：先跳出教學，時間停住；按「開始消毒」才開始倒數 */
+    if (!S.invasionTaught) {
+      S.invasionTaught = true;
+      halt();
+      virusDlg.open();
+      return;
+    }
+    callout('病毒入侵！');
+  }
+
+  function endInvasion(quiet) {
+    S.invasion = null;
+    endScrub();
+    clearBoard();
+    setInvasionLook(false);
+    S.nextSpawnAt = S.clock + C.INVASION_REST_MS;
+    if (!quiet) callout('消毒完成！');
+  }
+
   function award(id) {
     if (E.earnSticker(progress, id)) S.newStickers.push(id);
   }
@@ -357,17 +417,73 @@
     var h = S.holes[i];
     if (!h || !h.open || !h.mole) return;
     if (E.BY_ID[h.mole.char].wipe) {
-      if (S.armed) wipe(h); else nope(h);
+      if (S.invasion) wipe(h); else nope(h);
       return;
     }
     damage(h, S.hammer);
   }
 
   board.addEventListener('pointerdown', function (ev) {
+    if (S.invasion && S.running) {
+      ev.preventDefault();
+      startScrub(ev);
+      return;
+    }
     var el = ev.target.closest('.hole');
     if (!el || el.classList.contains('is-locked')) return;
     ev.preventDefault();
     tapHole(Number(el.dataset.i));
+  });
+
+  /* 按住消毒：手指在哪裡，就擦哪裡的病毒；手指不動也會繼續擦（每一幀檢查一次，靠冷卻控制速度） */
+  var ghost = $('dragGhost');
+
+  function placeGhost(x, y) {
+    ghost.style.transform = 'translate(' + Math.round(x - 36) + 'px,' + Math.round(y - 44) + 'px)';
+  }
+
+  function wipeAt(x, y) {
+    var el = document.elementFromPoint ? document.elementFromPoint(x, y) : null;
+    var holeEl = el && el.closest ? el.closest('.hole') : null;
+    if (!holeEl || holeEl.classList.contains('is-locked')) return;
+    wipeHole(S.holes[Number(holeEl.dataset.i)]);
+  }
+
+  function startScrub(ev) {
+    try { board.setPointerCapture(ev.pointerId); } catch (e) { /* 忽略 */ }
+    S.scrub = { id: ev.pointerId, x: ev.clientX, y: ev.clientY };
+    ghost.hidden = false;
+    placeGhost(ev.clientX, ev.clientY);
+    document.body.classList.add('is-scrubbing');
+    var el = ev.target.closest ? ev.target.closest('.hole') : null;
+    if (el && !el.classList.contains('is-locked')) wipeHole(S.holes[Number(el.dataset.i)]);
+    else wipeAt(ev.clientX, ev.clientY);
+  }
+
+  function endScrub() {
+    S.scrub = null;
+    ghost.hidden = true;
+    document.body.classList.remove('is-scrubbing');
+  }
+
+  board.addEventListener('pointermove', function (ev) {
+    var d = S.scrub;
+    if (!d || ev.pointerId !== d.id) return;
+    d.x = ev.clientX;
+    d.y = ev.clientY;
+    placeGhost(d.x, d.y);
+    if (S.running) wipeAt(d.x, d.y);
+  });
+
+  /* 長按不跳出系統選單（Android 長按可能會跳，打斷按住消毒） */
+  board.addEventListener('contextmenu', function (ev) {
+    if (S.view === 'play') ev.preventDefault();
+  });
+
+  ['pointerup', 'pointercancel', 'lostpointercapture'].forEach(function (type) {
+    board.addEventListener(type, function (ev) {
+      if (S.scrub && ev.pointerId === S.scrub.id) endScrub();
+    });
   });
 
   /* 只處理鍵盤觸發的 click（Enter／Space）；手指點擊已經在 pointerdown 處理過 */
@@ -379,81 +495,7 @@
   });
 
   /* ─────────────────────────────────────────────────────────────
-     酒精棉片：拖到病毒上擦掉；或點一下拿起、再點病毒
-     ───────────────────────────────────────────────────────────── */
-
-  var swab = $('swabTool');
-  var ghost = $('dragGhost');
-  var tray = document.querySelector('.tray');
-
-  /* 病毒還沒登場的回合，棉片工具列不出現、也不能拿起 */
-  function toolsOn() { return S.round >= C.TOOLS_FROM_ROUND; }
-
-  function setArmed(on) {
-    S.armed = !!on;
-    swab.setAttribute('aria-pressed', S.armed ? 'true' : 'false');
-    swab.classList.toggle('is-armed', S.armed);
-    board.classList.toggle('swab-armed', S.armed);
-  }
-
-  function placeGhost(x, y) {
-    ghost.style.transform = 'translate(' + Math.round(x - 36) + 'px,' + Math.round(y - 44) + 'px)';
-  }
-
-  function wipeAt(x, y) {
-    var el = document.elementFromPoint ? document.elementFromPoint(x, y) : null;
-    var holeEl = el && el.closest ? el.closest('.hole') : null;
-    if (!holeEl || holeEl.classList.contains('is-locked')) return;
-    var h = S.holes[Number(holeEl.dataset.i)];
-    if (h && h.mole && E.BY_ID[h.mole.char].wipe) wipe(h);
-  }
-
-  function endDrag() {
-    S.drag = null;
-    ghost.hidden = true;
-    document.body.classList.remove('is-dragging');
-  }
-
-  swab.addEventListener('pointerdown', function (ev) {
-    if (!S.running || !toolsOn()) return;
-    ev.preventDefault();
-    try { swab.setPointerCapture(ev.pointerId); } catch (e) { /* 忽略 */ }
-    S.drag = { id: ev.pointerId, x0: ev.clientX, y0: ev.clientY, moved: false };
-  });
-
-  swab.addEventListener('pointermove', function (ev) {
-    var d = S.drag;
-    if (!d || ev.pointerId !== d.id) return;
-    if (!d.moved) {
-      /* 移動超過 8px 才算拖曳，避免手抖把「點一下」當成拖曳 */
-      if (Math.abs(ev.clientX - d.x0) + Math.abs(ev.clientY - d.y0) < 8) return;
-      d.moved = true;
-      ghost.hidden = false;
-      document.body.classList.add('is-dragging');
-    }
-    placeGhost(ev.clientX, ev.clientY);
-    if (S.running) wipeAt(ev.clientX, ev.clientY);
-  });
-
-  function finishDrag(ev) {
-    var d = S.drag;
-    if (!d || ev.pointerId !== d.id) return;
-    if (d.moved) {
-      if (ev.type === 'pointerup' && S.running) wipeAt(ev.clientX, ev.clientY);
-    } else if (ev.type === 'pointerup' && S.running) {
-      setArmed(!S.armed);
-    }
-    endDrag();
-  }
-
-  swab.addEventListener('pointerup', finishDrag);
-  swab.addEventListener('pointercancel', finishDrag);
-  swab.addEventListener('click', function (ev) {
-    if (ev.detail === 0 && S.running && toolsOn()) setArmed(!S.armed);
-  });
-
-  /* ─────────────────────────────────────────────────────────────
-     鍵盤：1–6 打對應的洞、S 拿起／放下棉片、Esc 暫停
+     鍵盤：1–6 打對應的洞（入侵時是擦；按住按鍵會自動重複＝持續消毒）、Esc 暫停
      ───────────────────────────────────────────────────────────── */
 
   document.addEventListener('keydown', function (ev) {
@@ -461,9 +503,6 @@
     if (ev.key >= '1' && ev.key <= '6') {
       ev.preventDefault();
       tapHole(Number(ev.key) - 1);
-    } else if ((ev.key === 's' || ev.key === 'S') && toolsOn()) {
-      ev.preventDefault();
-      setArmed(!S.armed);
     } else if (ev.key === 'Escape') {
       ev.preventDefault();
       pause();
@@ -497,10 +536,19 @@
       if (h.mole && S.clock >= h.mole.downAt) {
         var wasBoss = h === S.boss;
         lower(h, false);
-        breakCombo(); /* 有角色逃走 → 連擊歸零 */
+        if (!S.invasion) breakCombo(); /* 有角色逃走 → 連擊歸零（入侵時病毒很多，不算） */
         if (wasBoss) callout('大魔王跑掉了！');
       }
     });
+
+    if (S.invasion) {
+      if (S.clock >= S.invasion.until) endInvasion();
+    } else if (S.invasionAt !== null && S.clock >= S.invasionAt && !S.boss) {
+      startInvasion();
+      if (!S.running) return; /* 第一次入侵：教學對話框開著，時間停住 */
+    }
+    if (S.scrub) wipeAt(S.scrub.x, S.scrub.y); /* 手指按著不動，也繼續消毒 */
+    if (S.invasion) renderCombo();
 
     if (S.clock >= C.ROUND_MS) {
       endRound();
@@ -510,7 +558,7 @@
     var tLeft = (C.ROUND_MS - S.clock) / 1000;
     if (S.clock >= S.nextSpawnAt) {
       spawn();
-      S.nextSpawnAt = S.clock + E.spawnIntervalMs(tLeft, S.round, p.age);
+      S.nextSpawnAt = S.clock + (S.invasion ? E.invasionSpawnMs : E.spawnIntervalMs)(tLeft, S.round, p.age);
     }
     renderTime(tLeft);
     S.rafId = window.requestAnimationFrame(frame);
@@ -527,7 +575,7 @@
     S.running = false;
     if (S.rafId !== null) window.cancelAnimationFrame(S.rafId);
     S.rafId = null;
-    endDrag();
+    endScrub();
   }
 
   /* ─────────────────────────────────────────────────────────────
@@ -537,6 +585,7 @@
   function startRun() {
     S.round = 1;
     S.runScore = 0;
+    S.invasionTaught = false;
     startRound();
   }
 
@@ -551,6 +600,8 @@
     S.shownSec = null;
     S.boss = null;
     S.bosses = 0;
+    S.invasion = null;
+    S.invasionAt = E.invasionAt(S.round, Math.random);
     S.streak = 0;
     S.roundBestStreak = 0;
     S.appeared = 0;
@@ -558,29 +609,19 @@
     S.newStickers = [];
     buildBoard();
     setBossLook(false);
-    setArmed(false);
+    setInvasionLook(false);
     $('hudRound').textContent = roundLabel(S.round);
     $('hudScore').textContent = fmt(S.runScore);
     renderTime(C.ROUND_MS / 1000);
-    tray.hidden = !toolsOn();
     show('play', $('pauseBtn'));
-    /* 第 3 回合：病毒和酒精棉片登場。先示範怎麼拖曳，按下「開始」才計時 */
-    if (S.round === C.TOOLS_FROM_ROUND) {
-      virusDlg.open();
-      return;
-    }
-    beginRound();
-  }
-
-  function beginRound() {
     Anxin.announce(live, roundLabel(S.round) + '開始');
     resume();
   }
 
   function endRound() {
     halt();
+    if (S.invasion) endInvasion(true); /* 先收掉入侵（還在場的病毒不算數），再收其他角色 */
     S.holes.forEach(function (h) { lower(h, false); });
-    setArmed(false);
     progress.bestScore = Math.max(progress.bestScore, S.runScore);
     progress.bestRound = Math.max(progress.bestRound, S.round);
     /* 回合獎牌：抓到 ÷ 出現；獎勵分數也算進總分（可能因此解鎖新獎勵） */
@@ -612,9 +653,12 @@
 
   $('virGo').addEventListener('click', function () { virusDlgEl.close(); });
 
-  /* 不論按按鈕或 Esc 關掉，都開始這一回合 */
+  /* 不論按按鈕或 Esc 關掉，都開始入侵的 7 秒 */
   virusDlgEl.addEventListener('close', function () {
-    if (S.view === 'play' && !S.running && S.round === C.TOOLS_FROM_ROUND && S.clock === 0) beginRound();
+    if (S.view === 'play' && !S.running && S.invasion) {
+      callout('病毒入侵！');
+      resume();
+    }
   });
 
   var pauseDlgEl = $('pauseDlg');
@@ -666,21 +710,22 @@
       var canGo = ready && !locked && !!bank;
       var status = !next ? '已經滿級！'
         : (locked ? '下一回合結束後可以再挑戰'
-          : (ready ? (bank ? '可以挑戰小知識！' : '題目載入中…')
+          : (ready ? '題目載入中…'
             : (clicks === 0 && (c.from || 1) > 1 ? '第 ' + c.from + ' 回合登場'
               : '再收集 ' + (next - clicks) + ' 個就能挑戰')));
-      var action = canGo
-        ? '<button type="button" class="btn-challenge" data-char="' + c.id + '">挑戰小知識</button>'
-        : '';
-      return '<li class="coll-item' + (canGo ? ' is-ready' : '') + '">' +
+      var inner =
         '<svg class="coll-art" aria-hidden="true"><use href="#ch-' + c.id + '"></use></svg>' +
         '<span class="coll-name">' + esc(c.name) + '</span>' +
         '<span class="coll-stars" role="img" aria-label="等級 ' + lv + ' / ' + C.MAX_LEVEL + '">' + stars + '</span>' +
         '<span class="coll-count">收集 ' + clicks + ' 個</span>' +
-        '<span class="coll-bar" aria-hidden="true"><span style="width:' + pct + '%"></span></span>' +
-        (canGo ? '' : '<span class="coll-status">' + status + '</span>') +
-        action +
-        '</li>';
+        '<span class="coll-bar" aria-hidden="true"><span style="width:' + pct + '%"></span></span>';
+      /* 可以挑戰：整張卡片就是按鈕（淡黃底＋深色外框），點一下直接開始；不另外放按鈕 */
+      if (canGo) {
+        return '<li class="coll-cell"><button type="button" class="coll-item is-ready" data-char="' + c.id + '"' +
+          ' aria-label="' + esc(c.name) + '：挑戰小知識，答對就升級">' + inner + '</button></li>';
+      }
+      return '<li class="coll-cell"><div class="coll-item">' + inner +
+        '<span class="coll-status">' + status + '</span></div></li>';
     }).join('');
   }
 
@@ -744,10 +789,10 @@
     else showSummary();
   }
 
-  /* 兩個收藏清單共用：點「挑戰小知識」 */
+  /* 兩個收藏清單共用：點可以挑戰的卡片 */
   ['collection', 'summaryCollection'].forEach(function (id) {
     $(id).addEventListener('click', function (ev) {
-      var b = ev.target.closest('.btn-challenge');
+      var b = ev.target.closest('.coll-item.is-ready');
       if (b) openChallenge(b.dataset.char, id === 'collection' ? 'intro' : 'summary');
     });
   });
@@ -826,7 +871,7 @@
 
   function renderChallengeHint(el) {
     var n = bank ? E.CHARACTERS.filter(function (c) { return E.canChallenge(progress, c.id); }).length : 0;
-    el.textContent = n ? '有 ' + n + ' 位角色可以挑戰小知識，按下面的「挑戰小知識」！' : '';
+    el.textContent = n ? '有 ' + n + ' 位角色可以挑戰小知識：點一下黃色的卡片！' : '';
     el.hidden = !n;
   }
 
@@ -891,7 +936,8 @@
   function goIntro() {
     halt();
     S.holes.forEach(function (h) { lower(h, false); });
-    setArmed(false);
+    S.invasion = null;
+    S.invasionAt = null;
     save();
     renderCollection($('collection'));
     renderChallengeHint($('introChallenge'));
@@ -918,8 +964,8 @@
     },
     {
       art: ['ch-swab', 'ch-virus'],
-      title: '第 3 回合：新角色登場',
-      body: '從第 3 回合開始，酒精棉片和病毒也會跑出來。病毒要用酒精棉片擦掉——到時候會再示範一次給你看！'
+      title: '第 3 回合：小心病毒入侵',
+      body: '從第 3 回合開始，酒精棉片也會跑出來。有時候還會突然「病毒入侵」——到時候會教你怎麼消毒！'
     },
     {
       art: ['icon-star'],
@@ -994,6 +1040,7 @@
     progress: function () { return progress; },
     raise: function (i, char, variant) { raise(S.holes[i], char, variant || 'normal'); },
     setBank: function (b) { bank = b; },
-    jumpToRound: function (n) { halt(); S.round = n; startRound(); }
+    jumpToRound: function (n) { halt(); S.round = n; startRound(); },
+    invade: function () { startInvasion(); }
   };
 })();

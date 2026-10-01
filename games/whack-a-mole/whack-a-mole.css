@@ -136,9 +136,34 @@
   box-shadow: var(--sh-sm);
 }
 
-/* 可以挑戰：除了顏色，還有外框與文字 */
+/* li 只是外框：裡面的卡片撐滿格子，同一列等高 */
+.coll-cell {
+  display: grid;
+}
+
+/* 可以挑戰：整張卡片就是按鈕。淡黃底＋深色外框（不只靠顏色），點一下就開始 */
+button.coll-item {
+  width: 100%;
+  margin: 0;
+  border: 0;
+  font: inherit;
+  color: inherit;
+  text-align: start;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+
 .coll-item.is-ready {
+  background: #FEF9C3;
   box-shadow: var(--sh-sm), inset 0 0 0 2px var(--primary-deep);
+}
+
+.coll-item.is-ready .coll-bar {
+  background: rgba(146, 64, 14, .14);
+}
+
+.coll-item.is-ready:active {
+  transform: translateY(1px);
 }
 
 .coll-art {
@@ -208,29 +233,6 @@
   color: var(--fg-muted);
 }
 
-.coll-item.is-ready .coll-status {
-  color: var(--primary-deep);
-  font-weight: 700;
-}
-
-/* 達到門檻就能自己按：不用等回合結束，一次可以挑戰好幾位 */
-.btn-challenge {
-  grid-column: 1 / -1;
-  min-height: 44px;
-  margin-top: var(--sp-2);
-  padding: var(--sp-2) var(--sp-3);
-  border-radius: var(--r-pill);
-  background: var(--primary-wash);
-  color: var(--primary-deep);
-  border: 2px solid var(--primary-deep);
-  font-size: .9rem;
-  font-weight: 700;
-  line-height: 1.3;
-}
-
-.btn-challenge:active {
-  transform: translateY(1px);
-}
 
 .challenge-hint {
   margin-bottom: var(--sp-3);
@@ -332,9 +334,11 @@
   font-size: .9rem;
 }
 
-/* ═══ 第 3 回合：病毒登場教學（拖曳動畫）═══════════════════════
-   幾何固定在 240×200px，拖曳距離才能精準對到病毒：
-   工具中心 y = 200 − 10 − 32 = 158；病毒中心 y = 20 + 36 = 56 → 往上 102px */
+/* ═══ 病毒入侵教學：按住不放就會一直消毒 ════════════════════
+   幾何固定在 240×160px，手指才能精準停在病毒上：
+   兩個洞 96px，左緣 16 / 128 → 病毒中心 x = 64 / 176，y = 24 + 96 − 22 − 32 = 66；
+   手指起點中心 (120, 160 − 10 − 32 = 118) → 往 (−56, −52)、再往 (+56, −52)。
+   節奏 4.4 秒：移過去 → 按下（縮小）→ 按住不動，病毒慢慢變小消失 → 不放開、滑到下一隻 → 放開 */
 
 .vir {
   text-align: center;
@@ -344,8 +348,8 @@
   display: inline-block;
   padding: 2px var(--sp-3);
   border-radius: var(--r-pill);
-  background: var(--primary-wash);
-  color: var(--primary-deep);
+  background: #DCFCE7;
+  color: #14532D;
   font-size: .82rem;
   font-weight: 700;
 }
@@ -354,32 +358,46 @@
   margin-top: var(--sp-2);
 }
 
+.vir .dlg-title em {
+  font-style: normal;
+  color: var(--primary-deep);
+  text-decoration: underline;
+  text-decoration-thickness: 3px;
+  text-underline-offset: 4px;
+}
+
 .vir-stage {
   position: relative;
   display: block;
   width: 240px;
-  height: 200px;
-  margin: var(--sp-4) auto var(--sp-3);
+  height: 160px;
+  margin: var(--sp-3) auto;
   border-radius: var(--r-lg);
-  background: linear-gradient(180deg, var(--sand-1), var(--sand-2));
+  background: linear-gradient(180deg, #F0FDF4, #DCFCE7);
   overflow: hidden;
 }
 
 .vir-hole {
   position: absolute;
-  top: 14px;
-  left: 50%;
-  width: 104px;
-  height: 104px;
-  margin-left: -52px;
+  top: 24px;
+  width: 96px;
+  height: 96px;
+}
+
+.vir-hole.vir-a {
+  left: 16px;
+}
+
+.vir-hole.vir-b {
+  left: 128px;
 }
 
 .vir-pit {
   position: absolute;
   left: 8px;
   right: 8px;
-  bottom: 14px;
-  height: 28px;
+  bottom: 12px;
+  height: 26px;
   border-radius: 50%;
   background: radial-gradient(ellipse at 50% 35%, var(--pit), var(--pit-deep) 75%);
 }
@@ -387,31 +405,42 @@
 .vir-virus {
   position: absolute;
   left: 16px;
-  bottom: 26px;
-  width: 72px;
-  height: 72px;
-  animation: vir-virus 3.2s ease-in-out infinite;
+  bottom: 22px;
+  width: 64px;
+  height: 64px;
+  animation: vir-virus-a 4.4s ease-in-out infinite;
+}
+
+.vir-b .vir-virus {
+  animation-name: vir-virus-b;
 }
 
 .vir-lip {
   position: absolute;
   left: 2px;
   right: 2px;
-  bottom: 4px;
-  height: 22px;
+  bottom: 2px;
+  height: 20px;
   border-radius: 0 0 50% 50% / 0 0 100% 100%;
   background: linear-gradient(180deg, var(--earth-lip), var(--earth-lip-dark));
 }
 
 .vir-sparkle {
   position: absolute;
-  top: 26px;
-  left: 50%;
-  width: 60px;
-  height: 60px;
-  margin-left: -30px;
+  top: 38px;
+  width: 56px;
+  height: 56px;
   opacity: 0;
-  animation: vir-sparkle 3.2s ease-out infinite;
+  animation: vir-sparkle-a 4.4s ease-out infinite;
+}
+
+.vir-sparkle.vir-a {
+  left: 36px;
+}
+
+.vir-sparkle.vir-b {
+  left: 148px;
+  animation-name: vir-sparkle-b;
 }
 
 .vir-sparkle svg {
@@ -423,52 +452,33 @@
   stroke-linecap: round;
 }
 
-.vir-points {
-  position: absolute;
-  top: 18px;
-  left: 50%;
-  transform: translateX(-50%);
-  font-weight: 700;
-  color: var(--primary-deep);
-  text-shadow: 0 0 3px #fff, 0 0 3px #fff;
-  opacity: 0;
-  animation: vir-points 3.2s ease-out infinite;
-}
-
-.vir-tray,
 .vir-drag {
   position: absolute;
   bottom: 10px;
   left: 50%;
+  display: grid;
+  place-items: center;
   width: 64px;
   height: 64px;
   margin-left: -32px;
-}
-
-.vir-tray {
-  display: grid;
-  place-items: center;
-  border-radius: var(--r-md);
-  border: 2px dashed var(--line);
-  background: rgba(255, 255, 255, .6);
-}
-
-.vir-tray svg {
-  width: 44px;
-  height: 44px;
-  opacity: .35;
-}
-
-.vir-drag {
-  display: grid;
-  place-items: center;
-  animation: vir-drag 3.2s ease-in-out infinite;
+  animation: vir-drag 4.4s ease-in-out infinite;
 }
 
 .vir-swab {
+  position: relative;
   width: 50px;
   height: 50px;
   filter: drop-shadow(0 4px 5px rgba(124, 45, 18, .3));
+}
+
+/* 按住中：手指周圍一圈一直脈動，看得出「還壓著」 */
+.vir-press {
+  position: absolute;
+  inset: -6px;
+  border-radius: 50%;
+  border: 3px solid var(--primary-deep);
+  opacity: 0;
+  animation: vir-press 4.4s ease-in-out infinite;
 }
 
 /* 指尖：半透明圓點加白框，看得出「手指壓著」 */
@@ -485,34 +495,50 @@
 
 @keyframes vir-drag {
   0% { opacity: 0; transform: translate(0, 0); }
-  8% { opacity: 1; transform: translate(0, 0); }
-  16% { opacity: 1; transform: translate(0, 0) scale(.9); }
-  44% { transform: translate(0, -102px) scale(.9); }
-  51% { transform: translate(-14px, -102px) scale(.9); }
-  58% { transform: translate(14px, -102px) scale(.9); }
-  65% { transform: translate(-10px, -102px) scale(.9); }
-  72% { opacity: 1; transform: translate(0, -102px) scale(.9); }
-  84% { opacity: 0; transform: translate(0, -102px); }
+  6% { opacity: 1; transform: translate(0, 0); }
+  20% { transform: translate(-56px, -52px); }
+  24%, 46% { transform: translate(-56px, -52px) scale(.86); }
+  60%, 80% { transform: translate(56px, -52px) scale(.86); }
+  85% { opacity: 1; transform: translate(56px, -52px); }
+  92% { opacity: 0; transform: translate(56px, -52px); }
   100% { opacity: 0; transform: translate(0, 0); }
 }
 
-@keyframes vir-virus {
-  0%, 62% { opacity: 1; transform: scale(1) rotate(0); }
-  74% { opacity: 0; transform: scale(.2) rotate(50deg); }
-  92% { opacity: 0; transform: scale(.2); }
+@keyframes vir-press {
+  0%, 22% { opacity: 0; transform: scale(.6); }
+  26%, 40%, 54%, 68% { opacity: .9; transform: scale(1); }
+  33%, 47%, 61%, 75% { opacity: .45; transform: scale(1.22); }
+  80% { opacity: .9; transform: scale(1); }
+  84%, 100% { opacity: 0; transform: scale(1.3); }
+}
+
+/* 按住的這段時間慢慢變小（一直在消毒），最後轉一圈消失 */
+@keyframes vir-virus-a {
+  0%, 24% { opacity: 1; transform: scale(1) rotate(0); }
+  42% { opacity: 1; transform: scale(.6) rotate(20deg); }
+  47% { opacity: 0; transform: scale(.2) rotate(50deg); }
+  94% { opacity: 0; transform: scale(.2); }
   100% { opacity: 1; transform: scale(1); }
 }
 
-@keyframes vir-sparkle {
-  0%, 64% { opacity: 0; transform: scale(.4); }
-  74% { opacity: 1; transform: scale(1); }
-  88%, 100% { opacity: 0; transform: scale(1.3); }
+@keyframes vir-virus-b {
+  0%, 60% { opacity: 1; transform: scale(1) rotate(0); }
+  76% { opacity: 1; transform: scale(.6) rotate(-20deg); }
+  81% { opacity: 0; transform: scale(.2) rotate(-50deg); }
+  94% { opacity: 0; transform: scale(.2); }
+  100% { opacity: 1; transform: scale(1); }
 }
 
-@keyframes vir-points {
-  0%, 68% { opacity: 0; transform: translate(-50%, 0); }
-  76% { opacity: 1; }
-  92%, 100% { opacity: 0; transform: translate(-50%, -22px); }
+@keyframes vir-sparkle-a {
+  0%, 44% { opacity: 0; transform: scale(.4); }
+  50% { opacity: 1; transform: scale(1); }
+  60%, 100% { opacity: 0; transform: scale(1.3); }
+}
+
+@keyframes vir-sparkle-b {
+  0%, 78% { opacity: 0; transform: scale(.4); }
+  84% { opacity: 1; transform: scale(1); }
+  92%, 100% { opacity: 0; transform: scale(1.3); }
 }
 
 .vir-steps {
@@ -522,6 +548,15 @@
   padding: 0;
   list-style: none;
   text-align: start;
+}
+
+.vir-steps p {
+  margin: 0;
+  line-height: 1.45;
+}
+
+.vir-steps strong {
+  color: var(--primary-deep);
 }
 
 .vir-steps li {
@@ -543,10 +578,19 @@
   font-size: .85rem;
 }
 
-.vir .dlg-body {
-  margin-top: var(--sp-3);
-  text-align: start;
-  font-size: .9rem;
+/* 矮螢幕（iPhone SE 的 Safari 只有 548px 高）：收緊間距，整個對話框不用捲動就看得到按鈕 */
+@media (max-height: 600px) {
+  .vir-stage {
+    margin-block: var(--sp-2);
+  }
+
+  .vir-steps {
+    gap: var(--sp-1);
+  }
+
+  .vir .dlg-actions {
+    margin-top: var(--sp-3);
+  }
 }
 
 /* ═══ 遊戲中：HUD ════════════════════════════════════════════ */
@@ -715,6 +759,23 @@ body.is-playing .topbar {
 .combo.is-boss .combo-fill {
   background: linear-gradient(90deg, #DC2626, #F97316);
   transition-duration: 90ms;
+}
+
+/* 病毒入侵：連擊條變成 7 秒倒數（標籤「病毒入侵」＋「5 秒」） */
+.combo.is-invasion .combo-label,
+.combo.is-invasion .combo-count {
+  color: #166534;
+}
+
+.combo.is-invasion .combo-bar {
+  height: 16px;
+  border-color: #15803D;
+  background: #DCFCE7;
+}
+
+.combo.is-invasion .combo-fill {
+  background: linear-gradient(90deg, #15803D, #16A34A);
+  transition: none;
 }
 
 /* ═══ 棋盤：洞的大小依剩餘空間決定 ═══════════════════════════
@@ -980,6 +1041,43 @@ body.is-playing .topbar {
   box-shadow: var(--sh-md), 0 0 0 3px #B45309;
 }
 
+/* 病毒入侵：棋盤變成淡綠＋綠框；按住拖曳不能被瀏覽器當成捲動或縮放 */
+.board.is-invasion {
+  background: linear-gradient(180deg, #F0FDF4, #DCFCE7);
+  box-shadow: var(--sh-md), 0 0 0 3px #15803D;
+}
+
+.board.is-invasion,
+.board.is-invasion .hole {
+  touch-action: none;
+}
+
+.invasion-hint {
+  position: absolute;
+  left: 50%;
+  bottom: var(--sp-2);
+  z-index: 5;
+  display: flex;
+  align-items: center;
+  gap: var(--sp-1);
+  margin: 0;
+  padding: 3px var(--sp-3) 3px var(--sp-2);
+  transform: translateX(-50%);
+  border-radius: var(--r-pill);
+  background: rgba(255, 255, 255, .94);
+  box-shadow: 0 0 0 1px #15803D, var(--sh-sm);
+  color: #14532D;
+  font-size: .85rem;
+  font-weight: 700;
+  white-space: nowrap;
+  pointer-events: none;
+}
+
+.invasion-hint svg {
+  width: 22px;
+  height: 22px;
+}
+
 .v-iron .mole-art {
   filter: grayscale(1) brightness(.72) contrast(1.25);
 }
@@ -1069,7 +1167,7 @@ body.is-playing .topbar {
   }
 }
 
-/* 直接點病毒：搖頭表示「要用棉片喔」 */
+/* 入侵以外點到病毒：搖頭表示「要用棉片喔」 */
 .hole.is-nope .mole-art {
   animation: nope 320ms ease-in-out;
 }
@@ -1086,61 +1184,7 @@ body.is-playing .topbar {
   }
 }
 
-/* ═══ 工具列：酒精棉片 ═══════════════════════════════════════ */
-
-.tray {
-  flex: 0 0 auto;
-  display: grid;
-  grid-template-columns: auto 1fr;
-  align-items: center;
-  gap: var(--sp-3);
-}
-
-.tray-hint-short {
-  display: none;
-}
-
-.swab-tool {
-  display: grid;
-  place-items: center;
-  width: 76px;
-  height: 76px;
-  border-radius: var(--r-lg);
-  background: var(--card);
-  border: 2px dashed var(--line);
-  box-shadow: var(--sh-sm);
-  cursor: grab;
-  touch-action: none;
-  -webkit-tap-highlight-color: transparent;
-}
-
-.swab-tool svg {
-  width: 58px;
-  height: 58px;
-}
-
-/* 拿起棉片（點選模式）：實線框 + 淡底 + 文字狀態（aria-pressed） */
-.swab-tool.is-armed {
-  background: var(--primary-wash);
-  border-style: solid;
-  border-color: var(--primary-deep);
-  box-shadow: var(--sh-md);
-}
-
-.tray-hint {
-  font-size: .86rem;
-  line-height: 1.55;
-  color: var(--fg-muted);
-}
-
-.tray-hint strong {
-  color: var(--fg);
-}
-
-.tray-hint.is-flash {
-  color: var(--primary-deep);
-  font-weight: 700;
-}
+/* ═══ 病毒入侵：手指下的酒精棉片 ═════════════════════════════ */
 
 .drag-ghost {
   position: fixed;
@@ -1158,8 +1202,8 @@ body.is-playing .topbar {
   height: 100%;
 }
 
-.is-dragging,
-.is-dragging * {
+.is-scrubbing,
+.is-scrubbing * {
   cursor: grabbing;
 }
 
@@ -1578,12 +1622,11 @@ body.is-playing .topbar {
     display: block;
   }
 
-  .btn-challenge:hover {
-    box-shadow: var(--sh-md);
+  .coll-item.is-ready:hover {
+    box-shadow: var(--sh-md), inset 0 0 0 2px var(--primary-deep);
   }
 
   .hud-pause:hover,
-  .swab-tool:hover,
   .quiz-opt:not(:disabled):hover {
     background: var(--primary-wash);
     border-color: var(--primary-deep);
@@ -1599,7 +1642,7 @@ body.is-playing .topbar {
   }
 }
 
-/* ═══ 橫向手機：狀態列 + 棋盤 + 側邊工具列，一畫面放得下 ════════ */
+/* ═══ 橫向手機：狀態列 + 棋盤，一畫面放得下 ════════════════════ */
 
 @media (orientation: landscape) and (max-height: 540px) {
   body.is-playing .wrap {
@@ -1614,30 +1657,6 @@ body.is-playing .topbar {
     margin-bottom: var(--sp-2);
   }
 
-  .play-main {
-    flex-direction: row;
-  }
-
-  .tray {
-    width: 96px;
-    grid-template-columns: 1fr;
-    justify-items: center;
-    align-content: center;
-    gap: var(--sp-2);
-  }
-
-  .tray-hint {
-    display: none;
-  }
-
-  .tray-hint-short {
-    display: block;
-    font-size: .8rem;
-    font-weight: 700;
-    line-height: 1.4;
-    text-align: center;
-    color: var(--fg-muted);
-  }
 }
 
 /* ═══ 減少動態：角色直接出現／消失；分數文字留著、不飄 ═══════ */
@@ -1653,16 +1672,20 @@ body.is-playing .topbar {
     animation: none;
   }
 
-  /* 教學動畫改成一張靜態示意：棉片停在病毒上（不是停在最後一格——那時病毒已經消失了） */
+  /* 教學動畫改成一張靜態示意：手指按在第一隻病毒上、外圈亮著（不是停在最後一格——那時病毒都消失了） */
   .vir-drag,
+  .vir-press,
   .vir-virus,
-  .vir-sparkle,
-  .vir-points {
+  .vir-sparkle {
     animation: none;
   }
 
   .vir-drag {
     opacity: 1;
-    transform: translate(0, -102px) scale(.9);
+    transform: translate(-56px, -52px) scale(.86);
+  }
+
+  .vir-press {
+    opacity: .9;
   }
 }
