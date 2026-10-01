@@ -65,7 +65,7 @@ The `MIN_RATE` floor exists because `I(30) = 0`; without it each round opens wit
   threshold" rule as collections): 停留更久 1.5k / 10k / 24k · 更多洞 4k / 16k · 更強的槌子 14k / 32k.
   Tuned by simulation so a perfect player earns about one reward per round through round 6,
   and a realistic child (slower, misses ~1 in 3) keeps earning into round 8.
-- The hammer (更強的槌子) affects **taps** only — iron and 大魔王; each swab wipe deals 1 HP.
+- The hammer (更強的槌子) affects **taps** only — iron and 大魔王. Viruses are wiped by time, not HP.
 - Infinity mode = rounds continue past 6, difficulty capped at round 10.
 - No penalty for misses.
 
@@ -131,7 +131,8 @@ scroll. **No swab tray** any more (see 病毒入侵): the board takes the whole 
 ## Rewards
 
 - **Streak multiplier** — consecutive catches with no escape: ×1.5 from 5, ×2 from 10.
-  Shown as a 「×1.5」 chip on the combo row and a centre callout 「5 連擊！×1.5」 (taps pass through it).
+  Shown as a 「×1.5」 / 「×2」 chip **next to the score** in the HUD and a centre callout 「5 連擊！×1.5」
+  (taps pass through it).
   Points round to tens (150, 200, 300).
 - **Round medal** by catch rate (caught ÷ appeared): gold ≥ 80% +500, silver ≥ 60% +300,
   bronze ≥ 40% +100; no medal under 3 appearances. The bonus counts toward rewards.
@@ -172,17 +173,23 @@ From round 3 (infinity mode too), once per round at a random moment that **start
 
 - **Start:** everyone else ducks (not an escape, not counted in the medal's 「出現」). For 7s only
   viruses appear, **twice as often** as normal spawns (`invasionSpawnMs`, 250ms floor); stays still
-  follow the formula (病毒 ×2). The streak bar becomes a **7-second countdown** — label 「病毒入侵」,
-  green fill, 「5 秒」 text — and the board turns pale green with a 3px #15803D ring. A pill at the
-  bottom of the board (taps pass through) says 「按住病毒，就會一直消毒」. Callout 「病毒入侵！」.
+  follow the formula (病毒 ×2). The board turns pale green with a 3px #15803D ring, and a pill at the
+  bottom of the board (taps pass through) says 「按住病毒，就會一直消毒」 with the **countdown chip
+  「5 秒」** at its end (white on #15803D, 5.0:1). Callout 「病毒入侵！」.
 - **The finger is the swab.** No tray, no pick-up step: pressing anywhere on the board starts a
-  hold (`setPointerCapture`), the swab ghost follows the finger, and the virus under it is wiped —
-  **on press, on every move, and on every frame while the finger stays still**. The 250ms per-virus
-  cooldown sets the pace (≈ 4 wipes/s), so an iron virus falls after ~0.5s of holding, and sliding
-  while held wipes each virus it passes. Lifting the finger (or `pointercancel`) stops it.
+  hold (`setPointerCapture`), the swab ghost follows the finger, and the hole under the finger is
+  tracked (on press and on every move). **A virus must be wiped for a while** — every frame adds
+  the elapsed time to the virus under the finger, even if the finger doesn't move:
+  **normal 0.4s · silver 0.75s · iron 1.2s** (`WIPE_MS`; iron was "3 hits" → 3 × 0.4s).
+  - A quick touch is not enough; the virus's bar (same bar as iron's HP) drains as it is wiped, and
+    the virus wiggles (`.is-wiping`) only while the finger is on it.
+  - Wiping **adds up**: lift halfway, come back, and it carries on.
+  - **A virus being wiped can't escape** (its exit is pushed back while touched), so a long wipe
+    never ends in "it ran away".
+  - Sliding while held moves on to the next virus. Lifting the finger (or `pointercancel`) stops it.
   `touch-action: none` on the board during the invasion, so the browser doesn't treat the hold as
-  a scroll. Verified in Chromium: a 720ms motionless hold killed an iron virus; one slide over
-  two viruses wiped both.
+  a scroll. Verified in Chromium: after a 0.2s hold the virus was still up with its bar at 50%;
+  by 0.5s it was gone (+200).
 - **Escapes during the invasion don't break the streak** — viruses come thick and fast; it's a
   bonus phase. They still count against the medal's catch rate.
 - **End:** viruses still up vanish (not counted), 「消毒完成！」, and normal spawns resume after 600ms.
@@ -203,15 +210,18 @@ It fits without scrolling on 375×548 (SE Safari, tightened spacing under 600px 
 Reduced motion shows a still: the finger pressed on the first virus with the ring on.
 The start screen's rules card only teases it: 「還會突然病毒入侵 7 秒，到時候會教你怎麼消毒」.
 
-Keyboard: `1`–`6` hit holes; during the invasion they wipe, and holding a key down auto-repeats,
-which keeps disinfecting (same cooldown). `Esc` pauses; Ctrl/Cmd combos are left alone.
+Keyboard: `1`–`6` hit holes; during the invasion **holding a number key = holding a finger** on
+that hole (keydown starts it, keyup stops it, auto-repeat is ignored). Enter / Space on a focused
+hole can't be held, so each press wipes 0.25s (`WIPE_TAP_MS`). `Esc` pauses; Ctrl/Cmd combos are
+left alone.
 
-## Streak bar
+## No 連擊 bar
 
-The 槌子幫手 (auto-hammer) was **removed**. The bar under the HUD now tracks the streak toward the
-next multiplier: 「3 / 5」 → (×1.5) 「7 / 10」 → (×2) just the count with a full bar. **A character
-escaping resets it** (tapping an empty hole does not — young children tap freely). The same target
-for every age; it only decides a score multiplier, not a power-up.
+The 槌子幫手 (auto-hammer) was removed, and later the progress bar above the board too: the board now
+sits right under the HUD. The streak itself still counts — **a character escaping resets it**
+(tapping an empty hole does not) — and still decides the multiplier, which shows as the chip next
+to the score. Nothing else used the bar: the boss HP lives on the boss, the invasion countdown in
+the invasion pill.
 
 Old saves may still hold a `helper` sticker; it is ignored (the book counts only current ids).
 
@@ -223,10 +233,9 @@ full 8s × 停留更久 is left, so the round end never swallows it.
 - **Arrival:** everyone else ducks (not an escape — no streak loss, and not counted in the medal's
   「出現」); no new spawns while it is up. Callout 「大魔王來了！」.
 - **Look:** gold coat that bobs, a pulsing gold glow behind the hole, a 👑「大魔王」 badge under its
-  own HP bar, and the board gets a 3px #B45309 ring.
-- **HP bar:** the streak bar turns into the boss bar — label 「大魔王」, red→orange fill on a pale
-  track, 「9 / 12」 text. It is 16px (vs 12px) but still shorter than the text line, so nothing
-  shifts. Text #9A3412 on the page 6.9:1; fill vs track 4.3:1; ring 4.7:1.
+  HP bar, and the board gets a 3px #B45309 ring (4.7:1).
+- **HP bar:** **right above the boss, exactly like iron's** (the same green 8px bar, no boss-only
+  style) — it shrinks with every tap.
 - **HP by age:** little 8 · kid 12 · junior 16 · teen 20 — all ≈ 3–4s at that age's top tapping
   speed (≈ 2.5 / 4 / 5 / 6.5 per second). 更強的槌子 takes 2–3 HP per tap. Never a virus (viruses
   only come in 病毒入侵, where bosses are not allowed).
@@ -243,6 +252,13 @@ was **removed**: the start screen's rules card already explains the game, and th
 that needs a demo — holding to disinfect — is taught in context at the first 病毒入侵.
 「開始遊戲」 goes straight into round 1. New saves no longer carry `tutorialSeen`; old saves that
 still have it load unchanged (the key is simply ignored).
+
+## 剩下 5 秒
+
+When the round clock crosses 5s left, a centre callout 「剩下 5 秒！」 pops up **once per round**,
+and from then on the timer number jumps (scale 1.35 → 1) every second, on top of the existing
+orange + underline low-time style (not colour alone). Never at round start; a pause just before
+5s doesn't lose it. Reduced motion: the callout still shows, the number doesn't jump.
 
 ## 小知識 bank
 

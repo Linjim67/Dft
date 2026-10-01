@@ -89,8 +89,12 @@
       hammer: { label: '更強的槌子', start: 1, stages: [{ at: 14000, value: 2 }, { at: 32000, value: 3 }] }
     },
 
-    /* 按住消毒：手指停在病毒上，每 250ms 擦一次（同一隻病毒的冷卻），鐵甲病毒按住 0.5 秒就擦掉 */
-    WIPE_COOLDOWN_MS: 250,
+    /* 按住消毒：棉片要在病毒身上「擦滿」一段時間才會消失（累計，手指離開再回來會接著算）。
+       一般 0.4 秒、銀色 0.75 秒；鐵甲原本要打 3 下 → 3 × 0.4 = 1.2 秒。
+       被擦的病毒不會跑掉（擦到一半逃走太挫折）。
+       鍵盤：按住數字鍵＝按住手指；Enter／空白鍵（沒辦法按住）一次算擦 0.25 秒。 */
+    WIPE_MS: { normal: 400, silver: 750, iron: 1200 },
+    WIPE_TAP_MS: 250,
 
     /* 病毒入侵：第 3 回合起，每回合在隨機時間（第 6–20 秒之間開始）突然入侵 7 秒，
        這 7 秒只出現病毒，冒出來的速度是平常的 2 倍；其他角色先躲起來。
@@ -103,7 +107,7 @@
     INVASION_FIRST_MS: 300, /* 入侵開始後第一隻病毒多快出現 */
     INVASION_REST_MS: 600,  /* 入侵結束後，等一下下才繼續出現一般角色 */
 
-    /* 連續抓到（沒有角色逃走）→ 分數加成；有角色逃走就歸零。連擊條顯示離下一級還差幾個 */
+    /* 連續抓到（沒有角色逃走）→ 分數加成；有角色逃走就歸零。倍率顯示在分數旁邊 */
     STREAK_TIERS: [{ at: 5, mult: 1.5 }, { at: 10, mult: 2 }],
 
     /* 回合獎牌：這一回合「抓到 ÷ 出現」的比例；出現太少（<3）不頒獎 */
@@ -329,12 +333,9 @@
     return m;
   }
 
-  /* 連擊條的目標：下一個加成門檻（全部達到則回傳 null） */
-  function nextStreakTier(streak) {
-    for (var i = 0; i < CONFIG.STREAK_TIERS.length; i++) {
-      if (streak < CONFIG.STREAK_TIERS[i].at) return CONFIG.STREAK_TIERS[i];
-    }
-    return null;
+  /* 病毒要擦滿幾毫秒才會消失 */
+  function wipeMs(variant) {
+    return CONFIG.WIPE_MS[variant] || CONFIG.WIPE_MS.normal;
   }
 
   function medalFor(caught, appeared) {
@@ -484,7 +485,7 @@
     ageFactor: ageFactor,
     STICKERS: STICKERS,
     streakMult: streakMult,
-    nextStreakTier: nextStreakTier,
+    wipeMs: wipeMs,
     medalFor: medalFor,
     earnSticker: earnSticker,
     isLocked: isLocked,

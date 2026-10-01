@@ -243,20 +243,11 @@
       <div class="hud">
         <p class="hud-round" id="hudRound">第 1 / 6 回合</p>
         <p class="hud-time" id="hudTimeWrap"><span id="hudTime">30</span><span class="hud-unit">秒</span></p>
-        <p class="hud-score"><span class="hud-unit">分數</span><span id="hudScore">0</span></p>
+        <!-- 連擊加成（×1.5／×2）就貼在分數旁邊：文字，不只靠顏色 -->
+        <p class="hud-score"><span class="hud-unit">分數</span><span class="hud-score-row"><span class="hud-mult" id="hudMult" hidden>×1.5</span><span id="hudScore">0</span></span></p>
         <button class="hud-pause" type="button" id="pauseBtn" aria-label="暫停">
           <svg viewBox="0 0 24 24" class="icon" aria-hidden="true"><path d="M9 6v12M15 6v12" /></svg>
         </button>
-      </div>
-
-      <!-- 連擊條：文字「3 / 5」＋長度，不只靠顏色（離下一個加成還差幾個）。
-           大魔王在場時變成它的血條：標籤「大魔王」、數字「剩下 / 全部」；
-           病毒入侵時變成倒數：標籤「病毒入侵」、數字「5 秒」 -->
-      <div class="combo" id="combo">
-        <span class="combo-label" id="comboLabel">連擊</span>
-        <span class="combo-bar" aria-hidden="true"><span class="combo-fill" id="comboFill"></span></span>
-        <span class="combo-count" id="comboCount">0 / 5</span>
-        <span class="combo-mult" id="comboMult" hidden>×1.5</span>
       </div>
 
       <div class="play-main">
@@ -264,9 +255,9 @@
         <div class="board-wrap">
           <div class="board" id="board"></div>
           <p class="callout" id="callout" aria-hidden="true"></p>
-          <!-- 病毒入侵時的提示（不擋點擊）：手指就是酒精棉片 -->
+          <!-- 病毒入侵時的提示（不擋點擊）：手指就是酒精棉片；右邊是入侵還剩幾秒 -->
           <p class="invasion-hint" id="invasionHint" hidden>
-            <svg aria-hidden="true"><use href="#tool-swab" /></svg>按住病毒，就會一直消毒
+            <svg aria-hidden="true"><use href="#tool-swab" /></svg>按住病毒，就會一直消毒<span class="invasion-left" id="invasionLeft">7 秒</span>
           </p>
         </div>
       </div>

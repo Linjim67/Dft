@@ -586,6 +586,33 @@ body.is-playing .topbar {
   font-variant-numeric: tabular-nums;
 }
 
+.hud-score-row {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-1);
+}
+
+/* 連擊加成：連續抓到 5 個 ×1.5、10 個 ×2（文字，不只靠顏色） */
+.hud-mult {
+  padding: 0 6px;
+  border-radius: var(--r-pill);
+  background: var(--primary-deep);
+  color: #fff;
+  font: 700 .78rem/1.5 var(--font-num);
+  white-space: nowrap;
+}
+
+/* 最後 5 秒：每一秒數字跳一下 */
+#hudTime.is-tick {
+  display: inline-block;
+  animation: time-tick 420ms cubic-bezier(.2, .9, .3, 1.4);
+}
+
+@keyframes time-tick {
+  0% { transform: scale(1.35); }
+  100% { transform: scale(1); }
+}
+
 .hud-pause {
   display: grid;
   place-items: center;
@@ -596,96 +623,6 @@ body.is-playing .topbar {
   color: var(--fg);
   border: var(--line-w) solid var(--line);
   box-shadow: var(--sh-sm);
-}
-
-/* ═══ 連擊條 ═════════════════════════════════════════════════ */
-
-.combo {
-  display: flex;
-  align-items: center;
-  gap: var(--sp-2);
-  margin-bottom: var(--sp-3);
-}
-
-.combo-label {
-  font-size: .85rem;
-  font-weight: 700;
-  color: var(--fg-muted);
-  white-space: nowrap;
-}
-
-.combo-bar {
-  flex: 1 1 auto;
-  min-width: 0;
-  display: block;
-  height: 12px;
-  border-radius: var(--r-pill);
-  background: var(--bg-sunk);
-  border: 1px solid var(--line);
-  overflow: hidden;
-}
-
-.combo-fill {
-  display: block;
-  width: 0;
-  height: 100%;
-  border-radius: inherit;
-  background: var(--primary-fill);
-  transition: width var(--t-fast) var(--ease);
-}
-
-.combo-count {
-  font-family: var(--font-num);
-  min-width: 3.2em;
-  font-size: .9rem;
-  font-weight: 700;
-  text-align: end;
-  font-variant-numeric: tabular-nums;
-}
-
-/* 連續抓到一定數量：分數加成（文字「×1.5」，不只靠顏色） */
-.combo-mult {
-  padding: 1px var(--sp-2);
-  border-radius: var(--r-pill);
-  background: var(--primary-deep);
-  color: #fff;
-  font: 700 .8rem/1.5 var(--font-num);
-  white-space: nowrap;
-}
-
-/* 大魔王在場：連擊條變成它的血條（標籤「大魔王」＋「12 / 20」，不只靠顏色）。
-   條加粗到 16px 仍比文字行高矮，整列高度不變、棋盤不會跳動 */
-.combo.is-boss .combo-label,
-.combo.is-boss .combo-count {
-  color: #9A3412;
-}
-
-.combo.is-boss .combo-bar {
-  height: 16px;
-  border-color: #B45309;
-  background: #FEF3C7;
-}
-
-.combo.is-boss .combo-fill {
-  background: linear-gradient(90deg, #DC2626, #F97316);
-  transition-duration: 90ms;
-}
-
-/* 病毒入侵：連擊條變成 7 秒倒數（標籤「病毒入侵」＋「5 秒」） */
-.combo.is-invasion .combo-label,
-.combo.is-invasion .combo-count {
-  color: #166534;
-}
-
-.combo.is-invasion .combo-bar {
-  height: 16px;
-  border-color: #15803D;
-  background: #DCFCE7;
-}
-
-.combo.is-invasion .combo-fill {
-  background: linear-gradient(90deg, #15803D, #16A34A);
-  transition: none;
 }
 
 /* ═══ 棋盤：洞的大小依剩餘空間決定 ═══════════════════════════
@@ -988,6 +925,27 @@ body.is-playing .topbar {
   height: 22px;
 }
 
+.invasion-left {
+  margin-inline-start: var(--sp-1);
+  padding: 0 6px;
+  border-radius: var(--r-pill);
+  background: #15803D;
+  color: #fff;
+  font: 700 .78rem/1.5 var(--font-num);
+  font-variant-numeric: tabular-nums;
+}
+
+/* 正在擦的病毒：一直抖、慢慢變淡（血條也在變短） */
+.hole.is-wiping .mole-art {
+  animation: wiping 240ms ease-in-out infinite;
+}
+
+@keyframes wiping {
+  0%, 100% { transform: rotate(0) scale(1); }
+  25% { transform: rotate(-6deg) scale(.96); }
+  75% { transform: rotate(6deg) scale(.96); }
+}
+
 .v-iron .mole-art {
   filter: grayscale(1) brightness(.72) contrast(1.25);
 }
@@ -1013,15 +971,6 @@ body.is-playing .topbar {
   display: block;
 }
 
-.hole.is-boss .hp {
-  height: 11px;
-  border: 1px solid rgba(255, 255, 255, .85);
-}
-
-.hole.is-boss .hp-fill {
-  background: linear-gradient(90deg, #DC2626, #F97316);
-  transition-duration: 90ms;
-}
 
 .hp-fill {
   display: block;
@@ -1563,10 +1512,6 @@ body.is-playing .topbar {
     margin-bottom: var(--sp-1);
   }
 
-  .combo {
-    margin-bottom: var(--sp-2);
-  }
-
 }
 
 /* ═══ 減少動態：角色直接出現／消失；分數文字留著、不飄 ═══════ */
@@ -1578,6 +1523,8 @@ body.is-playing .topbar {
   .hole.is-nope .mole-art,
   .hole.is-up .v-boss .mole-art,
   .hole.is-boss::before,
+  .hole.is-wiping .mole-art,
+  #hudTime.is-tick,
   .callout.is-on {
     animation: none;
   }

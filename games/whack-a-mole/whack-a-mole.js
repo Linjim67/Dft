@@ -71,7 +71,9 @@
     stay: 1,
     hammer: 1,
     holes: [],
-    scrub: null,       /* 病毒入侵時按住螢幕的手指：{ id, x, y } */
+    scrub: null,       /* 病毒入侵時按住螢幕的手指：{ id, x, y, i }（i：手指下的洞） */
+    keyHold: null,     /* 按住數字鍵消毒：{ key, i } */
+    warned: false,     /* 這回合已經提示過「剩下 5 秒」 */
     invasionAt: null,  /* 這回合幾毫秒時病毒入侵（null：沒有或已經入侵過） */
     invasion: null,    /* 入侵中：{ until } */
     invasionTaught: false, /* 這一局已經看過入侵教學 */
@@ -171,19 +173,21 @@
     }
     var hp = E.maxHp(variant, p.age);
     S.appeared++;
+    var isVirus = !!E.BY_ID[char].wipe;
     h.mole = {
       char: char, variant: variant, hp: hp, maxHp: hp,
       upAt: S.clock,
       downAt: S.clock + E.upMs(char, variant, progress.level[char], p.age, S.stay, S.round),
-      lastWipe: -Infinity
+      wiped: 0, wipeNeed: isVirus ? E.wipeMs(variant) : 0 /* 病毒：已經擦了幾毫秒／要擦滿幾毫秒 */
     };
     setArt(h.use, char);
     h.moleEl.className = 'mole v-' + variant;
     h.badge.innerHTML = BADGE[variant];
-    h.el.classList.toggle('has-hp', hp > 1);
+    /* 血條：要打好幾下的（鐵甲、大魔王），以及要擦一陣子的病毒 */
+    h.el.classList.toggle('has-hp', hp > 1 || isVirus);
     h.el.classList.toggle('is-boss', boss);
     h.hpFill.style.width = '100%';
-    h.el.classList.remove('is-hit', 'is-nope', 'is-hurt');
+    h.el.classList.remove('is-hit', 'is-nope', 'is-hurt', 'is-wiping');
     h.el.dataset.char = char;
     h.el.classList.add('is-up');
     h.el.setAttribute('aria-label', holeLabel(h));
@@ -203,7 +207,7 @@
       h.el.classList.remove('is-boss');
       setBossLook(false);
     }
-    h.el.classList.remove('is-up', 'is-hurt');
+    h.el.classList.remove('is-up', 'is-hurt', 'is-wiping');
     if (hit) h.el.classList.add('is-hit');
     delete h.el.dataset.char;
     h.el.setAttribute('aria-label', holeLabel(h));
@@ -271,7 +275,7 @@
     if (navigator.vibrate) { try { navigator.vibrate(12); } catch (e) { /* 忽略 */ } }
     lower(h, true);
     $('hudScore').textContent = fmt(S.runScore);
-    renderCombo();
+    renderMult();
   }
 
   function damage(h, amount) {
@@ -280,21 +284,25 @@
     if (m.hp > 0) {
       h.hpFill.style.width = Math.round(100 * m.hp / m.maxHp) + '%';
       retrigger(h.el, 'is-hurt');
-      if (h === S.boss) renderCombo();
       return;
     }
     knockOut(h);
   }
 
-  function wipe(h) {
+  /* 擦病毒：累計擦了多久，擦滿就消失；血條跟著變短。被擦的時候不會跑掉 */
+  function wipe(h, ms) {
     var m = h.mole;
-    if (S.clock - m.lastWipe < C.WIPE_COOLDOWN_MS) return;
-    m.lastWipe = S.clock;
-    damage(h, 1); /* 棉片擦一次扣一格；槌子升級只影響「點」 */
+    m.wiped += ms;
+    if (m.wiped >= m.wipeNeed) {
+      knockOut(h);
+      return;
+    }
+    m.downAt = Math.max(m.downAt, S.clock + 200);
+    h.hpFill.style.width = Math.round(100 * (1 - m.wiped / m.wipeNeed)) + '%';
   }
 
-  function wipeHole(h) {
-    if (h && h.mole && E.BY_ID[h.mole.char].wipe) wipe(h);
+  function isVirusHole(h) {
+    return !!(h && h.mole && E.BY_ID[h.mole.char].wipe);
   }
 
   /* 入侵以外的時間點到病毒（只有測試會發生）：搖頭表示「要用棉片喔」 */
@@ -303,19 +311,14 @@
   }
 
   /* ─────────────────────────────────────────────────────────────
-     連擊條：平常顯示離下一個加成還差幾個；大魔王在場時變成它的血條
+     連擊倍率（分數旁邊的 ×1.5）與跳出來的大字
      ───────────────────────────────────────────────────────────── */
 
-  var comboEl = $('combo');
-  var comboFill = $('comboFill');
-  var comboCount = $('comboCount');
-  var comboLabel = $('comboLabel');
-
-  var comboMult = $('comboMult');
+  var hudMult = $('hudMult');
   var calloutEl = $('callout');
   var calloutTimer = null;
 
-  /* 大字從棋盤中間跳出來：連擊里程碑、大魔王 */
+  /* 大字從棋盤中間跳出來：連擊里程碑、大魔王、病毒入侵、剩下 5 秒 */
   function callout(text) {
     calloutEl.textContent = text;
     retrigger(calloutEl, 'is-on');
@@ -326,40 +329,19 @@
 
   function renderMult() {
     var m = E.streakMult(S.streak);
-    comboMult.hidden = m <= 1;
-    comboMult.textContent = '×' + m;
+    hudMult.hidden = m <= 1;
+    hudMult.textContent = '×' + m;
   }
 
-  function renderCombo() {
-    renderMult();
-    if (S.invasion) {
-      var left = Math.max(0, S.invasion.until - S.clock);
-      comboFill.style.width = (100 * left / C.INVASION_MS).toFixed(1) + '%';
-      comboCount.textContent = Math.ceil(left / 1000) + ' 秒';
-      return;
-    }
-    var b = S.boss && S.boss.mole;
-    if (b) {
-      comboFill.style.width = Math.round(100 * b.hp / b.maxHp) + '%';
-      comboCount.textContent = b.hp + ' / ' + b.maxHp;
-      return;
-    }
-    var next = E.nextStreakTier(S.streak);
-    comboFill.style.width = next ? Math.round(100 * S.streak / next.at) + '%' : '100%';
-    comboCount.textContent = next ? S.streak + ' / ' + next.at : String(S.streak);
-  }
-
+  /* 大魔王的血條就在它頭上（和鐵甲一樣），這裡只換棋盤外框 */
   function setBossLook(on) {
-    comboEl.classList.toggle('is-boss', on);
     board.classList.toggle('is-boss', on);
-    comboLabel.textContent = on ? '大魔王' : '連擊';
-    renderCombo();
   }
 
   /* 有角色逃走：連擊歸零、倍率消失 */
   function breakCombo() {
     S.streak = 0;
-    renderCombo();
+    renderMult();
   }
 
   /* ─────────────────────────────────────────────────────────────
@@ -367,13 +349,18 @@
      ───────────────────────────────────────────────────────────── */
 
   var invasionHint = $('invasionHint');
+  var invasionLeft = $('invasionLeft');
+
+  /* 入侵剩幾秒：寫在棋盤下方的提示裡 */
+  function renderInvasion() {
+    if (!S.invasion) return;
+    invasionLeft.textContent = Math.ceil(Math.max(0, S.invasion.until - S.clock) / 1000) + ' 秒';
+  }
 
   function setInvasionLook(on) {
-    comboEl.classList.toggle('is-invasion', on);
     board.classList.toggle('is-invasion', on);
     invasionHint.hidden = !on;
-    comboLabel.textContent = on ? '病毒入侵' : '連擊';
-    renderCombo();
+    renderInvasion();
   }
 
   /* 其他角色先躲起來：不算逃走、也不算進獎牌的「出現」 */
@@ -402,6 +389,7 @@
   function endInvasion(quiet) {
     S.invasion = null;
     endScrub();
+    S.keyHold = null;
     clearBoard();
     setInvasionLook(false);
     S.nextSpawnAt = S.clock + C.INVASION_REST_MS;
@@ -417,7 +405,7 @@
     var h = S.holes[i];
     if (!h || !h.open || !h.mole) return;
     if (E.BY_ID[h.mole.char].wipe) {
-      if (S.invasion) wipe(h); else nope(h);
+      if (S.invasion) wipe(h, C.WIPE_TAP_MS); else nope(h); /* Enter／空白鍵沒辦法按住：一次算擦一小段 */
       return;
     }
     damage(h, S.hammer);
@@ -435,29 +423,29 @@
     tapHole(Number(el.dataset.i));
   });
 
-  /* 按住消毒：手指在哪裡，就擦哪裡的病毒；手指不動也會繼續擦（每一幀檢查一次，靠冷卻控制速度） */
+  /* 按住消毒：記下手指下面是哪個洞，每一幀把經過的時間加到那隻病毒身上（手指不動也一直擦） */
   var ghost = $('dragGhost');
 
   function placeGhost(x, y) {
     ghost.style.transform = 'translate(' + Math.round(x - 36) + 'px,' + Math.round(y - 44) + 'px)';
   }
 
-  function wipeAt(x, y) {
-    var el = document.elementFromPoint ? document.elementFromPoint(x, y) : null;
+  function holeIndexOf(el) {
     var holeEl = el && el.closest ? el.closest('.hole') : null;
-    if (!holeEl || holeEl.classList.contains('is-locked')) return;
-    wipeHole(S.holes[Number(holeEl.dataset.i)]);
+    return holeEl && !holeEl.classList.contains('is-locked') ? Number(holeEl.dataset.i) : null;
+  }
+
+  function holeAt(x, y) {
+    return holeIndexOf(document.elementFromPoint ? document.elementFromPoint(x, y) : null);
   }
 
   function startScrub(ev) {
     try { board.setPointerCapture(ev.pointerId); } catch (e) { /* 忽略 */ }
-    S.scrub = { id: ev.pointerId, x: ev.clientX, y: ev.clientY };
+    var i = holeIndexOf(ev.target);
+    S.scrub = { id: ev.pointerId, x: ev.clientX, y: ev.clientY, i: i !== null ? i : holeAt(ev.clientX, ev.clientY) };
     ghost.hidden = false;
     placeGhost(ev.clientX, ev.clientY);
     document.body.classList.add('is-scrubbing');
-    var el = ev.target.closest ? ev.target.closest('.hole') : null;
-    if (el && !el.classList.contains('is-locked')) wipeHole(S.holes[Number(el.dataset.i)]);
-    else wipeAt(ev.clientX, ev.clientY);
   }
 
   function endScrub() {
@@ -471,8 +459,8 @@
     if (!d || ev.pointerId !== d.id) return;
     d.x = ev.clientX;
     d.y = ev.clientY;
+    d.i = holeAt(d.x, d.y);
     placeGhost(d.x, d.y);
-    if (S.running) wipeAt(d.x, d.y);
   });
 
   /* 長按不跳出系統選單（Android 長按可能會跳，打斷按住消毒） */
@@ -495,18 +483,26 @@
   });
 
   /* ─────────────────────────────────────────────────────────────
-     鍵盤：1–6 打對應的洞（入侵時是擦；按住按鍵會自動重複＝持續消毒）、Esc 暫停
+     鍵盤：1–6 打對應的洞（入侵時按住數字鍵＝手指按住那個洞）、Esc 暫停
      ───────────────────────────────────────────────────────────── */
 
   document.addEventListener('keydown', function (ev) {
     if (S.view !== 'play' || !S.running || ev.ctrlKey || ev.metaKey || ev.altKey) return;
     if (ev.key >= '1' && ev.key <= '6') {
       ev.preventDefault();
+      if (S.invasion) {
+        if (!ev.repeat) S.keyHold = { key: ev.key, i: Number(ev.key) - 1 };
+        return;
+      }
       tapHole(Number(ev.key) - 1);
     } else if (ev.key === 'Escape') {
       ev.preventDefault();
       pause();
     }
+  });
+
+  document.addEventListener('keyup', function (ev) {
+    if (S.keyHold && ev.key === S.keyHold.key) S.keyHold = null;
   });
 
   /* ─────────────────────────────────────────────────────────────
@@ -522,6 +518,25 @@
     S.shownSec = s;
     timeEl.textContent = s;
     timeWrap.classList.toggle('is-low', s <= 5);
+    if (s <= 5 && S.clock > 0) {
+      retrigger(timeEl, 'is-tick'); /* 最後 5 秒：每一秒數字跳一下 */
+      if (!S.warned) {
+        S.warned = true;
+        callout('剩下 5 秒！');
+      }
+    }
+  }
+
+  /* 這一幀正在被擦的病毒：手指下的、按住數字鍵的 */
+  function wipeTick(dt) {
+    var on = {};
+    if (S.scrub && S.scrub.i !== null) on[S.scrub.i] = true;
+    if (S.keyHold) on[S.keyHold.i] = true;
+    S.holes.forEach(function (h) {
+      var wiping = !!on[h.i] && isVirusHole(h);
+      h.el.classList.toggle('is-wiping', wiping);
+      if (wiping) wipe(h, dt);
+    });
   }
 
   function frame(ts) {
@@ -547,8 +562,10 @@
       startInvasion();
       if (!S.running) return; /* 第一次入侵：教學對話框開著，時間停住 */
     }
-    if (S.scrub) wipeAt(S.scrub.x, S.scrub.y); /* 手指按著不動，也繼續消毒 */
-    if (S.invasion) renderCombo();
+    if (S.invasion) {
+      wipeTick(dt); /* 手指按著（不動也算），就一直消毒 */
+      renderInvasion();
+    }
 
     if (S.clock >= C.ROUND_MS) {
       endRound();
@@ -602,6 +619,8 @@
     S.bosses = 0;
     S.invasion = null;
     S.invasionAt = E.invasionAt(S.round, Math.random);
+    S.keyHold = null;
+    S.warned = false;
     S.streak = 0;
     S.roundBestStreak = 0;
     S.appeared = 0;
@@ -610,6 +629,7 @@
     buildBoard();
     setBossLook(false);
     setInvasionLook(false);
+    renderMult();
     $('hudRound').textContent = roundLabel(S.round);
     $('hudScore').textContent = fmt(S.runScore);
     renderTime(C.ROUND_MS / 1000);
