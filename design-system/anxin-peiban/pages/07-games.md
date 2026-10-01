@@ -51,24 +51,25 @@ The `MIN_RATE` floor exists because `I(30) = 0`; without it each round opens wit
   returns. Tracked with lifetime `roundsPlayed`, so it survives closing the page. Other characters
   stay challengeable. **The answer is not revealed on a wrong try**, or the retry would be
   meaningless. Leaving without answering (「先不要」) is not a failure.
-- **Coatings unlock by level**: Lv1 silver · Lv2 + gold · Lv3 + iron. Each carries a text badge
-  (×1.5 / ×2) — never colour alone.
+- **Coatings unlock by level**: Lv1 silver · Lv2 + 金色大魔王 · Lv3 + iron. Each carries a text
+  badge (×1.5 / 👑大魔王 / ×2) — never colour alone.
 - **Point rewards** unlock automatically at lifetime-point thresholds (the same "reach a
   threshold" rule as collections): 停留更久 1.5k / 10k / 24k · 更多洞 4k / 16k · 更強的槌子 14k / 32k.
   Tuned by simulation so a perfect player earns about one reward per round through round 6,
   and a realistic child (slower, misses ~1 in 3) keeps earning into round 8.
-- The hammer affects **taps** only; each swab wipe deals 1 HP.
+- The hammer (更強的槌子) affects **taps** only — iron and 大魔王; each swab wipe deals 1 HP.
 - Infinity mode = rounds continue past 6, difficulty capped at round 10.
 - No penalty for misses.
 
 ## Stay time — the formula, and why it needs attention
 
-    stay = STAY_BASE_S / max(age, 1) × (1 + level) ÷ coat      coat: normal 1 · silver 2 · gold 3
+    stay = STAY_BASE_S / max(age, 1) × (1 + level) ÷ coat      coat: normal 1 · silver 2
     病毒 ×2 · iron ×1.6 (not in the formula; keeps the original "stays longer" rule)
-    × 「停留更久」 reward · floor MIN_UP_MS = 350ms
+    大魔王: fixed 8s (see below) · × 「停留更久」 reward · floor MIN_UP_MS = 550ms
 
-Coatings only unlock at the level that cancels their divisor (silver Lv1 → 2/2, gold Lv2 → 3/3), so
-**no character is ever shorter than `STAY_BASE_S / age`**. `max(age, 1)` avoids `3 / 0`.
+Silver only unlocks at the level that cancels its divisor (Lv1 → 2/2), so **no character is ever
+shorter than `STAY_BASE_S / age`**. `max(age, 1)` avoids `3 / 0`. (Gold's old ÷3 was dropped when
+it became the boss: a third of the stay is far too short to tap 12–20 times.)
 
 **⚠️ With the specified `STAY_BASE_S = 3` the game deadlocks.** `3/age` is shorter than a child's
 see-and-tap time at every age, so normal characters are almost never caught; only the virus (×2) is.
@@ -122,12 +123,12 @@ flex column and the page cannot scroll.
 
 ## Rewards
 
-- **Streak multiplier** — consecutive catches with no escape: ×1.5 from 5, ×2 from 10; hammer hits ×2.
+- **Streak multiplier** — consecutive catches with no escape: ×1.5 from 5, ×2 from 10.
   Shown as a 「×1.5」 chip on the combo row and a centre callout 「5 連擊！×1.5」 (taps pass through it).
   Points round to tens (150, 200, 300).
 - **Round medal** by catch rate (caught ÷ appeared): gold ≥ 80% +500, silver ≥ 60% +300,
   bronze ≥ 40% +100; no medal under 3 appearances. The bonus counts toward rewards.
-- **Sticker book** (8, kept per child): 第一次敲到 · 病毒清潔員 · 槌子幫手 · 10 連擊 · 鐵甲剋星 ·
+- **Sticker book** (8, kept per child): 第一次敲到 · 病毒清潔員 · 大魔王剋星 · 10 連擊 · 鐵甲剋星 ·
   小博士 · 金牌選手 · 六回合完成. Earned = solid ring + 「已獲得」; unearned = greyed, dashed, with
   how-to-earn text. New ones are listed on the round summary.
 
@@ -170,19 +171,35 @@ Soak after this change: teens' hit rate fell from ~63% to 40–45%. Their normal
 (429ms at 14) sits right at reaction time, and the long-staying viruses that used to lift it are
 absent for two rounds. Still playable and still levelling; it reads as "harder for teens".
 
-## Combo bar + helper hammer
+## Streak bar
 
-Consecutive catches fill the bar; **a character escaping resets it** (tapping an empty hole does
-not — young children tap freely). Target by age band, because a 3-year-old sees a fraction of the
-characters a teen does: little 4 · kid 6 · junior 8 · teen 10.
+The 槌子幫手 (auto-hammer) was **removed**. The bar under the HUD now tracks the streak toward the
+next multiplier: 「3 / 5」 → (×1.5) 「7 / 10」 → (×2) just the count with a full bar. **A character
+escaping resets it** (tapping an empty hole does not — young children tap freely). The same target
+for every age; it only decides a score multiplier, not a power-up.
 
-Full bar → **槌子幫手** for 3s of *game* time (pauses with the game, ends with the round): every
-normal character is smashed 180ms after it appears (long enough to be seen), iron in one blow,
-with points and collection credit. **It leaves 病毒 alone** — hammers don't clean germs, so the
-swab rule stays meaningful. Catches during the helper don't pre-fill the next combo.
-The bar shows text (「3 / 6」, then 「2 秒」) and the board gets an outline — never colour alone.
+Old saves may still hold a `helper` sticker; it is ignored (the book counts only current ids).
 
-Soak, six rounds per age: the hammer triggers 4–10 times (≈ once a round); hit rates 63–75%.
+## 金色大魔王 (boss) — replaces the gold coat
+
+Rolled like a coat (Lv2 20%, Lv3 15%), but at most **one per round** and only when at least the
+full 8s × 停留更久 is left, so the round end never swallows it.
+
+- **Arrival:** everyone else ducks (not an escape — no streak loss, and not counted in the medal's
+  「出現」); no new spawns while it is up. Callout 「大魔王來了！」 (「病毒大魔王！」 for the virus).
+- **Look:** gold coat that bobs, a pulsing gold glow behind the hole, a 👑「大魔王」 badge under its
+  own HP bar, and the board gets a 3px #B45309 ring.
+- **HP bar:** the streak bar turns into the boss bar — label 「大魔王」, red→orange fill on a pale
+  track, 「9 / 12」 text. It is 16px (vs 12px) but still shorter than the text line, so nothing
+  shifts. Text #9A3412 on the page 6.9:1; fill vs track 4.3:1; ring 4.7:1.
+- **HP by age:** little 8 · kid 12 · junior 16 · teen 20 — all ≈ 3–4s at that age's top tapping
+  speed (≈ 2.5 / 4 / 5 / 6.5 per second). 更強的槌子 takes 2–3 HP per tap. **病毒大魔王** is wiped,
+  not tapped, and wipes have a 250ms cooldown (≤ 4/s), so its HP is halved (4 / 6 / 8 / 10).
+- **Stay:** a fixed **8s** (× 停留更久), not age-, level- or virus-scaled.
+- **Knock-out:** 5× points (500; 病毒 1000) × the streak multiplier, +1 collection, sticker
+  大魔王剋星, callout 「打倒大魔王！」. **Escape:** 「大魔王跑掉了！」 and the streak resets.
+  Spawning resumes 700ms after it leaves.
+- Reduced motion: no bob and no glow pulse (the glow stays, static).
 
 ## First-visit tutorial
 

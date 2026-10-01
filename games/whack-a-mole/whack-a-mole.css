@@ -699,32 +699,22 @@ body.is-playing .topbar {
   white-space: nowrap;
 }
 
-.combo-hammer {
-  width: 28px;
-  height: 28px;
-  opacity: .35;
-  transition: opacity var(--t-fast) var(--ease), transform var(--t-fast) var(--ease);
+/* 大魔王在場：連擊條變成它的血條（標籤「大魔王」＋「12 / 20」，不只靠顏色）。
+   條加粗到 16px 仍比文字行高矮，整列高度不變、棋盤不會跳動 */
+.combo.is-boss .combo-label,
+.combo.is-boss .combo-count {
+  color: #9A3412;
 }
 
-/* 幫手出現：標籤換成「槌子幫手」、數字換成剩餘秒數、槌子亮起來並晃動 */
-.combo.is-helper .combo-label,
-.combo.is-helper .combo-count {
-  color: var(--primary-deep);
+.combo.is-boss .combo-bar {
+  height: 16px;
+  border-color: #B45309;
+  background: #FEF3C7;
 }
 
-.combo.is-helper .combo-fill {
-  transition: none;
-}
-
-.combo.is-helper .combo-hammer {
-  opacity: 1;
-  animation: hammer-wiggle 400ms ease-in-out infinite;
-}
-
-@keyframes hammer-wiggle {
-  50% {
-    transform: rotate(-18deg) scale(1.1);
-  }
+.combo.is-boss .combo-fill {
+  background: linear-gradient(90deg, #DC2626, #F97316);
+  transition-duration: 90ms;
 }
 
 /* ═══ 棋盤：洞的大小依剩餘空間決定 ═══════════════════════════
@@ -879,7 +869,7 @@ body.is-playing .topbar {
   height: 30px;
 }
 
-/* 連擊里程碑、槌子幫手：大字從棋盤中間跳出來（不擋點擊） */
+/* 連擊里程碑、大魔王：大字從棋盤中間跳出來（不擋點擊） */
 .callout {
   position: absolute;
   left: 50%;
@@ -938,12 +928,56 @@ body.is-playing .topbar {
   background: #52525B;
 }
 
-.v-gold .mole-art {
+.v-boss .mole-art {
   filter: sepia(1) saturate(3.2) hue-rotate(-12deg) brightness(1.05) drop-shadow(0 0 5px #FCD34D);
+  transform-origin: 50% 100%;
 }
 
-.v-gold .coat-badge {
+/* 大魔王：一直鼓起來（很神氣），挨打時 .is-hurt 照樣縮一下 */
+.hole.is-up .v-boss .mole-art {
+  animation: boss-bob 900ms ease-in-out infinite;
+}
+
+@keyframes boss-bob {
+  50% {
+    transform: scale(1.05, .95);
+  }
+}
+
+/* 角標：皇冠 +「大魔王」文字；放在血條下面，兩者不重疊 */
+.v-boss .coat-badge {
+  top: 14px;
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  padding-inline-start: 3px;
   background: #92400E;
+}
+
+.coat-badge svg {
+  width: 14px;
+  height: 14px;
+}
+
+/* 洞後面一圈金光，一眼就知道「就是它」 */
+.hole.is-boss::before {
+  content: "";
+  position: absolute;
+  inset: 0 2% 8%;
+  border-radius: 50%;
+  background: radial-gradient(closest-side, rgba(252, 211, 77, .75), rgba(252, 211, 77, 0));
+  pointer-events: none;
+  animation: boss-glow 1200ms ease-in-out infinite alternate;
+}
+
+@keyframes boss-glow {
+  from {
+    opacity: .55;
+  }
+}
+
+.board.is-boss {
+  box-shadow: var(--sh-md), 0 0 0 3px #B45309;
 }
 
 .v-iron .mole-art {
@@ -971,56 +1005,21 @@ body.is-playing .topbar {
   display: block;
 }
 
+.hole.is-boss .hp {
+  height: 11px;
+  border: 1px solid rgba(255, 255, 255, .85);
+}
+
+.hole.is-boss .hp-fill {
+  background: linear-gradient(90deg, #DC2626, #F97316);
+  transition-duration: 90ms;
+}
+
 .hp-fill {
   display: block;
   height: 100%;
   background: #4ADE80;
   transition: width 120ms ease-out;
-}
-
-/* 幫手期間：棋盤外框亮起（外框 + 連擊條文字，不單靠顏色） */
-.board.is-helper {
-  box-shadow: var(--sh-md), 0 0 0 3px var(--primary-deep);
-}
-
-.helper-hammer {
-  position: absolute;
-  top: -6%;
-  inset-inline-end: -4%;
-  z-index: 4;
-  width: 58%;
-  aspect-ratio: 1;
-  opacity: 0;
-  pointer-events: none;
-  transform-origin: 80% 80%;
-}
-
-.helper-hammer svg {
-  display: block;
-  width: 100%;
-  height: 100%;
-}
-
-/* 槌下去：舉起 → 敲 → 消失 */
-.hole.is-smashed .helper-hammer {
-  animation: smash 260ms ease-in forwards;
-}
-
-@keyframes smash {
-  0% {
-    opacity: 1;
-    transform: rotate(35deg);
-  }
-
-  55% {
-    opacity: 1;
-    transform: rotate(-25deg);
-  }
-
-  100% {
-    opacity: 0;
-    transform: rotate(-25deg);
-  }
 }
 
 /* ═══ 打擊回饋 ═══════════════════════════════════════════════ */
@@ -1040,9 +1039,12 @@ body.is-playing .topbar {
   animation: pop-rise 650ms ease-out forwards;
 }
 
-.pop-score.is-gold,
 .pop-score.is-iron {
   font-size: 1.35rem;
+}
+
+.pop-score.is-boss {
+  font-size: 1.75rem;
 }
 
 @keyframes pop-rise {
@@ -1645,7 +1647,8 @@ body.is-playing .topbar {
   .pop-score,
   .hole.is-hurt .mole,
   .hole.is-nope .mole-art,
-  .combo.is-helper .combo-hammer,
+  .hole.is-up .v-boss .mole-art,
+  .hole.is-boss::before,
   .callout.is-on {
     animation: none;
   }

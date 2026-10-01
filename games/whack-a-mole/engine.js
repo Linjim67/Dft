@@ -53,21 +53,33 @@
     WEIGHT_FLOOR: 10,
     UPGRADE_WEIGHT_BONUS: 0.05,
 
-    /* 鍍層：div 是停留時間的除數（一般 1、銀 2、金 3）。
-       鐵甲不在公式裡，沿用原規格「停留較久」：除以 0.625 = ×1.6，要打 3 下。 */
+    /* 鍍層：div 是停留時間的除數（一般 1、銀 2）。
+       鐵甲不在公式裡，沿用原規格「停留較久」：除以 0.625 = ×1.6，要打 3 下。
+       金色大魔王也不在公式裡：要連點很多下，停留時間固定（見 BOSS_*）。 */
     VARIANTS: {
       normal: { points: 1, div: 1, hp: 1 },
       silver: { points: 1.5, div: 2, hp: 1 },
-      gold: { points: 2, div: 3, hp: 1 },
+      boss: { points: 5, boss: true },
       iron: { points: 2, div: 0.625, hp: 3 }
     },
-    /* 依收藏等級解鎖：Lv1 銀、Lv2 金、Lv3 鐵（沒抽中就是一般） */
+    /* 依收藏等級解鎖：Lv1 銀、Lv2 大魔王、Lv3 鐵（沒抽中就是一般） */
     VARIANT_ODDS: [
       {},
       { silver: 0.3 },
-      { silver: 0.2, gold: 0.2 },
-      { silver: 0.15, gold: 0.15, iron: 0.2 }
+      { silver: 0.2, boss: 0.2 },
+      { silver: 0.15, boss: 0.15, iron: 0.2 }
     ],
+
+    /* 金色大魔王：出現時其他角色先躲起來、暫停冒出新的，畫面上只剩它和血條。
+       血量依年齡：各年齡層最快連點約 2–3／4／5／6–7 下每秒，都是 3–4 秒打得完。
+       停留 8 秒、不受年齡和等級影響（套 6/age ÷ 3 會短到點不完）；「停留更久」仍然有效。
+       病毒大魔王要用棉片擦，每次擦有 250ms 冷卻（每秒最多 4 下）→ 血量減半。
+       每回合最多一隻；剩下時間不夠 8 秒就不出現（不讓它被回合結束硬生生收走）。 */
+    BOSS_HP: { little: 8, kid: 12, junior: 16, teen: 20 },
+    BOSS_WIPE_HP_FACTOR: 0.5,
+    BOSS_STAY_MS: 8000,
+    BOSS_PER_ROUND: 1,
+    BOSS_REST_MS: 700,      /* 大魔王離開後，等一下下才繼續冒出角色 */
 
     /* 分數獎勵：累積總分達到門檻就自動解鎖（與收藏「達門檻」的規則相同）。
        門檻依模擬調整：全打中的玩家大約「每回合解鎖一項」，到第 6 回合全部解鎖；
@@ -81,15 +93,7 @@
     WIPE_COOLDOWN_MS: 250,  /* 同一隻病毒連續擦拭的最短間隔 */
     TOOLS_FROM_ROUND: 3,    /* 酒精棉片工具列跟著病毒一起出現 */
 
-    /* 連擊：連續抓到 N 個（有角色逃走就歸零）→ 槌子幫手自動打 3 秒。
-       N 依年齡：小小孩一回合看到的角色少很多，固定門檻對他們遙不可及。
-       槌子不打病毒——病毒還是要用酒精棉片擦。 */
-    COMBO_TARGET: { little: 4, kid: 6, junior: 8, teen: 10 },
-    HELPER_MS: 3000,
-    HELPER_DELAY_MS: 180,   /* 角色冒出來後等一下下再打，小朋友才看得到它被敲 */
-    HELPER_MULT: 2,         /* 槌子幫手期間分數 ×2 */
-
-    /* 連續抓到（沒有角色逃走）→ 分數加成；有角色逃走就歸零 */
+    /* 連續抓到（沒有角色逃走）→ 分數加成；有角色逃走就歸零。連擊條顯示離下一級還差幾個 */
     STREAK_TIERS: [{ at: 5, mult: 1.5 }, { at: 10, mult: 2 }],
 
     /* 回合獎牌：這一回合「抓到 ÷ 出現」的比例；出現太少（<3）不頒獎 */
@@ -105,7 +109,7 @@
   var STICKERS = [
     { id: 'first', name: '第一次敲到', hint: '敲到任何一個角色', art: 'ch-tourniquet' },
     { id: 'virus', name: '病毒清潔員', hint: '用酒精棉片擦掉病毒', art: 'ch-virus' },
-    { id: 'helper', name: '槌子幫手', hint: '集滿連擊條', art: 'icon-hammer' },
+    { id: 'boss', name: '大魔王剋星', hint: '打倒一隻金色大魔王', art: 'icon-crown' },
     { id: 'streak10', name: '10 連擊', hint: '連續抓到 10 個都沒漏掉', art: 'icon-star' },
     { id: 'iron', name: '鐵甲剋星', hint: '打倒鐵甲角色', art: 'ch-syringe' },
     { id: 'quiz', name: '小博士', hint: '答對一題小知識', art: 'icon-bulb' },
@@ -184,7 +188,7 @@
     var odds = CONFIG.VARIANT_ODDS[clamp(level, 0, CONFIG.MAX_LEVEL)];
     var r = rng();
     var acc = 0;
-    var order = ['silver', 'gold', 'iron'];
+    var order = ['silver', 'boss', 'iron'];
     for (var i = 0; i < order.length; i++) {
       acc += odds[order[i]] || 0;
       if (r < acc) return order[i];
@@ -204,8 +208,10 @@
      單次出現的參數
      ───────────────────────────────────────────────────────────── */
 
-  /* 6 / age × (1 + level) ÷ 鍍層除數；病毒 ×2；再乘分數獎勵「停留更久」與前兩回合的暖身 */
+  /* 6 / age × (1 + level) ÷ 鍍層除數；病毒 ×2；再乘分數獎勵「停留更久」與前兩回合的暖身。
+     大魔王固定 BOSS_STAY_MS × 停留更久 */
   function upMs(charId, variant, level, age, stayFactor, round) {
+    if (CONFIG.VARIANTS[variant].boss) return Math.round(CONFIG.BOSS_STAY_MS * (stayFactor || 1));
     var a = Math.max(Number(age) || 0, CONFIG.STAY_MIN_AGE);
     var ms = 1000 * CONFIG.STAY_BASE_S / a * (1 + clamp(level || 0, 0, CONFIG.MAX_LEVEL)) /
       CONFIG.VARIANTS[variant].div;
@@ -219,8 +225,18 @@
     return Math.round(BY_ID[charId].points * CONFIG.VARIANTS[variant].points);
   }
 
-  function maxHp(variant) {
-    return CONFIG.VARIANTS[variant].hp;
+  /* 大魔王的血量依年齡；病毒大魔王用棉片擦（有冷卻）→ 減半 */
+  function maxHp(variant, charId, age) {
+    if (!CONFIG.VARIANTS[variant].boss) return CONFIG.VARIANTS[variant].hp;
+    var hp = CONFIG.BOSS_HP[ageBand(Number(age) || 0)];
+    if (charId && BY_ID[charId].wipe) hp *= CONFIG.BOSS_WIPE_HP_FACTOR;
+    return Math.max(1, Math.round(hp));
+  }
+
+  /* 這一回合還能不能放大魔王：每回合一隻，而且剩下的時間要夠它整整停留 */
+  function bossAllowed(bossesThisRound, msLeft, stayFactor) {
+    return bossesThisRound < CONFIG.BOSS_PER_ROUND &&
+      msLeft >= CONFIG.BOSS_STAY_MS * (stayFactor || 1);
   }
 
   /* ─────────────────────────────────────────────────────────────
@@ -285,9 +301,12 @@
     return m;
   }
 
-  /* 這次抓到的倍率：幫手期間 ×2，否則看連擊 */
-  function catchMult(streak, helperOn) {
-    return helperOn ? Math.max(CONFIG.HELPER_MULT, streakMult(streak)) : streakMult(streak);
+  /* 連擊條的目標：下一個加成門檻（全部達到則回傳 null） */
+  function nextStreakTier(streak) {
+    for (var i = 0; i < CONFIG.STREAK_TIERS.length; i++) {
+      if (streak < CONFIG.STREAK_TIERS[i].at) return CONFIG.STREAK_TIERS[i];
+    }
+    return null;
   }
 
   function medalFor(caught, appeared) {
@@ -305,10 +324,6 @@
     if (progress.stickers[id]) return false;
     progress.stickers[id] = Date.now();
     return true;
-  }
-
-  function comboTarget(age) {
-    return CONFIG.COMBO_TARGET[ageBand(Number(age) || 0)];
   }
 
   function questionsFor(bank, charId, band) {
@@ -430,6 +445,7 @@
     upMs: upMs,
     pointsFor: pointsFor,
     maxHp: maxHp,
+    bossAllowed: bossAllowed,
     unlocks: unlocks,
     newlyUnlocked: newlyUnlocked,
     nextUnlock: nextUnlock,
@@ -437,10 +453,9 @@
     questionsFor: questionsFor,
     questionById: questionById,
     ageFactor: ageFactor,
-    comboTarget: comboTarget,
     STICKERS: STICKERS,
     streakMult: streakMult,
-    catchMult: catchMult,
+    nextStreakTier: nextStreakTier,
     medalFor: medalFor,
     earnSticker: earnSticker,
     isLocked: isLocked,

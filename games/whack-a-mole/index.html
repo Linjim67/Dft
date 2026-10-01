@@ -147,13 +147,13 @@
       <rect x="3" y="18.5" width="18" height="3" rx="1.5" fill="#C2410C" />
     </symbol>
 
-    <!-- 槌子幫手：木柄 + 圓圓的橘色槌頭 -->
-    <symbol id="icon-hammer" viewBox="0 0 64 64">
-      <g transform="rotate(-35 32 32)">
-        <rect x="28.5" y="24" width="7" height="36" rx="3.5" fill="#D6A066" stroke="#92400E" stroke-width="2" />
-        <rect x="10" y="8" width="44" height="20" rx="8" fill="#FB923C" stroke="#C2410C" stroke-width="2.5" />
-        <rect x="15" y="11.5" width="9" height="13" rx="3.5" fill="#FED7AA" />
-      </g>
+    <!-- 大魔王的皇冠（角標、貼紙） -->
+    <symbol id="icon-crown" viewBox="0 0 24 24">
+      <path d="M3.5 8.5 8 12l4-6.5 4 6.5 4.5-3.5-1.8 10H5.3Z" fill="#FCD34D" stroke="#92400E" stroke-width="1.5" stroke-linejoin="round" />
+      <path d="M5.6 15.5h12.8" stroke="#92400E" stroke-width="1.3" />
+      <circle cx="12" cy="4.6" r="1.4" fill="#F87171" stroke="#92400E" stroke-width="1" />
+      <circle cx="3.4" cy="7.6" r="1.2" fill="#FCD34D" stroke="#92400E" stroke-width="1" />
+      <circle cx="20.6" cy="7.6" r="1.2" fill="#FCD34D" stroke="#92400E" stroke-width="1" />
     </symbol>
 
     <symbol id="icon-pause" viewBox="0 0 24 24">
@@ -250,13 +250,13 @@
         </button>
       </div>
 
-      <!-- 連擊條：文字「3 / 6」＋長度，不只靠顏色；幫手出現時改顯示剩餘秒數 -->
+      <!-- 連擊條：文字「3 / 5」＋長度，不只靠顏色（離下一個加成還差幾個）。
+           大魔王在場時變成它的血條：標籤「大魔王」、數字「剩下 / 全部」 -->
       <div class="combo" id="combo">
         <span class="combo-label" id="comboLabel">連擊</span>
         <span class="combo-bar" aria-hidden="true"><span class="combo-fill" id="comboFill"></span></span>
-        <span class="combo-count" id="comboCount">0 / 6</span>
+        <span class="combo-count" id="comboCount">0 / 5</span>
         <span class="combo-mult" id="comboMult" hidden>×1.5</span>
-        <svg class="combo-hammer" aria-hidden="true"><use href="#icon-hammer" /></svg>
       </div>
 
       <div class="play-main">

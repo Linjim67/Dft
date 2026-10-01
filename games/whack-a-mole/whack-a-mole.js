@@ -50,7 +50,7 @@
     return r <= C.ROUNDS ? '第 ' + r + ' / ' + C.ROUNDS + ' 回合' : '無限模式・第 ' + r + ' 回合';
   }
 
-  var COAT_NAME = { normal: '', silver: '銀色', gold: '金色', iron: '鐵甲' };
+  var COAT_NAME = { normal: '', silver: '銀色', boss: '金色大魔王', iron: '鐵甲' };
 
   /* ─────────────────────────────────────────────────────────────
      狀態
@@ -76,9 +76,9 @@
     quiz: null,
     unlocked: [],
     leaving: false,
-    combo: 0,          /* 槌子量表：連續抓到的數量；集滿或有角色逃走就歸零 */
-    helperUntil: 0,    /* 槌子幫手在這個時間（遊戲時鐘）之前有效 */
-    streak: 0,         /* 連擊：自己連續抓到、沒有角色逃走（決定分數倍率） */
+    boss: null,        /* 大魔王所在的洞（在場時暫停冒出其他角色） */
+    bosses: 0,         /* 這一回合出現過幾隻大魔王 */
+    streak: 0,         /* 連擊：連續抓到、沒有角色逃走（決定分數倍率） */
     roundBestStreak: 0,
     appeared: 0,       /* 這一回合出現幾個（算獎牌用） */
     caught: 0,
@@ -86,8 +86,6 @@
     medalBonus: 0,
     newStickers: []
   };
-
-  var comboGoal = E.comboTarget(p.age);
 
   var views = { intro: $('introView'), play: $('playView'), quiz: $('quizView'), summary: $('summaryView') };
 
@@ -112,8 +110,7 @@
     '<span class="coat-badge"></span>' +
     '<svg class="mole-art"><use href="#ch-swab"></use></svg>' +
     '</span></span>' +
-    '<svg class="hole-front" aria-hidden="true"><use href="#hole-front"></use></svg>' +
-    '<span class="helper-hammer" aria-hidden="true"><svg><use href="#icon-hammer"></use></svg></span>';
+    '<svg class="hole-front" aria-hidden="true"><use href="#hole-front"></use></svg>';
 
   var LOCKED_HTML =
     '<svg class="hole-back" aria-hidden="true"><use href="#hole-back"></use></svg>' +
@@ -155,8 +152,22 @@
     return base + '：' + COAT_NAME[h.mole.variant] + E.BY_ID[h.mole.char].name;
   }
 
+  var BADGE = {
+    normal: '', silver: '×1.5', iron: '×2',
+    boss: '<svg aria-hidden="true"><use href="#icon-crown"></use></svg>大魔王'
+  };
+
   function raise(h, char, variant) {
-    var hp = E.maxHp(variant);
+    var boss = variant === 'boss';
+    if (boss) {
+      /* 大魔王登場：其他角色先躲起來（不算逃走、也不算進獎牌的「出現」） */
+      S.holes.forEach(function (o) {
+        if (o !== h && o.mole) { lower(o, false); S.appeared--; }
+      });
+      S.boss = h;
+      S.bosses++;
+    }
+    var hp = E.maxHp(variant, char, p.age);
     S.appeared++;
     h.mole = {
       char: char, variant: variant, hp: hp, maxHp: hp,
@@ -166,19 +177,30 @@
     };
     setArt(h.use, char);
     h.moleEl.className = 'mole v-' + variant;
-    h.badge.textContent = variant === 'silver' ? '×1.5' : (variant === 'gold' || variant === 'iron' ? '×2' : '');
+    h.badge.innerHTML = BADGE[variant];
     h.el.classList.toggle('has-hp', hp > 1);
+    h.el.classList.toggle('is-boss', boss);
     h.hpFill.style.width = '100%';
     h.el.classList.remove('is-hit', 'is-nope', 'is-hurt');
     h.el.dataset.char = char;
     h.el.classList.add('is-up');
     h.el.setAttribute('aria-label', holeLabel(h));
+    if (boss) {
+      setBossLook(true);
+      callout(E.BY_ID[char].wipe ? '病毒大魔王！' : '大魔王來了！');
+    }
   }
 
   function lower(h, hit) {
     if (!h.mole) return;
     h.mole = null;
     h.freeAt = S.clock + 220; /* 等縮回去的動畫結束，才讓下一隻從同一個洞出來 */
+    if (h === S.boss) {
+      S.boss = null;
+      S.nextSpawnAt = Math.max(S.nextSpawnAt, S.clock + C.BOSS_REST_MS);
+      h.el.classList.remove('is-boss');
+      setBossLook(false);
+    }
     h.el.classList.remove('is-up', 'is-hurt');
     if (hit) h.el.classList.add('is-hit');
     delete h.el.dataset.char;
@@ -186,11 +208,14 @@
   }
 
   function spawn() {
+    if (S.boss) return; /* 大魔王在場：專心打它 */
     var free = S.holes.filter(function (h) { return h.open && !h.mole && S.clock >= h.freeAt; });
     if (!free.length) return;
     var h = free[Math.floor(Math.random() * free.length)];
     var char = E.pickCharacter(progress, Math.random, S.round);
-    raise(h, char, E.pickVariant(progress.level[char], Math.random));
+    var variant = E.pickVariant(progress.level[char], Math.random);
+    if (variant === 'boss' && !E.bossAllowed(S.bosses, C.ROUND_MS - S.clock, S.stay)) variant = 'normal';
+    raise(h, char, variant);
   }
 
   /* ─────────────────────────────────────────────────────────────
@@ -212,23 +237,24 @@
     window.setTimeout(function () { if (s.parentNode) s.parentNode.removeChild(s); }, 700);
   }
 
-  function knockOut(h, byHelper) {
+  function knockOut(h) {
     var m = h.mole;
-    if (!byHelper) {
-      S.streak++;
-      S.roundBestStreak = Math.max(S.roundBestStreak, S.streak);
-      if (S.streak === 10) award('streak10');
-      E.CONFIG.STREAK_TIERS.forEach(function (t) {
-        if (S.streak === t.at) callout(t.at + ' 連擊！×' + t.mult);
-      });
-    }
-    var mult = E.catchMult(S.streak, helperOn());
+    S.streak++;
+    S.roundBestStreak = Math.max(S.roundBestStreak, S.streak);
+    if (S.streak === 10) award('streak10');
+    C.STREAK_TIERS.forEach(function (t) {
+      if (S.streak === t.at) callout(t.at + ' 連擊！×' + t.mult);
+    });
     /* 取到十位數，分數比較好看（150、200、300…） */
-    var pts = Math.round(E.pointsFor(m.char, m.variant) * mult / 10) * 10;
+    var pts = Math.round(E.pointsFor(m.char, m.variant) * E.streakMult(S.streak) / 10) * 10;
     S.caught++;
     award('first');
     if (m.char === 'virus') award('virus');
     if (m.variant === 'iron') award('iron');
+    if (m.variant === 'boss') {
+      award('boss');
+      callout('打倒大魔王！');
+    }
     S.runScore += pts;
     S.roundScore += pts;
     progress.totalPoints += pts;
@@ -237,19 +263,16 @@
     if (navigator.vibrate) { try { navigator.vibrate(12); } catch (e) { /* 忽略 */ } }
     lower(h, true);
     $('hudScore').textContent = fmt(S.runScore);
-    if (!byHelper && !helperOn()) {
-      S.combo++;
-      if (S.combo >= comboGoal) startHelper();
-    }
     renderCombo();
   }
 
   function damage(h, amount) {
     var m = h.mole;
-    m.hp -= amount;
+    m.hp = Math.max(0, m.hp - amount);
     if (m.hp > 0) {
       h.hpFill.style.width = Math.round(100 * m.hp / m.maxHp) + '%';
       retrigger(h.el, 'is-hurt');
+      if (h === S.boss) renderCombo();
       return;
     }
     knockOut(h);
@@ -272,7 +295,7 @@
   }
 
   /* ─────────────────────────────────────────────────────────────
-     連擊與槌子幫手
+     連擊條：平常顯示離下一個加成還差幾個；大魔王在場時變成它的血條
      ───────────────────────────────────────────────────────────── */
 
   var comboEl = $('combo');
@@ -284,9 +307,7 @@
   var calloutEl = $('callout');
   var calloutTimer = null;
 
-  function helperOn() { return S.clock < S.helperUntil; }
-
-  /* 大字從棋盤中間跳出來：連擊里程碑、槌子幫手 */
+  /* 大字從棋盤中間跳出來：連擊里程碑、大魔王 */
   function callout(text) {
     calloutEl.textContent = text;
     retrigger(calloutEl, 'is-on');
@@ -296,59 +317,35 @@
   }
 
   function renderMult() {
-    var m = E.catchMult(S.streak, helperOn());
+    var m = E.streakMult(S.streak);
     comboMult.hidden = m <= 1;
     comboMult.textContent = '×' + m;
   }
 
   function renderCombo() {
     renderMult();
-    if (helperOn()) {
-      var left = Math.max(0, S.helperUntil - S.clock);
-      comboFill.style.width = (100 * left / C.HELPER_MS).toFixed(1) + '%';
-      comboCount.textContent = Math.ceil(left / 1000) + ' 秒';
+    var b = S.boss && S.boss.mole;
+    if (b) {
+      comboFill.style.width = Math.round(100 * b.hp / b.maxHp) + '%';
+      comboCount.textContent = b.hp + ' / ' + b.maxHp;
       return;
     }
-    comboFill.style.width = Math.round(100 * Math.min(S.combo, comboGoal) / comboGoal) + '%';
-    comboCount.textContent = S.combo + ' / ' + comboGoal;
+    var next = E.nextStreakTier(S.streak);
+    comboFill.style.width = next ? Math.round(100 * S.streak / next.at) + '%' : '100%';
+    comboCount.textContent = next ? S.streak + ' / ' + next.at : String(S.streak);
   }
 
-  function setHelperLook(on) {
-    comboEl.classList.toggle('is-helper', on);
-    board.classList.toggle('is-helper', on);
-    comboLabel.textContent = on ? '槌子幫手' : '連擊';
-  }
-
-  function startHelper() {
-    S.helperUntil = S.clock + C.HELPER_MS;
-    S.combo = 0;
-    setHelperLook(true);
-    renderCombo();
-    award('helper');
-    callout('槌子幫手來了！');
-  }
-
-  function stopHelper() {
-    S.helperUntil = 0;
-    setHelperLook(false);
+  function setBossLook(on) {
+    comboEl.classList.toggle('is-boss', on);
+    board.classList.toggle('is-boss', on);
+    comboLabel.textContent = on ? '大魔王' : '連擊';
     renderCombo();
   }
 
-  /* 有角色逃走：連擊歸零、倍率消失；幫手期間槌子量表不受影響 */
+  /* 有角色逃走：連擊歸零、倍率消失 */
   function breakCombo() {
     S.streak = 0;
-    if (!helperOn()) S.combo = 0;
     renderCombo();
-  }
-
-  /* 幫手只打一般角色；病毒要用棉片擦，槌子幫不上忙 */
-  function helperTick() {
-    S.holes.forEach(function (h) {
-      var m = h.mole;
-      if (!m || E.BY_ID[m.char].wipe || S.clock < m.upAt + C.HELPER_DELAY_MS) return;
-      retrigger(h.el, 'is-smashed');
-      knockOut(h, true);
-    });
   }
 
   function award(id) {
@@ -498,15 +495,12 @@
 
     S.holes.forEach(function (h) {
       if (h.mole && S.clock >= h.mole.downAt) {
+        var wasBoss = h === S.boss;
         lower(h, false);
         breakCombo(); /* 有角色逃走 → 連擊歸零 */
+        if (wasBoss) callout('大魔王跑掉了！');
       }
     });
-
-    if (S.helperUntil) {
-      if (helperOn()) { helperTick(); renderCombo(); }
-      else stopHelper();
-    }
 
     if (S.clock >= C.ROUND_MS) {
       endRound();
@@ -555,14 +549,15 @@
     S.roundScore = 0;
     S.roundStartTotal = progress.totalPoints;
     S.shownSec = null;
-    S.combo = 0;
+    S.boss = null;
+    S.bosses = 0;
     S.streak = 0;
     S.roundBestStreak = 0;
     S.appeared = 0;
     S.caught = 0;
     S.newStickers = [];
     buildBoard();
-    stopHelper();
+    setBossLook(false);
     setArmed(false);
     $('hudRound').textContent = roundLabel(S.round);
     $('hudScore').textContent = fmt(S.runScore);
@@ -584,7 +579,6 @@
 
   function endRound() {
     halt();
-    stopHelper();
     S.holes.forEach(function (h) { lower(h, false); });
     setArmed(false);
     progress.bestScore = Math.max(progress.bestScore, S.runScore);
@@ -725,7 +719,7 @@
   var COAT_NOTE = [
     '',
     '之後會出現銀色的它：分數更高，但跑得更快！',
-    '金色的它也會出現了：分數加倍，要眼明手快！',
+    '金色大魔王會出現了：要連續敲很多下才打得倒，打倒有 5 倍分數！',
     '鐵甲版本登場：停得比較久，但要敲好幾下才打得倒！'
   ];
 
@@ -839,7 +833,7 @@
   function unlockText(u) {
     if (u.track === 'holes') return '第 ' + u.value + ' 個洞修好了，可以打的洞變多了！';
     if (u.track === 'stay') return '大家會在洞外停留更久（×' + u.value + '）';
-    return '槌子變強了：鐵甲角色一次扣 ' + u.value + ' 格';
+    return '槌子變強了：鐵甲和大魔王一次扣 ' + u.value + ' 格';
   }
 
   function showSummary() {
