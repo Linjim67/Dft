@@ -39,13 +39,17 @@
       ['tunnel', 2, ['..######..', '..######..', '..........', '.....*....', '..........', '..######..', '..######..']],
       ['zig', 3, ['...#.....#..', '...#........', '...#........', '...#.....#..', '.........#..', '.........#..', '...#.....#..']]
     ],
+    /* 飛碟：每一直排的障礙物只能從天花板往下長、或從地板往上長（不能浮在半空中），
+       中間留的空間至少 3 格。測試會一排一排檢查。 */
     ufo: [
-      ['pm', 1, ['....#.....', '....#.....', '..........', '....*.....', '..........', '..........', '.^^^#^^^..']],
-      ['pl', 1, ['....#.....', '....#.....', '....#.....', '..........', '....*.....', '..........', '.^^^.^^^..']],
-      ['ph', 1, ['..........', '....*.....', '..........', '..........', '....#.....', '....#.....', '.^^^#^^^..']],
-      ['bed', 2, ['..........', '..........', '..........', '.....*....', '..........', '..........', '.^^^^^^^^.']],
-      ['pp', 2, ['....#.......', '....#....#..', '.........#..', '.........#..', '............', '............', '.^^^#^^^^#^.']],
-      ['caves', 3, ['.vvvvvvvvv..', '............', '....#.......', '....#....*..', '............', '.........#..', '.^^^#^^^^#^.']]
+      ['pm', 1, ['...#....', '...#....', '........', '...*....', '........', '........', '.^^#^^..']],
+      ['pl', 1, ['...#....', '...#....', '...v....', '........', '...*....', '........', '.^^.^^..']],
+      ['ph', 1, ['........', '...*....', '........', '...^....', '...#....', '...#....', '.^^#^^..']],
+      ['bed', 2, ['..vvvvvv..', '..........', '..........', '....*.....', '..........', '..........', '.^^^^^^^^.']],
+      ['wall2', 2, ['...##...', '...##...', '........', '....*...', '........', '...##...', '.^^##^^.']],
+      ['steps', 2, ['..#....#..', '.......#..', '..*....v..', '..........', '..#.......', '..#.......', '.^#^^^^#^.']],
+      ['tunnel', 3, ['..####..', '..####..', '........', '...*....', '........', '..####..', '.^####^.']],
+      ['zig', 3, ['..#...#...#..', '..#.......#..', '..v...*...v..', '.............', '......^......', '......#......', '.^#^^^#^^^#^.']]
     ],
     /* 雙胞胎：上下兩個世界大部分一樣，不一樣的東西會換顏色、加虛線框 */
     duo: [
@@ -231,7 +235,7 @@
     {
       id: 5, name: '轉轉', sub: '畫面會轉來轉去', theme: 'pink', seed: 5503,
       sections: [
-        { mode: 'rot', len: 260, d: [1, 2] }
+        { mode: 'rot', len: 285, d: [1, 2] }
       ]
     },
     {
@@ -243,31 +247,42 @@
     }
   ];
 
+  /* 換玩法 = 一扇小小的傳送門：前面 IN 格是漏斗（地板往上斜、天花板往下斜），
+     門後 OUT 格回到原本的高度，再放一支旗子，之後才開始放障礙物。
+     同一種玩法接著走（第 2 關只是加速）就不放傳送門。 */
+  var FUN = E.CONFIG.FUNNEL;
+
   function buildLevel(id) {
     var L = LEVELS[id - 1];
     if (!L) return null;
-    var r = E.rng(L.seed), w = E.createWorld(), x = 0, items = [];
+    var r = E.rng(L.seed), w = E.createWorld(), x = 0, items = [], prev = null, prevSec = null;
     w.level = L;
     w.theme = L.theme;
     L.sections.forEach(function (sec, i) {
-      var x0 = x;
+      var change = i > 0 && sec.mode !== prev;
+      var x0 = change ? x + FUN.IN : x;           /* 這一段從傳送門開始 */
+      var from = change ? x0 + FUN.OUT + 1 : i > 0 ? x0 + 1 : x0;
+      if (change) {
+        E.addFunnel(w, x0, prev, sec.mode);
+        if (prevSec) prevSec.x1 = x0;
+      }
       if (sec.mode === 'boss') {
         E.addSection(w, { mode: 'boss', x0: x0, x1: Infinity });
-        E.addTrigger(w, { k: 'portal', x: x0 + 1, mode: 'boss', shots: sec.shots, seed: L.seed });
+        E.addTrigger(w, { k: 'portal', x: x0, mode: 'boss', shots: sec.shots, seed: L.seed });
         x = Infinity;
         return;
       }
       var s = E.addSection(w, { mode: sec.mode, x0: x0, x1: x0 });
-      if (i > 0) {
-        E.addTrigger(w, { k: 'portal', x: x0 + 1, mode: sec.mode });
-        E.addTrigger(w, { k: 'check', x: x0 + 2 });
-      }
-      if (sec.speed) E.addTrigger(w, { k: 'speed', x: x0 + 1.5, mul: sec.speed });
-      var plan = planSection(r, sec, x0, true);
+      if (change) E.addTrigger(w, { k: 'portal', x: x0, mode: sec.mode });
+      if (i > 0) E.addTrigger(w, { k: 'check', x: from });
+      if (sec.speed) E.addTrigger(w, { k: 'speed', x: (change ? x0 : from) + 0.5, mul: sec.speed });
+      var plan = planSection(r, sec, from, true);
       plan.cps.forEach(function (cx) { E.addTrigger(w, { k: 'check', x: cx }); });
       items = items.concat(plan.items);
-      x = plan.end + 2;
+      x = plan.end + 1;
       s.x1 = x;
+      prev = sec.mode;
+      prevSec = s;
     });
     if (isFinite(x)) pickStars(items, x);
     items.forEach(function (it) { emitItem(w, it); });
@@ -288,6 +303,15 @@
   var INF_MODES = ['cube', 'ship', 'ufo', 'duo', 'rot'];
   var INF = { LEN: 55, STAR_CHANCE: 0.35, SPEED_STEP: 0.06, SPEED_CAP: 1.3, SHOTS_BASE: 5, SHOTS_CAP: 12 };
 
+  /* 換到下一種玩法：漏斗＋傳送門；回傳這一段的起點和放障礙物的起點 */
+  function infPortal(w, st, mode, extra) {
+    var x0 = st.x + FUN.IN;
+    E.addFunnel(w, x0, st.mode, mode);
+    if (st.sec) st.sec.x1 = x0;
+    E.addTrigger(w, Object.assign({ k: 'portal', x: x0, mode: mode }, extra || {}));
+    return x0;
+  }
+
   function addRound(w, st) {
     st.round++;
     var R = st.round;
@@ -296,38 +320,41 @@
     st.orders.push(order);
     E.addTrigger(w, { k: 'speed', x: st.x + 0.5, mul: Math.min(1 + INF.SPEED_STEP * (R - 1), INF.SPEED_CAP), round: R });
     order.forEach(function (mode) {
-      var x0 = st.x;
+      var x0 = st.x, from = st.x;
+      if (mode !== st.mode) {
+        x0 = infPortal(w, st, mode);
+        from = x0 + FUN.OUT + 1;
+      }
       var s = E.addSection(w, { mode: mode, x0: x0, x1: x0, round: R });
-      E.addTrigger(w, { k: 'portal', x: x0 + 1, mode: mode });
-      var plan = planSection(st.r, { mode: mode, len: INF.LEN, d: d }, x0, false);
+      var plan = planSection(st.r, { mode: mode, len: INF.LEN, d: d }, from, false);
       plan.items.forEach(function (it) {
         it.star = it.pat.star && st.r() < INF.STAR_CHANCE;
         emitItem(w, it);
       });
-      st.x = plan.end + 2;
+      st.x = plan.end + 1;
       s.x1 = st.x;
+      st.mode = mode;
+      st.sec = s;
     });
-    E.addSection(w, { mode: 'boss', x0: st.x, x1: Infinity, round: R });
-    E.addTrigger(w, {
-      k: 'portal', x: st.x + 1, mode: 'boss', round: R,
-      shots: Math.min(INF.SHOTS_BASE + R, INF.SHOTS_CAP), seed: (st.seed + R * 7919) >>> 0
+    var bx = infPortal(w, st, 'boss', {
+      round: R, shots: Math.min(INF.SHOTS_BASE + R, INF.SHOTS_CAP), seed: (st.seed + R * 7919) >>> 0
     });
+    st.sec = E.addSection(w, { mode: 'boss', x0: bx, x1: Infinity, round: R });
+    st.mode = 'boss';
   }
 
   function buildInfinity(seed) {
     var w = E.createWorld();
     w.endless = true;
     w.theme = 'orange';
-    var st = { seed: seed >>> 0, r: E.rng(seed), round: 0, x: 10, orders: [] };
+    var st = { seed: seed >>> 0, r: E.rng(seed), round: 0, x: 10, orders: [], mode: 'cube', sec: null };
     w.inf = st;
-    E.addSection(w, { mode: 'cube', x0: 0, x1: 10, round: 0 });
+    st.sec = E.addSection(w, { mode: 'cube', x0: 0, x1: 10, round: 0 });
     addRound(w, st);
     /* 打完醫生 → 接上下一輪。機器人的分身共用同一個世界，同一輪只接一次 */
     w.onBossDone = function (run) {
       if (!run.boss || run.boss.round < st.round) return;
-      var bossSec = w.sections[w.sections.length - 1];
-      st.x = Math.ceil(run.x) + 10;
-      bossSec.x1 = st.x;
+      st.x = Math.ceil(run.x) + 4;
       addRound(w, st);
     };
     return w;

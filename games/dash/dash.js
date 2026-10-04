@@ -18,6 +18,7 @@
   var ROWS = 9;             /* 畫面高 9 格 */
   var MIN_COLS = 11;        /* 直式手機至少看得到 11 格（往前約 8 格） */
   var FONT = '"PingFang TC","Noto Sans TC","Microsoft JhengHei",system-ui,sans-serif';
+  var ROLL_R = 0.45;        /* 小膠囊滾動的半徑（格）：走 1 格轉 1/0.45 弧度，不打滑 */
 
   var THEME = {
     orange: { sky: ['#FFF7ED', '#FFE4C4'], ground: '#FDBA74', seam: '#E9A066' },
@@ -175,6 +176,8 @@
     G.lastLane = null;
     G.doneAt = 0;
     G.hud = {};
+    G.roll = 0;
+    G.rollX = 0;
     resetInput();
 
     $('hudTitle').textContent = title();
@@ -421,6 +424,10 @@
     }
     var target = run.mode === 'rot' ? run.rot.angle : 0;
     G.angle = reduce ? target : G.angle + (target - G.angle) * Math.min(1, dt * 9);
+    /* 滾著前進：轉多少 = 走多遠 ÷ 半徑 */
+    var moved = run.x - G.rollX;
+    if (moved > 0 && moved < 2) G.roll = (G.roll + moved / ROLL_R) % (Math.PI * 2);
+    G.rollX = run.x;
     if (Math.abs(G.angle - target) < 0.01) G.angle = target;
     stepParticles(dt);
     updateHud();
@@ -535,6 +542,8 @@
   function afterCrash(t) {
     if (G.run.world.endless) { infOver(); return; }
     E.respawn(G.run);
+    G.rollX = G.run.x;
+    G.roll = 0;
     G.phase = 'respawn';
     G.holdUntil = t + 650;
     G.angle = 0;
@@ -765,6 +774,7 @@
     var left = -extra * T, right = W + extra * T;
 
     clouds(camX, gY, left, right);
+    if (!top) speedLines(camX, t);
 
     /* 火箭、飛碟段落的天花板 */
     run.world.sections.forEach(function (s) {
@@ -787,6 +797,8 @@
     ctx.fillStyle = 'rgba(124,45,18,.6)';
     ctx.fillRect(left, gY - 1, right - left, 3);
 
+    drawFunnels(camX, gY, c0, c1, th);
+
     /* 傳送門、加速、旗子、終點 */
     var tr = run.world.triggers;
     for (var i = 0; i < tr.length; i++) {
@@ -804,6 +816,75 @@
     }
 
     drawPlayer(P, a, gY, t);
+  }
+
+  /* 傳送門前的漏斗：地板往上斜、天花板往下斜，只有門口過得去 */
+  function drawFunnels(camX, gY, c0, c1, th) {
+    var T = V.T, F = C.FUNNEL, top = F.FLOOR + F.GAP, sky = 14;
+    var X = function (wx) { return (wx - camX) * T; };
+    var Y = function (wy) { return gY - wy * T; };
+    G.run.world.funnels.forEach(function (f) {
+      if (f.x1 < c0 - 1 || f.x0 > c1 + 1) return;
+      var a = f.px - F.NECK, b = f.px + F.NECK;
+      ctx.save();
+      ctx.fillStyle = th.ground;
+      ctx.beginPath();
+      ctx.moveTo(X(f.x0), Y(-0.02)); ctx.lineTo(X(a), Y(F.FLOOR)); ctx.lineTo(X(b), Y(F.FLOOR)); ctx.lineTo(X(f.x1), Y(-0.02));
+      ctx.closePath(); ctx.fill();
+      ctx.beginPath();
+      ctx.moveTo(X(f.x0), Y(sky)); ctx.lineTo(X(f.x0), Y(f.cIn)); ctx.lineTo(X(a), Y(top));
+      ctx.lineTo(X(b), Y(top)); ctx.lineTo(X(f.x1), Y(f.cOut)); ctx.lineTo(X(f.x1), Y(sky));
+      ctx.closePath(); ctx.fill();
+      /* 斜坡的紋路（和地磚同色），一眼看得出是斜的 */
+      ctx.strokeStyle = th.seam;
+      ctx.lineWidth = Math.max(1, T * 0.05);
+      ctx.beginPath();
+      for (var k = 1; k < 4; k++) {
+        var d = k * 0.28;
+        ctx.moveTo(X(f.x0 + 0.6), Y(Math.max(0, d * 0.25 - 0.05)));
+        ctx.lineTo(X(a), Y(F.FLOOR - d)); ctx.lineTo(X(b), Y(F.FLOOR - d));
+        ctx.lineTo(X(f.x1 - 0.6), Y(Math.max(0, d * 0.25 - 0.05)));
+        ctx.moveTo(X(f.x0 + 0.3), Y(f.cIn + d)); ctx.lineTo(X(a), Y(top + d)); ctx.lineTo(X(b), Y(top + d)); ctx.lineTo(X(f.x1 - 0.3), Y(f.cOut + d));
+      }
+      ctx.stroke();
+      ctx.strokeStyle = 'rgba(124,45,18,.6)';
+      ctx.lineWidth = 3;
+      ctx.lineJoin = 'round';
+      ctx.beginPath();
+      ctx.moveTo(X(f.x0), Y(0)); ctx.lineTo(X(a), Y(F.FLOOR)); ctx.lineTo(X(b), Y(F.FLOOR)); ctx.lineTo(X(f.x1), Y(0));
+      ctx.moveTo(X(f.x0), Y(sky)); ctx.lineTo(X(f.x0), Y(f.cIn)); ctx.lineTo(X(a), Y(top));
+      ctx.lineTo(X(b), Y(top)); ctx.lineTo(X(f.x1), Y(f.cOut)); ctx.lineTo(X(f.x1), Y(sky));
+      ctx.stroke();
+      ctx.restore();
+    });
+  }
+
+  /* 速度線：比場景跑得更快的橫線，越快越明顯（減少動態時不畫） */
+  function speedLines(camX, t) {
+    if (reduce) return;
+    var T = V.T, W = V.w, run = G.run, par = 1.8, span = 2.6;
+    var base = camX * par;
+    var k = clamp((run.baseScale * run.speedMul - 0.55) / 0.75, 0.3, 1);
+    var i0 = Math.floor(base / span) - 2, i1 = Math.ceil((base + W / T) / span) + 1;
+    ctx.save();
+    ctx.lineCap = 'round';
+    ctx.lineWidth = Math.max(1.5, 0.055 * T);
+    for (var i = i0; i <= i1; i++) {
+      var h1 = hash(i * 3.17), h2 = hash(i * 7.73 + 1), h3 = hash(i * 1.31 + 5);
+      if (h3 > 0.45 + 0.5 * k) continue;
+      var x = (i * span + h1 * span - base) * T;
+      var y = (0.5 + h2 * 6.6) * T;
+      var len = (1.2 + h3 * 2.4) * T;
+      var w = Math.max(2, 0.07 * T);
+      /* 淺色天空上白線看不到：用暖棕色的半透明線，上緣一條細白光 */
+      ctx.lineWidth = w;
+      ctx.strokeStyle = 'rgba(124,45,18,' + (0.14 + 0.16 * k).toFixed(2) + ')';
+      ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(x + len, y); ctx.stroke();
+      ctx.lineWidth = Math.max(1, w * 0.4);
+      ctx.strokeStyle = 'rgba(255,255,255,.7)';
+      ctx.beginPath(); ctx.moveTo(x + w, y - w * 0.6); ctx.lineTo(x + len * 0.75, y - w * 0.6); ctx.stroke();
+    }
+    ctx.restore();
   }
 
   function clouds(camX, gY, left, right) {
@@ -847,9 +928,8 @@
   function drawTrigger(g, camX, gY) {
     var T = V.T, sx = (g.x - camX) * T, run = G.run;
     if (g.k === 'portal') {
-      var before = E.sectionAt(run.world, g.x - 1.5), after = E.sectionAt(run.world, g.x + 0.5);
-      var tall = [before && before.mode, after && after.mode].some(function (m) { return m === 'ship' || m === 'ufo'; });
-      var h = tall ? 6.4 : 3.2, yb = tall ? 0.3 : 0;
+      /* 小小的門，剛好卡在漏斗最窄的地方 */
+      var F = C.FUNNEL, h = F.GAP + 0.2, yb = F.FLOOR - 0.1;
       blit('portal_' + g.mode, sx - 0.4 * T, gY - (yb + h) * T, 0.8, h);
       var icon = PORTAL_ICON[g.mode] || 'egg';
       var iw = icon === 'doctor' ? 0.42 : icon === 'egg' ? 0.5 : 0.62;
@@ -901,6 +981,25 @@
     ctx.restore();
   }
 
+  /* 跑起來時，小膠囊後面拖三條短短的線 */
+  function streaks(pm, t) {
+    if (reduce || G.phase !== 'play') return;
+    var T = V.T, back = pm === 'cube' ? 0.5 : 0.8;
+    ctx.save();
+    ctx.lineCap = 'round';
+    ctx.lineWidth = Math.max(1.5, 0.06 * T);
+    ctx.strokeStyle = 'rgba(124,45,18,.28)';
+    for (var i = 0; i < 3; i++) {
+      var len = (0.45 + 0.25 * Math.sin(t / 70 + i * 2.1) + 0.2 * i % 0.4) * T;
+      var y = (i - 1) * 0.24 * T;
+      ctx.beginPath();
+      ctx.moveTo(-back * T - 0.12 * T, y);
+      ctx.lineTo(-back * T - 0.12 * T - len, y);
+      ctx.stroke();
+    }
+    ctx.restore();
+  }
+
   function drawPlayer(P, a, gY, t) {
     if (!P) return;
     var run = G.run, T = V.T, pm = E.physMode(run.mode);
@@ -909,9 +1008,12 @@
     ctx.save();
     if (G.phase === 'respawn' && Math.floor(t / 220) % 2) ctx.globalAlpha = 0.35;
     ctx.translate(PX * T, gY - y * T);
+    streaks(pm, t);
     if (pm === 'cube') {
       var tilt = P.grounded ? 0 : clamp(-P.vy / C.JUMP_V, -1, 1) * 14;
-      ctx.rotate(tilt * Math.PI / 180);
+      /* 滾著前進（畫面插值到這一幀的位置）；撞到時轉正，看得到暈暈的臉；減少動態時只微微傾斜 */
+      var xr = G.phase === 'play' ? run.prevX + (run.x - run.prevX) * a : run.x;
+      var spin = dead ? 0 : reduce ? tilt * Math.PI / 180 : G.roll - (run.x - xr) / ROLL_R;
       var sxs = 1, sys = 1;
       if (!reduce && G.squashAt && !dead) {
         var k = (t - G.squashAt) / 130;
@@ -923,6 +1025,7 @@
       ctx.translate(0, 0.45 * T);
       ctx.scale(sxs, sys);
       ctx.translate(0, -0.45 * T);
+      ctx.rotate(spin);
       blit(dead ? 'eggDizzy' : 'egg', -0.5 * T, -0.52 * T, 1, 1);
     } else if (pm === 'ship') {
       ctx.rotate(clamp(-P.vy / C.SHIP_VMAX, -1, 1) * 20 * Math.PI / 180);

@@ -485,13 +485,21 @@ it bulged, rather than only receiving a number.
   ×1 · else ×1.1). Because everything — gravity included — runs on game time, a jump covers the same
   tiles at every age; a young child simply gets more reaction time. A scroll-only slowdown would
   shorten jumps and make the same map impossible.
-- Cube: jump ≈ 2.25 tiles high, 0.56 s, ≈ 3.9 tiles long. Hold = re-jump on landing (as in GD).
+- **Gravity is asymmetric** (GD feel): rising 62, falling 86 tiles/s² (1.4×), terminal 26. A jump is
+  ≈ 2.25 tiles high, 0.49 s, ≈ 3.8 tiles long at the base speed of **7.8 tiles/s** (raised from 7 so the
+  heavier jump still clears three needles). Hold = re-jump on landing (as in GD).
   Forgiveness: 0.12 s input buffer before landing, 0.07 s coyote time after an edge, corners within
   0.22 tiles step up instead of crashing.
 - **Needles hurt less than they look**: drawn tip at 0.8 tiles, hitbox 0.24 × 0.45; the player's
   hazard box is 0.6 vs a 0.86 body. A single needle leaves a ~390 ms jump window at ×1.
-- Ship: hold = up, release = down, ±6.5 tiles/s; floor and ceiling are safe to slide on.
-- UFO: each tap = a ≈ 1.5-tile hop (Flappy Bird); holding does nothing.
+- Ship: hold = up (46), release = down (40), ±7.5 tiles/s; floor and ceiling are safe to slide on.
+- UFO: each tap = a ≈ 1.5-tile hop (Flappy Bird, gravity 46); holding does nothing.
+- **The capsule rolls**: rotation = distance ÷ 0.45 tiles (its radius, so no slipping); it keeps
+  spinning in the air and turns upright for the dizzy face on a crash. Reduced motion: a small tilt
+  instead.
+- **Speed lines**: thin warm-brown streaks with a white top edge, moving at 1.8× the scroll (they read
+  as wind, not scenery), denser at higher speed; plus three short trails behind the capsule.
+  Brown, not white — white vanishes on the light skies. Off with reduced motion.
 - Respawn: checkpoints (安心旗) at every section start and ~45 tiles apart, always with ≥ 4 empty tiles
   ahead. A crash shows a dizzy "><" face for 0.7 s, then the capsule blinks at the flag for 0.65 s.
   The word is 「撞到了，沒關係」 — never 失敗.
@@ -502,7 +510,7 @@ it bulged, rather than only receiving a number.
 |---|---|---|---|
 | 1 | 出發囉 | (a) standard, dash + ship | cube → ship → cube |
 | 2 | 快快跑 | (b) faster | speed portals ×1.2 then ×1.35 |
-| 3 | 藥杯飛碟 | (c) UFO | 200 tiles of UFO between short cube runs |
+| 3 | 藥杯飛碟 | (c) UFO | 200 tiles of UFO between short cube runs; every column is a stack from the ceiling and/or the floor with a ≥ 3-tile gap (no floating boxes) |
 | 4 | 雙胞胎 | (d) duo, split screen | see below |
 | 5 | 轉轉 | (e) rotate 3° per jump / spike | see below |
 | 6 | 醫生的水槍 | (f) boss with telegraphs | see below |
@@ -510,6 +518,15 @@ it bulged, rather than only receiving a number.
 
 All levels are open from the start (children pick, per #07). Each shows 0–3 stars and 完成 / 最遠 N%.
 Levels last 30–75 s at every age (tested).
+
+**Portals are small, and the course funnels you into them.** Instead of a tall ring you can fly past,
+each mode change is a 2-tile ring at the narrowest point of a funnel: the floor ramps up 0 → 1 and the
+ceiling slopes down (from 5 on the jumping side, from the corridor ceiling 7 on rocket/UFO sides) to 3,
+over 5 tiles in front and 4 behind. The slopes are **solid but safe** — the capsule rolls up and down
+them (it sticks to a down-slope instead of hopping), a jump bonks on the ceiling, a rocket hugging the
+ceiling is pushed down through the neck. Only a gap narrower than the capsule would hurt ("squeeze"),
+which the generator never makes. Nothing else is placed inside a funnel; the checkpoint flag sits on
+flat ground after it. Joins that keep the same mode (level 2's speed-ups) get no portal at all.
 
 **Levels are built from ASCII patterns.** Each pattern is a few tiles of hand-drawn obstacles, graded
 1–3 (`#` box, `^` needle, `v` hanging needle, `o` pad, `*` star slot). A level is a fixed seed plus a
@@ -574,6 +591,12 @@ and 「換一張新地圖」.
   - all six levels finish **with all 3 stars**;
   - all-difficulty-3 sections pass in every mode;
   - three infinity seeds pass through round 1, the boss and into round 2.
-- **Tests:** 40 engine/level tests; 18 jsdom page tests.
+- **Tests:** 47 engine/level tests, including:
+  - the funnel shape;
+  - rolling through it without leaving the ground;
+  - a ship being pushed through by the ceiling;
+  - the UFO column rule checked column by column.
+
+  Plus 18 jsdom page tests.
 - **Real Chromium:** touch taps, ship hold over CDP touch, landscape, and an AA contrast audit
   (124 text elements).

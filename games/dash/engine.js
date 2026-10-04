@@ -13,7 +13,7 @@
   var CONFIG = {
     DT: 1 / 120,
     MAX_REAL_DT: 0.1,         /* 切回分頁時不會一口氣跑好幾秒 */
-    SPEED: 7,                 /* 格／遊戲秒 */
+    SPEED: 7.8,               /* 格／遊戲秒 */
 
     HALF: 0.43,               /* 碰方塊用的半徑（和畫出來的大小一樣） */
     HAZ: 0.30,                /* 碰針、水柱用的半徑：比看起來小，擦邊不算 */
@@ -21,25 +21,32 @@
     STEP_TOL: 0.22,           /* 撞到方塊邊緣時差一點點就自動踩上去 */
     EPS: 0.02,
 
-    /* 小膠囊（跳跳）：跳約 2.25 格高，平地上 0.56 秒落地 ≈ 3.9 格遠 */
-    JUMP_V: 15.71,
-    GRAVITY: 56.1,
-    MAX_FALL: 22,
+    /* 小膠囊（跳跳）：往上的重力比較輕、往下的重力重 1.4 倍（像 Geometry Dash 一樣「咚」一下落地）。
+       跳約 2.25 格高，平地上 0.49 秒落地 ≈ 3.8 格遠 */
+    JUMP_V: 16.52,
+    GRAVITY: 62,              /* 往上飛的時候 */
+    FALL_GRAVITY: 86,         /* 往下掉的時候 */
+    MAX_FALL: 26,
     COYOTE_S: 0.07,           /* 走出方塊邊緣後一小段時間還可以跳 */
     BUFFER_S: 0.12,           /* 落地前一點點按下去也算 */
-    PAD_V: 21.7,              /* 彈簧墊：跳約 4.1 格高 */
+    PAD_V: 22.55,             /* 彈簧墊：跳約 4.1 格高 */
 
     /* 體溫計火箭：按住往上、放開往下 */
-    SHIP_UP: 34,
-    SHIP_G: 30,
-    SHIP_VMAX: 6.5,
+    SHIP_UP: 46,
+    SHIP_G: 40,
+    SHIP_VMAX: 7.5,
 
     /* 藥杯飛碟：點一下往上跳一小段（像 Flappy Bird） */
-    UFO_FLAP: 10,
-    UFO_G: 34,
-    UFO_VMAX: 11,
+    UFO_FLAP: 11.6,
+    UFO_G: 46,
+    UFO_VMAX: 13,
 
     CEIL: 7,                  /* 火箭、飛碟關的天花板 */
+
+    /* 傳送門前後的「漏斗」：地板往上斜、天花板往下斜，只留門口那一段（2 格高）可以過。
+       IN：門前斜坡長度；OUT：門後回到原本高度的長度；FLOOR：門口地板高度；GAP：門口高度；
+       CUBE_CEIL：跳跳段落本來沒有天花板，漏斗的天花板從這個高度開始往下斜 */
+    FUNNEL: { IN: 5, OUT: 4, NECK: 0.5, FLOOR: 1, GAP: 2, CUBE_CEIL: 5 },
     RESPAWN_Y: 3.5,           /* 火箭、飛碟從旗子重來時的高度 */
 
     /* 針：看起來的針尖在 0.8 格，真正會撞到的只到 0.5 格 */
@@ -115,7 +122,7 @@
 
   function createWorld() {
     return {
-      sections: [], cols: {}, topCols: {}, triggers: [],
+      sections: [], cols: {}, topCols: {}, triggers: [], funnels: [],
       starCount: 0, goalX: null, bossAt: null, endless: false, onBossDone: null
     };
   }
@@ -137,6 +144,58 @@
     if (g.k === 'goal') world.goalX = g.x;
     if (g.k === 'portal' && g.mode === 'boss' && world.bossAt == null && !world.endless) world.bossAt = g.x;
     return g;
+  }
+
+  /* 傳送門的漏斗：from / to 是前後兩段的玩法，決定斜坡從多高開始 */
+  function addFunnel(world, px, from, to) {
+    var F = CONFIG.FUNNEL;
+    var high = function (m) { return physMode(m) === 'cube' ? F.CUBE_CEIL : CONFIG.CEIL; };
+    var f = { px: px, x0: px - F.IN, x1: px + F.OUT, cIn: high(from), cOut: high(to) };
+    world.funnels.push(f);
+    world.funnels.sort(function (a, b) { return a.px - b.px; });
+    return f;
+  }
+
+  function funnelAt(world, x) {
+    var fs = world.funnels;
+    for (var i = 0; i < fs.length; i++) {
+      if (x < fs[i].x0) return null;
+      if (x <= fs[i].x1) return fs[i];
+    }
+    return null;
+  }
+
+  /* 斜坡往門口靠近：0 → 1 */
+  function funnelT(f, x) {
+    var n = CONFIG.FUNNEL.NECK;
+    if (x < f.px - n) return (x - f.x0) / (f.px - n - f.x0);
+    if (x <= f.px + n) return 1;
+    return (f.x1 - x) / (f.x1 - f.px - n);
+  }
+
+  function floorAt(world, x) {
+    var f = funnelAt(world, x);
+    return f ? CONFIG.FUNNEL.FLOOR * clamp(funnelT(f, x), 0, 1) : 0;
+  }
+
+  function ceilAt(world, x) {
+    var f = funnelAt(world, x), F = CONFIG.FUNNEL;
+    if (!f) return Infinity;
+    var far = x < f.px ? f.cIn : f.cOut;
+    return far + (F.FLOOR + F.GAP - far) * clamp(funnelT(f, x), 0, 1);
+  }
+
+  /* 一個方框底下最高的地板、頭上最低的天花板（斜坡的轉角也要算） */
+  function terrainUnder(world, x, H) {
+    var hi = Math.max(floorAt(world, x - H), floorAt(world, x), floorAt(world, x + H));
+    var lo = Math.min(ceilAt(world, x - H), ceilAt(world, x), ceilAt(world, x + H));
+    var f = funnelAt(world, x - H) || funnelAt(world, x + H), n = CONFIG.FUNNEL.NECK;
+    if (f) {
+      [f.px - n, f.px + n].forEach(function (k) {
+        if (k > x - H && k < x + H) { hi = Math.max(hi, floorAt(world, k)); lo = Math.min(lo, ceilAt(world, k)); }
+      });
+    }
+    return { floor: hi, ceil: lo };
   }
 
   function sectionAt(world, x) {
@@ -273,7 +332,7 @@
         P.buffer = 0;
         if (main) emit(run, 'jump');
       } else if (!P.grounded) {
-        P.vy = Math.max(P.vy - C.GRAVITY * dt, -C.MAX_FALL);
+        P.vy = Math.max(P.vy - (P.vy > 0 ? C.GRAVITY : C.FALL_GRAVITY) * dt, -C.MAX_FALL);
       }
       P.buffer = Math.max(0, P.buffer - dt);
       P.coyote = Math.max(0, P.coyote - dt);
@@ -312,16 +371,19 @@
       if (!moved) break;
     }
 
-    /* 2. 上下移動：落在方塊上、頭頂到方塊、地板、天花板 */
+    /* 2. 上下移動：落在方塊上、頭頂到方塊、地板、天花板（傳送門的漏斗是斜的） */
+    var ter = terrainUnder(run.world, x, H);
+    var fl = ter.floor, cl = m === 'cube' ? ter.ceil : Math.min(ter.ceil, C.CEIL);
+    if (cl - fl < 2 * H) return crash(run, 'squeeze');
     var oy = P.y, ground = false;
     P.y += P.vy * dt;
-    if (P.y - H <= 0) {
-      P.y = H;
+    if (P.y - H <= fl) {
+      P.y = fl + H;
       if (P.vy < 0) P.vy = 0;
       ground = true;
     }
-    if (m !== 'cube' && P.y + H >= C.CEIL) {
-      P.y = C.CEIL - H;
+    if (P.y + H >= cl) {
+      P.y = cl - H;
       if (P.vy > 0) P.vy = 0;
     }
     for (i = 0; i < objs.length; i++) {
@@ -343,7 +405,8 @@
     /* 3. 跳跳：腳下有沒有東西（走出方塊邊緣就開始掉） */
     if (m === 'cube') {
       if (!ground && P.vy <= 0) {
-        if (P.y - H <= 1e-6) ground = true;
+        /* 下坡：本來站在地上、地板只低了一點點 → 貼著斜坡走，不會一直「掉下去」 */
+        if (P.y - H - fl <= (P.grounded ? 0.08 : 1e-6)) { P.y = fl + H; P.vy = 0; ground = true; }
         else {
           for (i = 0; i < objs.length; i++) {
             b = objs[i];
@@ -541,8 +604,9 @@
     run.mode = cp.mode;
     run.ti = cp.ti;
     run.speedMul = cp.speedMul;
-    run.p = newPlayer(cube ? C.HALF : C.RESPAWN_Y, cube);
-    run.p2 = cp.mode === 'duo' ? newPlayer() : null;
+    var fy = floorAt(run.world, cp.x) + C.HALF;
+    run.p = newPlayer(cube ? fy : C.RESPAWN_Y, cube);
+    run.p2 = cp.mode === 'duo' ? newPlayer(fy) : null;
     run.rot = { angle: 0, dir: 1 };
     if (cp.boss && run.boss) {
       run.boss.bt = cp.boss.bt;
@@ -653,6 +717,10 @@
     addObject: addObject,
     addTrigger: addTrigger,
     sectionAt: sectionAt,
+    addFunnel: addFunnel,
+    funnelAt: funnelAt,
+    floorAt: floorAt,
+    ceilAt: ceilAt,
     newRun: newRun,
     cloneRun: cloneRun,
     step: step,
