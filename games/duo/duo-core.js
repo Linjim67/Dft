@@ -20,9 +20,46 @@
   var CHAR_NAMES = { tourniquet: '止血帶', swab: '酒精棉片', syringe: '針筒', virus: '病毒' };
   var COAT_NAMES = { normal: '一般', silver: '銀色', iron: '鐵甲', boss: '大魔王' };
 
-  /* 家長的事件按鈕：trick = 搗蛋，help = 幫忙。cooldownMs：家長按了之後多久才能再按 */
+  /* 第幾回合開始出現（要和 engine.js 的 CHARACTERS.from 一致）：酒精棉片、病毒都是第 3 回合登場 */
+  var CHAR_FROM = { tourniquet: 1, swab: 3, syringe: 1, virus: 3 };
+
+  /* ── 家長的排隊：點一個洞，就放隊伍最前面那一個 ──
+     一般角色一袋一袋洗牌後排進來（同一袋裡不會重複，不會連來好幾個一樣的）；
+     回合越後面越常帶鍍層。病毒不排隊：入侵時整條隊伍換成病毒。 */
+  var LINE_LEN = 4; /* 畫面上看得到的：現在這一個 + 後面三個 */
+
+  function coatChance(round) {
+    return Math.min(0.4, 0.08 * Math.max(0, (round || 1) - 1));
+  }
+
+  function lineItem(c, round, rand) {
+    var r = rand();
+    var p = coatChance(round);
+    return { c: c, v: r < p / 2 ? 'silver' : (r < p ? 'iron' : 'normal') };
+  }
+
+  /* 回傳補滿之後的新隊伍（不改原本的陣列） */
+  function refillLine(line, round, rand) {
+    rand = rand || Math.random;
+    var out = line.slice();
+    var pool = PLACEABLE.filter(function (c) { return c !== 'virus' && CHAR_FROM[c] <= (round || 1); });
+    while (out.length < LINE_LEN) {
+      var bag = pool.slice();
+      for (var i = bag.length - 1; i > 0; i--) {
+        var j = Math.floor(rand() * (i + 1));
+        var t = bag[i]; bag[i] = bag[j]; bag[j] = t;
+      }
+      /* 新的一袋第一個不要和隊伍最後一個一樣 */
+      if (out.length && bag.length > 1 && bag[0] === out[out.length - 1].c) bag.push(bag.shift());
+      bag.forEach(function (c) { out.push(lineItem(c, round, rand)); });
+    }
+    return out;
+  }
+
+  /* 家長的事件按鈕：trick = 搗蛋，help = 幫忙，virus = 排隊區旁邊的「開始病毒入侵」。
+     cooldownMs：家長按了之後多久才能再按 */
   var EVENTS = {
-    invasion: { name: '病毒入侵', kind: 'trick', cooldownMs: 15000, hint: '7 秒只出現病毒' },
+    invasion: { name: '病毒入侵', kind: 'virus', cooldownMs: 15000, hint: '7 秒只出現病毒' },
     boss: { name: '大魔王', kind: 'trick', cooldownMs: 15000, hint: '要連點很多下' },
     quake: { name: '地震', kind: 'trick', cooldownMs: 12000, hint: '棋盤搖 4 秒' },
     bubbles: { name: '泡泡', kind: 'trick', cooldownMs: 12000, hint: '先戳破才打得到' },
@@ -135,6 +172,10 @@
     COATS: COATS,
     CHAR_NAMES: CHAR_NAMES,
     COAT_NAMES: COAT_NAMES,
+    CHAR_FROM: CHAR_FROM,
+    LINE_LEN: LINE_LEN,
+    coatChance: coatChance,
+    refillLine: refillLine,
     EVENTS: EVENTS,
     MODES: MODES,
     REASONS: REASONS,

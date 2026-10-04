@@ -1,9 +1,11 @@
 /* ═══════════════════════════════════════════════════════════════
    安心陪伴 — 打地鼠・遙控器（家長的手機）
    - 看：孩子手機回報的 state/child（棋盤、回合、時間、分數、事件）
-   - 放：手動模式選角色＋鍍層，點空洞 → cmds 新增一筆 place
+   - 放：手動模式下角色排好隊，家長只要點空洞 → cmds 新增一筆 place（隊伍最前面那一個）
+   - 病毒：能發動時才出現「開始病毒入侵」按鈕；入侵時整條隊伍換成病毒
    - 搗蛋／幫忙：事件按鈕 → cmds 新增一筆 event
    - 模式：rooms/{代碼}.mode（我來放／自動出現）
+   - 斷線：蓋一個對話框（孩子的手機沒回報、這支手機沒網路、監聽停止）
    孩子的手機才是遊戲的主人：它會再檢查一次能不能放，不行就在 ack 裡說原因。
    ═══════════════════════════════════════════════════════════════ */
 (function () {
@@ -21,10 +23,10 @@
   var room = null;
   var state = null;
   var stateSeenAt = 0;            /* 這支手機收到最新狀態的時間（判斷斷線用，不受兩支手機時鐘差影響） */
-  var sel = { c: 'syringe', v: 'normal' };
-  var beforeInvasion = null;      /* 病毒入侵時自動換成病毒，結束後換回來 */
-  var pending = {};               /* 洞 → { id, at }：已送出、還沒在孩子畫面上看到 */
-  var sent = {};                  /* 指令 id → { kind, h, e } */
+  var line = [];                  /* 排隊中的一般角色 { c, v }；病毒不排隊 */
+  var placed = 0;                 /* 放了幾次：隊伍往前移時才重畫（每 500ms 的更新不會重播動畫） */
+  var pending = {};               /* 洞 → { id, at, item }：已送出、還沒在孩子畫面上看到 */
+  var sent = {};                  /* 指令 id → { kind, h, e, item, fromLine } */
   var cooldown = {};              /* 事件 → 可以再按的時間 */
   var lastAckId = null;
 
@@ -38,40 +40,26 @@
         var sp = new window.DOMParser().parseFromString(html, 'text/html').querySelector('svg.sprite');
         if (sp) document.body.insertBefore(document.importNode(sp, true), document.body.firstChild);
       })
-      .catch(function () { /* 沒有圖也能用：洞裡會寫角色名字 */ });
+      .catch(function () { /* 沒有圖也能用：洞裡、隊伍裡都會寫角色名字 */ });
   }
 
   function art(c, v, cls) {
     return '<svg class="' + (cls || 'tile-art') + ' v-' + v + '" aria-hidden="true"><use href="#ch-' + c + '"></use></svg>';
   }
 
-  /* ── 調色盤：角色＋鍍層（單選；原生 radio，鍵盤也能用） ── */
-  $('palette').innerHTML = D.PLACEABLE.map(function (c) {
-    return '<label class="pal-option"><input type="radio" name="char" value="' + c + '"' + (c === sel.c ? ' checked' : '') + '>' +
-      '<span class="pal-face">' + art(c, 'normal', 'pal-art') + '<span class="pal-name">' + esc(D.CHAR_NAMES[c]) + '</span>' +
-      '<span class="pal-note"></span></span></label>';
-  }).join('');
-  $('coats').innerHTML = D.COATS.map(function (v) {
-    return '<label class="segmented-option"><input type="radio" name="coat" value="' + v + '"' + (v === sel.v ? ' checked' : '') + '>' +
-      '<span class="segmented-face">' + esc(D.COAT_NAMES[v]) + '</span></label>';
-  }).join('');
+  function itemName(it) {
+    return (it.v && it.v !== 'normal' ? D.COAT_NAMES[it.v] : '') + D.CHAR_NAMES[it.c];
+  }
 
-  $('palette').addEventListener('change', function (ev) {
-    if (ev.target.name === 'char') { sel.c = ev.target.value; beforeInvasion = null; render(); }
-  });
-  $('coats').addEventListener('change', function (ev) {
-    if (ev.target.name === 'coat') { sel.v = ev.target.value; render(); }
-  });
-
-  /* ── 事件按鈕 ── */
+  /* ── 事件按鈕（病毒入侵不在這裡：它在排隊區旁邊，能按時才出現） ── */
   function eventButton(id) {
     var e = D.EVENTS[id];
     return '<button type="button" class="event-btn is-' + e.kind + '" data-event="' + id + '">' +
       '<span class="ev-name">' + esc(e.name) + '</span><span class="ev-note" id="evNote-' + id + '"></span></button>';
   }
-  var ids = Object.keys(D.EVENTS);
-  $('trickEvents').innerHTML = ids.filter(function (k) { return D.EVENTS[k].kind === 'trick'; }).map(eventButton).join('');
-  $('helpEvents').innerHTML = ids.filter(function (k) { return D.EVENTS[k].kind === 'help'; }).map(eventButton).join('');
+  var gridIds = Object.keys(D.EVENTS).filter(function (k) { return D.EVENTS[k].kind !== 'virus'; });
+  $('trickEvents').innerHTML = gridIds.filter(function (k) { return D.EVENTS[k].kind === 'trick'; }).map(eventButton).join('');
+  $('helpEvents').innerHTML = gridIds.filter(function (k) { return D.EVENTS[k].kind === 'help'; }).map(eventButton).join('');
 
   /* ── 提示訊息（孩子的手機說不行的時候） ── */
   var toastTimer = null;
@@ -85,15 +73,19 @@
 
   function stale() { return !!state && Date.now() - stateSeenAt > D.STALE_MS; }
   function canPlay() { return !!state && !stale() && state.view === 'play' && state.running && !state.teach; }
+  function manual() { return !room || room.mode === 'manual'; }
+  function round() { return (state && state.round) || 1; }
+  function invading() { return canPlay() && !!state.inv; }
 
   /* 事件現在能不能按，不能的話寫原因（不只把按鈕變灰） */
   function eventBlock(id, now) {
     if (cooldown[id] > now) return '再等 ' + Math.ceil((cooldown[id] - now) / 1000) + ' 秒';
     if (!canPlay()) return '遊戲中才能按';
     if (id === 'invasion') {
+      if (round() < D.CHAR_FROM.virus) return '第 ' + D.CHAR_FROM.virus + ' 回合起才有病毒';
       if (state.inv) return '進行中';
       if (state.boss) return '大魔王在場';
-      if (state.time < 7) return '時間不夠了';
+      if (state.time < 7) return '這回合時間不夠了';
     }
     if (id === 'boss') {
       if (state.boss) return '進行中';
@@ -106,11 +98,76 @@
     return '';
   }
 
-  function holeLabel(i, h) {
+  /* ── 排隊：現在看得到的隊伍（入侵時整條換成病毒，原本的隊伍留著，入侵完接著用） ── */
+  function shownLine() {
+    if (invading()) {
+      var v = [];
+      for (var i = 0; i < D.LINE_LEN; i++) v.push({ c: 'virus', v: 'normal' });
+      return v;
+    }
+    line = D.refillLine(line, round());
+    return line.slice(0, D.LINE_LEN);
+  }
+
+  /* 點洞時要放的那一個（從隊伍拿走；病毒入侵時是病毒） */
+  function takeNext() {
+    if (invading()) return { item: { c: 'virus', v: 'normal' }, fromLine: false };
+    line = D.refillLine(line, round());
+    return { item: line.shift(), fromLine: true };
+  }
+
+  /* 孩子的手機說不行（或沒送出去）：放回隊伍最前面，不會白白少一個 */
+  function giveBack(meta) {
+    if (meta && meta.kind === 'place' && meta.fromLine) line.unshift(meta.item);
+  }
+
+  var lineKey = '';
+  function renderLine() {
+    var items = shownLine();
+    var key = placed + '|' + items.map(function (it) { return it.c + '.' + it.v; }).join(',');
+    if (key !== lineKey) {
+      lineKey = key;
+      $('line').innerHTML = items.map(function (it, i) {
+        var coat = it.v !== 'normal' ? '<span class="line-coat is-' + it.v + '">' + esc(D.COAT_NAMES[it.v]) + '</span>' : '';
+        return '<li class="line-item' + (i === 0 ? ' is-now' : '') + (it.c === 'virus' ? ' is-virus' : '') + '">' +
+          (i === 0 ? '<span class="line-kicker">下一個</span>' : '') +
+          art(it.c, it.v, 'line-art') +
+          '<span class="line-name">' + esc(D.CHAR_NAMES[it.c]) + '</span>' + coat + '</li>';
+      }).join('');
+    }
+    var hint;
+    if (!canPlay()) hint = '孩子開始玩之後，點一個空洞就會放「' + itemName(items[0]) + '」。';
+    else if (invading()) hint = '病毒入侵中，隊伍換成病毒：點空洞放病毒。';
+    else hint = '點一個空洞，就放「' + itemName(items[0]) + '」。';
+    if ($('lineHint').textContent !== hint) $('lineHint').textContent = hint;
+  }
+
+  /* ── 病毒入侵：能發動才出現按鈕；不能的時候同一個位置寫原因（按鈕出現時棋盤不會跳） ── */
+  function setText(id, text) { if ($(id).textContent !== text) $(id).textContent = text; }
+
+  function renderStorm() {
+    var now = Date.now();
+    var why = eventBlock('invasion', now);
+    var active = invading();
+    $('stormBtn').hidden = !!why || active;
+    $('stormWait').hidden = !why && !active;
+    $('storm').classList.toggle('is-active', active);
+    if (active) {
+      setText('stormWaitName', '病毒入侵中・還有 ' + state.inv + ' 秒');
+      setText('stormWaitNote', manual() ? '病毒會自己冒出來，你也可以點空洞放' : '病毒會自己冒出來');
+    } else if (why) {
+      setText('stormWaitName', '病毒還沒準備好');
+      setText('stormWaitNote', why);
+    } else {
+      setText('stormNote', manual() ? '7 秒只出現病毒，你也可以點空洞放' : '7 秒只出現病毒');
+    }
+  }
+
+  function holeLabel(i, h, next) {
     var base = '第 ' + (i + 1) + ' 個洞';
     if (!h || !h.o) return base + '：維修中';
-    if (h.c) return base + '：' + (h.v && h.v !== 'normal' ? D.COAT_NAMES[h.v] : '') + D.CHAR_NAMES[h.c] + (h.b ? '（泡泡蓋住）' : '');
-    if (room && room.mode === 'manual') return base + '：空的，點一下放「' + D.COAT_NAMES[sel.v] + D.CHAR_NAMES[sel.c] + '」';
+    if (h.c) return base + '：' + itemName({ c: h.c, v: h.v }) + (h.b ? '（泡泡蓋住）' : '');
+    if (manual() && canPlay()) return base + '：空的，點一下放「' + itemName(next) + '」';
     return base + '：空的';
   }
 
@@ -128,14 +185,15 @@
   function renderMirror() {
     var holes = state && state.holes && state.holes.length ? state.holes : [];
     var now = Date.now();
-    var manual = room && room.mode === 'manual';
+    var placing = manual() && canPlay();
+    var next = shownLine()[0];
     for (var i = 0; i < 6; i++) {
       var h = holes[i];
       var pend = pending[i] && now - pending[i].at < PENDING_MS ? pending[i] : null;
       if (pending[i] && !pend) delete pending[i];
       if (h && h.c && pend) { delete pending[i]; pend = null; } /* 孩子畫面上出現了 */
       var cls = 'tile' + (!h || !h.o ? ' is-locked' : '') + (h && h.c ? ' is-up' : '') + (h && h.b ? ' has-bubble' : '') +
-        (pend ? ' is-pending' : '') + (manual && canPlay() && h && h.o && !h.c ? ' can-place' : '');
+        (pend ? ' is-pending' : '') + (placing && h && h.o && !h.c ? ' can-place' : '');
       var inner = '<span class="tile-pit" aria-hidden="true"></span>';
       if (!h || !h.o) {
         inner += '<span class="tile-lock" aria-hidden="true">' + (h ? '維修中' : '') + '</span>';
@@ -145,15 +203,16 @@
           inner += '<span class="tile-hp" aria-hidden="true"><span style="width:' + Math.max(0, Math.min(100, h.p)) + '%"></span></span>';
         }
       } else if (pend) {
-        inner += '<span class="tile-plus" aria-hidden="true">放置中…</span>';
-      } else if (manual && canPlay()) {
+        /* 剛點的：先看到半透明的角色，孩子畫面上出現了就變實心 */
+        inner += art(pend.item.c, pend.item.v, 'tile-art is-ghost') + '<span class="tile-name">放置中…</span>';
+      } else if (placing) {
         inner += '<span class="tile-plus" aria-hidden="true">＋</span>';
       }
       if (h && h.b) inner += '<span class="tile-bubble" aria-hidden="true"></span>';
       inner += '<span class="tile-key" aria-hidden="true">' + (i + 1) + '</span>';
       var tile = tiles[i];
       if (tile.el.className !== cls) tile.el.className = cls;
-      var label = holeLabel(i, h);
+      var label = holeLabel(i, h, next);
       if (tile.el.getAttribute('aria-label') !== label) tile.el.setAttribute('aria-label', label);
       if (tile.key !== inner) { tile.key = inner; tile.el.innerHTML = inner; }
     }
@@ -162,7 +221,8 @@
   }
 
   function renderHud() {
-    var st = D.childStatus(state, stale());
+    var st = failure ? { tone: 'error', text: failure.title }
+      : dead ? { tone: 'error', text: '連線中斷了' } : D.childStatus(state, stale());
     $('duoStatusText').textContent = st.text;
     $('duoStatus').className = 'duo-status is-' + st.tone;
     var playingView = state && (state.view === 'play' || state.view === 'summary');
@@ -172,7 +232,6 @@
     var chips = [];
     if (state && state.mult > 1) chips.push(['mult', '連擊 ×' + state.mult]);
     if (state && state.dbl) chips.push(['help', '雙倍分數']);
-    if (state && state.inv) chips.push(['trick', '病毒入侵 ' + state.inv + ' 秒']);
     if (state && state.boss) chips.push(['trick', '大魔王']);
     if (state && state.quake) chips.push(['trick', '地震']);
     if (state && state.bubbles) chips.push(['trick', '泡泡 ' + state.bubbles + ' 個']);
@@ -180,27 +239,9 @@
     $('rChips').hidden = !chips.length;
   }
 
-  function renderPalette() {
-    var inv = !!(state && state.inv);
-    /* 病毒只能在入侵時放；入侵時只能放病毒 → 自動幫家長切換 */
-    if (inv && sel.c !== 'virus') { beforeInvasion = sel.c; sel.c = 'virus'; }
-    if (!inv && sel.c === 'virus' && beforeInvasion) { sel.c = beforeInvasion; beforeInvasion = null; }
-    Array.prototype.forEach.call($('palette').querySelectorAll('input'), function (input) {
-      var c = input.value;
-      var allowed = inv ? c === 'virus' : c !== 'virus';
-      input.checked = c === sel.c;
-      input.disabled = !allowed;
-      input.closest('.pal-option').querySelector('.pal-note').textContent =
-        c === 'virus' && !inv ? '入侵時' : (inv && c !== 'virus' ? '入侵中不行' : '');
-    });
-    Array.prototype.forEach.call($('coats').querySelectorAll('input'), function (input) {
-      input.checked = input.value === sel.v;
-    });
-  }
-
   function renderEvents() {
     var now = Date.now();
-    ids.forEach(function (id) {
+    gridIds.forEach(function (id) {
       var b = document.querySelector('.event-btn[data-event="' + id + '"]');
       var why = eventBlock(id, now);
       b.disabled = !!why;
@@ -209,19 +250,81 @@
     });
   }
 
+  /* ── 斷線對話框 ──
+     fail：一開始就連不上 · dead：監聽停止（Firestore 不會自己恢復）· offline：這支手機沒網路
+     stale：孩子的手機超過 STALE_MS 沒回報。後兩種恢復時對話框自己關掉；
+     家長按「繼續等」關掉的，同一種情況不會一直跳出來，恢復後再斷才會。 */
+  var failure = null;
+  var dead = false;
+  var lostShown = null;
+  var lostDismissed = null;
+  var lostDlg = Anxin.wireDialog($('lostDlg'));
+  var LOST = {
+    dead: { title: '連線中斷了', body: '和孩子的手機斷線了。重新整理這一頁，就會再連上。', action: '重新整理' },
+    offline: { title: '這支手機沒有網路', body: '連上網路後，這個視窗會自己關掉，遊戲可以接著玩。', action: '繼續等' },
+    stale: { title: '孩子的手機好像斷線了', body: '請看看孩子的手機是不是還開著打地鼠、螢幕有沒有關掉。連回來之後，這個視窗會自己關掉。', action: '繼續等' }
+  };
+
+  function lostKind() {
+    if (failure) return 'fail';
+    if (dead) return 'dead';
+    if (navigator.onLine === false) return 'offline';
+    if (stale()) return 'stale';
+    return null;
+  }
+
+  function mustReload(k) { return k === 'fail' || k === 'dead'; }
+
+  function renderLost() {
+    var k = lostKind();
+    var dlg = $('lostDlg');
+    if (!k) {
+      lostDismissed = null;
+      lostShown = null;
+      if (dlg.hasAttribute('open')) dlg.close();
+      return;
+    }
+    if (k === lostDismissed) return;
+    if (k !== lostShown) {
+      lostShown = k;
+      var m = k === 'fail' ? { title: failure.title, body: failure.body, action: '重新整理' } : LOST[k];
+      $('lostTitle').textContent = m.title;
+      $('lostBody').textContent = m.body;
+      $('lostAction').textContent = m.action;
+    }
+    if (!dlg.hasAttribute('open')) lostDlg.open();
+  }
+
+  $('lostAction').addEventListener('click', function () {
+    if (mustReload(lostShown)) { window.location.reload(); return; }
+    lostDismissed = lostShown;
+    lostDlg.close();
+  });
+  $('lostDlg').addEventListener('cancel', function (ev) {
+    if (mustReload(lostShown)) { ev.preventDefault(); return; } /* 不能用 Esc 關掉：關了也連不回來 */
+    lostDismissed = lostShown;
+  });
+  window.addEventListener('offline', function () { render(); });
+  window.addEventListener('online', function () { render(); });
+  /* 螢幕關掉時這支手機收不到狀態：回來時先等一輪，不要一打開就跳「斷線了」 */
+  document.addEventListener('visibilitychange', function () {
+    if (!document.hidden && state) { stateSeenAt = Date.now(); render(); }
+  });
+
   function render() {
-    var manual = !room || room.mode === 'manual';
     Array.prototype.forEach.call(document.querySelectorAll('input[name="mode"]'), function (input) {
       input.checked = !!room && input.value === room.mode;
     });
-    $('modeHint').textContent = manual
-      ? '角色只會出現在你點的洞。病毒入侵時會自己冒出病毒。'
-      : '角色會像單機版一樣自己跑出來；你還是可以按下面的搗蛋、幫忙。';
-    $('placeSection').hidden = !manual;
+    $('modeHint').textContent = manual()
+      ? '角色照隊伍的順序，只出現在你點的洞。病毒入侵時也會自己冒出病毒。'
+      : '角色會像單機版一樣自己跑出來；你還是可以發動病毒、按下面的搗蛋和幫忙。';
+    $('placeSection').hidden = !manual();
     renderHud();
-    renderPalette();
+    renderLine();
+    renderStorm();
     renderMirror();
     renderEvents();
+    renderLost();
   }
 
   function send(cmd, meta) {
@@ -230,7 +333,7 @@
     sent[r.id] = meta;
     r.done.catch(function () {
       delete sent[r.id];
-      if (meta.kind === 'place') delete pending[meta.h];
+      if (meta.kind === 'place') { delete pending[meta.h]; giveBack(meta); placed++; }
       if (meta.kind === 'event') cooldown[meta.e] = 0;
       toast('網路不太穩，沒有送出去，請再按一次');
       render();
@@ -243,25 +346,33 @@
     if (!b) return;
     var i = Number(b.dataset.i);
     var h = state && state.holes && state.holes[i];
-    if (!room || room.mode !== 'manual') { toast(D.reasonText('auto')); return; }
+    if (!manual()) { toast(D.reasonText('auto')); return; }
     if (!canPlay()) { toast(D.reasonText('not-playing')); return; }
     if (!h || !h.o) { toast(D.reasonText('locked')); return; }
     if (h.c || pending[i]) { toast(D.reasonText('busy')); return; }
     if (state.boss) { toast(D.reasonText('boss')); return; }
-    var id = send({ t: 'place', h: i, c: sel.c, v: sel.v }, { kind: 'place', h: i });
-    if (id) pending[i] = { id: id, at: Date.now() };
+    if (!duo) return;
+    var next = takeNext();
+    var meta = { kind: 'place', h: i, item: next.item, fromLine: next.fromLine };
+    var id = send({ t: 'place', h: i, c: next.item.c, v: next.item.v }, meta);
+    pending[i] = { id: id, at: Date.now(), item: next.item };
+    placed++;
     render();
   });
 
-  function onEventClick(ev) {
-    var b = ev.target.closest('.event-btn');
-    if (!b || b.disabled) return;
-    var e = b.dataset.event;
+  function trigger(e) {
+    if (eventBlock(e, Date.now())) return;
     if (send({ t: 'event', e: e }, { kind: 'event', e: e })) cooldown[e] = Date.now() + D.EVENTS[e].cooldownMs;
     render();
   }
+
+  function onEventClick(ev) {
+    var b = ev.target.closest('.event-btn');
+    if (b && !b.disabled) trigger(b.dataset.event);
+  }
   $('trickEvents').addEventListener('click', onEventClick);
   $('helpEvents').addEventListener('click', onEventClick);
+  $('stormBtn').addEventListener('click', function () { trigger('invasion'); });
 
   Array.prototype.forEach.call(document.querySelectorAll('input[name="mode"]'), function (input) {
     input.addEventListener('change', function () {
@@ -285,6 +396,7 @@
         if (meta.kind === 'place') delete pending[meta.h];
         if (!ack.ok) {
           if (meta.kind === 'event') cooldown[meta.e] = 0; /* 沒成功就不用冷卻 */
+          if (meta.kind === 'place') { giveBack(meta); placed++; }
           toast(D.reasonText(ack.why));
         }
       }
@@ -316,15 +428,18 @@
       return duo.getRoom(code).then(function (r) {
         if (!r || r.parentUid !== uid) { window.location.replace('/games/duo/'); return; }
         onRoom(r);
-        var lost = function (err) { console.error('雙機：監聽停止', err); toast(D.LISTEN_LOST); };
+        var lost = function (err) {
+          console.error('雙機：監聽停止', err);
+          dead = true;
+          render();
+        };
         duo.watchRoom(code, onRoom, lost);
         duo.watchState(code, onState, lost);
       });
     })
     .catch(function (err) {
       console.error('雙機：連線失敗', err);
-      var f = D.failureText(err);
-      $('duoStatusText').textContent = f.title + '。' + f.body;
-      $('duoStatus').className = 'duo-status is-error';
+      failure = D.failureText(err);
+      render();
     });
 })();

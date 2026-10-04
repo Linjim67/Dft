@@ -123,9 +123,11 @@
     startBtn.disabled = true;
   }
 
+  /* 監聽停了就收不到爸爸媽媽的指令：停下遊戲、蓋對話框（回選單會重新連上） */
   function lost(err) {
     console.error('雙機：監聽停止', err);
-    say(D.LISTEN_LOST, 'warn');
+    say('和爸爸媽媽的手機斷線了', 'error');
+    stopWith('和爸爸媽媽的手機斷線了，回選單就能再連上');
   }
 
   /* Firebase 的 module 只有雙機才載入（單機不需要，省流量） */

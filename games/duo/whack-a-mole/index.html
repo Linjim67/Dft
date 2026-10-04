@@ -66,12 +66,24 @@
       <p class="remote-hint" id="modeHint"></p>
     </fieldset>
 
-    <!-- 手動：先選角色和鍍層，再點下面的洞 -->
-    <fieldset class="remote-section" id="placeSection">
-      <legend class="section-title">選角色，再點一個洞</legend>
-      <div class="palette" id="palette"></div>
-      <div class="segmented coat-seg" id="coats"></div>
-    </fieldset>
+    <!-- 手動：角色排好隊，家長只要點洞；點一下就放隊伍最前面那一個 -->
+    <section class="remote-section" id="placeSection" aria-labelledby="lineTitle">
+      <h2 class="section-title" id="lineTitle">排隊出場</h2>
+      <ol class="line" id="line" aria-describedby="lineHint"></ol>
+      <p class="remote-hint" id="lineHint"></p>
+    </section>
+
+    <!-- 病毒：能發動時才出現按鈕；位置固定（還不能按時放說明），按鈕出現時棋盤不會被擠下去 -->
+    <div class="storm" id="storm">
+      <button type="button" class="storm-btn" id="stormBtn" hidden>
+        <svg class="storm-art" aria-hidden="true"><use href="#ch-virus"></use></svg>
+        <span class="storm-text"><span class="storm-name">開始病毒入侵</span><span class="storm-note" id="stormNote"></span></span>
+      </button>
+      <p class="storm-wait" id="stormWait">
+        <svg class="storm-art" aria-hidden="true"><use href="#ch-virus"></use></svg>
+        <span class="storm-text"><span class="storm-name" id="stormWaitName">病毒還沒準備好</span><span class="storm-note" id="stormWaitNote"></span></span>
+      </p>
+    </div>
 
     <!-- 孩子的棋盤（同步顯示）；手動時點空洞就放進去 -->
     <div class="mirror" id="mirror" role="group" aria-label="孩子的棋盤"></div>
@@ -85,6 +97,16 @@
   </main>
 
   <div class="toast" id="toast" role="status" aria-live="polite" hidden></div>
+
+  <!-- 斷線：蓋一個對話框（不只狀態列的一行字） -->
+  <dialog class="dlg lost-dlg" id="lostDlg" aria-labelledby="lostTitle" aria-describedby="lostBody">
+    <h2 class="dlg-title" id="lostTitle"></h2>
+    <p class="dlg-body" id="lostBody"></p>
+    <div class="dlg-actions">
+      <button class="btn btn-primary" type="button" id="lostAction"></button>
+      <a class="btn btn-quiet" href="/games/duo/">回配對頁</a>
+    </div>
+  </dialog>
 
   <script type="module" src="/shared/firebase.js"></script>
   <script src="/games/duo/duo-core.js"></script>
