@@ -171,28 +171,48 @@
     return used.length;
   }
 
-  /* 大魔王關的星星放在打鬥裡：兩發水柱中間比較長的空檔，要跳起來才拿得到。
-     空檔至少 1.8 秒，星星在正中間，跳起來的那 0.56 秒不會撞上水柱。 */
-  function bossStars(w, portalX, shots, seed) {
-    var B = E.CONFIG.BOSS, S = E.CONFIG.SPEED;
+  /* 大魔王關的障礙物和星星：場地是平的，障礙物只放在「兩發水柱中間的空檔」正中間——
+     小膠囊經過的那一刻，前後至少 1 秒都沒有水柱，所以不會同時要跳障礙、又要躲水。
+     有星星的空檔：一根針放在星星正下方（跳過針剛好拿到星星）。
+     醫生滾進來的時候先放一根針暖身。障礙物輪流：一根針 → 兩格藥盒 → 兩根針。 */
+  var BOSS_OBST = { SAFE: 1.0, INTRO_T: 1.5, CYCLE: ['n1', 'box', 'n2'] };
+
+  function bossLayout(w, portalX, shots, seed, withStars) {
+    var B = E.CONFIG.BOSS, S = E.CONFIG.SPEED, O = BOSS_OBST;
     var sched = E.bossSchedule(shots, seed);
     var reach = (B.DX - B.TIP - B.LEN / 2) / (S + B.SHOT_V);
     var arrive = sched.list.map(function (q) { return q.at + reach; });
-    var gaps = [];
+    var spots = [];
+    if (arrive[0] - O.INTRO_T >= O.SAFE && O.INTRO_T * S >= FUN.OUT + 4) spots.push({ t: O.INTRO_T });
     for (var i = 0; i + 1 < arrive.length; i++) {
-      if (arrive[i + 1] - arrive[i] >= 1.8) gaps.push((arrive[i] + arrive[i + 1]) / 2);
+      if (arrive[i + 1] - arrive[i] >= 2 * O.SAFE) spots.push({ t: (arrive[i] + arrive[i + 1]) / 2 });
     }
-    var n = 0;
-    [0.15, 0.5, 0.85].forEach(function (f) {
-      var t = gaps[Math.min(gaps.length - 1, Math.round(f * (gaps.length - 1)))];
-      if (t == null || (n && w._lastStarT === t)) return;
-      w._lastStarT = t;
-      var sx = Math.floor(portalX + S * t);
-      E.addObject(w, { k: 'star', x: sx, y: E.floorAt(w, sx + 0.5) + 2 });   /* 山丘上：離地 2 格 */
-      n++;
+    var gaps = spots.filter(function (sp) { return sp.t > O.INTRO_T; });
+    var nStars = 0;
+    if (withStars) {
+      [0.15, 0.5, 0.85].forEach(function (f) {
+        var sp = gaps[Math.min(gaps.length - 1, Math.round(f * (gaps.length - 1)))];
+        if (sp && !sp.star) { sp.star = true; nStars++; }
+      });
+    }
+    var k = 0;
+    spots.forEach(function (sp) {
+      var xc = portalX + S * sp.t;
+      var kind = sp.star || sp.t <= O.INTRO_T ? 'n1' : O.CYCLE[k++ % O.CYCLE.length];
+      if (kind === 'n1') {
+        var c = Math.floor(xc - 0.5);
+        E.addObject(w, { k: 'needle', x: c, y: 0, dir: 1, boss: true });
+        if (sp.star) E.addObject(w, { k: 'star', x: c, y: 2 });
+      } else {
+        var c0 = Math.floor(xc - 1);
+        for (var j = 0; j < 2; j++) {
+          E.addObject(w, kind === 'box' ? { k: 'block', x: c0 + j, y: 0, boss: true } : { k: 'needle', x: c0 + j, y: 0, dir: 1, boss: true });
+        }
+      }
+      sp.kind = kind;
     });
-    delete w._lastStarT;
-    return n;
+    w.bossSpots = (w.bossSpots || []).concat(spots.map(function (sp) { return { x: portalX + S * sp.t, t: sp.t, kind: sp.kind, star: !!sp.star, portalX: portalX, arrive: arrive }; }));
+    return nStars;
   }
 
   /* ─────────────────────────────────────────────────────────────
@@ -270,7 +290,6 @@
       if (sec.mode === 'boss') {
         E.addSection(w, { mode: 'boss', x0: x0, x1: Infinity });
         E.addTrigger(w, { k: 'portal', x: x0, mode: 'boss', shots: sec.shots, seed: L.seed });
-        E.addHills(w, x0 + FUN.OUT + 2);                /* 打鬥場地不是平的 */
         x = Infinity;
         return;
       }
@@ -291,7 +310,7 @@
     /* 大魔王關：三顆星星都在打鬥裡 */
     if (!isFinite(x)) {
       var boss = L.sections[L.sections.length - 1];
-      bossStars(w, w.bossAt, boss.shots, L.seed);
+      bossLayout(w, w.bossAt, boss.shots, L.seed, true);
     }
     if (isFinite(x)) E.addTrigger(w, { k: 'goal', x: x + 4 });
     return w;
@@ -338,11 +357,10 @@
       st.mode = mode;
       st.sec = s;
     });
-    var bx = infPortal(w, st, 'boss', {
-      round: R, shots: Math.min(INF.SHOTS_BASE + R, INF.SHOTS_CAP), seed: (st.seed + R * 7919) >>> 0
-    });
+    var shots = Math.min(INF.SHOTS_BASE + R, INF.SHOTS_CAP), bseed = (st.seed + R * 7919) >>> 0;
+    var bx = infPortal(w, st, 'boss', { round: R, shots: shots, seed: bseed });
+    bossLayout(w, bx, shots, bseed, false);
     st.sec = E.addSection(w, { mode: 'boss', x0: bx, x1: Infinity, round: R });
-    E.addHills(w, bx + FUN.OUT + 2);
     st.mode = 'boss';
   }
 
@@ -357,8 +375,7 @@
     /* 打完醫生 → 接上下一輪。機器人的分身共用同一個世界，同一輪只接一次 */
     w.onBossDone = function (run) {
       if (!run.boss || run.boss.round < st.round) return;
-      /* 山丘在下一個山谷收尾，下一輪的傳送門漏斗從平地開始 */
-      st.x = Math.max(Math.ceil(run.x) + 4, Math.ceil(E.endHills(w, run.x)));
+      st.x = Math.ceil(run.x) + 4;
       addRound(w, st);
     };
     return w;

@@ -799,7 +799,6 @@
     ctx.fillStyle = 'rgba(124,45,18,.6)';
     ctx.fillRect(left, gY - 1, right - left, 3);
 
-    drawHills(camX, gY, c0, c1, th);
     drawFunnels(camX, gY, c0, c1, th);
 
     /* 傳送門、加速、旗子、終點 */
@@ -819,45 +818,6 @@
     }
 
     drawPlayer(P, a, gY, t);
-  }
-
-  /* 大魔王場地的小山丘：和地板同一個顏色，地磚的縫一路畫到山坡表面 */
-  function drawHills(camX, gY, c0, c1, th) {
-    var hs = G.run.world.hills;
-    if (!hs) return;
-    var T = V.T, w = G.run.world;
-    hs.forEach(function (h) {
-      var a = Math.max(h.x0, c0 - 1), b = Math.min(h.x1, c1 + 2);
-      if (a >= b) return;
-      var X = function (wx) { return (wx - camX) * T; };
-      var Y = function (wx) { return gY - E.floorAt(w, wx) * T; };
-      ctx.save();
-      ctx.beginPath();
-      ctx.moveTo(X(a), gY + 3);
-      for (var x = a; x < b; x += 0.25) ctx.lineTo(X(x), Y(x));
-      ctx.lineTo(X(b), Y(b));
-      ctx.lineTo(X(b), gY + 3);
-      ctx.closePath();
-      ctx.fillStyle = th.ground;
-      ctx.fill();
-      ctx.fillStyle = th.seam;
-      for (var c = Math.ceil(a); c < b; c++) {
-        var top = Y(c) + 0.2 * T;
-        if (top < gY) ctx.fillRect(X(c), top, Math.max(1, T * 0.05), gY - top + 1);
-      }
-      ctx.strokeStyle = 'rgba(255,255,255,.4)';
-      ctx.lineWidth = Math.max(2, 0.1 * T);
-      ctx.beginPath();
-      for (x = a; x <= b; x += 0.25) x === a ? ctx.moveTo(X(x), Y(x) + 0.08 * T) : ctx.lineTo(X(x), Y(x) + 0.08 * T);
-      ctx.stroke();
-      ctx.strokeStyle = 'rgba(124,45,18,.6)';
-      ctx.lineWidth = 3;
-      ctx.lineJoin = 'round';
-      ctx.beginPath();
-      for (x = a; x <= b; x += 0.25) x === a ? ctx.moveTo(X(x), Y(x)) : ctx.lineTo(X(x), Y(x));
-      ctx.stroke();
-      ctx.restore();
-    });
   }
 
   /* 傳送門前的漏斗：地板往上斜、天花板往下斜，只有門口過得去 */

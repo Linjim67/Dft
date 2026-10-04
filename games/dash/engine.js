@@ -84,11 +84,7 @@
       PAIR: { 'low,low': 0.8, 'low,high': 0.75, 'high,low': 0.62 },
       FIRST: ['low', 'low', 'high'],   /* 開場三發固定：先學會跳，再學會不要跳 */
       SHOTS: 12,
-      OUTRO: 14,              /* 打完之後，終點在幾格外（醫生先舉白旗、滾走） */
-      /* 打鬥的場地是起伏的小山丘：高 1.2 格、一個起伏 18 格（最陡約 12°）。
-         瞄準的雷射和水柱都「貼著地面、離地固定高度」前進（低的在腳邊、高的在頭的高度），
-         所以不管地形怎麼起伏，雷射不會插進山丘裡，要跳／不要跳的時機也和平地一樣。 */
-      HILLS: { AMP: 1.2, WAVE: 18 }
+      OUTRO: 14               /* 打完之後，終點在幾格外（醫生先舉白旗、滾走） */
     }
   };
 
@@ -197,38 +193,9 @@
     return (f.x1 - x) / (f.x1 - f.px - n);
   }
 
-  /* 大魔王場地的山丘：從 x0 開始、在 x1 結束（都剛好在山谷，高度 0，接得起來） */
-  function addHills(world, x0) {
-    var h = { x0: x0, x1: Infinity };
-    (world.hills || (world.hills = [])).push(h);
-    return h;
-  }
-
-  /* 打完了：山丘在下一個山谷收尾，回傳收尾的位置 */
-  function endHills(world, x) {
-    var hs = world.hills || [], W = CONFIG.BOSS.HILLS.WAVE;
-    var h = hs[hs.length - 1];
-    if (!h || h.x1 !== Infinity) return x;
-    h.x1 = h.x0 + Math.ceil(Math.max(0, x - h.x0) / W) * W;
-    return h.x1;
-  }
-
-  function hillAt(world, x) {
-    var hs = world.hills;
-    if (!hs) return 0;
-    for (var i = 0; i < hs.length; i++) {
-      var h = hs[i];
-      if (x >= h.x0 && x < h.x1) {
-        var H = CONFIG.BOSS.HILLS;
-        return H.AMP * (1 - Math.cos(2 * Math.PI * (x - h.x0) / H.WAVE)) / 2;
-      }
-    }
-    return 0;
-  }
-
   function floorAt(world, x) {
     var f = funnelAt(world, x);
-    return f ? CONFIG.FUNNEL.FLOOR * clamp(funnelT(f, x), 0, 1) : hillAt(world, x);
+    return f ? CONFIG.FUNNEL.FLOOR * clamp(funnelT(f, x), 0, 1) : 0;
   }
 
   function ceilAt(world, x) {
@@ -805,8 +772,6 @@
     bossBag: bossBag,
     shotY: shotY,
     laneMid: laneMid,
-    addHills: addHills,
-    endHills: endHills,
     emptyRecord: emptyRecord,
     loadRecord: loadRecord,
     saveRecord: saveRecord,

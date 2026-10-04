@@ -613,18 +613,21 @@ So he is a **playmate in a water fight**:
 - When the bag runs dry he is **beaten**: a happy face, a little white flag and
   「點滴用完了，你贏了！」, then he rolls away and the goal appears 14 tiles on.
 
-**The arena is not flat** — rolling hills 1.2 tiles high, one every 18 tiles (steepest ≈ 12°); the
-stool rolls over them too. The laser and the water **ride the ground at a fixed height** (low ≈ at
-the feet, high ≈ head height) rather than flying in a straight line. With the screen scrolling 1.5 s
-between the charge and the hit, a straight beam aimed at where the ground *will* be pointed into the
-hill the child is standing on *now* (measured: 0.13 tiles into a hill). Following the ground means
-what the child sees is exactly what hits, nothing ever cuts through a hill, and jump timing is the
-same as on flat ground. In infinity the hills end in a valley, so the next round's portal funnel
-starts on flat ground.
+**The arena floor is flat, with obstacles timed between the shots.** (A hilly version was tried and
+dropped at the product owner's request — flat ground, obstacles instead.) The doctor's schedule is
+fixed in time and the capsule's position is fixed in time, so each obstacle is placed where the capsule
+passes it **at the midpoint of a gap between two water arrivals, at least 1 s from any shot** — a child
+never has to jump an obstacle and dodge water at the same moment. Respawning at the phase checkpoint
+keeps the same timing.
+- A warm-up needle while he rolls in.
+- Then one needle → a 2-box medicine stack → two needles, in turn (10 obstacles in level 6).
+- The 3 star gaps put the needle directly under the star, so the jump that clears it collects it.
+- Infinity's boss fights get the same obstacles (no stars there).
+
+The laser and water ride the floor at lane height, so on this flat floor they are straight lines.
 
 There are 12 shots: the opener is always low, low, high, and never three of one lane in a row. From
-the halfway point (a checkpoint) he fires pairs. All 3 of level 6's stars float 2 tiles above the
-hills in the gaps between shots, at least 1.8 s apart, so reaching for one never collides with water.
+the halfway point (a checkpoint) he fires pairs. All 3 of level 6's stars float 2 tiles up, over a needle, in those gaps.
 
 **無限挑戰 (g).** For each round, the seed shuffles `[跳跳, 火箭, 飛碟, 雙胞胎, 轉轉]`. Each mode plays
 83 tiles behind a portal (1.5× the first version's 55). When the array is empty: boss (5 + round shots), then the next round with a
@@ -669,7 +672,7 @@ and 「換一張新地圖」.
   - a ship being pushed through by the ceiling;
   - the UFO column rule checked column by column;
   - the IV bag only ever draining, and empty at the win;
-  - the boss hills being gentle, and ending flat before the next portal.
+  - every boss obstacle being ≥ 1 s from any shot, with each star over a needle.
 
   Plus 18 jsdom page tests.
 - **Real Chromium:** touch taps, ship hold over CDP touch, landscape, and an AA contrast audit
