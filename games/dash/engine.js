@@ -57,9 +57,18 @@
     /* 轉轉關：每跳一次、每越過一根針，畫面轉 3 度；轉到 15 度就往回轉 */
     ROT_STEP: 3,
     ROT_MAX: 15,
+    /* 轉轉關的坡度：畫面順時針轉（往右下）= 下坡變快、逆時針（往右上）= 上坡變慢。
+       速度 × (1 + 角度 / 40)，限制在 0.8–1.4 之間；角度跟著畫面慢慢轉過去（每秒 40°） */
+    ROT_SPEED_DIV: 40,
+    ROT_SPEED_MIN: 0.8,
+    ROT_SPEED_MAX: 1.4,
+    ROT_EASE: 40,
 
     /* 年紀 < 門檻 → 速度倍率 */
     AGE_SPEED: [[6, 0.7], [8, 0.8], [10, 0.9], [13, 1], [99, 1.1]],
+    /* 年紀越大越快：再乘上 √(年紀) ÷ 2（4 歲 ×1、9 歲 ×1.5、16 歲 ×2）；未滿 1 歲以 1 歲計，速度不會變成 0 */
+    AGE_ACCEL_REF: 4,
+    AGE_ACCEL_MIN_AGE: 1,
 
     /* 大魔王：醫生的水槍 */
     BOSS: {
@@ -108,12 +117,23 @@
     return a;
   }
 
-  function ageScale(age) {
-    var a = Number(age);
-    if (!isFinite(a)) a = 8;
+  function ageBand(a) {
     var bands = CONFIG.AGE_SPEED;
     for (var i = 0; i < bands.length; i++) if (a < bands[i][0]) return bands[i][1];
     return 1;
+  }
+
+  function ageScale(age) {
+    var a = Number(age);
+    if (!isFinite(a)) a = 8;
+    return ageBand(a) * Math.sqrt(Math.max(a, CONFIG.AGE_ACCEL_MIN_AGE) / CONFIG.AGE_ACCEL_REF);
+  }
+
+  /* 轉轉關：下坡快、上坡慢（用畫面實際轉到的角度） */
+  function tiltScale(run) {
+    if (run.mode !== 'rot') return 1;
+    var C = CONFIG;
+    return clamp(1 + run.rot.view / C.ROT_SPEED_DIV, C.ROT_SPEED_MIN, C.ROT_SPEED_MAX);
   }
 
   /* 跳跳、雙胞胎、轉轉、大魔王都是「跳跳」的物理 */
@@ -263,7 +283,7 @@
       p: newPlayer(), p2: null, ti: 0, speedMul: 1,
       baseScale: opt.timeScale || 1, acc: 0,
       dead: false, done: false, deaths: 0, got: {}, gotN: 0,
-      rot: { angle: 0, dir: 1 }, boss: null,
+      rot: { angle: 0, dir: 1, view: 0 }, boss: null,
       checkpoints: opt.checkpoints !== false, cp: null,
       passCol: Math.floor(-1.5), ev: []
     };
@@ -620,6 +640,8 @@
      ───────────────────────────────────────────────────────────── */
 
   function step(run, held, press) {
+    var R = run.rot, d = R.angle - R.view, e = CONFIG.ROT_EASE * CONFIG.DT;
+    R.view = Math.abs(d) <= e ? R.angle : R.view + (d > 0 ? e : -e);
     var C = CONFIG;
     run.t += C.DT;
     run.prevX = run.x;
@@ -637,7 +659,7 @@
     var C = CONFIG;
     run.ev = [];
     if (run.dead || run.done) return run.ev;
-    run.acc += clamp(realDt, 0, C.MAX_REAL_DT) * run.baseScale * run.speedMul;
+    run.acc += clamp(realDt, 0, C.MAX_REAL_DT) * run.baseScale * run.speedMul * tiltScale(run);
     var press = input.presses > 0;
     while (run.acc >= C.DT && !run.dead && !run.done) {
       step(run, !!input.held, press);
@@ -657,7 +679,7 @@
     var fy = floorAt(run.world, cp.x) + C.HALF;
     run.p = newPlayer(cube ? fy : C.RESPAWN_Y, cube);
     run.p2 = cp.mode === 'duo' ? newPlayer(fy) : null;
-    run.rot = { angle: 0, dir: 1 };
+    run.rot = { angle: 0, dir: 1, view: 0 };
     if (cp.boss && run.boss) {
       run.boss.bt = cp.boss.bt;
       run.boss.tank = cp.boss.tank;
@@ -761,6 +783,7 @@
     rng: rng,
     shuffle: shuffle,
     ageScale: ageScale,
+    tiltScale: tiltScale,
     physMode: physMode,
     createWorld: createWorld,
     addSection: addSection,

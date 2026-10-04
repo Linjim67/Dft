@@ -33,7 +33,7 @@
 
   var MODES = {
     cube: { hint: '點一下：跳　按住：一直跳', tap: '點這裡也可以跳', word: '跳' },
-    rot: { hint: '畫面會轉來轉去，一樣點一下就跳', tap: '點這裡也可以跳', word: '跳' },
+    rot: { hint: '畫面會轉來轉去：下坡變快、上坡變慢', tap: '點這裡也可以跳', word: '跳' },
     ship: { hint: '體溫計火箭：按住往上飛，放開往下', tap: '按住這裡往上飛', word: '飛' },
     ufo: { hint: '藥杯飛碟：點一下往上飛一下', tap: '點一下往上飛一下', word: '飛' },
     duo: { hint: '上下兩個一起跳！藍色虛線框是不一樣的地方', tap: '點這裡，兩個一起跳', word: '跳' },
@@ -422,8 +422,9 @@
       G.phase = 'play';
       G.input.presses = 0;
     }
+    /* 畫面轉到的角度就是引擎用來算上坡／下坡速度的角度（減少動態時直接轉到位） */
     var target = run.mode === 'rot' ? run.rot.angle : 0;
-    G.angle = reduce ? target : G.angle + (target - G.angle) * Math.min(1, dt * 9);
+    G.angle = reduce ? target : run.rot.view;
     /* 滾著前進：轉多少 = 走多遠 ÷ 半徑 */
     var moved = run.x - G.rollX;
     if (moved > 0 && moved < 2) G.roll = (G.roll + moved / ROLL_R) % (Math.PI * 2);
@@ -905,7 +906,7 @@
     if (reduce) return;
     var T = V.T, W = V.w, run = G.run, par = 1.8, span = 2.6;
     var base = camX * par;
-    var k = clamp((run.baseScale * run.speedMul - 0.55) / 0.75, 0.3, 1);
+    var k = clamp((run.baseScale * run.speedMul * E.tiltScale(run) - 0.55) / 0.75, 0.3, 1);
     var i0 = Math.floor(base / span) - 2, i1 = Math.ceil((base + W / T) / span) + 1;
     ctx.save();
     ctx.lineCap = 'round';

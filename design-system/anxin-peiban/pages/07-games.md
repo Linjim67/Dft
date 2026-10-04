@@ -347,7 +347,8 @@ Firestore (`shared/firebase.js` → `AnxinFirebase.duo`):
   `state.ack {id, ok, why}`, and the remote shows the reason as a toast.
 - **State** is one document, written on change but **at most every 600ms** (Firestore's ~1 write
   per second per document), with a trailing write so the last change always lands, plus a **5s
-  heartbeat**. The remote warns 「好像斷線了」 after 12s of silence (measured on its own clock).
+  heartbeat**. After 12s of silence (measured on its own clock) the remote opens the
+  connection-lost dialog (see Screens).
 - Measured on the emulators: parent tap → character on the child's screen ≈ **90ms**.
 
 ## Rules (`firestore.rules`, tested on the emulator: 34 cases)
@@ -363,23 +364,48 @@ Firestore (`shared/firebase.js` → `AnxinFirebase.duo`):
 - An **expired** room (another family's code from yesterday) can be re-created; an active one can't.
   Expired rooms accept no more commands, state or joins.
 
-## Placing (我來放)
+## Placing (我來放) — a line-up, the parent only picks the hole
 
-Parent picks a **character** (止血帶 · 酒精棉片 · 針筒 · 病毒) and a **coat** (一般 · 銀色 · 鐵甲), then taps
-an empty hole on the **mirror board**. Placed characters follow the normal stay formula for the
-child's age and level. The child's phone refuses (and the remote explains): not playing, hole busy,
-hole 維修中, boss on the board, non-virus during an invasion, virus outside one (it couldn't be
-wiped), automatic mode. During 病毒入侵 the palette switches itself to 病毒 and back afterwards.
-In **我來放** nothing spawns on its own and there is no scheduled invasion (viruses still pour out
-during an invasion the parent starts). **自動出現** = exactly (S) behaviour; the palette hides, events
-stay available. The mirror tiles are created once and updated in place — re-rendering them would
-drop a tap that lands mid-update.
+Characters **queue up** (「排隊出場」): the front one is big with a 「下一個」 tag, the next three
+follow. Tapping an empty hole on the **mirror board** places the front one and the line moves up
+(each card slides into place; reduced motion: no slide). There is no character or coat picker.
+
+- The line is `AnxinDuo.refillLine` (pure, in `duo-core.js`): characters come in **shuffled bags**
+  of the ones already in play (`CHAR_FROM`, mirroring `engine.js`: 酒精棉片 from round 3), so the
+  same one never comes twice in a row — rounds 1–2 simply alternate 止血帶 / 針筒.
+- **Coats** come with the line: `coatChance(round)` = 8% per round after the first, capped at 40%,
+  split evenly 銀色 / 鐵甲. The card says the coat in words (a pill), not only through the filter.
+- **No viruses in the line.** During 病毒入侵 the whole line shows 病毒 and taps place viruses; the
+  normal line is kept and resumes afterwards.
+- A tapped hole shows the character **half-transparent** (「放置中…」) until the child's board has it.
+  If the child's phone refuses (or the write fails) the character goes **back to the front** of the
+  line, so nothing is lost.
+- The parent's phone owns the line (the child just receives `{t:'place', h, c, v}` as before), so
+  **`firestore.rules` did not change**.
+
+Placed characters follow the normal stay formula for the child's age and level. The child's phone
+refuses (and the remote explains): not playing, hole busy, hole 維修中, boss on the board, non-virus
+during an invasion, virus outside one (it couldn't be wiped), automatic mode. In **我來放** nothing
+spawns on its own and there is no scheduled invasion (viruses still pour out during an invasion the
+parent starts). **自動出現** = exactly (S) behaviour; the line hides, the virus button and events stay.
+The mirror tiles are created once and updated in place — re-rendering them would drop a tap that
+lands mid-update.
+
+## 開始病毒入侵 — appears when it can be launched
+
+The invasion is not one of the 搗蛋 buttons any more. Between the line and the board there is one
+fixed-height slot: when an invasion **can** start it holds a big green 「開始病毒入侵」 button that
+pops in; otherwise the same slot says why not (dashed, grey virus: 「第 3 回合起才有病毒」 — viruses
+join at round 3, as in (S) · 「遊戲中才能按」 · 「再等 N 秒」 · 「大魔王在場」 · 「這回合時間不夠了」), and
+during one it shows 「病毒入侵中・還有 N 秒」. Keeping the slot's size fixed means the board never
+jumps under the parent's finger when the button appears (checked: board top identical in all
+three states).
 
 ## Events (game time; they pause with the game; cleared at round end)
 
 | | Event | Effect | Refused when |
 |---|---|---|---|
-| 搗蛋 | 病毒入侵 | the (S) 7s invasion, how-to dialog first time per run | already on · boss up · < 7s left |
+| 病毒 slot | 病毒入侵 | the (S) 7s invasion, how-to dialog first time per run | round < 3 · already on · boss up · < 7s left |
 | 搗蛋 | 大魔王 | boss in a random open hole (never a virus), others duck | already up · invasion · < 8s left |
 | 搗蛋 | 地震 | board shakes 4s (reduced motion: tilted, still) | already shaking |
 | 搗蛋 | 泡泡 | 3 open holes covered 6s; first tap / finger pops the bubble, the next one hits | bubbles still floating |
@@ -396,8 +422,20 @@ spamming; a refused event doesn't use its cooldown.
 - **Child menu:** no top bar (no profile, nowhere to go); the game cards are the buttons.
 - **Child game:** the (S) page with the back link → the menu, no 開始打針 (needs a profile), a
   connection banner (「已連線・爸爸媽媽會幫你放角色」), callouts when the parent switches mode.
-- **Remote:** status · round / time / score + event chips · mode switch · palette + coats · mirror
-  board (same coat filters as the game) · 搗蛋 / 幫忙 buttons · toast for refusals.
+- **Remote:** status · round / time / score + event chips · mode switch · line-up · 病毒 slot ·
+  mirror board (same coat filters as the game) · 搗蛋 / 幫忙 buttons · toast for refusals.
+- **Connection lost → a dialog** on the remote, not a line in the status pill:
+  | Case | Title | Main button | Closes |
+  |---|---|---|---|
+  | child silent 12s | 孩子的手機好像斷線了 | 繼續等 | by itself when the child reports again |
+  | this phone offline (`offline` event) | 這支手機沒有網路 | 繼續等 | by itself when back online |
+  | listener stopped (terminal in Firestore) | 連線中斷了 | 重新整理 | only by reloading (Esc blocked) |
+  | couldn't connect at all | `failureText` title | 重新整理 | only by reloading |
+
+  Every case also offers 回配對頁. 繼續等 keeps that case quiet until it recovers and happens again.
+  Coming back to the page (screen unlocked) restarts the 12s wait instead of flashing the dialog
+  for updates a hidden tab couldn't receive. On the **child's** phone a stopped listener freezes the
+  game under the existing end dialog (「和爸爸媽媽的手機斷線了，回選單就能再連上」).
 - Contrast measured in a real browser on every screen and state (178 text elements): all AA.
 
 ⚠️ Production needs the updated `firestore.rules` **published in the Firebase Console** and
@@ -490,10 +528,12 @@ it bulged, rather than only receiving a number.
 
 - 120 Hz fixed step in *game time*. Same inputs → same result, which is what lets the test bot prove
   levels are passable.
-- **Age slows the whole game, not just the scroll** (`AGE_SPEED`: <6 ×0.7 · <8 ×0.8 · <10 ×0.9 · <13
-  ×1 · else ×1.1). Because everything — gravity included — runs on game time, a jump covers the same
-  tiles at every age; a young child simply gets more reaction time. A scroll-only slowdown would
-  shorten jumps and make the same map impossible.
+- **Age sets the speed of the whole game, not just the scroll**: band (`AGE_SPEED`: <6 ×0.7 · <8 ×0.8
+  · <10 ×0.9 · <13 ×1 · else ×1.1) **× √age ÷ 2** (product owner's "difficulty acceleration", anchored
+  so a 4-year-old is unchanged; ages under 1 count as 1 so the game never stops). Result: 2 y ×0.49 ·
+  4 y ×0.70 · 7 y ×1.06 · 9 y ×1.35 · 12 y ×1.73 · 18 y ×2.33. Because everything — gravity and the
+  boss's 1 s warning included — runs on game time, a jump covers the same tiles at every age; only the
+  reaction time changes. A scroll-only change would alter jump lengths and break the maps.
 - **Gravity is asymmetric** (GD feel): rising 62, falling 86 tiles/s² (1.4×), terminal 26. A jump is
   ≈ 2.25 tiles high, 0.49 s, ≈ 3.8 tiles long at the base speed of **7.8 tiles/s** (raised from 7 so the
   heavier jump still clears three needles). Hold = re-jump on landing (as in GD).
@@ -549,7 +589,15 @@ colour plus outline, never colour alone. The difference is computed cell by cell
 
 **轉轉 (e).** Each jump and each needle passed turns the view 3°; at ±15° it turns back the other way.
 A literal cumulative 3° would put the course upside down after 60 events. The view eases to the new
-angle; with reduced motion it snaps.
+angle at 40°/s; with reduced motion it snaps.
+
+The tilt is also a slope: tilted clockwise the course runs downhill and the game speeds up, and
+anticlockwise it runs uphill and slows down, by **×(1 + angle/40), kept within 0.8–1.4**. That's
+×1.375 at the full 15° downhill and ×0.8 from 8° uphill. The product owner suggested
+`max(0.8, 1 + angle/20)`; that reaches ×1.75 downhill, and stacked on the age boost a 10-year-old
+would hit ×2.8, so the gentler slope was used. It follows the *eased* view angle, so speed and
+picture change together. It changes game time like the age speed, so jumps keep their shape and the
+level stays provably passable.
 
 **醫生的水槍 (f).** A doctor as a villain who shoots needles at a child would undo what this site is for.
 So he is a **playmate in a water fight**:
@@ -579,7 +627,7 @@ the halfway point (a checkpoint) he fires pairs. All 3 of level 6's stars float 
 hills in the gaps between shots, at least 1.8 s apart, so reaching for one never collides with water.
 
 **無限挑戰 (g).** For each round, the seed shuffles `[跳跳, 火箭, 飛碟, 雙胞胎, 轉轉]`. Each mode plays
-55 tiles behind a portal. When the array is empty: boss (5 + round shots), then the next round with a
+83 tiles behind a portal (1.5× the first version's 55). When the array is empty: boss (5 + round shots), then the next round with a
 fresh shuffle, harder patterns and +6 % speed per round (capped at ×1.3). The sky colour follows the
 mode, so a portal is felt even before the controls change. There are no checkpoints, and a crash ends
 the run. The summary shows metres, the round reached, and **地圖編號** (the seed) with 「同一張地圖再玩」
