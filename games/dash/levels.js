@@ -187,7 +187,8 @@
       var t = gaps[Math.min(gaps.length - 1, Math.round(f * (gaps.length - 1)))];
       if (t == null || (n && w._lastStarT === t)) return;
       w._lastStarT = t;
-      E.addObject(w, { k: 'star', x: Math.floor(portalX + S * t), y: 2 });
+      var sx = Math.floor(portalX + S * t);
+      E.addObject(w, { k: 'star', x: sx, y: E.floorAt(w, sx + 0.5) + 2 });   /* 山丘上：離地 2 格 */
       n++;
     });
     delete w._lastStarT;
@@ -269,6 +270,7 @@
       if (sec.mode === 'boss') {
         E.addSection(w, { mode: 'boss', x0: x0, x1: Infinity });
         E.addTrigger(w, { k: 'portal', x: x0, mode: 'boss', shots: sec.shots, seed: L.seed });
+        E.addHills(w, x0 + FUN.OUT + 2);                /* 打鬥場地不是平的 */
         x = Infinity;
         return;
       }
@@ -340,6 +342,7 @@
       round: R, shots: Math.min(INF.SHOTS_BASE + R, INF.SHOTS_CAP), seed: (st.seed + R * 7919) >>> 0
     });
     st.sec = E.addSection(w, { mode: 'boss', x0: bx, x1: Infinity, round: R });
+    E.addHills(w, bx + FUN.OUT + 2);
     st.mode = 'boss';
   }
 
@@ -354,7 +357,8 @@
     /* 打完醫生 → 接上下一輪。機器人的分身共用同一個世界，同一輪只接一次 */
     w.onBossDone = function (run) {
       if (!run.boss || run.boss.round < st.round) return;
-      st.x = Math.ceil(run.x) + 4;
+      /* 山丘在下一個山谷收尾，下一輪的傳送門漏斗從平地開始 */
+      st.x = Math.max(Math.ceil(run.x) + 4, Math.ceil(E.endHills(w, run.x)));
       addRound(w, st);
     };
     return w;

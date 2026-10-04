@@ -552,16 +552,31 @@ A literal cumulative 3° would put the course upside down after 60 events. The v
 angle; with reduced motion it snaps.
 
 **醫生的水槍 (f).** A doctor as a villain who shoots needles at a child would undo what this site is for.
-So he is a **playmate in a water fight**: he rolls in saying 「來玩水槍大戰！」, ends with 「你好勇敢！」
-and a happy face, then rolls away. The syringe holds water, and its fill level is his "HP"; the HUD
-swaps the progress bar for 「醫生的水 · 剩 N 發」. Every shot is **telegraphed for 1 s**:
-- he aims the syringe at the lane and a "!" bubble appears;
-- a red dashed band fills toward the child;
-- a label says **「跳！」** (low lane) or **「別跳！」** (high lane), text not colour.
+So he is a **playmate in a water fight**:
+- He rolls in on his stool saying 「來玩水槍大戰！」.
+- An **IV stand (點滴袋) stands beside him**, with a tube running to his syringe.
+- **Every shot is charged first** (1 s): water flows from the bag through the tube, the syringe fills
+  up and its plunger pulls back. **The bag drops a little with every charge**, so the bag is his
+  health bar. The HUD swaps the progress bar for 「點滴袋 · 剩 N 發」.
+- **Aiming is a laser pointer**: a thin bright line with a red glow that fades out on both sides,
+  ending in a glowing dot on the capsule. It brightens as the syringe fills. A "!" bubble shows
+  over his head.
+- The label 「跳！」 (low) or 「別跳！」 (high) sits next to the dot — text, not colour alone.
+- When the bag runs dry he is **beaten**: a happy face, a little white flag and
+  「點滴用完了，你贏了！」, then he rolls away and the goal appears 14 tiles on.
+
+**The arena is not flat** — rolling hills 1.2 tiles high, one every 18 tiles (steepest ≈ 12°); the
+stool rolls over them too. The laser and the water **ride the ground at a fixed height** (low ≈ at
+the feet, high ≈ head height) rather than flying in a straight line. With the screen scrolling 1.5 s
+between the charge and the hit, a straight beam aimed at where the ground *will* be pointed into the
+hill the child is standing on *now* (measured: 0.13 tiles into a hill). Following the ground means
+what the child sees is exactly what hits, nothing ever cuts through a hill, and jump timing is the
+same as on flat ground. In infinity the hills end in a valley, so the next round's portal funnel
+starts on flat ground.
 
 There are 12 shots: the opener is always low, low, high, and never three of one lane in a row. From
-the halfway point (a checkpoint) he fires pairs. All 3 of level 6's stars float in the gaps between
-shots, at least 1.8 s apart, so reaching for one never collides with water.
+the halfway point (a checkpoint) he fires pairs. All 3 of level 6's stars float 2 tiles above the
+hills in the gaps between shots, at least 1.8 s apart, so reaching for one never collides with water.
 
 **無限挑戰 (g).** For each round, the seed shuffles `[跳跳, 火箭, 飛碟, 雙胞胎, 轉轉]`. Each mode plays
 55 tiles behind a portal. When the array is empty: boss (5 + round shots), then the next round with a
@@ -600,11 +615,13 @@ and 「換一張新地圖」.
   - all six levels finish **with all 3 stars**;
   - all-difficulty-3 sections pass in every mode;
   - three infinity seeds pass through round 1, the boss and into round 2.
-- **Tests:** 47 engine/level tests, including:
+- **Tests:** 50 engine/level tests, including:
   - the funnel shape;
   - rolling through it without leaving the ground;
   - a ship being pushed through by the ceiling;
-  - the UFO column rule checked column by column.
+  - the UFO column rule checked column by column;
+  - the IV bag only ever draining, and empty at the win;
+  - the boss hills being gentle, and ending flat before the next portal.
 
   Plus 18 jsdom page tests.
 - **Real Chromium:** touch taps, ship hold over CDP touch, landscape, and an AA contrast audit

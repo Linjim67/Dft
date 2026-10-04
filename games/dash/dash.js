@@ -485,7 +485,7 @@
           break;
         case 'bossDone':
           G.doneAt = t;
-          showHint('醫生：「你好勇敢！」');
+          showHint('點滴袋空了，打敗醫生！');
           break;
         case 'crash':
           crashed(t);
@@ -578,7 +578,7 @@
     $('winStars').setAttribute('role', 'img');
     var line = n === 3 ? '三顆星星全部拿到了！' : n ? '拿到 ' + n + ' 顆星星。' : '這次沒拿到星星，下次跳高一點看看！';
     line += run.deaths ? '試了 ' + (run.deaths + 1) + ' 次，好有耐心！' : '一次就成功！';
-    if (last) line = '醫生說：「你好勇敢！」' + line;
+    if (last) line = '點滴袋空了，你打敗醫生了！' + line;
     $('winLine').textContent = line;
     $('nextBtn').textContent = last ? '挑戰無限模式' : '下一關：' + LV.LEVELS[G.level].name;
     winDlg.open();
@@ -634,12 +634,13 @@
     setText('hudTry', '第 ' + (run.deaths + 1) + ' 次');
     var b = run.boss;
     if (b) {
-      var left = Math.max(0, b.tank);
-      if (G.hud.tank !== left) {
-        G.hud.tank = left;
-        $('bossFill').style.transform = 'scaleX(' + (left / b.total) + ')';
-        $('bossLeft').textContent = '剩 ' + left + ' 發';
+      /* 點滴袋：每一次蓄力都會少一點；空了就打敗醫生 */
+      var bag = Math.round(E.bossBag(b) * 100);
+      if (G.hud.bag !== bag) {
+        G.hud.bag = bag;
+        $('bossFill').style.transform = 'scaleX(' + (bag / 100) + ')';
       }
+      setText('bossLeft', '剩 ' + Math.max(0, b.tank) + ' 發');
     }
   }
 
@@ -797,6 +798,7 @@
     ctx.fillStyle = 'rgba(124,45,18,.6)';
     ctx.fillRect(left, gY - 1, right - left, 3);
 
+    drawHills(camX, gY, c0, c1, th);
     drawFunnels(camX, gY, c0, c1, th);
 
     /* 傳送門、加速、旗子、終點 */
@@ -816,6 +818,45 @@
     }
 
     drawPlayer(P, a, gY, t);
+  }
+
+  /* 大魔王場地的小山丘：和地板同一個顏色，地磚的縫一路畫到山坡表面 */
+  function drawHills(camX, gY, c0, c1, th) {
+    var hs = G.run.world.hills;
+    if (!hs) return;
+    var T = V.T, w = G.run.world;
+    hs.forEach(function (h) {
+      var a = Math.max(h.x0, c0 - 1), b = Math.min(h.x1, c1 + 2);
+      if (a >= b) return;
+      var X = function (wx) { return (wx - camX) * T; };
+      var Y = function (wx) { return gY - E.floorAt(w, wx) * T; };
+      ctx.save();
+      ctx.beginPath();
+      ctx.moveTo(X(a), gY + 3);
+      for (var x = a; x < b; x += 0.25) ctx.lineTo(X(x), Y(x));
+      ctx.lineTo(X(b), Y(b));
+      ctx.lineTo(X(b), gY + 3);
+      ctx.closePath();
+      ctx.fillStyle = th.ground;
+      ctx.fill();
+      ctx.fillStyle = th.seam;
+      for (var c = Math.ceil(a); c < b; c++) {
+        var top = Y(c) + 0.2 * T;
+        if (top < gY) ctx.fillRect(X(c), top, Math.max(1, T * 0.05), gY - top + 1);
+      }
+      ctx.strokeStyle = 'rgba(255,255,255,.4)';
+      ctx.lineWidth = Math.max(2, 0.1 * T);
+      ctx.beginPath();
+      for (x = a; x <= b; x += 0.25) x === a ? ctx.moveTo(X(x), Y(x) + 0.08 * T) : ctx.lineTo(X(x), Y(x) + 0.08 * T);
+      ctx.stroke();
+      ctx.strokeStyle = 'rgba(124,45,18,.6)';
+      ctx.lineWidth = 3;
+      ctx.lineJoin = 'round';
+      ctx.beginPath();
+      for (x = a; x <= b; x += 0.25) x === a ? ctx.moveTo(X(x), Y(x)) : ctx.lineTo(X(x), Y(x));
+      ctx.stroke();
+      ctx.restore();
+    });
   }
 
   /* 傳送門前的漏斗：地板往上斜、天花板往下斜，只有門口過得去 */
@@ -1037,61 +1078,87 @@
     ctx.restore();
   }
 
-  /* ── 大魔王：醫生、針筒（裝水的水槍）、預告、水柱 ── */
+  /* ── 大魔王：醫生坐在看診椅上、旁邊的點滴架、針筒、雷射瞄準、水柱 ──
+     每一發先「蓄力」：水從點滴袋經過管子流進針筒，針筒慢慢變滿（點滴袋跟著變少），
+     同時雷射筆的紅光貼著地面指到小膠囊身上；滿了就射出去。點滴袋空了 = 打敗醫生。 */
 
-  function laneY(lane) {
-    var l = lane === 'low' ? B.LOW : B.HIGH;
-    return (l[0] + l[1]) / 2;
-  }
+  function laneY(lane) { return E.laneMid(lane); }
 
   function drawBoss(camX, gY, b, t) {
-    var T = V.T;
+    var T = V.T, w = G.run.world;
     var off = 0;
     if (b.bt < 1.2) off = Math.pow(1 - b.bt / 1.2, 2) * 7 * T;
-    if (b.state === 'done' && G.doneAt) off = Math.max(0, (t - G.doneAt - 1400) / 1000) * 6 * T;
+    if (b.state === 'done' && G.doneAt) off = Math.max(0, (t - G.doneAt - 1000) / 1000) * 9 * T;   /* 舉旗 1 秒，再滾走 */
     var docX = (PX + B.DX) * T + off;
-    var tipX = docX - B.TIP * T;
-
+    var dY = gY - E.floorAt(w, camX + PX + B.DX + off / T) * T;   /* 椅子在山丘上滾 */
+    var done = b.state === 'done';
     var tells = E.bossTells(b);
-    for (var i = 0; i < tells.length; i++) telegraph(tells[i], tipX, gY);
+    var charge = tells.length ? tells[0].frac : 0;
 
-    blit(b.state === 'done' ? 'doctorHappy' : 'doctor', docX - 0.9 * T, gY - 3 * T, 1.8, 3);
+    for (var i = tells.length - 1; i >= 0; i--) laser(tells[i], camX, gY, docX - B.TIP * T, dY);
+
+    var bag = ivStand(docX + 0.72 * T, dY, E.bossBag(b), t);
+    blit(done ? 'doctorHappy' : 'doctor', docX - 0.9 * T, dY - 3 * T, 1.8, 3);
 
     var target = tells.length ? laneY(tells[0].lane) : G.lastLane ? laneY(G.lastLane) : 0.9;
     G.aimY += (target - G.aimY) * (reduce ? 1 : 0.18);
-    if (b.state !== 'done') syringe(tipX, gY - G.aimY * T, b.tank / b.total, t);
+    if (!done) {
+      var tipX = docX - B.TIP * T, tipY = dY - G.aimY * T;
+      tube(bag, tipX + 2.0 * T, tipY, charge > 0, t);
+      syringe(tipX, tipY, charge, t);
+    } else {
+      whiteFlag(docX - 0.55 * T, dY - 1.6 * T, t);
+    }
 
-    for (i = 0; i < b.shots.length; i++) water((b.shots[i].x - camX) * T, gY, b.shots[i].lane);
+    for (i = 0; i < b.shots.length; i++) water(b.shots[i], camX, gY);
 
-    if (b.bt < B.INTRO_S && b.state === 'fight') bubble(docX, gY - 3.15 * T, '來玩水槍大戰！');
-    else if (b.state === 'done') bubble(docX, gY - 3.15 * T, '你好勇敢！');
-    else if (tells.length) exclaim(docX + 0.55 * T, gY - 3.25 * T);
+    if (b.bt < B.INTRO_S && !done) bubble(docX, dY - 3.15 * T, '來玩水槍大戰！');
+    else if (done) bubble(docX, dY - 3.15 * T, '點滴用完了，你贏了！');
+    else if (tells.length) exclaim(docX + 0.55 * T, dY - 3.25 * T);
   }
 
-  function telegraph(tl, tipX, gY) {
-    var T = V.T, lane = tl.lane === 'low' ? B.LOW : B.HIGH;
-    var y0 = gY - lane[1] * T, h = (lane[1] - lane[0]) * T;
-    var x0 = -2 * T, x1 = tipX;
+  /* 雷射筆：細細一條亮線，兩旁的紅光越往外越淡；貼著地面、離地固定高度，終點是小膠囊身上的紅點 */
+  function laser(tl, camX, gY, tipX, dY) {
+    var T = V.T, w = G.run.world, mid = laneY(tl.lane);
+    var a = 0.35 + 0.65 * tl.frac;            /* 蓄力越滿越亮 */
+    var startY = dY - G.aimY * T, pts = [];
+    var relTip = (tipX / T) - PX;
+    for (var r = relTip; r > -PX - 2; r -= 0.25) {
+      var y = gY - (E.floorAt(w, camX + PX + r) + mid) * T;
+      var k = clamp((relTip - r) / 1.2, 0, 1);   /* 離開針筒尖端的第一格：從針筒的高度接到地面的高度 */
+      pts.push([(PX + r) * T, startY + (y - startY) * k]);
+    }
     ctx.save();
-    ctx.fillStyle = 'rgba(220,38,38,.12)';
-    ctx.fillRect(x0, y0, x1 - x0, h);
-    /* 越接近發射，紅色越往小膠囊這邊長過來 */
-    var fx = x1 - (x1 - PX * T) * tl.frac;
-    ctx.fillStyle = 'rgba(220,38,38,.2)';
-    ctx.fillRect(fx, y0, x1 - fx, h);
-    ctx.strokeStyle = '#B91C1C';
-    ctx.lineWidth = 2;
-    ctx.setLineDash([6, 5]);
-    ctx.beginPath();
-    ctx.moveTo(x0, y0); ctx.lineTo(x1, y0);
-    ctx.moveTo(x0, y0 + h); ctx.lineTo(x1, y0 + h);
-    ctx.stroke();
-    ctx.setLineDash([]);
+    ctx.lineCap = 'round';
+    ctx.lineJoin = 'round';
+    function path() {
+      ctx.beginPath();
+      for (var i = 0; i < pts.length; i++) i ? ctx.lineTo(pts[i][0], pts[i][1]) : ctx.moveTo(pts[i][0], pts[i][1]);
+    }
+    [[0.5, 0.06], [0.3, 0.11], [0.16, 0.2]].forEach(function (g) {
+      ctx.strokeStyle = 'rgba(239,68,68,' + (g[1] * a).toFixed(3) + ')';
+      ctx.lineWidth = g[0] * T;
+      path(); ctx.stroke();
+    });
+    ctx.strokeStyle = 'rgba(220,38,38,' + (0.9 * a).toFixed(3) + ')';
+    ctx.lineWidth = Math.max(2.5, 0.07 * T);
+    path(); ctx.stroke();
+    ctx.strokeStyle = 'rgba(255,241,242,' + a.toFixed(3) + ')';
+    ctx.lineWidth = Math.max(1, 0.025 * T);
+    path(); ctx.stroke();
+    /* 紅點：打在小膠囊身上 */
+    var dx = PX * T, dy = gY - (E.floorAt(w, camX + PX) + mid) * T;
+    var rg = ctx.createRadialGradient(dx, dy, 0, dx, dy, 0.42 * T);
+    rg.addColorStop(0, 'rgba(255,241,242,' + a.toFixed(3) + ')');
+    rg.addColorStop(0.25, 'rgba(239,68,68,' + (0.85 * a).toFixed(3) + ')');
+    rg.addColorStop(1, 'rgba(239,68,68,0)');
+    ctx.fillStyle = rg;
+    ctx.beginPath(); ctx.arc(dx, dy, 0.42 * T, 0, Math.PI * 2); ctx.fill();
     /* 文字：跳！／別跳！（不只靠顏色） */
     var text = tl.lane === 'low' ? '跳！' : '別跳！';
     ctx.font = '700 ' + Math.round(0.44 * T) + 'px ' + FONT;
     var tw = ctx.measureText(text).width, ph = 0.62 * T, pw = tw + 0.4 * T;
-    var lx = Math.max(4, (PX - 0.6) * T - pw), ly = y0 + h / 2 - ph / 2;
+    var lx = Math.max(4, (PX - 0.6) * T - pw), ly = dy - ph / 2;
     ctx.fillStyle = tl.lane === 'low' ? '#B91C1C' : '#1E3A8A';
     rrect(lx, ly, pw, ph, ph / 2);
     ctx.fill();
@@ -1102,6 +1169,77 @@
     ctx.restore();
   }
 
+  /* 點滴架：醫生旁邊；點滴袋的水位 = 醫生還剩多少（每次蓄力都會變少） */
+  function ivStand(x, dY, level, t) {
+    var T = V.T;
+    ctx.save();
+    ctx.lineCap = 'round';
+    /* 腳架與輪子 */
+    ctx.strokeStyle = '#78716C';
+    ctx.lineWidth = Math.max(2, 0.07 * T);
+    ctx.beginPath();
+    ctx.moveTo(x - 0.35 * T, dY - 0.12 * T); ctx.lineTo(x, dY - 0.3 * T); ctx.lineTo(x + 0.35 * T, dY - 0.12 * T);
+    ctx.moveTo(x, dY - 0.3 * T); ctx.lineTo(x, dY - 3.75 * T);
+    ctx.moveTo(x - 0.35 * T, dY - 3.75 * T); ctx.lineTo(x + 0.15 * T, dY - 3.75 * T);
+    ctx.stroke();
+    ctx.fillStyle = '#44403C';
+    [-0.35, 0.35].forEach(function (k) { ctx.beginPath(); ctx.arc(x + k * T, dY - 0.08 * T, 0.08 * T, 0, Math.PI * 2); ctx.fill(); });
+    /* 點滴袋 */
+    var bw = 0.62 * T, bh = 1.05 * T, bx = x - 0.35 * T - bw / 2, by = dY - 3.62 * T;
+    ctx.fillStyle = 'rgba(255,255,255,.92)';
+    rrect(bx, by, bw, bh, 0.16 * T); ctx.fill();
+    var lv = clamp(level, 0, 1), lh = (bh - 0.16 * T) * lv;
+    if (lh > 0.5) {
+      ctx.save();
+      rrect(bx, by, bw, bh, 0.16 * T); ctx.clip();
+      ctx.fillStyle = '#7DD3FC';
+      ctx.fillRect(bx, by + bh - 0.08 * T - lh, bw, lh + 0.08 * T);
+      ctx.fillStyle = 'rgba(255,255,255,.6)';
+      ctx.fillRect(bx, by + bh - 0.08 * T - lh, bw, Math.max(1.5, 0.04 * T));
+      ctx.restore();
+    }
+    ctx.strokeStyle = '#57534E';
+    ctx.lineWidth = Math.max(1.5, 0.05 * T);
+    rrect(bx, by, bw, bh, 0.16 * T); ctx.stroke();
+    /* 刻度、標籤 */
+    ctx.strokeStyle = 'rgba(87,83,78,.55)';
+    ctx.lineWidth = 1;
+    for (var k = 1; k < 4; k++) { ctx.beginPath(); ctx.moveTo(bx + bw - 0.16 * T, by + k * bh / 4); ctx.lineTo(bx + bw - 0.04 * T, by + k * bh / 4); ctx.stroke(); }
+    ctx.fillStyle = '#FDBA74';
+    rrect(bx + 0.08 * T, by + 0.14 * T, bw * 0.45, 0.22 * T, 3); ctx.fill();
+    /* 掛鉤、滴管 */
+    ctx.strokeStyle = '#78716C';
+    ctx.beginPath(); ctx.moveTo(bx + bw / 2, by); ctx.lineTo(bx + bw / 2, dY - 3.75 * T); ctx.stroke();
+    var cx = bx + bw / 2, cy = by + bh;
+    ctx.fillStyle = 'rgba(255,255,255,.9)';
+    ctx.strokeStyle = '#57534E';
+    rrect(cx - 0.08 * T, cy, 0.16 * T, 0.3 * T, 3); ctx.fill(); ctx.stroke();
+    ctx.restore();
+    return { x: cx, y: cy + 0.3 * T };
+  }
+
+  /* 管子：點滴袋 → 針筒尾端；蓄力時管子裡的水滴往針筒流 */
+  function tube(bag, ex, ey, flowing, t) {
+    var T = V.T;
+    var c1x = bag.x, c1y = bag.y + 1.2 * T, c2x = ex + 0.6 * T, c2y = ey;
+    ctx.save();
+    ctx.lineCap = 'round';
+    ctx.strokeStyle = flowing ? 'rgba(14,165,233,.85)' : 'rgba(186,230,253,.95)';
+    ctx.lineWidth = Math.max(2, 0.07 * T);
+    ctx.beginPath(); ctx.moveTo(bag.x, bag.y); ctx.bezierCurveTo(c1x, c1y, c2x, c2y, ex, ey); ctx.stroke();
+    if (flowing && !reduce) {
+      ctx.fillStyle = '#E0F2FE';
+      for (var i = 0; i < 4; i++) {
+        var u = ((t / 600) + i / 4) % 1, v = 1 - u;
+        var px = v * v * v * bag.x + 3 * v * v * u * c1x + 3 * v * u * u * c2x + u * u * u * ex;
+        var py = v * v * v * bag.y + 3 * v * v * u * c1y + 3 * v * u * u * c2y + u * u * u * ey;
+        ctx.beginPath(); ctx.arc(px, py, Math.max(1.2, 0.03 * T), 0, Math.PI * 2); ctx.fill();
+      }
+    }
+    ctx.restore();
+  }
+
+  /* 針筒（水槍）：蓄力時從空慢慢變滿，射出去就空了 */
   function syringe(tipX, y, fill, t) {
     var T = V.T;
     var rk = G.recoilAt ? (t - G.recoilAt) / 160 : 1;
@@ -1121,25 +1259,29 @@
     ctx.strokeStyle = '#0C4A6E';
     ctx.lineWidth = 2;
     rrect(0.36 * T, -0.13 * T, 0.16 * T, 0.26 * T, 3); ctx.fill(); ctx.stroke();
-    /* 針筒：水量 = 醫生還剩幾發 */
-    var bx = 0.5 * T, bw = 1.15 * T, bh = 0.5 * T;
+    /* 針筒：水從推桿那頭進來，慢慢裝滿 */
+    var bx = 0.5 * T, bw = 1.15 * T, bh = 0.5 * T, inner = bw - 0.1 * T;
     ctx.fillStyle = 'rgba(255,255,255,.95)';
     ctx.strokeStyle = '#57534E';
     ctx.lineWidth = Math.max(2, 0.05 * T);
     rrect(bx, -bh / 2, bw, bh, 0.12 * T); ctx.fill();
-    ctx.fillStyle = '#38BDF8';
-    ctx.fillRect(bx + 0.05 * T, -bh / 2 + 0.07 * T, (bw - 0.1 * T) * clamp(fill, 0, 1), bh - 0.14 * T);
+    var f = clamp(fill, 0, 1);
+    if (f > 0) {
+      ctx.fillStyle = f >= 0.999 ? '#0EA5E9' : '#38BDF8';
+      ctx.fillRect(bx + 0.05 * T, -bh / 2 + 0.07 * T, inner * f, bh - 0.14 * T);
+    }
     rrect(bx, -bh / 2, bw, bh, 0.12 * T); ctx.stroke();
     ctx.strokeStyle = 'rgba(87,83,78,.7)';
     ctx.lineWidth = 1.5;
     for (var k = 1; k < 5; k++) {
       ctx.beginPath(); ctx.moveTo(bx + k * bw / 5, -bh / 2); ctx.lineTo(bx + k * bw / 5, -bh / 2 + 0.14 * T); ctx.stroke();
     }
-    /* 推桿 */
+    /* 推桿：裝越滿拉得越出來 */
+    var pull = (0.12 + 0.3 * f) * T;
     ctx.fillStyle = '#A8A29E';
-    ctx.fillRect(bx + bw, -0.06 * T, 0.38 * T, 0.12 * T);
+    ctx.fillRect(bx + bw - 0.1 * T, -0.06 * T, pull + 0.1 * T, 0.12 * T);
     ctx.fillStyle = '#57534E';
-    rrect(bx + bw + 0.34 * T, -0.24 * T, 0.11 * T, 0.48 * T, 3); ctx.fill();
+    rrect(bx + bw + pull, -0.24 * T, 0.11 * T, 0.48 * T, 3); ctx.fill();
     /* 醫生的手 */
     ctx.fillStyle = '#FFE7D1';
     ctx.strokeStyle = '#9A3412';
@@ -1148,28 +1290,54 @@
     ctx.restore();
   }
 
-  function water(sx, gY, lane) {
-    var T = V.T, l = lane === 'low' ? B.LOW : B.HIGH;
-    var cy = gY - (l[0] + l[1]) / 2 * T, h = (l[1] - l[0]) * T * 0.9, w = B.LEN * T;
+  /* 水柱：貼著地面、沿著山丘的坡度前進 */
+  function water(shot, camX, gY) {
+    var T = V.T, w = G.run.world, l = shot.lane === 'low' ? B.LOW : B.HIGH;
+    var sx = (shot.x - camX) * T, cy = gY - E.shotY(w, shot.x, shot.lane) * T;
+    var slope = (E.floorAt(w, shot.x + 0.3) - E.floorAt(w, shot.x - 0.3)) / 0.6;
+    var h = (l[1] - l[0]) * T * 0.9, len = B.LEN * T;
     ctx.save();
-    var g = ctx.createLinearGradient(0, cy - h / 2, 0, cy + h / 2);
+    ctx.translate(sx, cy);
+    ctx.rotate(-Math.atan(slope));
+    var g = ctx.createLinearGradient(0, -h / 2, 0, h / 2);
     g.addColorStop(0, '#7DD3FC');
     g.addColorStop(1, '#0284C7');
     ctx.fillStyle = g;
-    rrect(sx - w / 2, cy - h / 2, w, h, h / 2);
+    rrect(-len / 2, -h / 2, len, h, h / 2);
     ctx.fill();
     ctx.strokeStyle = '#075985';
     ctx.lineWidth = 2;
     ctx.stroke();
     ctx.fillStyle = 'rgba(255,255,255,.75)';
-    rrect(sx - w / 2 + 0.18 * T, cy - h / 2 + 0.08 * T, w * 0.4, h * 0.22, h * 0.11);
+    rrect(-len / 2 + 0.18 * T, -h / 2 + 0.08 * T, len * 0.4, h * 0.22, h * 0.11);
     ctx.fill();
     ctx.fillStyle = '#38BDF8';
     for (var k = 1; k <= 3; k++) {
       ctx.beginPath();
-      ctx.arc(sx + w / 2 + k * 0.22 * T, cy + (k % 2 ? -1 : 1) * 0.08 * T, (0.1 - k * 0.02) * T, 0, Math.PI * 2);
+      ctx.arc(len / 2 + k * 0.22 * T, (k % 2 ? -1 : 1) * 0.08 * T, (0.1 - k * 0.02) * T, 0, Math.PI * 2);
       ctx.fill();
     }
+    ctx.restore();
+  }
+
+  /* 打敗醫生：舉起小白旗（笑咪咪的投降） */
+  function whiteFlag(x, y, t) {
+    var T = V.T, wave = reduce ? 0 : Math.sin(t / 160) * 0.06 * T;
+    ctx.save();
+    ctx.strokeStyle = '#78716C';
+    ctx.lineWidth = Math.max(2, 0.06 * T);
+    ctx.lineCap = 'round';
+    ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(x, y - 1.5 * T); ctx.stroke();
+    ctx.fillStyle = '#fff';
+    ctx.strokeStyle = '#57534E';
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.moveTo(x, y - 1.5 * T);
+    ctx.quadraticCurveTo(x - 0.35 * T, y - 1.45 * T + wave, x - 0.75 * T, y - 1.5 * T);
+    ctx.lineTo(x - 0.75 * T, y - 1.0 * T);
+    ctx.quadraticCurveTo(x - 0.35 * T, y - 0.95 * T - wave, x, y - 1.0 * T);
+    ctx.closePath();
+    ctx.fill(); ctx.stroke();
     ctx.restore();
   }
 

@@ -75,7 +75,11 @@
       PAIR: { 'low,low': 0.8, 'low,high': 0.75, 'high,low': 0.62 },
       FIRST: ['low', 'low', 'high'],   /* 開場三發固定：先學會跳，再學會不要跳 */
       SHOTS: 12,
-      OUTRO: 8                /* 打完之後，終點在幾格外 */
+      OUTRO: 14,              /* 打完之後，終點在幾格外（醫生先舉白旗、滾走） */
+      /* 打鬥的場地是起伏的小山丘：高 1.2 格、一個起伏 18 格（最陡約 12°）。
+         瞄準的雷射和水柱都「貼著地面、離地固定高度」前進（低的在腳邊、高的在頭的高度），
+         所以不管地形怎麼起伏，雷射不會插進山丘裡，要跳／不要跳的時機也和平地一樣。 */
+      HILLS: { AMP: 1.2, WAVE: 18 }
     }
   };
 
@@ -173,9 +177,38 @@
     return (f.x1 - x) / (f.x1 - f.px - n);
   }
 
+  /* 大魔王場地的山丘：從 x0 開始、在 x1 結束（都剛好在山谷，高度 0，接得起來） */
+  function addHills(world, x0) {
+    var h = { x0: x0, x1: Infinity };
+    (world.hills || (world.hills = [])).push(h);
+    return h;
+  }
+
+  /* 打完了：山丘在下一個山谷收尾，回傳收尾的位置 */
+  function endHills(world, x) {
+    var hs = world.hills || [], W = CONFIG.BOSS.HILLS.WAVE;
+    var h = hs[hs.length - 1];
+    if (!h || h.x1 !== Infinity) return x;
+    h.x1 = h.x0 + Math.ceil(Math.max(0, x - h.x0) / W) * W;
+    return h.x1;
+  }
+
+  function hillAt(world, x) {
+    var hs = world.hills;
+    if (!hs) return 0;
+    for (var i = 0; i < hs.length; i++) {
+      var h = hs[i];
+      if (x >= h.x0 && x < h.x1) {
+        var H = CONFIG.BOSS.HILLS;
+        return H.AMP * (1 - Math.cos(2 * Math.PI * (x - h.x0) / H.WAVE)) / 2;
+      }
+    }
+    return 0;
+  }
+
   function floorAt(world, x) {
     var f = funnelAt(world, x);
-    return f ? CONFIG.FUNNEL.FLOOR * clamp(funnelT(f, x), 0, 1) : 0;
+    return f ? CONFIG.FUNNEL.FLOOR * clamp(funnelT(f, x), 0, 1) : hillAt(world, x);
   }
 
   function ceilAt(world, x) {
@@ -518,6 +551,10 @@
     emit(run, 'bossStart', { shots: total });
   }
 
+  function laneMid(lane) { var l = lane === 'low' ? CONFIG.BOSS.LOW : CONFIG.BOSS.HIGH; return (l[0] + l[1]) / 2; }
+  function laneHalf(lane) { var l = lane === 'low' ? CONFIG.BOSS.LOW : CONFIG.BOSS.HIGH; return (l[1] - l[0]) / 2; }
+
+  /* 正在預告的那幾發（蓄力中）：frac = 針筒裡的水滿了多少 */
   function bossTells(b) {
     var out = [], T = CONFIG.BOSS.TELL_S;
     if (!b || b.state !== 'fight') return out;
@@ -527,6 +564,19 @@
       out.push({ lane: s.lane, left: s.at - b.bt, frac: clamp(1 - (s.at - b.bt) / T, 0, 1) });
     }
     return out;
+  }
+
+  /* 點滴袋還剩多少（0–1）：每一發蓄力時，水從點滴袋慢慢流進針筒 */
+  function bossBag(b) {
+    if (!b) return 1;
+    var T = CONFIG.BOSS.TELL_S, used = 0;
+    for (var i = 0; i < b.list.length; i++) used += clamp((b.bt - (b.list[i].at - T)) / T, 0, 1);
+    return clamp(1 - used / b.total, 0, 1);
+  }
+
+  /* 水柱（和雷射）的中心高度：那個位置的地面 + 這一排的高度 */
+  function shotY(world, x, lane) {
+    return floorAt(world, x) + laneMid(lane);
   }
 
   function stepBoss(run) {
@@ -549,9 +599,9 @@
       var w = b.shots[i];
       w.x -= B.SHOT_V * C.DT;
       if (w.x < run.x - 8) { b.shots.splice(i, 1); continue; }
-      var lane = w.lane === 'low' ? B.LOW : B.HIGH;
+      var yc = shotY(run.world, w.x, w.lane), hh = laneHalf(w.lane);
       if (overlap(run.x - hz, run.x + hz, w.x - B.LEN / 2 - pad, w.x + B.LEN / 2 + pad) &&
-        overlap(P.y - hz, P.y + hz, lane[0] - pad, lane[1] + pad)) {
+        overlap(P.y - hz, P.y + hz, yc - hh - pad, yc + hh + pad)) {
         crash(run, 'water');
         return;
       }
@@ -729,6 +779,11 @@
     progress: progress,
     bossSchedule: bossSchedule,
     bossTells: bossTells,
+    bossBag: bossBag,
+    shotY: shotY,
+    laneMid: laneMid,
+    addHills: addHills,
+    endHills: endHills,
     emptyRecord: emptyRecord,
     loadRecord: loadRecord,
     saveRecord: saveRecord,
