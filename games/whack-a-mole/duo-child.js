@@ -123,6 +123,11 @@
     startBtn.disabled = true;
   }
 
+  function lost(err) {
+    console.error('雙機：監聽停止', err);
+    say(D.LISTEN_LOST, 'warn');
+  }
+
   /* Firebase 的 module 只有雙機才載入（單機不需要，省流量） */
   var mod = document.createElement('script');
   mod.type = 'module';
@@ -152,12 +157,14 @@
       game = window.WhackGame.boot({ age: room.age, code: code }, { mode: room.mode, onChange: schedule });
       startBtn.disabled = false;
       say(modeText(room.mode), 'ok');
-      duo.watchRoom(code, onRoom, function () { say('網路不太穩，正在重新連線…', 'warn'); });
-      duo.watchCmds(code, onCmd, function () { say('網路不太穩，正在重新連線…', 'warn'); });
+      duo.watchRoom(code, onRoom, lost);
+      duo.watchCmds(code, onCmd, lost);
       window.setInterval(schedule, D.HEARTBEAT_MS); /* 畫面沒變也定時回報：家長才知道還連著 */
       schedule();
     })
-    .catch(function () {
-      fail('連不上網路。請確認孩子的手機有網路，再重新整理一次。');
+    .catch(function (err) {
+      console.error('雙機：連線失敗', err);
+      var f = D.failureText(err);
+      fail(f.title + '。' + f.body);
     });
 })();

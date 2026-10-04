@@ -119,13 +119,20 @@
       return null;
     })
     .then(function () {
-      duo.watchRoom(code, onRoom, function () { status('網路不太穩，正在重新連線…', 'warn'); });
+      duo.watchRoom(code, onRoom, function (err) {
+        console.error('雙機：房間監聽停止', err);
+        status(D.LISTEN_LOST, 'error');
+      });
     })
     .catch(function (err) {
       var m = err && err.message;
       if (m === 'missing') showError('找不到這個連線', '可能過期了。請爸爸媽媽重新打開「雙機」，再掃一次 QR code。');
       else if (m === 'parent') showError('這是爸爸媽媽的手機', '請用孩子的手機掃描 QR code，兩支手機才能一起玩。');
       else if (m === 'taken') showError('已經有另一支手機連線了', '請爸爸媽媽在他們的手機上按「重新配對」。');
-      else showError('連不上網路', '請確認這支手機有網路，再重新整理一次。');
+      else {
+        console.error('雙機：加入房間失敗', err);
+        var f = D.failureText(err);
+        showError(f.title, f.body);
+      }
     });
 })();

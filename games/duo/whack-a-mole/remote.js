@@ -316,12 +316,15 @@
       return duo.getRoom(code).then(function (r) {
         if (!r || r.parentUid !== uid) { window.location.replace('/games/duo/'); return; }
         onRoom(r);
-        duo.watchRoom(code, onRoom, function () { toast('網路不太穩，正在重新連線…'); });
-        duo.watchState(code, onState, function () { toast('網路不太穩，正在重新連線…'); });
+        var lost = function (err) { console.error('雙機：監聽停止', err); toast(D.LISTEN_LOST); };
+        duo.watchRoom(code, onRoom, lost);
+        duo.watchState(code, onState, lost);
       });
     })
-    .catch(function () {
-      $('duoStatusText').textContent = '連不上網路，請確認手機有網路，再重新整理這一頁';
+    .catch(function (err) {
+      console.error('雙機：連線失敗', err);
+      var f = D.failureText(err);
+      $('duoStatusText').textContent = f.title + '。' + f.body;
       $('duoStatus').className = 'duo-status is-error';
     });
 })();

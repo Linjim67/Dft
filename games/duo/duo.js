@@ -115,13 +115,18 @@
       });
     })
     .then(function () {
-      duo.watchRoom(code, render, function () { status('網路不太穩，正在重新連線…', 'error'); });
+      duo.watchRoom(code, render, function (err) {
+        console.error('雙機：房間監聽停止', err);
+        status(D.LISTEN_LOST, 'error');
+      });
     })
     .catch(function (err) {
       if (err && err.message === 'taken') {
         showError('這組代碼正在被使用', '請回主頁按「重新填寫」，拿一組新的代碼再試一次。');
       } else {
-        showError('連不上網路', '請確認手機有網路，再重新整理這一頁。');
+        console.error('雙機：建立房間失敗', err);
+        var f = D.failureText(err);
+        showError(f.title, f.body);
       }
     });
 })();

@@ -101,6 +101,22 @@
 
   function reasonText(why) { return REASONS[why] || REASONS.bad; }
 
+  /* 連線失敗的原因：伺服器拒絕（規則沒發布、匿名登入沒開）不是家長的網路問題，
+     不能叫他們去檢查 wifi；其餘（離線、gstatic 載不到）才是網路 */
+  var SETUP_CODES = ['permission-denied', 'auth/operation-not-allowed',
+    'auth/admin-restricted-operation', 'auth/configuration-not-found'];
+
+  function failureText(err) {
+    if (err && SETUP_CODES.indexOf(err.code) !== -1) {
+      return { kind: 'setup', title: '雙機暫時不能用',
+        body: '不是手機網路的問題，是網站這邊的設定。請先玩單機遊戲，我們會盡快修好。' };
+    }
+    return { kind: 'offline', title: '連不上網路', body: '請確認手機有網路，再重新整理這一頁。' };
+  }
+
+  /* Firestore 的監聽一出錯就停了（斷網時它會自己重連，不會走到這裡） */
+  var LISTEN_LOST = '連線中斷了，請重新整理這一頁';
+
   /* 家長看到的一句話：孩子現在在做什麼 */
   function childStatus(state, stale) {
     if (!state) return { tone: 'wait', text: '等孩子打開打地鼠…' };
@@ -134,6 +150,8 @@
     gameById: gameById,
     validCmd: validCmd,
     reasonText: reasonText,
+    failureText: failureText,
+    LISTEN_LOST: LISTEN_LOST,
     childStatus: childStatus
   };
 

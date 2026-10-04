@@ -401,7 +401,16 @@ spamming; a refused event doesn't use its cooldown.
 - Contrast measured in a real browser on every screen and state (178 text elements): all AA.
 
 ⚠️ Production needs the updated `firestore.rules` **published in the Firebase Console** and
-**Anonymous sign-in enabled**; until then pairing shows 「連不上網路」.
+**Anonymous sign-in enabled**. Until then every `rooms/*` read is `permission-denied`.
+
+**Failure messages** (`AnxinDuo.failureText`): a server refusal (`permission-denied`, anonymous
+sign-in off) shows 「雙機暫時不能用 — 不是手機網路的問題…請先玩單機遊戲」, because telling a parent
+to check their Wi-Fi sends them after the wrong problem. Only real network failures (offline,
+gstatic blocked) show 「連不上網路」. The raw error is always `console.error`ed. Firestore listeners
+stop for good on an error (a dropped network reconnects silently and never reaches `onError`), so
+their message is 「連線中斷了，請重新整理這一頁」, not "reconnecting".
+(2026-10-04: the live project still had pre-duo rules — signed-in `GET rooms/0427` → 403 while
+`threads` → 200 — which the old catch-all reported as 「連不上網路」.)
 
 ---
 
