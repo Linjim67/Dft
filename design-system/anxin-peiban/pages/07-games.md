@@ -1,8 +1,9 @@
 # 07 小遊戲 — page overrides
 
-Inherits MASTER. Covers `/games/solo/` (menu), `/games/whack-a-mole/` — (S) 打地鼠, and the two-phone
+Inherits MASTER. Covers `/games/solo/` (menu), `/games/whack-a-mole/` — (S) 打地鼠, the two-phone
 (M) 打地鼠: `/games/duo/` (pairing), `/games/<code>/` (child's menu), `/games/<code>/whack-a-mole/`
-(child's game) and `/games/duo/whack-a-mole/` (parent's remote).
+(child's game) and `/games/duo/whack-a-mole/` (parent's remote), `/games/draw-circle/` — 畫圓圈, and
+`/games/dash/` — (S) 膠囊衝衝衝 (the spec's "Geometry Dash").
 
 ## Routing
 
@@ -14,6 +15,7 @@ the code, and the page reads it with `AnxinDuo.codeFromLocation` (local dev: `?c
 「即將推出」 badge (visible text, not only greyed-out).
 
 「Mini mario」 is shown as **「跳跳冒險」** — "Mario" is a Nintendo trademark and this is a public site.
+For the same reason 「Geometry Dash」 (RobTop Games) ships as **「膠囊衝衝衝」**.
 
 ## Files
 
@@ -287,6 +289,12 @@ playfully "whack" medical tools is a recognised desensitisation technique (medic
 is drawn plunger-up with its needle end below the hole's lip, so **no tip is ever visible**, and all
 four characters have friendly faces. Outside the game, the rule still stands.
 
+膠囊衝衝衝 is the second exception, also by spec ("Spikes are needles"): here the tips *are* visible,
+because a hazard has to read as a hazard. They are drawn as cartoon needles on chunky coloured hubs
+(no blood, no skin, nothing being injected), and the child's job is to hop *over* them — mastery,
+not threat. The boss is a smiling doctor on a rolling stool playing 水槍大戰; see that section for why
+he is not a villain.
+
 ## Robustness
 
 - Clock advances only while playing; `dt` is capped at 100ms so returning to the tab can't skip seconds.
@@ -444,3 +452,128 @@ it bulged, rather than only receiving a number.
 - The record is the child's own best only, keyed to the profile code.
 - Freehand drawing is the activity itself — the "essential" exception to WCAG 2.5.7 — so there is
   no keyboard alternative; scores are still announced as text.
+
+
+---
+
+# (S) 膠囊衝衝衝 — `/games/dash/` (spec: Geometry Dash)
+
+| File | Role |
+|---|---|
+| `engine.js` | `window.DashEngine` — **pure** physics, collisions, portals, checkpoints, boss, records. Every tunable in `CONFIG` |
+| `levels.js` | `window.DashLevels` — ASCII patterns, the six fixed levels, the infinity generator |
+| `art.js` | `window.DashArt` — Q 版 SVG sprites, rasterised once per tile size |
+| `dash.js` | Canvas renderer, input, HUD, dialogs, record |
+
+## Characters — everything is something from a hospital
+
+| Spec | Built as |
+|---|---|
+| egg-like chibi character | **小膠囊** — an egg-shaped capsule, orange top / cream bottom with a capsule seam, big low eyes |
+| spikes are needles | needles on red hubs (blue in 雙胞胎 when they differ between the halves) |
+| blocks | **藥盒** — medicine boxes with a two-tone pill; no red cross (a protected emblem) |
+| ship mode | **體溫計火箭** — a thermometer, bulb as the engine, the capsule riding on top |
+| UFO mode | **藥杯飛碟** — a glass dome on an upside-down medicine cup |
+| boss "a doctor?" | a smiling doctor on a rolling stool holding a water-filled syringe |
+| — | 彈簧墊 (jump pad), 安心旗 (checkpoint flag), 星星 (3 per level) |
+
+## Physics — fixed step, measured in tiles
+
+- 120 Hz fixed step in *game time*. Same inputs → same result, which is what lets the test bot prove
+  levels are passable.
+- **Age slows the whole game, not just the scroll** (`AGE_SPEED`: <6 ×0.7 · <8 ×0.8 · <10 ×0.9 · <13
+  ×1 · else ×1.1). Because everything — gravity included — runs on game time, a jump covers the same
+  tiles at every age; a young child simply gets more reaction time. A scroll-only slowdown would
+  shorten jumps and make the same map impossible.
+- Cube: jump ≈ 2.25 tiles high, 0.56 s, ≈ 3.9 tiles long. Hold = re-jump on landing (as in GD).
+  Forgiveness: 0.12 s input buffer before landing, 0.07 s coyote time after an edge, corners within
+  0.22 tiles step up instead of crashing.
+- **Needles hurt less than they look**: drawn tip at 0.8 tiles, hitbox 0.24 × 0.45; the player's
+  hazard box is 0.6 vs a 0.86 body. A single needle leaves a ~390 ms jump window at ×1.
+- Ship: hold = up, release = down, ±6.5 tiles/s; floor and ceiling are safe to slide on.
+- UFO: each tap = a ≈ 1.5-tile hop (Flappy Bird); holding does nothing.
+- Respawn: checkpoints (安心旗) at every section start and ~45 tiles apart, always with ≥ 4 empty tiles
+  ahead. A crash shows a dizzy "><" face for 0.7 s, then the capsule blinks at the flag for 0.65 s.
+  The word is 「撞到了，沒關係」 — never 失敗.
+
+## The six levels (spec a–f) + infinity (g)
+
+| # | Name | Spec | Built |
+|---|---|---|---|
+| 1 | 出發囉 | (a) standard, dash + ship | cube → ship → cube |
+| 2 | 快快跑 | (b) faster | speed portals ×1.2 then ×1.35 |
+| 3 | 藥杯飛碟 | (c) UFO | 200 tiles of UFO between short cube runs |
+| 4 | 雙胞胎 | (d) duo, split screen | see below |
+| 5 | 轉轉 | (e) rotate 3° per jump / spike | see below |
+| 6 | 醫生的水槍 | (f) boss with telegraphs | see below |
+| ∞ | 無限挑戰 | (g) seeded array of modes | see below |
+
+All levels are open from the start (children pick, per #07). Each shows 0–3 stars and 完成 / 最遠 N%.
+Levels last 30–75 s at every age (tested).
+
+**Levels are built from ASCII patterns.** Each pattern is a few tiles of hand-drawn obstacles, graded
+1–3 (`#` box, `^` needle, `v` hanging needle, `o` pad, `*` star slot). A level is a fixed seed plus a
+list of sections `{mode, length, difficulty from → to}`; the generator picks patterns of rising
+difficulty. Stars go on star-capable patterns at about 20 / 50 / 80 % of the level.
+
+**雙胞胎 (d).** The canvas splits along a horizontal line. The top half is a *second world*, drawn
+upside down (as in GD dual mode), and both capsules obey the same tap. Patterns are mostly identical;
+where they differ, the differing obstacles are **blue and outlined with a dashed box** in both halves —
+colour plus outline, never colour alone. The difference is computed cell by cell, not hand-tagged.
+
+**轉轉 (e).** Each jump and each needle passed turns the view 3°; at ±15° it turns back the other way.
+A literal cumulative 3° would put the course upside down after 60 events. The view eases to the new
+angle; with reduced motion it snaps.
+
+**醫生的水槍 (f).** A doctor as a villain who shoots needles at a child would undo what this site is for.
+So he is a **playmate in a water fight**: he rolls in saying 「來玩水槍大戰！」, ends with 「你好勇敢！」
+and a happy face, then rolls away. The syringe holds water, and its fill level is his "HP"; the HUD
+swaps the progress bar for 「醫生的水 · 剩 N 發」. Every shot is **telegraphed for 1 s**:
+- he aims the syringe at the lane and a "!" bubble appears;
+- a red dashed band fills toward the child;
+- a label says **「跳！」** (low lane) or **「別跳！」** (high lane), text not colour.
+
+There are 12 shots: the opener is always low, low, high, and never three of one lane in a row. From
+the halfway point (a checkpoint) he fires pairs. All 3 of level 6's stars float in the gaps between
+shots, at least 1.8 s apart, so reaching for one never collides with water.
+
+**無限挑戰 (g).** For each round, the seed shuffles `[跳跳, 火箭, 飛碟, 雙胞胎, 轉轉]`. Each mode plays
+55 tiles behind a portal. When the array is empty: boss (5 + round shots), then the next round with a
+fresh shuffle, harder patterns and +6 % speed per round (capped at ×1.3). The sky colour follows the
+mode, so a portal is felt even before the controls change. There are no checkpoints, and a crash ends
+the run. The summary shows metres, the round reached, and **地圖編號** (the seed) with 「同一張地圖再玩」
+and 「換一張新地圖」.
+
+## Screen
+
+- Canvas 9 tiles high; tile = min(height / 9, width / 11). Portrait 375 px → 32 px tiles, ~8 tiles of
+  look-ahead. The capsule sits 2.8 tiles from the left edge.
+- **Portrait leaves space under the canvas: it becomes a big orange 「跳」 / 「飛」 pad** (dark ink on
+  orange, per MASTER). It presses down while held. The whole stage is the touch target; the pad just
+  tells children where to put their thumb. A mode's first-time hint appears under the pad. In
+  landscape (no room for the pad) the hint pill sits over the floor strip instead of the top of the
+  canvas, where ship gates are.
+- 「點一下開始」 overlay: the first tap only starts the run, and a finger still held from it is ignored
+  until lifted.
+- Top bar hidden while playing (same as 打地鼠); pause holds 繼續 / 重新開始 / 選關卡 + 小遊戲選單 /
+  開始打針. Auto-pause when the page is hidden.
+- Keyboard: Space / ↑ / W jump (hold works), Esc / P pause. Focus moves to the canvas only when the
+  game was started from the keyboard, so touch users never see a focus ring.
+- Real-time hand–eye play is the activity itself (WCAG 2.5.7 "essential"). Mode changes, stars,
+  crashes and results are also announced in a live region.
+- Reduced motion: no particles, squash or star bob, and rotation snaps. No flashing anywhere; the
+  respawn blink is ~2.3 Hz at partial opacity.
+- Record `anxin.dash.v1` keyed to the profile code. Stars count only on a finish; leaving mid-level
+  keeps the best %.
+
+## Verified
+
+- **Solver bot** (breadth-first search over inputs on the real engine, with hazards **enlarged by
+  0.06–0.08 tiles** and inputs only every 25–50 ms):
+  - every pattern passes, and every star slot is reachable;
+  - all six levels finish **with all 3 stars**;
+  - all-difficulty-3 sections pass in every mode;
+  - three infinity seeds pass through round 1, the boss and into round 2.
+- **Tests:** 40 engine/level tests; 18 jsdom page tests.
+- **Real Chromium:** touch taps, ship hold over CDP touch, landscape, and an AA contrast audit
+  (124 text elements).

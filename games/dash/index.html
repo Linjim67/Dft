@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="zh-Hant-TW">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="color-scheme" content="light">
+  <meta name="theme-color" content="#FFF7ED">
+  <title>安心陪伴 · 膠囊衝衝衝</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet"
+    href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&display=swap">
+  <link rel="stylesheet" href="/styles.css">
+  <link rel="stylesheet" href="/shared/page.css">
+  <link rel="stylesheet" href="/games/dash/dash.css">
+  <script src="/shared/app.js"></script>
+  <script>Anxin.requireProfile();</script>
+</head>
+
+<body class="dash-page">
+  <a class="skip-link" href="#main">跳到主要內容</a>
+
+  <svg class="sprite" aria-hidden="true" focusable="false">
+    <symbol id="i-star" viewBox="0 0 24 24">
+      <path d="M12 3.2l2.7 5.5 6 .9-4.35 4.25 1 6L12 17l-5.35 2.85 1-6L3.3 9.6l6-.9Z" />
+    </symbol>
+  </svg>
+
+  <header class="wrap topbar">
+    <a class="back-link" href="/games/solo/">
+      <svg viewBox="0 0 24 24" class="icon" aria-hidden="true"><path d="M15 5 8 12l7 7" /></svg>
+      <span>小遊戲</span>
+    </a>
+    <a class="pill-cta" href="/shot/">
+      <span>開始打針</span>
+      <svg viewBox="0 0 24 24" class="icon" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6" /></svg>
+    </a>
+  </header>
+
+  <main id="main">
+
+    <!-- ══════════ 選關卡 ══════════ -->
+    <section class="wrap" id="introView" aria-labelledby="introTitle">
+      <div class="page-head">
+        <h1 id="introTitle" tabindex="-1">膠囊衝衝衝</h1>
+        <p class="page-lede">小膠囊要衝到終點！跳過針頭、坐火箭、開飛碟，還要和醫生玩水槍。</p>
+      </div>
+
+      <ul class="dash-how">
+        <li><span class="how-key">點一下</span><span>跳起來</span></li>
+        <li><span class="how-key">按住</span><span>一直跳／火箭往上飛</span></li>
+        <li><span class="how-key">撞到了</span><span>沒關係，從綠色旗子再來</span></li>
+      </ul>
+
+      <h2 class="section-title dash-list-title">選一關</h2>
+      <ol class="level-list" id="levelList"></ol>
+
+      <p class="dash-tip">
+        <svg viewBox="0 0 24 24" class="icon" aria-hidden="true"><rect x="3" y="7" width="18" height="10" rx="2" /><path d="M7 7v10" /></svg>
+        <span>把手機橫過來，可以看得更遠。</span>
+      </p>
+    </section>
+
+    <!-- ══════════ 遊戲中 ══════════ -->
+    <section class="dash-play" id="playView" hidden aria-labelledby="hudTitle">
+      <div class="dash-hud">
+        <button class="hud-btn" type="button" id="pauseBtn" aria-label="暫停">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6v12M15 6v12" /></svg>
+        </button>
+        <div class="hud-mid">
+          <h1 class="hud-title" id="hudTitle">第 1 關・出發囉</h1>
+          <div class="hud-progress" id="hudProgress">
+            <span class="hud-bar" aria-hidden="true"><span class="hud-fill" id="hudFill"></span></span>
+            <span class="hud-pct" id="hudPct">0%</span>
+          </div>
+          <!-- 大魔王：醫生水槍裡的水就是血條（取代進度條，版面不會跳） -->
+          <div class="boss-bar" id="bossBar" hidden>
+            <span class="boss-label">醫生的水</span>
+            <span class="boss-meter" aria-hidden="true"><span class="boss-fill" id="bossFill"></span></span>
+            <span class="boss-left" id="bossLeft">12 發</span>
+          </div>
+        </div>
+        <div class="hud-right">
+          <span class="hud-stars" id="hudStars"></span>
+          <span class="hud-try" id="hudTry">第 1 次</span>
+        </div>
+      </div>
+
+      <!-- 整塊都可以點：畫面本身、和下面的空白 -->
+      <div class="stage" id="stage">
+        <!-- 跳躍遊戲是即時的手眼協調（WCAG 2.5.7 的「必要」例外）；進度與事件另外以文字播報 -->
+        <canvas class="stage-canvas" id="stageCanvas" tabindex="0" role="img" aria-label="遊戲畫面：小膠囊往右跑。按空白鍵或向上鍵跳，Esc 暫停"></canvas>
+        <p class="mode-hint" id="modeHint" hidden></p>
+
+        <div class="ready" id="readyBox">
+          <p class="ready-name" id="readyName">第 1 關・出發囉</p>
+          <button class="btn btn-primary ready-btn" type="button" id="goBtn">點一下開始</button>
+          <p class="ready-sub" id="readySub">點一下：跳　按住：一直跳</p>
+        </div>
+
+        <!-- 直式手機：畫面下面的空白是一顆大按鈕（整個舞台本來就都可以點，這只是讓小朋友知道） -->
+        <div class="tap-zone" id="tapZone" aria-hidden="true">
+          <span class="tap-pad" id="tapPad"><span id="tapWord">跳</span></span>
+          <span class="tap-hint" id="tapHint">點這裡也可以跳</span>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- ══════════ 對話框 ══════════ -->
+  <dialog class="dlg" id="pauseDlg" aria-labelledby="pauseTitle">
+    <h2 class="dlg-title" id="pauseTitle">暫停中</h2>
+    <p class="dlg-body">休息一下，準備好再繼續。</p>
+    <div class="dlg-actions">
+      <button class="btn btn-primary" type="button" data-close autofocus>繼續玩</button>
+      <button class="btn btn-quiet" type="button" id="restartBtn">這一關重新開始</button>
+      <button class="btn btn-quiet" type="button" id="toLevelsBtn">選別的關卡</button>
+    </div>
+    <!-- 遊戲中頂列收起來（小朋友亂點不會跑出遊戲），離開的路放在暫停裡 -->
+    <p class="dlg-links">
+      <a class="quiet-link" href="/games/solo/">小遊戲選單</a>
+      <a class="quiet-link" href="/shot/">開始打針</a>
+    </p>
+  </dialog>
+
+  <dialog class="dlg dash-win" id="winDlg" aria-labelledby="winTitle" aria-describedby="winLine">
+    <p class="win-kicker" id="winKicker">第 1 關・出發囉</p>
+    <h2 class="dlg-title" id="winTitle">過關了！</h2>
+    <p class="win-stars" id="winStars"></p>
+    <p class="dlg-body" id="winLine"></p>
+    <div class="dlg-actions">
+      <button class="btn btn-primary" type="button" id="nextBtn">下一關</button>
+      <button class="btn btn-quiet" type="button" id="againBtn">再玩一次</button>
+      <button class="btn btn-quiet" type="button" id="winLevelsBtn">選別的關卡</button>
+    </div>
+  </dialog>
+
+  <dialog class="dlg dash-over" id="overDlg" aria-labelledby="overTitle" aria-describedby="overLine">
+    <p class="win-kicker">無限挑戰</p>
+    <h2 class="dlg-title" id="overTitle">跑了 0 公尺！</h2>
+    <p class="dlg-body" id="overLine"></p>
+    <p class="over-seed" id="overSeed"></p>
+    <div class="dlg-actions">
+      <button class="btn btn-primary" type="button" id="sameSeedBtn">同一張地圖再玩</button>
+      <button class="btn btn-quiet" type="button" id="newSeedBtn">換一張新地圖</button>
+      <button class="btn btn-quiet" type="button" id="overLevelsBtn">選別的關卡</button>
+    </div>
+  </dialog>
+
+  <div class="live-region" id="liveRegion" role="status" aria-live="polite"></div>
+
+  <script src="/games/dash/engine.js"></script>
+  <script src="/games/dash/levels.js"></script>
+  <script src="/games/dash/art.js"></script>
+  <script src="/games/dash/dash.js"></script>
+</body>
+
+</html>
