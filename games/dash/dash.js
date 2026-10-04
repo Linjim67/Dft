@@ -628,7 +628,7 @@
       var left = Math.max(0, b.tank);
       if (G.hud.tank !== left) {
         G.hud.tank = left;
-        $('bossFill').style.width = (left / b.total * 100) + '%';
+        $('bossFill').style.transform = 'scaleX(' + (left / b.total) + ')';
         $('bossLeft').textContent = '剩 ' + left + ' 發';
       }
     }

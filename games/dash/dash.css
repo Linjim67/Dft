@@ -387,7 +387,8 @@ body.is-playing .topbar {
   width: 100%;
   height: 100%;
   background: #0284C7;
-  transition: width var(--t-base) var(--ease);
+  transform-origin: left center;
+  transition: transform var(--t-base) var(--ease);
 }
 
 .boss-left {
@@ -498,6 +499,7 @@ body.is-playing .topbar {
   justify-content: center;
   gap: var(--sp-3);
   overflow: hidden;
+  padding: var(--sp-3);
   border-radius: var(--r-lg);
   border: 2px dashed var(--rule);
   background: rgba(255, 255, 255, .45);
@@ -514,14 +516,15 @@ body.is-playing .topbar {
   color: var(--primary-ink);
   font-size: 2.1rem;
   font-weight: 700;
-  box-shadow: var(--sh-orange), inset 0 -6px 0 rgba(124, 45, 18, .22);
+  box-shadow: var(--sh-orange);
   transition: transform 80ms var(--ease), box-shadow 80ms var(--ease), background-color 80ms var(--ease);
 }
 
+/* 按下去：往下 2px＋陰影收起來（MASTER 的按壓方式，不用硬邊） */
 .tap-zone.is-down .tap-pad {
-  transform: translateY(4px) scale(.96);
+  transform: translateY(2px) scale(.97);
   background: var(--primary);
-  box-shadow: 0 1px 3px rgba(194, 65, 12, .3), inset 0 -2px 0 rgba(124, 45, 18, .22);
+  box-shadow: 0 1px 3px rgba(194, 65, 12, .3);
 }
 
 .tap-hint {
