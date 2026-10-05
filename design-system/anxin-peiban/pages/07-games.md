@@ -530,12 +530,16 @@ it bulged, rather than only receiving a number.
 
 - 120 Hz fixed step in *game time*. Same inputs → same result, which is what lets the test bot prove
   levels are passable.
-- **Age sets the speed of the whole game, not just the scroll**: band (`AGE_SPEED`: <6 ×0.7 · <8 ×0.8
-  · <10 ×0.9 · <13 ×1 · else ×1.1) **× √age ÷ 2** (product owner's "difficulty acceleration", anchored
-  so a 4-year-old is unchanged; ages under 1 count as 1 so the game never stops). Result: 2 y ×0.49 ·
-  4 y ×0.70 · 7 y ×1.06 · 9 y ×1.35 · 12 y ×1.73 · 18 y ×2.33. Because everything — gravity and the
-  boss's 1 s warning included — runs on game time, a jump covers the same tiles at every age; only the
-  reaction time changes. A scroll-only change would alter jump lengths and break the maps.
+- **Age sets the speed of the whole game, not just the scroll**: one smooth curve,
+  **0.7 × √(age ÷ 4), capped at 1.4** (ages under 1 count as 1 so the game never stops).
+  - Result: 2 y ×0.49 · 4 y ×0.70 · 7 y ×0.93 · 9 y ×1.05 · 12 y ×1.21 · 15 y ×1.36 · 16 y+ ×1.40.
+  - History: the first version used age bands (×0.7–×1.1). The product owner then asked for a
+    "difficulty acceleration" of √age ÷ 2 on top, and stacked on the bands that hit ×2.33 at 18 —
+    too fast for older children. The curve now replaces both. It is anchored so a 4-year-old is
+    unchanged, it has no jumps at band edges, and it tops out near Geometry Dash's normal 1× speed.
+  - Because everything — gravity and the boss's 1 s warning included — runs on game time, a jump
+    covers the same tiles at every age; only the reaction time changes. A scroll-only change would
+    alter jump lengths and break the maps.
 - **Gravity is asymmetric** (GD feel): rising 62, falling 86 tiles/s² (1.4×), terminal 26. A jump is
   ≈ 2.25 tiles high, 0.49 s, ≈ 3.8 tiles long at the base speed of **7.8 tiles/s** (raised from 7 so the
   heavier jump still clears three needles). Hold = re-jump on landing (as in GD).

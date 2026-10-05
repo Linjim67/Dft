@@ -64,11 +64,11 @@
     ROT_SPEED_MAX: 1.4,
     ROT_EASE: 40,
 
-    /* 年紀 < 門檻 → 速度倍率 */
-    AGE_SPEED: [[6, 0.7], [8, 0.8], [10, 0.9], [13, 1], [99, 1.1]],
-    /* 年紀越大越快：再乘上 √(年紀) ÷ 2（4 歲 ×1、9 歲 ×1.5、16 歲 ×2）；未滿 1 歲以 1 歲計，速度不會變成 0 */
-    AGE_ACCEL_REF: 4,
-    AGE_ACCEL_MIN_AGE: 1,
+    /* 年紀越大越快，一條平滑的曲線：速度 = 0.7 × √(年紀 ÷ 4)，最快 1.4。
+       4 歲 0.70（不變）· 7 歲 0.93 · 9 歲 1.05 · 12 歲 1.21 · 15 歲 1.36 · 16 歲以上 1.40。
+       （上一版是「年齡級距 × √年紀 ÷ 2」，兩個加速疊在一起，18 歲到 2.33 倍，太快）
+       未滿 1 歲以 1 歲計，速度不會變成 0 */
+    AGE_SPEED: { REF_AGE: 4, REF: 0.7, MIN_AGE: 1, MAX: 1.4 },
 
     /* 大魔王：醫生的水槍 */
     BOSS: {
@@ -116,16 +116,10 @@
     return a;
   }
 
-  function ageBand(a) {
-    var bands = CONFIG.AGE_SPEED;
-    for (var i = 0; i < bands.length; i++) if (a < bands[i][0]) return bands[i][1];
-    return 1;
-  }
-
   function ageScale(age) {
-    var a = Number(age);
+    var A = CONFIG.AGE_SPEED, a = Number(age);
     if (!isFinite(a)) a = 8;
-    return ageBand(a) * Math.sqrt(Math.max(a, CONFIG.AGE_ACCEL_MIN_AGE) / CONFIG.AGE_ACCEL_REF);
+    return Math.min(A.MAX, A.REF * Math.sqrt(Math.max(a, A.MIN_AGE) / A.REF_AGE));
   }
 
   /* 轉轉關：下坡快、上坡慢（用畫面實際轉到的角度） */
