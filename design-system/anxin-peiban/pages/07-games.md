@@ -699,6 +699,33 @@ and 「換一張新地圖」.
 - Record `anxin.dash.v1` keyed to the profile code. Stars count only on a finish; leaving mid-level
   keeps the best %.
 
+## Difficulty pass — a simulated 16-year-old
+
+At 16 the game runs ×1.4. A simulated player played every level start to finish (20 playthroughs
+each), respawning at flags like a child would:
+- It reads the course perfectly (everything is visible ~0.6 s ahead) and aims every tap at the middle
+  of that jump's success window.
+- Each tap lands with **human timing error, σ = 35 ms** (also run at σ = 50 ms). The error is
+  converted into game time at the current speed, so speed portals and 轉轉's downhill really do tighten
+  it.
+- Windows come from an exact search: every frame tap/no-tap, then a backward pass marking which states
+  can still finish.
+- Rocket / UFO stretches were checked separately: every section can be flown when input may only
+  change **every 70 ms, for every phase of that rhythm**, with hazards enlarged by 0.06 tiles.
+
+Three pieces left less than a human's margin, with these tightest windows (real ms at 16 y):
+
+| Piece | Before | After | Change |
+|---|---|---|---|
+| three needles in a row (`n3`) | 71 ms (~69% per try) | 167 ms | now `^^` + 3-tile gap + `^` (`n2n1`) |
+| box, then a needle 2 tiles after (`boxn`) | 36 ms | 268 ms | needle right against the box: one jump off the box clears it |
+| tower, 2-wide steps and a 1-wide top (`tower`) | 48 ms | 143 ms | three 4-wide steps, star on top (the ~3.8-tile jump overshot 2-wide steps) |
+
+After the change every jump piece leaves **≥ 119 ms** at 16 y; a test now enforces ≥ 110 ms. Deaths
+per playthrough at σ 35 ms: L1 0.25 · L2 0.80 · L3 0.05 · L4 0.65 · L5 0.80 · L6 0.10, with no spot
+dying more than a few times in 20 playthroughs. Infinity still tightens by design: +6 % speed per
+round, up to ×1.3.
+
 ## Verified
 
 - **Solver bot** (breadth-first search over inputs on the real engine, with hazards **enlarged by
