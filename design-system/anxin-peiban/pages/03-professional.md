@@ -57,39 +57,38 @@ code card. Both check `holderUid` as well. If Firebase is unreachable, both page
 - Current password: `123456`. To change it, run the one-liner in the comment above `validStaffSession`,
   paste the hash into the rules, and publish. Use a passphrase for real use (see the warning above).
 
-## /pro/ layout — a work station, not a form
+## /pro/ layout — three layouts, one page, same flow
 
-Context: the blood-draw counter. Staff may wear gloves, see many children per shift, and glance at the
-screen between tasks. `ui-ux-pro-max --design-system` returned no verified match (a landing-page
-pattern, neumorphism, and the cyan palette with the `#A5F3FC` border MASTER already rejected), so the
-page keeps MASTER's tokens. Verified UX rules applied: password visibility toggle, confirmation before
-irreversible actions, and submit feedback → success state.
+Context: the blood-draw counter. Staff may be on a phone, a touch tablet or a PC, see many children per
+shift, and glance at the screen between tasks. `ui-ux-pro-max --design-system` returned no verified match,
+so the page keeps MASTER's tokens. **Copy is minimal by request**: labels say what a thing is, and
+nothing narrates what the UI already shows (no ledes, no step guide, 「XXXX 查無」 with no body).
 
-- **Staff mode bar**: a sticky dark (`--primary-ink`) bar with 醫護端, 「登入至 HH:MM」 and 登出 (48px).
-  Nobody can mistake it for the parent app. On the dark bar the focus ring switches to `#FDBA74`,
-  because `#C2410C` on ink is only 2.8:1.
-- **Code entry**: four 76px slots plus an on-screen 3×4 keypad with 60px keys, which works with gloves.
-  A real `<input inputmode="none">` sits transparent over the slots, so paste, physical keyboards and
-  screen readers all work and the phone keyboard never covers the keypad. Digits typed while a keypad
-  button has focus are routed into the code. The lookup fires on the 4th digit.
-- **Phases** (`#deskView[data-phase]`: entry → case → done). On a phone the keypad folds away once a
-  case opens, and a 「‹ 換代碼」 bar replaces it. At ≥ 56rem, grid areas place the keypad and recent list
-  on the left and the case on the right, always visible together. The dashed empty state there doubles
-  as a 3-step guide for new staff.
-- **Patient card**, in reading order for a glance: 「3 歲半 · 女孩」 (1.7rem) → **特別注意** (wash + warning
-  icon, no side stripe; muted 「家長沒有填寫」 when empty) → fear and worry as 5-segment meters with text
-  (filled `#EA580C` vs track is 3.21:1).
-- **Two numbered steps**: ① 打針前 (card) and ② 打完針後 (rating card). Focus moves to ① when a case opens.
-- **Compare note**: once staff pick, a status line reads 「比家長估的低 2 級」, 「和家長估的一樣」 or
-  「高 N 級」, with an arrow icon as well as the text.
-- **Safety nets**: submit opens a confirm dialog that summarises both ratings and the note; the default
-  focus is 「再看一下」. If a new code would discard an unsent rating, a dialog asks first; 「回到代碼」
-  restores the code shown in the slots.
-- **最近完成**: the last 5 codes sent from this device (code, rating, time; localStorage, 12 h, cleared on
-  登出). Staff use it to confirm a submission went through. It sits after the result panel in the page
-  order, so on a phone 「查無」 appears right under the keypad.
-- On phones (≤ 30rem) the rating card's padding drops to 16px and the scale gap to 6px, so 「完全不會」 and
-  「非常害怕」 stay on one line at 375px.
+| | Phone (< 56rem) | Touch tablet (≥ 56rem, coarse pointer) | **PC** (≥ 64rem + hover + fine pointer) |
+|---|---|---|---|
+| Code entry | 4 slots + on-screen keypad | same, left column | 4 compact slots in a sticky top toolbar; **no keypad** |
+| Case | one phase at a time; keypad folds away behind 「‹ 換代碼」 | beside the keypad | ① card and ② rating **side by side**, fits 1440×900 without scrolling |
+| After 送出 | done card + 「下一位」 | same | one-line 「XXXX 已送出」 banner; cursor back in the code box |
+| 最近完成 | below results (hidden when empty) | left column | right sidebar, always shown (「—」 when empty) |
+
+PC keyboard handling, so staff only reach for the mouse to pick a face:
+- Digits typed anywhere go into the code and focus moves to the code box. Typing in the note
+  textarea or on a radio is excluded.
+- Esc clears the code. Ctrl/⌘+Enter sends from anywhere in the form.
+- The kbd hints (「0–9 輸入 Esc 清除」, 「送出 Ctrl+Enter」) appear only in this layout.
+- When a case opens, focus stays in the code box, so a typo can be retyped at once. The live region
+  announces the case. Touch layouts move focus to ① instead.
+
+Shared by all three:
+- **Staff mode bar**: a sticky dark bar with 醫護端, 「登入至 HH:MM」 and 登出 (48px).
+- **Patient card**: 「3 歲半 · 女孩」 → **特別注意** (wash + warning icon; collapses to one line,
+  「特別注意 無」, when empty) → fear and worry as 5-segment meters with text.
+- **The question quotes the parent** (spec): 「家長說『蠻害怕』，實際呢？」. A compare note follows the
+  pick: 「比家長低 2 級」, 「同家長」 or 「比家長高 N 級」.
+- **No confirm window** (removed by request): 送出 sends at once. The footnote 「送出後代碼即失效」 stays.
+  The only remaining dialog guards against data loss: switching codes with an unsent rating asks
+  「XXXX 還沒送出」 → 「回到 XXXX」 / 「放棄」.
+- Password show/hide toggle. The note counter reads 「n / 500」.
 
 ### The comparison scale (spec: shallow fill vs thicker, deeper border)
 

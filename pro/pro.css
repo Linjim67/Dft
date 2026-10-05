@@ -151,14 +151,12 @@
   letter-spacing: -.01em;
 }
 
-.login-title:focus-visible {
-  outline-offset: 6px;
+.login-title {
+  margin-bottom: var(--sp-5);
 }
 
-.login-lede {
-  margin-block: var(--sp-2) var(--sp-5);
-  color: var(--fg-muted);
-  font-size: .96rem;
+.login-title:focus-visible {
+  outline-offset: 6px;
 }
 
 .pwd-wrap {
@@ -219,13 +217,6 @@
   margin: var(--sp-5) 0 0;
 }
 
-.login-foot {
-  margin-top: var(--sp-4);
-  font-size: .84rem;
-  line-height: 1.6;
-  color: var(--fg-muted);
-  text-align: center;
-}
 
 /* ═══ 工作台版面 ══════════════════════════════════════════════ */
 
@@ -365,19 +356,12 @@
   }
 }
 
-.entry-hint {
-  margin-top: var(--sp-2);
-  font-size: .86rem;
-  line-height: 1.6;
-  color: var(--fg-muted);
-}
-
 /* 數字鍵：60px 高，戴手套也按得準 */
 .keypad {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
   gap: var(--sp-2);
-  margin-top: var(--sp-4);
+  margin-top: var(--sp-5);
 }
 
 .key {
@@ -428,8 +412,7 @@
   margin-bottom: var(--sp-2);
 }
 
-.recent-list,
-.steps {
+.recent-list {
   padding: 0;
   list-style: none;
 }
@@ -550,21 +533,7 @@
 
 .panel-empty-title {
   font-weight: 700;
-  color: var(--fg);
-}
-
-.steps {
-  display: grid;
-  gap: var(--sp-2);
-  margin-top: var(--sp-2);
-  text-align: start;
-}
-
-.steps li {
-  display: flex;
-  align-items: center;
-  gap: var(--sp-3);
-  font-size: .94rem;
+  color: var(--fg-muted);
 }
 
 .step-num {
@@ -715,12 +684,6 @@
   font-weight: 400;
 }
 
-.patient-meta {
-  font-size: .84rem;
-  color: var(--fg-muted);
-  font-variant-numeric: tabular-nums;
-}
-
 /* 特別注意：最先要看到的那一句。淡橘底 + 警示圖示，不靠側邊色條 */
 .needs {
   display: grid;
@@ -764,6 +727,26 @@
   font-weight: 400;
   font-size: .96rem;
   color: var(--fg-muted);
+}
+
+/* 沒有特殊需求：縮成一行「特別注意 無」 */
+.needs.is-empty {
+  align-items: center;
+  padding-block: var(--sp-2);
+}
+
+.needs.is-empty > .icon {
+  margin-top: 0;
+}
+
+.needs.is-empty > div {
+  display: flex;
+  align-items: baseline;
+  gap: var(--sp-3);
+}
+
+.needs.is-empty .needs-text {
+  margin-top: 0;
 }
 
 /* 害怕／擔心：5 格量表 + 文字（不只靠顏色） */
@@ -871,6 +854,33 @@
 .note-meta .char-count {
   margin: 0;
   margin-inline-start: auto;
+}
+
+.label-opt {
+  font-weight: 400;
+  font-size: .9rem;
+  color: var(--fg-muted);
+}
+
+/* 鍵盤提示：只在電腦版面出現 */
+.kbd-hint,
+.kbd-inline {
+  display: none;
+}
+
+kbd {
+  display: inline-block;
+  min-width: 1.6em;
+  padding: 0 5px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: var(--card);
+  box-shadow: inset 0 -1px 0 var(--line);
+  font: inherit;
+  font-size: .78rem;
+  line-height: 1.5;
+  text-align: center;
+  color: var(--fg);
 }
 
 /* 家長選的 vs 醫檢師選的：醫檢師一選，就告訴他兩者差多少 */
@@ -995,16 +1005,14 @@
   outline-offset: 6px;
 }
 
-.done-lede {
-  margin: var(--sp-2) auto var(--sp-5);
-  max-width: 24rem;
-  color: var(--fg-muted);
-}
-
-.done-lede strong {
-  color: var(--fg);
+.done-title span {
   letter-spacing: .08em;
   font-variant-numeric: tabular-nums;
+}
+
+.done-lede {
+  margin: var(--sp-1) auto var(--sp-5);
+  color: var(--fg-muted);
 }
 
 .done .btn {
@@ -1014,36 +1022,177 @@
   margin: 0 auto;
 }
 
-/* ═══ 確認對話框 ══════════════════════════════════════════════ */
+/* ═══ 電腦版面 ══════════════════════════════════════════════════
+   寬螢幕 + 滑鼠：實體鍵盤打代碼，不需要數字鍵。
+   上方：代碼工具列（黏在醫護模式列下面）
+   中間：① 病人小卡 ｜ ② 評分，並排，不用捲動
+   右側：最近完成（一直都在）
+   送出後只顯示一條「已送出」，游標回到代碼框，直接打下一組。
+   ═══════════════════════════════════════════════════════════════ */
 
-.confirm-list {
-  display: grid;
-  margin-top: var(--sp-4);
-  border-radius: var(--r-md);
-  background: var(--bg-sunk);
-  overflow: hidden;
-}
+@media (min-width: 64rem) and (hover: hover) and (pointer: fine) {
 
-.confirm-list div {
-  display: grid;
-  grid-template-columns: 6.5em 1fr;
-  gap: var(--sp-3);
-  padding: var(--sp-2) var(--sp-4);
-  border-top: 1px solid var(--hairline);
-  font-size: .94rem;
-}
+  .staff-bar-inner,
+  .pro-main {
+    max-width: 84rem;
+  }
 
-.confirm-list div:first-child {
-  border-top: 0;
-}
+  .pro-main {
+    padding-inline: var(--sp-6);
+  }
 
-.confirm-list dt {
-  color: var(--fg-muted);
-}
+  .desk {
+    grid-template-columns: minmax(0, 1fr) 15rem;
+    grid-template-areas: "entry recent" "panel recent";
+    grid-template-rows: auto 1fr;
+    gap: var(--sp-5) var(--sp-6);
+    padding-top: var(--sp-5);
+  }
 
-.confirm-list dd {
-  font-weight: 700;
-  overflow-wrap: anywhere;
+  /* 代碼工具列 */
+  .desk[data-phase] .entry {
+    display: flex;
+    align-items: center;
+    gap: var(--sp-4);
+    position: sticky;
+    top: calc(60px + var(--sp-3));
+    z-index: 5;
+    padding: var(--sp-3) var(--sp-5);
+    background: var(--card);
+    border-radius: var(--r-lg);
+    box-shadow: var(--sh-md);
+  }
+
+  .entry-title {
+    margin: 0;
+    font-size: .95rem;
+    color: var(--fg-muted);
+    white-space: nowrap;
+  }
+
+  .slots {
+    grid-template-columns: repeat(4, 52px);
+    gap: 6px;
+  }
+
+  .slot {
+    height: 58px;
+    font-size: 1.8rem;
+  }
+
+  .slot.is-active::after {
+    height: 26px;
+  }
+
+  .keypad {
+    display: none;
+  }
+
+  .kbd-hint {
+    display: block;
+    margin-inline-start: auto;
+    font-size: .84rem;
+    color: var(--fg-muted);
+    white-space: nowrap;
+  }
+
+  /* 最近完成：右側欄 */
+  .desk[data-phase] .recent {
+    position: sticky;
+    top: calc(60px + var(--sp-3));
+    margin-top: 0;
+  }
+
+  .recent-list:empty::before {
+    content: "—";
+    display: block;
+    padding: var(--sp-3) var(--sp-4);
+    color: var(--fg-muted);
+  }
+
+  .recent-list li {
+    grid-template-columns: auto 1fr;
+    gap: 0 var(--sp-3);
+  }
+
+  .recent-time {
+    grid-column: 2;
+    grid-row: 1;
+    justify-self: end;
+  }
+
+  .recent-fear {
+    grid-column: 1 / -1;
+    font-size: .84rem;
+  }
+
+  /* 結果區 */
+  .panel-empty {
+    align-content: center;
+    min-height: 22rem;
+    padding: var(--sp-7);
+  }
+
+  .case {
+    grid-template-columns: minmax(16rem, .85fr) minmax(0, 1.3fr);
+    gap: var(--sp-5);
+    align-items: start;
+  }
+
+  .patient-who {
+    font-size: 1.5rem;
+  }
+
+  .rate-card .field {
+    margin-bottom: var(--sp-4);
+  }
+
+  .rate-card .field + .field {
+    padding-top: var(--sp-4);
+  }
+
+  .kbd-inline {
+    display: inline-flex;
+    align-items: center;
+    gap: 2px;
+    margin-inline-start: var(--sp-3);
+    font-size: .78rem;
+    font-weight: 400;
+    color: var(--fg-muted);
+  }
+
+  /* 已送出：一條橫幅，不用按「下一位」 */
+  .done {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    align-items: center;
+    gap: var(--sp-4);
+    padding: var(--sp-4) var(--sp-5);
+    text-align: start;
+  }
+
+  .done .success-badge {
+    width: 48px;
+    height: 48px;
+    margin: 0;
+  }
+
+  .done .success-badge .icon {
+    width: 24px;
+    height: 24px;
+  }
+
+  .done-title {
+    font-size: 1.2rem;
+  }
+
+  .done-lede {
+    margin: 0;
+  }
+
+  .done .done-btn {
+    display: none;
+  }
 }
 
 /* ═══ Hover／減少動態 ═════════════════════════════════════════ */

@@ -44,8 +44,7 @@
     <!-- ══════════ 登入 ══════════ -->
     <section class="login" id="loginView" hidden aria-labelledby="loginTitle">
       <div class="login-card">
-        <h1 class="login-title" id="loginTitle" tabindex="-1">醫護人員登入</h1>
-        <p class="login-lede">輸入團隊密碼，就能用家長給的 4 位數代碼，查看孩子的狀況。</p>
+        <h1 class="login-title" id="loginTitle" tabindex="-1">醫護登入</h1>
 
         <form id="loginForm" novalidate>
           <!-- 給密碼管理工具辨識帳號用；畫面與報讀都看不到 -->
@@ -74,30 +73,29 @@
             <span class="btn-label" id="loginLabel">登入</span>
           </button>
         </form>
-        <p class="login-foot">登入後 12 小時內有效（一個班）。密碼不會上傳，只送出加密後的金鑰。</p>
       </div>
     </section>
 
     <!-- ══════════ 工作台 ══════════
-         data-phase：entry（輸入代碼）→ case（看資料、填回饋）→ done（已送出）
-         手機：一次只看一個階段；平板／桌機：左邊鍵盤、右邊資料，同時看得到 -->
+         data-phase：entry（輸入代碼）→ case（看資料、評分）→ done（已送出）
+         手機：一次一個階段 · 觸控平板：左鍵盤右資料 ·
+         電腦（寬螢幕 + 滑鼠）：上方代碼列、資料與評分並排、右側最近完成，不顯示數字鍵 -->
     <div class="desk" id="deskView" data-phase="entry" hidden>
       <h1 class="visually-hidden">醫護端工作台</h1>
 
-      <!-- ── 左：輸入代碼 ── -->
+      <!-- ── 輸入代碼 ── -->
       <section class="entry" id="entry" aria-labelledby="entryTitle">
-        <h2 class="entry-title" id="entryTitle">家長的暫時代碼</h2>
+        <h2 class="entry-title" id="entryTitle">家長代碼</h2>
 
         <!-- 四格顯示 + 疊在上面的真正輸入框（可貼上、可用實體鍵盤；inputmode=none 不叫出手機鍵盤） -->
         <div class="slots" id="slots">
           <input class="slots-input" id="codeInput" type="text" inputmode="none" autocomplete="off"
-            maxlength="4" spellcheck="false" aria-labelledby="entryTitle" aria-describedby="entryHint">
+            maxlength="4" spellcheck="false" aria-labelledby="entryTitle">
           <span class="slot" aria-hidden="true"></span>
           <span class="slot" aria-hidden="true"></span>
           <span class="slot" aria-hidden="true"></span>
           <span class="slot" aria-hidden="true"></span>
         </div>
-        <p class="entry-hint" id="entryHint">在家長手機的主頁面上。輸入第 4 位就會自動查詢。</p>
 
         <div class="keypad" role="group" aria-label="數字鍵">
           <button class="key" type="button" data-key="1">1</button>
@@ -119,9 +117,11 @@
           </button>
         </div>
 
+        <!-- 電腦才顯示：在頁面任何地方打數字都會進代碼 -->
+        <p class="kbd-hint" aria-hidden="true"><kbd>0</kbd>–<kbd>9</kbd> 輸入　<kbd>Esc</kbd> 清除</p>
       </section>
 
-      <!-- ── 右：查詢結果 ── -->
+      <!-- ── 查詢結果 ── -->
       <section class="panel" id="panel" aria-label="查詢結果">
 
         <!-- 手機：看資料時鍵盤收起來，這一條可以回去換代碼 -->
@@ -130,26 +130,21 @@
             <svg viewBox="0 0 24 24" class="icon" aria-hidden="true"><path d="M15 5 8 12l7 7" /></svg>
             <span>換代碼</span>
           </button>
-          <p class="code-bar-code">代碼 <strong id="barCode"></strong></p>
+          <p class="code-bar-code"><strong id="barCode"></strong></p>
         </div>
 
-        <!-- 還沒查詢（只在平板／桌機顯示） -->
+        <!-- 還沒查詢（平板、電腦） -->
         <div class="panel-empty" id="emptyView">
           <svg viewBox="0 0 24 24" class="icon panel-empty-icon" aria-hidden="true">
             <rect x="4.5" y="3.5" width="15" height="17" rx="2.5" />
             <path d="M9 3.5h6v2.5H9zM8.5 11h7M8.5 14.5h4.5" />
           </svg>
-          <p class="panel-empty-title">輸入代碼後，孩子的資料會出現在這裡</p>
-          <ol class="steps">
-            <li><span class="step-num" aria-hidden="true">1</span>輸入家長手機上的 4 位數代碼</li>
-            <li><span class="step-num" aria-hidden="true">2</span>打針前，先看「特別注意」和害怕程度</li>
-            <li><span class="step-num" aria-hidden="true">3</span>打完針，評估孩子實際有多害怕</li>
-          </ol>
+          <p class="panel-empty-title">輸入代碼</p>
         </div>
 
         <p class="panel-loading" id="loadingView" role="status" hidden>
           <span class="spinner" aria-hidden="true"></span>
-          <span id="loadingText">查詢中…</span>
+          <span>查詢中…</span>
         </p>
 
         <!-- 查無／已結束／過期／連線錯誤 -->
@@ -161,7 +156,7 @@
           <div class="result-note-text">
             <h2 class="result-note-title" id="resultTitle" tabindex="-1"></h2>
             <p class="result-note-body" id="resultBody"></p>
-            <button class="btn btn-quiet result-note-btn" type="button" id="retryBtn">重新輸入代碼</button>
+            <button class="btn btn-quiet result-note-btn" type="button" id="retryBtn">重新輸入</button>
           </div>
         </div>
 
@@ -187,40 +182,36 @@
                   <circle cx="12" cy="12" r="8.2" />
                   <path d="M12 8v4.6M12 15.8h.01" />
                 </svg>
-                <span id="errorSummaryTitle">還有地方需要補上</span>
+                <span id="errorSummaryTitle">未完成</span>
               </p>
               <ul id="errorList"></ul>
             </div>
 
             <form class="rate-card" id="staffForm" novalidate>
               <fieldset class="field">
-                <legend class="field-label">
-                  <span id="fearQuestion"></span> <span class="req">必填</span>
-                </legend>
-                <p class="field-hint" id="fear-hint">淡色那一格是家長選的；請點選您觀察到的程度。</p>
+                <legend class="field-label" id="fearQuestion"></legend>
                 <div class="face-scale staff-scale" id="staffScale" data-name="staffFear"
-                  data-describedby="fear-hint staffFear-error"></div>
+                  data-describedby="staffFear-error"></div>
                 <p class="compare-note" id="compareNote" role="status" hidden></p>
                 <p class="field-error" id="staffFear-error" hidden></p>
               </fieldset>
 
               <div class="field">
-                <label class="field-label" for="staffNote">
-                  還有什麼想補充的嗎？ <span class="opt">選填</span>
-                </label>
+                <label class="field-label" for="staffNote">補充<span class="label-opt">（選填）</span></label>
                 <textarea id="staffNote" name="staffNote" maxlength="500" rows="3"
-                  placeholder="例如：抽血時一直看平板，幾乎沒哭。" aria-describedby="note-hint note-count"></textarea>
+                  placeholder="例：一直看平板，沒哭" aria-describedby="note-hint note-count"></textarea>
                 <div class="note-meta">
-                  <p class="note-hint" id="note-hint">請不要寫孩子的姓名或病歷號。</p>
-                  <p class="char-count" id="note-count" aria-live="polite">還可以輸入 500 字</p>
+                  <p class="note-hint" id="note-hint">勿填姓名、病歷號</p>
+                  <p class="char-count" id="note-count" aria-live="polite">0 / 500</p>
                 </div>
               </div>
 
               <button class="btn btn-primary finish-btn" type="submit" id="finishBtn">
-                <span class="btn-label" id="finishLabel">送出，結束這組代碼</span>
+                <span class="btn-label" id="finishLabel">送出</span>
+                <span class="kbd-inline" aria-hidden="true"><kbd>Ctrl</kbd>+<kbd>Enter</kbd></span>
               </button>
               <p class="field-error" id="finish-error" role="alert" hidden></p>
-              <p class="form-foot">送出前會再確認一次。送出後代碼立即失效，孩子的資料也會從查詢系統移除。</p>
+              <p class="form-foot">送出後代碼即失效</p>
             </form>
           </section>
         </div>
@@ -230,39 +221,29 @@
           <div class="success-badge" aria-hidden="true">
             <svg viewBox="0 0 24 24" class="icon"><path d="M6 12.4 10.2 16.6 18 8.8" /></svg>
           </div>
-          <h2 class="done-title" id="doneTitle" tabindex="-1">已送出，辛苦了</h2>
-          <p class="done-lede">代碼 <strong id="doneCode"></strong> 已經失效，孩子的資料也已從查詢系統移除。</p>
-          <button class="btn btn-primary done-btn" type="button" id="nextBtn">查詢下一位</button>
+          <div class="done-text">
+            <h2 class="done-title" id="doneTitle" tabindex="-1"><span id="doneCode"></span> 已送出</h2>
+            <p class="done-lede">代碼已失效</p>
+          </div>
+          <button class="btn btn-primary done-btn" type="button" id="nextBtn">下一位</button>
         </section>
       </section>
 
       <!-- 這台裝置最近送出的代碼：確認剛剛真的送出了。
-           放在結果後面：手機上「查無」會緊接在鍵盤下方；平板／桌機靠 grid 排回左欄 -->
+           放在結果後面：手機上「查無」會緊接在鍵盤下方；平板、電腦靠 grid 排到旁邊 -->
       <section class="recent" id="recent" aria-labelledby="recentTitle" hidden>
-        <h2 class="recent-title" id="recentTitle">這台裝置最近完成</h2>
+        <h2 class="recent-title" id="recentTitle">最近完成</h2>
         <ol class="recent-list" id="recentList"></ol>
       </section>
     </div>
   </main>
 
-  <!-- 送出會讓代碼失效，不能反悔：先確認。預設焦點在「再看一下」 -->
-  <dialog class="dlg" id="confirmDlg" aria-labelledby="confirmTitle" aria-describedby="confirmBody">
-    <h2 class="dlg-title" id="confirmTitle">送出並結束代碼 <span id="confirmCode"></span>？</h2>
-    <dl class="confirm-list" id="confirmList"></dl>
-    <p class="dlg-body" id="confirmBody">送出後代碼立即失效，孩子的資料也會從查詢系統移除，之後無法修改。</p>
+  <!-- 換代碼時，還沒送出的評分會被清掉：先問。預設焦點在「回到原本的代碼」 -->
+  <dialog class="dlg" id="discardDlg" aria-labelledby="discardTitle">
+    <h2 class="dlg-title" id="discardTitle"><span id="discardCode"></span> 還沒送出</h2>
     <div class="dlg-actions">
-      <button class="btn btn-primary" type="button" id="confirmSend">確認送出</button>
-      <button class="btn btn-quiet" type="button" data-close autofocus>再看一下</button>
-    </div>
-  </dialog>
-
-  <!-- 換代碼時，還沒送出的回饋會被清掉：先問。預設焦點在「回到原本的代碼」 -->
-  <dialog class="dlg" id="discardDlg" aria-labelledby="discardTitle" aria-describedby="discardBody">
-    <h2 class="dlg-title" id="discardTitle">代碼 <span id="discardCode"></span> 的回饋還沒送出</h2>
-    <p class="dlg-body" id="discardBody">換成別的代碼，剛剛選的答案就會被清掉。</p>
-    <div class="dlg-actions">
-      <button class="btn btn-primary" type="button" data-close autofocus id="discardKeep">回到代碼 <span id="discardKeepCode"></span></button>
-      <button class="btn btn-danger" type="button" id="discardGo">放棄這份回饋</button>
+      <button class="btn btn-primary" type="button" data-close autofocus id="discardKeep">回到 <span id="discardKeepCode"></span></button>
+      <button class="btn btn-danger" type="button" id="discardGo">放棄</button>
     </div>
   </dialog>
 

@@ -2,8 +2,10 @@
    安心陪伴 — 醫護端（/pro/）
    1. 登入：密碼在手機上用 PBKDF2 變成金鑰，只上傳金鑰；伺服器規則比對雜湊
    2. 查詢：家長的 4 位數暫時代碼 → 孩子的資料（不含暱稱）
-   3. 回饋：家長估的害怕程度 vs 醫檢師實際觀察；確認後送出 = 代碼失效
+   3. 回饋：家長估的害怕程度 vs 醫檢師實際觀察；送出 = 代碼失效
    工作台分三個階段（#deskView 的 data-phase）：entry → case → done
+   版面由 CSS 依螢幕決定；電腦（寬螢幕 + 滑鼠）另外有鍵盤操作：
+   任何地方打數字都進代碼、Esc 清除、Ctrl+Enter 送出，送出後游標直接回到代碼框。
    ═══════════════════════════════════════════════════════════════ */
 (function () {
   'use strict';
@@ -41,6 +43,8 @@
 
   /* 觸控裝置不主動把焦點放進代碼框：萬一瀏覽器不支援 inputmode=none，系統鍵盤會蓋住數字鍵 */
   var finePointer = window.matchMedia('(hover: hover) and (pointer: fine)');
+  /* 電腦版面（要和 pro.css 的 @media 一致） */
+  var pcLayout = window.matchMedia('(min-width: 64rem) and (hover: hover) and (pointer: fine)');
 
   /* ─────────────────────────────────────────────────────────────
      畫面：登入 / 工作台；工作台的階段；右邊面板顯示哪一塊
@@ -138,7 +142,7 @@
     clearPwdError();
 
     if (!pwd.value) {
-      showPwdError('請輸入團隊密碼。');
+      showPwdError('請輸入密碼');
       pwd.focus();
       return;
     }
@@ -159,15 +163,15 @@
       setSigningIn(false);
       /* 規則拒絕＝金鑰的雜湊對不上＝密碼錯（匿名登入沒開會是 auth/ 開頭的錯誤） */
       if (err && err.code === 'permission-denied') {
-        showPwdError('密碼不正確，請再試一次。');
+        showPwdError('密碼不正確');
         pwd.select();
       } else if (err && err.code === 'anxin/no-crypto') {
-        showPwdError('這個瀏覽器不支援加密登入，請改用 Chrome 或 Safari 的最新版本。');
+        showPwdError('請改用新版 Chrome 或 Safari');
       } else if (Anxin.isSetupError(err)) {
-        showPwdError('登入服務還沒設定好（不是網路的問題），請聯絡團隊。');
+        showPwdError('登入服務未設定，請聯絡團隊');
       } else {
         window.console.error('登入失敗：', err);
-        showPwdError('連不上伺服器，請確認網路後再試一次。');
+        showPwdError('連不上伺服器，請再試一次');
       }
       pwd.focus();
     });
@@ -276,6 +280,31 @@
     }
   });
 
+  /* 電腦：在頁面任何地方打數字都進代碼（正在打字的欄位、單選鈕除外）；Esc 清除 */
+  document.addEventListener('keydown', function (ev) {
+    if (desk.hidden || ev.ctrlKey || ev.metaKey || ev.altKey || document.querySelector('dialog[open]')) return;
+    if ($('entry').contains(ev.target)) return; /* 上面已處理 */
+    var t = ev.target;
+    var typing = t && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA' || t.isContentEditable);
+    if (typing) return;
+    if (getComputedStyle($('entry')).display === 'none') return; /* 手機看資料時鍵盤收起來了 */
+    if (/^\d$/.test(ev.key)) {
+      pushDigit(ev.key);
+      focusEntry(); /* 接下來的 ⌫、Enter 都落在代碼框 */
+      ev.preventDefault();
+    } else if (ev.key === 'Escape' && panelState !== 'case') {
+      setCode('');
+      focusEntry();
+    }
+  });
+
+  codeInput.addEventListener('keydown', function (ev) {
+    if (ev.key === 'Escape' && codeInput.value) {
+      setCode('');
+      ev.preventDefault();
+    }
+  });
+
   /* ─────────────────────────────────────────────────────────────
      查詢；換代碼時若有沒送出的回饋，先問
      ───────────────────────────────────────────────────────────── */
@@ -338,9 +367,9 @@
   });
 
   var STATE_TEXT = {
-    missing: ['查無這組代碼', '請再核對一次家長手機主頁面上的 4 位數字。'],
-    done: ['這組代碼已經結束了', '已經有醫檢師送出這位孩子的回饋，代碼隨即失效。'],
-    expired: ['這組代碼已經過期', '代碼只在家長填寫後 24 小時內有效，請家長重新填寫一次。']
+    missing: ['查無', ''],
+    done: ['已結束', '已有醫檢師送出回饋'],
+    expired: ['已過期', '超過 24 小時，請家長重填']
   };
 
   var noteAction = null;
@@ -350,12 +379,13 @@
     opts = opts || {};
     $('resultTitle').textContent = title;
     $('resultBody').textContent = body;
+    $('resultBody').hidden = !body;
     $('resultNote').classList.toggle('is-error', !!opts.error);
-    $('retryBtn').textContent = opts.retry ? '再查一次' : '重新輸入代碼';
+    $('retryBtn').textContent = opts.retry ? '再查一次' : '重新輸入';
     noteAction = opts.retry || function () { setCode(''); focusEntry(); };
     panelShow('note');
     setPhase('entry');
-    Anxin.announce(live, title + '。' + body);
+    Anxin.announce(live, title + (body ? '。' + body : ''));
     if (!finePointer.matches) $('resultNote').scrollIntoView({ block: 'nearest', behavior: 'smooth' });
   }
 
@@ -365,7 +395,6 @@
     var seq = ++lookupSeq;
     current = null;
     if (codeInput.value !== code) { codeInput.value = code; renderSlots(); }
-    $('loadingText').textContent = '查詢代碼 ' + code + ' 中…';
     panelShow('loading');
     setPhase('entry');
 
@@ -380,7 +409,7 @@
     }).then(function (r) {
       if (seq !== lookupSeq) return;
       if (r.state !== 'active') {
-        note(STATE_TEXT[r.state][0] + '（' + code + '）', STATE_TEXT[r.state][1]);
+        note(code + ' ' + STATE_TEXT[r.state][0], STATE_TEXT[r.state][1]);
         return;
       }
       current = { code: code, lock: lock, profile: r.profile };
@@ -395,12 +424,12 @@
   function lookupFailed(err, code) {
     var retry = function () { lookup(code); };
     var offline = function () {
-      note('連不上伺服器', '請確認網路後再查一次。', { error: true, retry: retry });
+      note('連不上伺服器', '', { error: true, retry: retry });
     };
     if (err && err.code === 'permission-denied') {
       fb.staff.session().then(function (s) {
-        if (!s || s.expiresAt <= Date.now()) backToLogin('登入已經超過 12 小時，請重新輸入密碼。');
-        else note('沒有權限讀取', '代碼可能剛好在這時失效了，請再查一次。', { error: true, retry: retry });
+        if (!s || s.expiresAt <= Date.now()) backToLogin('登入已逾 12 小時，請重新登入');
+        else note('無法讀取', '代碼可能剛失效', { error: true, retry: retry });
       }, offline);
       return;
     }
@@ -416,7 +445,7 @@
     form: staffForm,
     summary: $('errorSummary'),
     list: $('errorList'),
-    fields: { staffFear: { label: '孩子實際的害怕程度' } }
+    fields: { staffFear: { label: '害怕程度' } }
   });
 
   var ICON_ALERT = '<svg viewBox="0 0 24 24" class="icon" aria-hidden="true">' +
@@ -442,25 +471,23 @@
     var gender = p.gender === '男' ? '男孩' : '女孩';
 
     $('barCode').textContent = current.code;
-    $('finishLabel').textContent = '送出，結束代碼 ' + current.code;
 
     $('patientCard').innerHTML =
       '<header class="patient-head">' +
       '<p class="patient-who">' + esc(Anxin.ageLabel(p.age)) + '<span class="sep" aria-hidden="true">·</span>' + gender + '</p>' +
-      '<p class="patient-meta">代碼 ' + esc(current.code) + '・' + esc(Anxin.formatExpiry(current.lock.expiresAt)) + '</p>' +
       '</header>' +
       (p.specialNeeds
         ? '<div class="needs">' + ICON_ALERT + '<div><p class="needs-label">特別注意</p>' +
           '<p class="needs-text">' + esc(p.specialNeeds) + '</p></div></div>'
         : '<div class="needs is-empty">' + ICON_INFO + '<div><p class="needs-label">特別注意</p>' +
-          '<p class="needs-text">家長沒有填寫特殊需求</p></div></div>') +
+          '<p class="needs-text">無</p></div></div>') +
       '<dl class="meters">' +
-      meter('家長估的害怕程度', fear, p.fearLevel) +
-      meter('家長自己的擔心', WORRY[p.worryLevel - 1], p.worryLevel) +
+      meter('害怕（家長估）', fear, p.fearLevel) +
+      meter('家長擔心', WORRY[p.worryLevel - 1], p.worryLevel) +
       '</dl>';
 
     /* 題目：先說家長的評估，再問醫檢師的觀察 */
-    $('fearQuestion').textContent = '家長覺得孩子「' + fear + '」，您實際觀察到的呢？';
+    $('fearQuestion').textContent = '家長說「' + fear + '」，實際呢？';
 
     var host = $('staffScale');
     var compare = $('compareNote');
@@ -471,9 +498,9 @@
         $('errorSummary').hidden = true;
         Anxin.setAnswered(host, true);
         var d = v - p.fearLevel;
-        compare.innerHTML = (d === 0 ? ICON_SAME + '和家長估的一樣'
-          : d < 0 ? ICON_DOWN + '比家長估的低 ' + (-d) + ' 級'
-            : ICON_UP + '比家長估的高 ' + d + ' 級');
+        compare.innerHTML = (d === 0 ? ICON_SAME + '同家長'
+          : d < 0 ? ICON_DOWN + '比家長低 ' + (-d) + ' 級'
+            : ICON_UP + '比家長高 ' + d + ' 級');
         compare.hidden = false;
       }
     });
@@ -489,7 +516,7 @@
     compare.hidden = true;
     Anxin.setAnswered(host, false);
     $('staffNote').value = '';
-    $('note-count').textContent = '還可以輸入 500 字';
+    $('note-count').textContent = '0 / 500';
     Anxin.setAnswered($('staffNote'), false);
     staffErrors.clearAll();
     $('errorSummary').hidden = true;
@@ -498,31 +525,31 @@
     panelShow('case');
     setPhase('case');
     window.scrollTo(0, 0);
-    $('beforeTitle').focus();
-    Anxin.announce(live, '代碼 ' + current.code + '：' + Anxin.ageLabel(p.age) + gender +
-      (p.specialNeeds ? '，特別注意：' + p.specialNeeds : '') + '。家長覺得孩子' + fear);
+    /* 電腦：焦點留在代碼框（打錯可以直接重打）；觸控：移到「打針前」 */
+    if (!pcLayout.matches) $('beforeTitle').focus();
+    Anxin.announce(live, current.code + '：' + Anxin.ageLabel(p.age) + gender +
+      (p.specialNeeds ? '，特別注意：' + p.specialNeeds : '') + '。家長說' + fear);
   }
 
   $('staffNote').addEventListener('input', function () {
     var ta = $('staffNote');
-    $('note-count').textContent = '還可以輸入 ' + (500 - ta.value.length) + ' 字';
+    $('note-count').textContent = ta.value.length + ' / 500';
     Anxin.setAnswered(ta, ta.value.trim());
   });
 
   /* ─────────────────────────────────────────────────────────────
-     3. 送出：先確認（送出 = 代碼失效，不能反悔）
+     3. 送出（= 代碼失效）
      ───────────────────────────────────────────────────────────── */
 
   var finishBtn = $('finishBtn');
   var finishError = $('finish-error');
   var finishing = false;
-  var confirmDlg = Anxin.wireDialog($('confirmDlg'));
 
   function setFinishing(on) {
     finishing = on;
     finishBtn.disabled = on;
     finishBtn.setAttribute('aria-busy', on ? 'true' : 'false');
-    $('finishLabel').textContent = on ? '送出中…' : '送出，結束代碼 ' + (current ? current.code : '');
+    $('finishLabel').textContent = on ? '送出中…' : '送出';
   }
 
   function showFinishError(msg) {
@@ -541,29 +568,23 @@
 
     staffErrors.clearAll();
     finishError.hidden = true;
-    var pick = picked();
-    if (!pick) {
-      staffErrors.setError('staffFear', '請選一個最接近您觀察的程度。');
-      staffErrors.showSummary([{ key: 'staffFear', msg: '請選一個最接近您觀察的程度。' }]);
-      Anxin.announce(live, '還有 1 個地方需要補上');
+    if (!picked()) {
+      staffErrors.setError('staffFear', '請選一項');
+      staffErrors.showSummary([{ key: 'staffFear', msg: '請選一項' }]);
+      Anxin.announce(live, '請選害怕程度');
       return;
     }
     $('errorSummary').hidden = true;
-
-    var v = Number(pick.value);
-    var p = current.profile;
-    var noteText = $('staffNote').value.trim();
-    $('confirmCode').textContent = current.code;
-    $('confirmList').innerHTML =
-      '<div><dt>您的觀察</dt><dd>' + FEAR[v - 1] + '（' + v + ' / 5）</dd></div>' +
-      '<div><dt>家長估計</dt><dd>' + FEAR[p.fearLevel - 1] + '（' + p.fearLevel + ' / 5）</dd></div>' +
-      '<div><dt>補充</dt><dd>' + (noteText ? esc(noteText) : '（沒有）') + '</dd></div>';
-    confirmDlg.open();
+    finish();
   });
 
-  $('confirmSend').addEventListener('click', function () {
-    confirmDlg.close();
-    finish();
+  /* Ctrl（Mac：⌘）+ Enter 在表單裡任何地方都能送出 */
+  staffForm.addEventListener('keydown', function (ev) {
+    if (ev.key === 'Enter' && (ev.ctrlKey || ev.metaKey)) {
+      ev.preventDefault();
+      if (staffForm.requestSubmit) staffForm.requestSubmit(finishBtn);
+      else finishBtn.click();
+    }
   });
 
   function finish() {
@@ -583,28 +604,30 @@
       panelShow('done');
       setPhase('done');
       window.scrollTo(0, 0);
-      $('doneTitle').focus();
-      Anxin.announce(live, '已送出，代碼 ' + c.code + ' 已失效');
+      /* 電腦：直接回到代碼框，打下一組就會蓋掉「已送出」；觸控：焦點給「已送出」 */
+      if (pcLayout.matches) codeInput.focus();
+      else $('doneTitle').focus();
+      Anxin.announce(live, c.code + ' 已送出，代碼已失效');
     }, function (err) {
       setFinishing(false);
       if (err && err.code === 'permission-denied') {
         /* 可能是登入過期，也可能是別的醫檢師剛好先送出了：重新查一次就知道 */
         net(fb.codes.getLock(c.code)).then(function (lock) {
           if (Anxin.codes.state(lock, Date.now()) === 'done') {
-            showFinishError('這組代碼剛剛已經有人送出回饋了，不用再送一次。');
+            showFinishError('已有人送出，不用再送');
             return null;
           }
           return fb.staff.session().then(function (s) {
-            if (!s || s.expiresAt <= Date.now()) backToLogin('登入已經超過 12 小時，請重新輸入密碼後再送一次。');
-            else showFinishError('沒辦法送出：代碼可能已經過期。請重新查詢一次。');
+            if (!s || s.expiresAt <= Date.now()) backToLogin('登入已逾 12 小時，請重新登入');
+            else showFinishError('無法送出，代碼可能已過期');
           });
         }).catch(function () {
-          showFinishError('連不上伺服器，您選的答案都還在。請確認網路後再按一次。');
+          showFinishError('連不上伺服器，答案還在，請再按一次');
         });
         return;
       }
       window.console.error('送出失敗：', err);
-      showFinishError('連不上伺服器，您選的答案都還在。請確認網路後再按一次。');
+      showFinishError('連不上伺服器，答案還在，請再按一次');
     });
   }
 
@@ -640,7 +663,8 @@
 
   function renderRecent() {
     var list = loadRecent();
-    $('recent').hidden = !list.length;
+    /* 電腦的右側欄一直都在（空的時候顯示「—」），其他版面沒有紀錄就不佔位 */
+    $('recent').hidden = !list.length && !pcLayout.matches;
     $('recentList').innerHTML = list.map(function (r) {
       return '<li><span class="recent-code">' + r.code + '</span>' +
         '<span class="recent-fear">' + FEAR[r.staffFear - 1] + '</span>' +
@@ -651,6 +675,8 @@
   /* ─────────────────────────────────────────────────────────────
      開頁：這支裝置 12 小時內登入過，就直接進工作台
      ───────────────────────────────────────────────────────────── */
+
+  if (pcLayout.addEventListener) pcLayout.addEventListener('change', renderRecent);
 
   function enterDesk(expiresAt) {
     show('desk');
