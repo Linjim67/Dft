@@ -196,28 +196,10 @@ button {
   white-space: nowrap;
 }
 
-/* ═══ Header ═════════════════════════════════════════════════ */
+/* ═══ 頁頂（首頁、主頁面沒有頁首，內容自己避開瀏海） ═══════ */
 
-.site-header {
-  padding-block: calc(var(--sp-5) + env(safe-area-inset-top)) var(--sp-5);
-}
-
-.header-inner {
-  display: flex;
-  align-items: center;
-  gap: var(--sp-3);
-}
-
-/* 品牌記號用實心橘，比白底描邊乾淨得多 */
-.brand-mark {
-  display: grid;
-  place-items: center;
-  width: 50px;
-  height: 50px;
-  border-radius: var(--r-md);
-  background: var(--primary);
-  color: var(--primary-ink);
-  box-shadow: var(--sh-orange);
+.site-top {
+  padding-top: calc(var(--sp-5) + env(safe-area-inset-top));
 }
 
 /* ═══ Welcome ════════════════════════════════════════════════ */
