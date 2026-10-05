@@ -57,11 +57,39 @@ code card. Both check `holderUid` as well. If Firebase is unreachable, both page
 - Current password: `123456`. To change it, run the one-liner in the comment above `validStaffSession`,
   paste the hash into the rules, and publish. Use a passphrase for real use (see the warning above).
 
-## /pro/ layout
+## /pro/ layout — a work station, not a form
 
-Login → lookup. The code field is the hero: 2rem tabular digits with wide tracking, so it can be
-matched against the parent's screen at a glance. Digits only; the lookup fires on the 4th digit.
-「特別注意」 is the row a 醫檢師 most needs to see, so it gets the wash background and a bold label (no side stripe).
+Context: the blood-draw counter. Staff may wear gloves, see many children per shift, and glance at the
+screen between tasks. `ui-ux-pro-max --design-system` returned no verified match (a landing-page
+pattern, neumorphism, and the cyan palette with the `#A5F3FC` border MASTER already rejected), so the
+page keeps MASTER's tokens. Verified UX rules applied: password visibility toggle, confirmation before
+irreversible actions, and submit feedback → success state.
+
+- **Staff mode bar**: a sticky dark (`--primary-ink`) bar with 醫護端, 「登入至 HH:MM」 and 登出 (48px).
+  Nobody can mistake it for the parent app. On the dark bar the focus ring switches to `#FDBA74`,
+  because `#C2410C` on ink is only 2.8:1.
+- **Code entry**: four 76px slots plus an on-screen 3×4 keypad with 60px keys, which works with gloves.
+  A real `<input inputmode="none">` sits transparent over the slots, so paste, physical keyboards and
+  screen readers all work and the phone keyboard never covers the keypad. Digits typed while a keypad
+  button has focus are routed into the code. The lookup fires on the 4th digit.
+- **Phases** (`#deskView[data-phase]`: entry → case → done). On a phone the keypad folds away once a
+  case opens, and a 「‹ 換代碼」 bar replaces it. At ≥ 56rem, grid areas place the keypad and recent list
+  on the left and the case on the right, always visible together. The dashed empty state there doubles
+  as a 3-step guide for new staff.
+- **Patient card**, in reading order for a glance: 「3 歲半 · 女孩」 (1.7rem) → **特別注意** (wash + warning
+  icon, no side stripe; muted 「家長沒有填寫」 when empty) → fear and worry as 5-segment meters with text
+  (filled `#EA580C` vs track is 3.21:1).
+- **Two numbered steps**: ① 打針前 (card) and ② 打完針後 (rating card). Focus moves to ① when a case opens.
+- **Compare note**: once staff pick, a status line reads 「比家長估的低 2 級」, 「和家長估的一樣」 or
+  「高 N 級」, with an arrow icon as well as the text.
+- **Safety nets**: submit opens a confirm dialog that summarises both ratings and the note; the default
+  focus is 「再看一下」. If a new code would discard an unsent rating, a dialog asks first; 「回到代碼」
+  restores the code shown in the slots.
+- **最近完成**: the last 5 codes sent from this device (code, rating, time; localStorage, 12 h, cleared on
+  登出). Staff use it to confirm a submission went through. It sits after the result panel in the page
+  order, so on a phone 「查無」 appears right under the keypad.
+- On phones (≤ 30rem) the rating card's padding drops to 16px and the scale gap to 6px, so 「完全不會」 and
+  「非常害怕」 stay on one line at 375px.
 
 ### The comparison scale (spec: shallow fill vs thicker, deeper border)
 
