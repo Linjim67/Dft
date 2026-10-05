@@ -28,11 +28,12 @@
     <section class="brief" aria-labelledby="briefTitle">
       <h1 id="briefTitle" class="brief-title">小檔案</h1>
 
-      <div class="code-card">
+      <div class="code-card" id="codeCard">
         <p class="code-label">暫時代碼</p>
         <p class="code-digits" id="codeDigits">----</p>
         <p class="code-expiry" id="codeExpiry"></p>
-        <p class="code-note">打針時，請把這組代碼交給醫檢師</p>
+        <!-- 醫檢師送出回饋後，代碼就失效了：這一行會換成「已完成」 -->
+        <p class="code-note" id="codeNote" role="status">打針時，請把這組代碼交給醫檢師</p>
       </div>
 
       <dl class="summary-card" id="summaryCard"></dl>
@@ -117,6 +118,8 @@
     </div>
   </dialog>
 
+  <!-- 只用來確認代碼是否已由醫檢師完成；載不到時代碼卡維持原樣 -->
+  <script type="module" src="/shared/firebase.js"></script>
   <script src="/home/home.js"></script>
 </body>
 

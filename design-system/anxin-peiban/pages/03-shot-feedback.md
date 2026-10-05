@@ -1,6 +1,7 @@
 # 03 開始打針 + 回饋 — page overrides
 
 Inherits MASTER. Covers `/shot/`, `/feedback/`, `/thanks/`, and the Firestore `feedback` collection.
+The 醫護端 (`/pro/`), the temporary-code registry and the code chip on `/shot/` are in `03-professional.md`.
 
 ## /shot/
 

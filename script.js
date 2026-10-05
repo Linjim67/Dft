@@ -103,8 +103,8 @@
     });
   }
 
-  scale('fearScale', 'fearLevel', ['完全不會', '有一點', '普通', '蠻害怕', '非常害怕']);
-  scale('worryScale', 'worryLevel', ['完全不會', '有一點', '普通', '蠻擔心', '非常擔心']);
+  scale('fearScale', 'fearLevel', Anxin.FEAR_CAPTIONS);
+  scale('worryScale', 'worryLevel', Anxin.WORRY_CAPTIONS);
 
   /* ─────────────────────────────────────────────────────────────
      字數提示與作答狀態
@@ -159,24 +159,42 @@
   }
 
   /* ─────────────────────────────────────────────────────────────
-     暫時代碼：djb2 雜湊取 4 位十進位，24 小時後失效
-     （僅用於讓家長回到同一份資料，不具身分驗證作用）
+     送出 → 向伺服器領一組不重複的暫時代碼 → 存到本機 → 前往主頁面（#02）
+     代碼的規則（怎麼挑、何時算空著、何時失效）在 Anxin.codes（/shared/app.js）。
      ───────────────────────────────────────────────────────────── */
 
-  function makeCode(seed) {
-    var h = 5381;
-    for (var i = 0; i < seed.length; i++) {
-      h = ((h << 5) + h + seed.charCodeAt(i)) >>> 0;
-    }
-    return String(h % 10000).padStart(4, '0');
+  var CLAIM_TIMEOUT_MS = 15000;
+  var submitBtn = $('submitBtn');
+  var submitLabel = submitBtn.querySelector('.btn-label');
+  var submitError = $('storage-error');
+  var claiming = false;
+
+  function setClaiming(on) {
+    claiming = on;
+    submitBtn.disabled = on;
+    submitBtn.setAttribute('aria-busy', on ? 'true' : 'false');
+    submitLabel.textContent = on ? '正在產生代碼…' : '完成，開始陪伴';
   }
 
-  /* ─────────────────────────────────────────────────────────────
-     送出 → 存到本機 → 前往主頁面（#02）
-     ───────────────────────────────────────────────────────────── */
+  function showSubmitError(msg) {
+    submitError.textContent = msg;
+    submitError.hidden = false;
+    Anxin.announce(live, msg);
+  }
+
+  function claimErrorText(err) {
+    if (err && err.code === 'anxin/no-free-code') {
+      return '代碼暫時都在使用中，請過一分鐘再按一次「完成，開始陪伴」。';
+    }
+    if (Anxin.isSetupError(err)) {
+      return '暫時代碼服務還沒準備好（是網站設定的問題，不是您的網路）。您填的內容都還在，請告訴現場的醫護人員。';
+    }
+    return '目前連不上伺服器，拿不到暫時代碼。您填的內容都還在，請確認網路後再按一次「完成，開始陪伴」。';
+  }
 
   form.addEventListener('submit', function (ev) {
     ev.preventDefault();
+    if (claiming) return;
     var list = validate();
 
     if (list.length) {
@@ -186,35 +204,53 @@
     }
 
     $('errorSummary').hidden = true;
-    var now = Date.now();
-    var nickname = $('nickname').value.trim();
-    var age = indexToAge(ageIdx);
-    var gender = form.querySelector('[name="gender"]:checked').value;
+    submitError.hidden = true;
 
-    Anxin.profile.save({
-      nickname: nickname,
-      age: age,
-      gender: gender,
-      fearLevel: Number(form.querySelector('[name="fearLevel"]:checked').value),
-      worryLevel: Number(form.querySelector('[name="worryLevel"]:checked').value),
-      specialNeeds: needs.value.trim(),
-      code: makeCode(nickname + '|' + age + '|' + gender + '|' + now),
-      createdAt: now,
-      expiresAt: now + Anxin.profile.TTL_MS
-    });
-
-    /* 主頁面靠本機資料運作。存不進去（封鎖儲存的無痕模式）就先別跳轉，
+    /* 主頁面靠本機資料運作。存不進去（封鎖儲存的無痕模式）就先別領代碼、別跳轉，
        否則主頁找不到資料會把家長彈回空白表單，剛填的全部不見。 */
-    if (!Anxin.profile.load()) {
-      var storageError = $('storage-error');
-      storageError.textContent = '這個瀏覽器目前無法儲存資料，請關閉無痕模式或換個瀏覽器再試一次。';
-      storageError.hidden = false;
-      Anxin.announce(live, storageError.textContent);
+    if (!Anxin.profile.canStore()) {
+      showSubmitError('這個瀏覽器目前無法儲存資料，請關閉無痕模式或換個瀏覽器再試一次。');
       return;
     }
 
-    /* replace：返回鍵不會回到這張表單又被導回主頁 */
-    window.location.replace('/home/');
+    var now = Date.now();
+    var profile = {
+      nickname: $('nickname').value.trim(),
+      age: indexToAge(ageIdx),
+      gender: form.querySelector('[name="gender"]:checked').value,
+      fearLevel: Number(form.querySelector('[name="fearLevel"]:checked').value),
+      worryLevel: Number(form.querySelector('[name="worryLevel"]:checked').value),
+      specialNeeds: needs.value.trim(),
+      createdAt: now,
+      expiresAt: now + Anxin.profile.TTL_MS
+    };
+    /* 給醫檢師看的那份：沒有暱稱，特殊需求裡的暱稱也換成「孩子」 */
+    var shared = Anxin.codes.buildProfile(profile);
+
+    setClaiming(true);
+
+    Anxin.withTimeout(
+      Anxin.whenFirebase(10000).then(function (fb) {
+        return Anxin.codes.claim(function (code) {
+          return fb.codes.tryClaim(code, shared, Anxin.codes.isFree);
+        });
+      }),
+      CLAIM_TIMEOUT_MS
+    ).then(function (code) {
+      profile.code = code;
+      Anxin.profile.save(profile);
+      if (!Anxin.profile.load()) {
+        setClaiming(false);
+        showSubmitError('這個瀏覽器目前無法儲存資料，請關閉無痕模式或換個瀏覽器再試一次。');
+        return;
+      }
+      /* replace：返回鍵不會回到這張表單又被導回主頁 */
+      window.location.replace('/home/');
+    }, function (err) {
+      window.console.error('領取暫時代碼失敗：', err);
+      setClaiming(false);
+      showSubmitError(claimErrorText(err));
+    });
   });
 
   /* ─────────────────────────────────────────────────────────────

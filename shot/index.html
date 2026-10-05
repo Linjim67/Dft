@@ -39,6 +39,12 @@
       <h1 class="shot-title" id="shotTitle">我們一起加油</h1>
       <p class="shot-lede">深呼吸，很快就結束了。<br>打完之後，按下面的按鈕。</p>
 
+      <!-- 醫檢師要用這組代碼查孩子的資料；醫檢師送出回饋後，這裡會即時換成「已完成」 -->
+      <p class="shot-code" id="shotCode" role="status">
+        <span id="shotCodeText">給醫檢師的代碼</span>
+        <strong class="shot-code-digits" id="shotCodeDigits">----</strong>
+      </p>
+
       <button class="btn btn-primary shot-done" type="button" id="doneBtn">打針完畢</button>
     </div>
   </main>
@@ -55,6 +61,7 @@
     </div>
   </dialog>
 
+  <script type="module" src="/shared/firebase.js"></script>
   <script src="/shot/shot.js"></script>
 </body>
 

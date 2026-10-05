@@ -10,12 +10,28 @@
      個人資料：只存在本機，24 小時後失效
      ───────────────────────────────────────────────────────────── */
 
-  var STORE_KEY = 'anxin.profile.v1';
+  /* v2：代碼改由伺服器登記（codes/{代碼}）。v1 的代碼只存在手機上、沒有登記，
+     可能和別人重複，醫檢師也查不到，所以一律作廢、請家長重填。 */
+  var STORE_KEY = 'anxin.profile.v2';
+  var LEGACY_KEYS = ['anxin.profile.v1'];
   var TTL_MS = 24 * 60 * 60 * 1000;
 
   /* 無痕模式或瀏覽器封鎖儲存時，存取 localStorage 本身就會丟例外 */
   function store() {
     try { return root.localStorage || null; } catch (e) { return null; }
+  }
+
+  /* 送出表單前先確認存得進去：存不進去就別去伺服器領代碼，免得白白佔用一組 */
+  function canStore() {
+    var s = store();
+    if (!s) return false;
+    try {
+      s.setItem('anxin.probe', '1');
+      s.removeItem('anxin.probe');
+      return true;
+    } catch (e) {
+      return false;
+    }
   }
 
   function saveProfile(p) {
@@ -32,6 +48,7 @@
     var s = store();
     if (!s) return null;
     try {
+      LEGACY_KEYS.forEach(function (k) { s.removeItem(k); });
       var raw = s.getItem(STORE_KEY);
       if (!raw) return null;
       var p = JSON.parse(raw);
@@ -76,6 +93,10 @@
   }
 
   var LEVEL_TEXT = ['', '完全不會', '有一點', '普通', '蠻明顯的', '非常明顯'];
+
+  /* #01 的害怕量表；醫檢師的回饋用同一把尺，兩邊才比得起來 */
+  var FEAR_CAPTIONS = ['完全不會', '有一點', '普通', '蠻害怕', '非常害怕'];
+  var WORRY_CAPTIONS = ['完全不會', '有一點', '普通', '蠻擔心', '非常擔心'];
 
   function formatExpiry(ts) {
     var d = new Date(ts);
@@ -275,6 +296,126 @@
   }
 
   /* ─────────────────────────────────────────────────────────────
+     暫時代碼：伺服器登記，同一時間絕不重複
+     以前是把表單內容雜湊成 4 位數、只存在手機上——一萬組號碼裡，
+     同一天約 118 個家庭就有一半機率撞號，而且沒有人會發現。
+     現在每組代碼在 Firestore 都有一張「鎖」（codes/{代碼}）：
+       領取 = 一筆交易，讀到空的（或上一位的 24 小時已過）才寫入；
+              兩支手機同時搶同一組，Firestore 會讓其中一筆重跑並看到已被佔用。
+       失效 = 醫檢師送出回饋時標成 done：之後查不到，個人資料也刪掉。
+     done 的代碼要等原本的 24 小時過了才會再發出去：家長手機上的
+     雙機房間（rooms/{代碼}）和遊戲紀錄也用這組號碼，提早發給別人會撞到。
+     ───────────────────────────────────────────────────────────── */
+
+  var CODE_TRIES = 8;
+  /* 鎖的期限由家長手機的時鐘決定；多等 10 分鐘，手機時間稍快也不會去搶還沒過期的 */
+  var CODE_REUSE_MARGIN_MS = 10 * 60 * 1000;
+
+  /* 0000–9999 等機率：Uint16 取到 60000 以上就重抽（60000 = 6 × 10000，取餘數才不會偏） */
+  function randomCode() {
+    var c = root.crypto;
+    var buf = new Uint16Array(1);
+    var n;
+    do {
+      if (c && c.getRandomValues) {
+        c.getRandomValues(buf);
+        n = buf[0];
+      } else {
+        n = Math.floor(Math.random() * 65536);
+      }
+    } while (n >= 60000);
+    return String(n % 10000).padStart(4, '0');
+  }
+
+  function codeIsFree(lock, now) {
+    return !lock || Number(lock.expiresAt) + CODE_REUSE_MARGIN_MS < now;
+  }
+
+  /* 醫檢師查詢時看到的狀態 */
+  function codeState(lock, now) {
+    if (!lock) return 'missing';
+    if (lock.status === 'done') return 'done';
+    if (!(Number(lock.expiresAt) > now)) return 'expired';
+    return 'active';
+  }
+
+  /* 一組一組試，直到領到為止。tryOne(code) → Promise<boolean>（false = 有人在用）。
+     同一次不重試同一組；伺服器錯誤（離線、規則拒絕）直接往外丟，不會被當成「有人在用」。 */
+  function claimCode(tryOne, tries, pick) {
+    tries = tries || CODE_TRIES;
+    pick = pick || randomCode;
+    var seen = {};
+    function attempt(i) {
+      if (i >= tries) {
+        var err = new Error('no free code');
+        err.code = 'anxin/no-free-code';
+        return Promise.reject(err);
+      }
+      var code;
+      var guard = 0;
+      do { code = pick(); } while (seen[code] && ++guard < 50);
+      seen[code] = true;
+      return tryOne(code).then(function (ok) { return ok ? code : attempt(i + 1); });
+    }
+    return attempt(0);
+  }
+
+  /* 給醫檢師看的個人資料（codes/{代碼}/private/profile）。白名單：沒有暱稱 */
+  function buildCodeProfile(p) {
+    return {
+      age: Number(p.age),
+      gender: p.gender,
+      fearLevel: level(p.fearLevel, 'fearLevel'),
+      worryLevel: level(p.worryLevel, 'worryLevel'),
+      specialNeeds: freeText(p.specialNeeds, p.nickname, 200),
+      expiresAt: Number(p.expiresAt)
+    };
+  }
+
+  /* ─────────────────────────────────────────────────────────────
+     醫檢師回饋（staffFeedback）：家長估的害怕程度 vs 醫檢師實際觀察
+     parentFear 與 profile 由伺服器規則比對代碼裡的資料，醫檢師改不了。
+     ───────────────────────────────────────────────────────────── */
+
+  var STAFF_SCALE_VERSION = 'staff-v1';
+
+  function buildStaffFeedback(prof, a) {
+    return {
+      staffFear: level(a.staffFear, 'staffFear'),
+      parentFear: level(prof.fearLevel, 'parentFear'),
+      note: String(a.note == null ? '' : a.note).trim().slice(0, 500),
+      profile: {
+        age: Number(prof.age),
+        gender: prof.gender,
+        worryLevel: level(prof.worryLevel, 'worryLevel')
+      },
+      scaleVersion: STAFF_SCALE_VERSION
+    };
+  }
+
+  /* 伺服器錯誤分兩類：設定問題（規則沒發布、匿名登入沒開）不是使用者的網路問題 */
+  var SETUP_ERRORS = ['permission-denied', 'auth/operation-not-allowed',
+    'auth/admin-restricted-operation', 'auth/configuration-not-found'];
+
+  function isSetupError(err) {
+    return !!err && SETUP_ERRORS.indexOf(err.code) !== -1;
+  }
+
+  /* Firestore 離線時寫入不會失敗而是一直等；所有送出都要配逾時 */
+  function withTimeout(promise, ms) {
+    return new Promise(function (resolve, reject) {
+      var timer = root.setTimeout(function () {
+        var err = new Error('timeout');
+        err.code = 'anxin/timeout';
+        reject(err);
+      }, ms);
+      promise.then(
+        function (v) { root.clearTimeout(timer); resolve(v); },
+        function (e) { root.clearTimeout(timer); reject(e); });
+    });
+  }
+
+  /* ─────────────────────────────────────────────────────────────
      等 /shared/firebase.js（module）就緒。它是 deferred 載入，
      家長通常填完表單時早已就緒；載入失敗就逾時，交給頁面顯示錯誤。
      ───────────────────────────────────────────────────────────── */
@@ -300,11 +441,27 @@
       TTL_MS: TTL_MS,
       save: saveProfile,
       load: loadProfile,
-      clear: clearProfile
+      clear: clearProfile,
+      canStore: canStore
     },
     requireProfile: requireProfile,
     ageLabel: ageLabel,
     LEVEL_TEXT: LEVEL_TEXT,
+    FEAR_CAPTIONS: FEAR_CAPTIONS,
+    WORRY_CAPTIONS: WORRY_CAPTIONS,
+    codes: {
+      TRIES: CODE_TRIES,
+      REUSE_MARGIN_MS: CODE_REUSE_MARGIN_MS,
+      random: randomCode,
+      isFree: codeIsFree,
+      state: codeState,
+      claim: claimCode,
+      buildProfile: buildCodeProfile
+    },
+    buildStaffFeedback: buildStaffFeedback,
+    STAFF_SCALE_VERSION: STAFF_SCALE_VERSION,
+    isSetupError: isSetupError,
+    withTimeout: withTimeout,
     formatExpiry: formatExpiry,
     escapeHtml: escapeHtml,
     buildFaceScale: buildFaceScale,

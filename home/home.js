@@ -30,6 +30,20 @@
   if (p.specialNeeds) html += row('特別注意', p.specialNeeds, true);
   $('summaryCard').innerHTML = html;
 
+  /* ── 代碼失效：醫檢師送出回饋後，這組代碼就查不到了 ──
+     讀不到（離線、Firebase 載不到）就維持原樣；代碼卡只是提示，不擋任何功能。
+     同時比對領取人：理論上代碼過期前不會發給別人，多一道保險。 */
+
+  Anxin.whenFirebase(10000).then(function (fb) {
+    return Promise.all([fb.codes.getLock(p.code), fb.ensureAuth()]);
+  }).then(function (r) {
+    var lock = r[0];
+    if (!lock || lock.holderUid !== r[1].uid || lock.status !== 'done') return;
+    $('codeCard').classList.add('is-done');
+    $('codeExpiry').hidden = true;
+    $('codeNote').textContent = '醫檢師已完成紀錄，這組代碼已經失效';
+  }).catch(function () { /* 維持原樣 */ });
+
   /* ── 重新填寫：先確認 ── */
 
   var restart = Anxin.wireDialog($('restartDlg'));

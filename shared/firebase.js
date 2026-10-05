@@ -5,7 +5,8 @@
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js';
 import {
   getFirestore, collection, addDoc, serverTimestamp,
-  doc, getDoc, setDoc, updateDoc, onSnapshot, query, where, Timestamp, connectFirestoreEmulator
+  doc, getDoc, setDoc, updateDoc, deleteDoc, onSnapshot, query, where, Timestamp,
+  runTransaction, writeBatch, connectFirestoreEmulator
 } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
 import {
   getAuth, signInAnonymously, connectAuthEmulator
@@ -170,7 +171,102 @@ const duo = {
   }
 };
 
+/* ─────────────────────────────────────────────────────────────
+   暫時代碼（#01 → 醫檢師）：codes/{代碼}
+   - 鎖：誰拿著、狀態（active / done）、期限。沒有個人資料，登入的人都能用代碼讀單一張
+   - private/profile：給醫檢師看的個人資料（不含暱稱），只有醫檢師讀得到
+   規則（何時算空著、怎麼挑號碼）在 Anxin.codes；這裡只做資料進出。
+   ───────────────────────────────────────────────────────────── */
+
+const lockRef = (code) => doc(db, 'codes', code);
+const codeProfileRef = (code) => doc(db, 'codes', code, 'private', 'profile');
+
+function lockFrom(snap) {
+  if (!snap.exists()) return null;
+  const d = snap.data();
+  return { ...d, expiresAt: toMs(d.expiresAt), createdAt: toMs(d.createdAt), doneAt: toMs(d.doneAt) };
+}
+
+const codes = {
+  /* 一筆交易：讀鎖 → isFree 說可以才連同個人資料一起寫入，回傳 true；有人在用回傳 false。
+     兩支手機同時搶同一組時，Firestore 會讓晚到的那筆重跑，重跑時就會讀到已被佔用。
+     profile 由 Anxin.codes.buildProfile 產生（expiresAt 是毫秒）。 */
+  async tryClaim(code, profile, isFree) {
+    const u = await ensureAuth();
+    return runTransaction(db, async (tx) => {
+      const lock = lockFrom(await tx.get(lockRef(code)));
+      if (!isFree(lock, Date.now())) return false;
+      const expiresAt = Timestamp.fromMillis(profile.expiresAt);
+      tx.set(lockRef(code), {
+        v: 1, code, holderUid: u.uid, status: 'active',
+        expiresAt, doneAt: null, createdAt: serverTimestamp()
+      });
+      tx.set(codeProfileRef(code), { ...profile, expiresAt });
+      return true;
+    });
+  },
+
+  async getLock(code) {
+    await ensureAuth();
+    return lockFrom(await getDoc(lockRef(code)));
+  },
+
+  watchLock(code, cb, onError) {
+    const start = () => onSnapshot(lockRef(code), (s) => cb(lockFrom(s)), onError);
+    start.onError = onError;
+    return watch(start);
+  },
+
+  /* 醫檢師才讀得到，而且代碼要還有效 */
+  async getProfile(code) {
+    await ensureAuth();
+    const s = await getDoc(codeProfileRef(code));
+    if (!s.exists()) return null;
+    return { ...s.data(), expiresAt: toMs(s.data().expiresAt) };
+  },
+
+  /* 醫檢師送出回饋＝代碼失效，三件事同一批寫入，要嘛全部成功、要嘛全部沒發生：
+     回饋存進 staffFeedback、鎖標成 done、個人資料刪掉。
+     回饋的文件 id = 代碼-領取時間，一次領取只能有一份回饋。 */
+  async finish(code, lock, payload) {
+    await ensureAuth();
+    const batch = writeBatch(db);
+    batch.set(doc(db, 'staffFeedback', code + '-' + lock.createdAt), { ...payload, createdAt: serverTimestamp() });
+    batch.update(lockRef(code), { status: 'done', doneAt: serverTimestamp() });
+    batch.delete(codeProfileRef(code));
+    return batch.commit();
+  }
+};
+
+/* ─────────────────────────────────────────────────────────────
+   醫護人員登入：staff/{uid}
+   密碼不會離開手機：頁面先用 PBKDF2 把密碼變成金鑰，這裡只寫入金鑰。
+   伺服器規則比對金鑰的 SHA-256，對了才建得出這份文件；
+   之後讀代碼個人資料、寫回饋，規則都靠「這個 uid 有沒有有效的 staff 文件」判斷。
+   ───────────────────────────────────────────────────────────── */
+
+const staff = {
+  async session() {
+    const u = await ensureAuth();
+    const s = await getDoc(doc(db, 'staff', u.uid));
+    if (!s.exists()) return null;
+    return { expiresAt: toMs(s.data().expiresAt) };
+  },
+
+  async signIn(key, expiresAt) {
+    const u = await ensureAuth();
+    return setDoc(doc(db, 'staff', u.uid), {
+      key, at: serverTimestamp(), expiresAt: Timestamp.fromMillis(expiresAt)
+    });
+  },
+
+  async signOut() {
+    const u = await ensureAuth();
+    return deleteDoc(doc(db, 'staff', u.uid));
+  }
+};
+
 /* 給一般 <script> 用的橋：頁面邏輯維持非 module（可測試），
    gstatic 被擋或太慢時，表單照樣顯示，只是送出時會得到明確的錯誤。 */
-window.AnxinFirebase = { submitFeedback, ensureAuth, duo };
+window.AnxinFirebase = { submitFeedback, ensureAuth, duo, codes, staff };
 window.dispatchEvent(new Event('anxin:firebase'));

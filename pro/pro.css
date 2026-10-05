@@ -1,0 +1,320 @@
+/* ═══ 醫護端（/pro/） ═════════════════════════════════════════
+   同一套 token；醫檢師在診間單手操作，查詢列與送出鈕都在拇指範圍內。
+   ═══════════════════════════════════════════════════════════════ */
+
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+/* ═══ 頁首：品牌 + 登出 ═══════════════════════════════════════ */
+
+.pro-header {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+  padding-block: calc(var(--sp-3) + env(safe-area-inset-top)) var(--sp-3);
+}
+
+.pro-header .brand-mark {
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  border-radius: var(--r-md);
+  background: var(--primary-wash);
+  color: var(--primary-deep);
+}
+
+.pro-header .brand-name {
+  font-weight: 700;
+  line-height: 1.3;
+}
+
+.pro-header .brand-tagline {
+  font-size: .85rem;
+  line-height: 1.3;
+  color: var(--fg-muted);
+}
+
+.sign-out {
+  margin-inline-start: auto;
+  background: none;
+  border: 0;
+  border-radius: var(--r-sm);
+}
+
+.boot-note {
+  padding-block: var(--sp-7);
+  text-align: center;
+  color: var(--fg-muted);
+}
+
+/* ═══ 登入 ════════════════════════════════════════════════════ */
+
+.pwd-input {
+  display: block;
+  width: 100%;
+  min-height: var(--tap);
+  margin-top: var(--sp-3);
+  padding: var(--sp-3) var(--sp-4);
+  background: var(--card);
+  border: var(--line-w) solid var(--line);
+  border-radius: var(--r-md);
+  box-shadow: var(--sh-inset);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: .08em;
+  transition: border-color var(--t-fast) var(--ease);
+}
+
+.pwd-input:focus {
+  border-color: var(--primary-deep);
+}
+
+.pwd-input:focus-visible {
+  outline-offset: 0;
+}
+
+/* ═══ 查詢列 ══════════════════════════════════════════════════ */
+
+.lookup {
+  margin-block: var(--sp-5) var(--sp-5);
+}
+
+.lookup .field-label {
+  margin-bottom: var(--sp-2);
+}
+
+.lookup-row {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: var(--sp-3);
+  align-items: stretch;
+}
+
+/* 四位數字就是主角：大、等寬、字距拉開，醫檢師一眼對得上家長的螢幕 */
+.code-input {
+  min-height: 64px !important;
+  padding-block: var(--sp-2) !important;
+  font-size: 2rem;
+  font-weight: 700;
+  line-height: 1.2;
+  letter-spacing: .3em;
+  text-indent: .3em;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+  color: var(--primary-deep);
+}
+
+.code-input::placeholder {
+  color: var(--idle);
+  opacity: .45;
+}
+
+/* 查詢鈕在這一列不吃全寬，也不套大螢幕的置中 + min-width */
+.lookup-btn {
+  width: auto;
+  min-width: 6.5rem;
+  min-height: 64px;
+  margin: 0;
+}
+
+.lookup .field-hint {
+  margin: var(--sp-2) 0 0;
+}
+
+/* ═══ 查詢結果：查無／失效 ════════════════════════════════════ */
+
+.result-note {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: var(--sp-3);
+  align-items: start;
+  padding: var(--sp-4);
+  background: var(--card);
+  border-radius: var(--r-lg);
+  box-shadow: var(--sh-md);
+}
+
+.result-note .icon {
+  margin-top: 3px;
+  color: var(--primary-deep);
+}
+
+.result-note.is-error .icon {
+  color: var(--danger);
+}
+
+.result-note-title {
+  font-weight: 700;
+  line-height: 1.45;
+}
+
+.result-note-body {
+  margin-top: var(--sp-1);
+  font-size: .94rem;
+  color: var(--fg-muted);
+}
+
+/* ═══ 孩子的資料 ══════════════════════════════════════════════ */
+
+.case-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--sp-1) var(--sp-3);
+  margin-bottom: var(--sp-3);
+}
+
+.case-title {
+  font-size: 1.3rem;
+  font-weight: 700;
+  line-height: 1.35;
+}
+
+.case-title span {
+  color: var(--primary-deep);
+  letter-spacing: .08em;
+  font-variant-numeric: tabular-nums;
+}
+
+.case-expiry {
+  font-size: .86rem;
+  color: var(--fg-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+/* 「特別注意」是醫檢師最需要看到的一行：左側加一條深橘線 */
+.summary-row.is-alert {
+  background: var(--primary-wash);
+  box-shadow: inset 4px 0 0 var(--primary-deep);
+}
+
+.summary-row.is-alert dt {
+  color: var(--fg);
+  font-weight: 700;
+}
+
+.summary-row.is-alert dd {
+  color: var(--fg);
+}
+
+.case + .section-title {
+  margin-top: 0;
+}
+
+/* ═══ 醫檢師量表 ══════════════════════════════════════════════
+   兩種標記要同時看得出來，而且不能只靠顏色：
+   家長選的 → 淡色底 + 「家長」小標籤
+   醫檢師選的 → 更粗更深的框 + 右上角勾勾（底色不變，所以兩者重疊時仍分得開）
+   ═══════════════════════════════════════════════════════════════ */
+
+.staff-scale .face-option.is-parent .face-body {
+  background: var(--primary-wash);
+  border-style: dashed;
+}
+
+/* --idle 在淡橘底上只有 4.19:1，家長那一格的說明改用 --fg-muted */
+.staff-scale .face-option.is-parent .face-caption {
+  color: var(--fg-muted);
+}
+
+.parent-tag {
+  position: absolute;
+  top: -10px;
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 0 var(--sp-2);
+  border-radius: var(--r-pill);
+  background: var(--card);
+  box-shadow: inset 0 0 0 1px var(--line);
+  font-size: .68rem;
+  font-weight: 700;
+  line-height: 1.6;
+  color: var(--fg);
+  white-space: nowrap;
+  pointer-events: none;
+}
+
+.staff-scale .face-option input:checked + .face-body {
+  background: var(--card);
+  border-style: solid;
+  border-color: var(--fg);
+  box-shadow: var(--sh-md), inset 0 0 0 2px var(--fg);
+}
+
+.staff-scale .face-option.is-parent input:checked + .face-body {
+  background: var(--primary-wash);
+}
+
+.staff-scale .face-option input:checked + .face-body svg {
+  stroke: var(--fg);
+}
+
+.staff-scale .face-option input:checked + .face-body .face-caption {
+  color: var(--fg);
+}
+
+.staff-check {
+  position: absolute;
+  top: -7px;
+  right: -5px;
+  display: none;
+  place-items: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: var(--fg);
+  color: #FFFFFF;
+  box-shadow: var(--sh-sm);
+  pointer-events: none;
+}
+
+.staff-check .icon {
+  width: 14px;
+  height: 14px;
+  stroke-width: 3;
+}
+
+.staff-scale .face-option input:checked ~ .staff-check {
+  display: grid;
+}
+
+.note-hint {
+  margin: var(--sp-1) 0 0;
+}
+
+.done-title {
+  font-size: 1.6rem;
+  font-weight: 700;
+  line-height: 1.4;
+}
+
+.done-title:focus-visible,
+.case-title:focus-visible {
+  outline-offset: 6px;
+}
+
+#doneView .btn {
+  margin-top: var(--sp-2);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .sign-out:hover {
+    color: var(--primary-deep);
+  }
+
+  .pwd-input:hover {
+    border-color: var(--primary-deep);
+  }
+
+  /* 家長那一格滑過時保持淡色底，不然看起來像被醫檢師選了 */
+  .staff-scale .face-option.is-parent input:not(:checked) + .face-body:hover {
+    background: var(--primary-wash);
+  }
+}

@@ -31,6 +31,131 @@ service cloud.firestore {
       }
     }
 
+    // ── 暫時代碼（#01 → 醫檢師） ─────────────────────────────────
+    // codes/{代碼} 是代碼的「鎖」：誰拿著、狀態、期限，沒有個人資料，
+    // 登入的人都能用代碼讀單一張（家長的手機要先讀，才知道這組有沒有人在用）；不能列出全部。
+    // 同一組代碼在 expiresAt（領取後 24 小時）之前絕不會再發給別人；
+    // 醫檢師送出回饋只會把它標成 done（失效、查不到），不會提早釋出。
+    match /codes/{code} {
+      allow get: if request.auth != null && code.matches('^[0-9]{4}$');
+      allow list: if false;
+
+      // 領取：全新的代碼，或上一位的 24 小時已經過了
+      allow create: if validClaim(code, request.resource.data);
+      allow update: if (resource.data.expiresAt < request.time && validClaim(code, request.resource.data))
+        || staffFinish(code);
+      allow delete: if false;
+
+      // 給醫檢師看的個人資料（不含暱稱）。
+      // 只能在領取代碼的同一筆交易裡寫入；只有醫檢師、而且代碼還有效時才讀得到；
+      // 醫檢師送出回饋（代碼變 done）的同一批寫入裡刪除。
+      match /private/{docId} {
+        allow get: if docId == 'profile' && isStaff() && codeLive(code);
+        allow list: if false;
+        allow create, update: if docId == 'profile' && claimedNow(code)
+          && validCodeProfile(request.resource.data, getAfter(lockPath(code)).data);
+        allow delete: if docId == 'profile' && finishing(code);
+      }
+    }
+
+    // 醫護人員登入：staff/{uid}。密碼不上傳，只上傳 PBKDF2 金鑰；
+    // 這裡比對金鑰的 SHA-256。規則裡只有雜湊值，沒有密碼也沒有金鑰。
+    match /staff/{uid} {
+      allow get, delete: if request.auth != null && request.auth.uid == uid;
+      allow list: if false;
+      allow create, update: if request.auth != null && request.auth.uid == uid
+        && validStaffSession(request.resource.data);
+    }
+
+    // 醫檢師回饋：只能新增，任何人都不能讀、改、刪（和家長的回饋一樣）。
+    // id = 代碼-領取時間（毫秒）：一次領取只會有一份；而且必須和「代碼變 done」同一批寫入。
+    match /staffFeedback/{id} {
+      allow create: if isStaff() && validStaffFeedback(id, request.resource.data);
+      allow read, update, delete: if false;
+    }
+
+    function lockPath(code) {
+      return /databases/$(database)/documents/codes/$(code);
+    }
+
+    function codeProfilePath(code) {
+      return /databases/$(database)/documents/codes/$(code)/private/profile;
+    }
+
+    function isStaff() {
+      let s = /databases/$(database)/documents/staff/$(request.auth.uid);
+      return request.auth != null && exists(s) && get(s).data.expiresAt > request.time;
+    }
+
+    function codeLive(code) {
+      let lock = get(lockPath(code)).data;
+      return lock.status == 'active' && lock.expiresAt > request.time;
+    }
+
+    // 這一批寫入由醫檢師把代碼從 active 變成 done
+    function finishing(code) {
+      return isStaff() && codeLive(code) && getAfter(lockPath(code)).data.status == 'done';
+    }
+
+    // 這一筆交易剛由自己領取這組代碼（鎖的 createdAt 就是這次寫入的時間）
+    function claimedNow(code) {
+      let lock = getAfter(lockPath(code)).data;
+      return request.auth != null && lock.holderUid == request.auth.uid
+        && lock.createdAt == request.time;
+    }
+
+    function validClaim(code, d) {
+      return request.auth != null
+        && code.matches('^[0-9]{4}$')
+        && d.keys().hasOnly(['v', 'code', 'holderUid', 'status', 'expiresAt', 'doneAt', 'createdAt'])
+        && d.keys().hasAll(['v', 'code', 'holderUid', 'status', 'expiresAt', 'doneAt', 'createdAt'])
+        && d.v == 1
+        && d.code == code
+        && d.holderUid == request.auth.uid
+        && d.status == 'active'
+        && d.doneAt == null
+        && d.createdAt == request.time
+        && d.expiresAt is timestamp
+        && d.expiresAt > request.time
+        && d.expiresAt < request.time + duration.value(2, 'd')
+        // 鎖和個人資料一定一起出現：醫檢師查得到代碼，就一定看得到資料
+        && existsAfter(codeProfilePath(code));
+    }
+
+    // 醫檢師結束代碼：只改 status / doneAt，而且同一批寫入一定有這次領取的回饋
+    function staffFinish(code) {
+      let d = request.resource.data;
+      return isStaff()
+        && resource.data.status == 'active'
+        && resource.data.expiresAt > request.time
+        && d.diff(resource.data).affectedKeys().hasOnly(['status', 'doneAt'])
+        && d.status == 'done'
+        && d.doneAt == request.time
+        && existsAfter(/databases/$(database)/documents/staffFeedback/$(code + '-' + string(resource.data.createdAt.toMillis())));
+    }
+
+    function validStaffFeedback(id, d) {
+      let code = id.split('-')[0];
+      let lock = get(lockPath(code)).data;
+      let prof = get(codeProfilePath(code)).data;
+      return id.matches('^[0-9]{4}-[0-9]{1,16}$')
+        && id == code + '-' + string(lock.createdAt.toMillis())
+        && finishing(code)
+        && d.keys().hasOnly(['staffFear', 'parentFear', 'note', 'profile', 'scaleVersion', 'createdAt'])
+        && d.keys().hasAll(['staffFear', 'parentFear', 'note', 'profile', 'scaleVersion', 'createdAt'])
+        && isLevel(d.staffFear)
+        && d.parentFear == prof.fearLevel
+        && d.note is string && d.note.size() <= 500
+        && d.profile is map
+        && d.profile.keys().hasOnly(['age', 'gender', 'worryLevel'])
+        && d.profile.keys().hasAll(['age', 'gender', 'worryLevel'])
+        && d.profile.age == prof.age
+        && d.profile.gender == prof.gender
+        && d.profile.worryLevel == prof.worryLevel
+        && d.scaleVersion in ['staff-v1']
+        && d.createdAt == request.time;
+    }
+
     // 回饋（#03）：只能新增；任何人都不能讀、改、刪。
     // keys().hasOnly 是白名單：帶有 nickname（或任何多出來的欄位）的文件
     // 會在伺服器端直接被拒絕，不只是前端「沒送」而已。
@@ -200,6 +325,36 @@ service cloud.firestore {
 
   function isLevel(v) {
     return v is int && v >= 1 && v <= 5;
+  }
+
+  // 欄位必須與 Anxin.codes.buildProfile（shared/app.js）完全一致；不含暱稱
+  function validCodeProfile(p, lock) {
+    return p.keys().hasOnly(['age', 'gender', 'fearLevel', 'worryLevel', 'specialNeeds', 'expiresAt'])
+      && p.keys().hasAll(['age', 'gender', 'fearLevel', 'worryLevel', 'specialNeeds', 'expiresAt'])
+      && p.age is number && p.age >= 0 && p.age <= 18
+      && p.gender in ['男', '女']
+      && isLevel(p.fearLevel)
+      && isLevel(p.worryLevel)
+      && p.specialNeeds is string && p.specialNeeds.size() <= 200
+      && p.expiresAt == lock.expiresAt;
+  }
+
+  // 醫護人員密碼（目前是 123456）。頁面算 key = PBKDF2-SHA256(密碼, 'anxin-staff-v1', 600000 次, 32 bytes) 的 hex，
+  // 這裡存的是 SHA-256(key)。換密碼：跑下面這行，把輸出貼到下面的字串，再發布規則。
+  //   node -e "const c=require('crypto');const k=c.pbkdf2Sync(process.argv[1],'anxin-staff-v1',600000,32,'sha256').toString('hex');console.log(c.createHash('sha256').update(k).digest('hex'))" '新密碼'
+  // 注意：這個檔案在公開的 GitHub repo 上，雜湊值任何人都看得到。正式密碼請用夠長的通關句
+  //（例如四、五個詞），PBKDF2 才擋得住離線暴力破解；6 位數字幾小時內就會被試出來。
+  // 登入有效 12 小時（一個班）；pro/pro.js 的 SESSION_MS 要小於這裡的 13 小時上限。
+  function validStaffSession(d) {
+    return d.keys().hasOnly(['key', 'at', 'expiresAt'])
+      && d.keys().hasAll(['key', 'at', 'expiresAt'])
+      && d.key is string && d.key.size() == 64
+      && hashing.sha256(d.key).toHexString().lower()
+        == '13613b945d1a3b140f626cf76781144e54f6644ee850255b10e6677a1bc4968f'
+      && d.at == request.time
+      && d.expiresAt is timestamp
+      && d.expiresAt > request.time
+      && d.expiresAt < request.time + duration.value(13, 'h');
   }
 
   // 欄位必須與 Anxin.buildFeedbackPayload（shared/app.js）完全一致
