@@ -44,6 +44,10 @@
     $('codeNote').textContent = '醫檢師已完成紀錄，這組代碼已經失效';
   }).catch(function () { /* 維持原樣 */ });
 
+  /* ── 醫檢師送出回饋 → 轉到「打針完畢」頁（每組代碼一次） ── */
+
+  Anxin.shotFinished.redirectWhenDone(p);
+
   /* ── 重新填寫：先確認 ── */
 
   var restart = Anxin.wireDialog($('restartDlg'));

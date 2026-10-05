@@ -7,4 +7,7 @@
 
   var p = Anxin.profile.load();
   if (!p) return; /* <head> 裡的守衛已經導回 / */
+
+  /* 醫檢師送出回饋 → 轉到「打針完畢」頁 */
+  Anxin.shotFinished.redirectWhenDone(p);
 })();

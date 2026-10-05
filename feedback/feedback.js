@@ -9,6 +9,9 @@
   var p = Anxin.profile.load();
   if (!p) return; /* <head> 裡的守衛已經導回 / */
 
+  /* 已經在寫回饋：醫檢師之後送出時，別把家長拉去「打針完畢」頁 */
+  Anxin.shotFinished.mark(p.code);
+
   var $ = function (id) { return document.getElementById(id); };
   var live = $('liveRegion');
   var form = $('feedbackForm');

@@ -9,6 +9,30 @@ Spec says "just a button", and that's right: the parent is holding a child with 
 reassurance, one 68px-tall 打針完畢. Its dialog offers 給建議 / 離開 **plus** 「還沒打完」 — a phone has no Esc
 key, and an accidental tap must not force a navigation.
 
+## 打針完畢 page — triggered by the 醫檢師
+
+When the 醫檢師 submits their feedback (code → `done`), the parent's phone moves to `/shot/?done=1`
+by itself. That is the 打針完畢 page: a green check, 「打針完畢！」, 「您和{暱稱}都好勇敢。」 (the
+nickname comes from the phone and is never uploaded), then the spec's question 「可以給我們團隊一些建議嗎？」
+with 好，給建議 → `/feedback/` and 不用了，離開 → `/thanks/`. From the feedback page, the existing step to
+the discussion page (sharing experience) follows.
+
+- **Who listens**: `/shot/` (switches in place, with no navigation), `/home/`, `/guide/` and `/cheer/`
+  (redirect there). One shared helper, `Anxin.shotFinished`, watches the code's lock and only reacts to
+  this phone's own code (`holderUid`).
+- **Games don't listen.** The child may be playing on the phone during or after the draw, and yanking
+  the game away is hostile. The redirect happens when they come back to `/home/`.
+- **Once per code** (`anxin.shotDone.v1`). The flag is set when the page is shown, when the parent takes
+  the manual 打針完畢 → 給建議／離開 path, or when `/feedback/` or `/thanks/` opens. After that nothing
+  redirects again: the back button returns to home without bouncing, and a parent already writing
+  feedback is never pulled away.
+- `?done=1` is reload-safe, and an inline `<head>` check sets `is-finished` before first paint, so the
+  old 「我們一起加油」 page never flashes.
+- Focus moves to the heading so screen readers announce it. The heading's outline is removed: it isn't
+  operable, and an unprompted keyboard ring looks like a glitch.
+- The manual 打針完畢 button and dialog still work exactly as before, for when the 醫檢師 doesn't use
+  the portal.
+
 ## /feedback/ — questions
 
 Same components as #01. Balanced 5-point scales with a neutral midpoint, chosen over the original skewed

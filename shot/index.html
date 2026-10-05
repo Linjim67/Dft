@@ -16,7 +16,11 @@
   <link rel="stylesheet" href="/shared/page.css">
   <link rel="stylesheet" href="/shot/shot.css">
   <script src="/shared/app.js"></script>
-  <script>Anxin.requireProfile();</script>
+  <script>
+    Anxin.requireProfile();
+    /* 打針完畢頁（/shot/?done=1）：第一個畫面就是它，不會先閃出「我們一起加油」 */
+    if (/[?&]done=1(&|$)/.test(location.search)) document.documentElement.classList.add('is-finished');
+  </script>
 </head>
 
 <body>
@@ -39,14 +43,29 @@
       <h1 class="shot-title" id="shotTitle">我們一起加油</h1>
       <p class="shot-lede">深呼吸，很快就結束了。<br>打完之後，按下面的按鈕。</p>
 
-      <!-- 醫檢師要用這組代碼查孩子的資料；醫檢師送出回饋後，這裡會即時換成「已完成」 -->
-      <p class="shot-code" id="shotCode" role="status">
-        <span id="shotCodeText">給醫檢師的代碼</span>
+      <!-- 醫檢師要用這組代碼查孩子的資料 -->
+      <p class="shot-code" id="shotCode">
+        <span>給醫檢師的代碼</span>
         <strong class="shot-code-digits" id="shotCodeDigits">----</strong>
       </p>
 
       <button class="btn btn-primary shot-done" type="button" id="doneBtn">打針完畢</button>
     </div>
+
+    <!-- ══ 打針完畢：醫檢師送出回饋後自動切到這裡（主頁、指南、鼓勵頁會轉過來） ══
+         規格同「打針完畢」視窗：給建議，或離開（前往感謝頁） -->
+    <section class="finished" id="finishedView" aria-labelledby="finishedTitle">
+      <div class="finished-badge" aria-hidden="true">
+        <svg viewBox="0 0 24 24" class="icon"><path d="M6 12.4 10.2 16.6 18 8.8" /></svg>
+      </div>
+      <h1 class="shot-title" id="finishedTitle" tabindex="-1">打針完畢！</h1>
+      <p class="shot-lede">您和<span id="finishedName">孩子</span>都好勇敢。</p>
+      <p class="finished-ask">可以給我們團隊一些建議嗎？</p>
+      <div class="finished-actions">
+        <a class="btn btn-primary" href="/feedback/">好，給建議</a>
+        <a class="btn btn-quiet" href="/thanks/">不用了，離開</a>
+      </div>
+    </section>
   </main>
 
   <!-- 規格：打針完畢 → 給建議，或離開（前往感謝頁） -->

@@ -393,6 +393,53 @@
     };
   }
 
+  /* ─────────────────────────────────────────────────────────────
+     打針完畢：醫檢師送出回饋（代碼變 done）時，家長的手機自動進入「打針完畢」頁
+     （/shot/?done=1），接著寫回饋。每組代碼只觸發一次：
+     看過「打針完畢」頁、自己按過「打針完畢」、或已經在回饋／感謝頁，就記下來，
+     之後不再把家長拉走（返回鍵也不會被彈回去）。
+     遊戲頁不監聽：孩子正在玩時不硬切，回到主頁面時才會轉過去。
+     ───────────────────────────────────────────────────────────── */
+
+  var SHOT_DONE_KEY = 'anxin.shotDone.v1';
+  var SHOT_FINISHED_URL = '/shot/?done=1';
+
+  function shotFinishedSeen(code) {
+    var s = store();
+    try { return !!s && !!code && s.getItem(SHOT_DONE_KEY) === String(code); } catch (e) { return false; }
+  }
+
+  function markShotFinished(code) {
+    var s = store();
+    if (!s || !code) return;
+    try { s.setItem(SHOT_DONE_KEY, String(code)); } catch (e) { /* 忽略：最多是會再被帶到打針完畢頁一次 */ }
+  }
+
+  /* 醫檢師完成這支手機領的代碼 → onDone()。連不上就什麼都不做（頁面照常可用）。回傳取消函式 */
+  function watchShotDone(p, onDone) {
+    if (!p || !p.code || shotFinishedSeen(p.code)) return function () {};
+    var stop = function () {};
+    var cancelled = false;
+    var fired = false;
+    whenFirebase(10000).then(function (fb) {
+      return fb.ensureAuth().then(function (user) {
+        if (cancelled) return;
+        stop = fb.codes.watchLock(p.code, function (lock) {
+          if (fired || !lock || lock.holderUid !== user.uid || lock.status !== 'done') return;
+          if (shotFinishedSeen(p.code)) return; /* 另一個分頁已經處理過 */
+          fired = true;
+          onDone(lock);
+        }, function () { /* 監聽中斷：維持原樣 */ });
+      });
+    }).catch(function () { /* 連不上：維持原樣 */ });
+    return function () { cancelled = true; stop(); };
+  }
+
+  /* 一般頁面（主頁、指南、鼓勵）：完成就轉到「打針完畢」頁 */
+  function goToShotFinishedWhenDone(p) {
+    return watchShotDone(p, function () { root.location.assign(SHOT_FINISHED_URL); });
+  }
+
   /* 伺服器錯誤分兩類：設定問題（規則沒發布、匿名登入沒開）不是使用者的網路問題 */
   var SETUP_ERRORS = ['permission-denied', 'auth/operation-not-allowed',
     'auth/admin-restricted-operation', 'auth/configuration-not-found'];
@@ -460,6 +507,13 @@
     },
     buildStaffFeedback: buildStaffFeedback,
     STAFF_SCALE_VERSION: STAFF_SCALE_VERSION,
+    shotFinished: {
+      URL: SHOT_FINISHED_URL,
+      seen: shotFinishedSeen,
+      mark: markShotFinished,
+      watch: watchShotDone,
+      redirectWhenDone: goToShotFinishedWhenDone
+    },
     isSetupError: isSetupError,
     withTimeout: withTimeout,
     formatExpiry: formatExpiry,

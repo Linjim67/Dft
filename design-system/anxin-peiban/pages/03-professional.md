@@ -39,9 +39,9 @@ Profiles are stored under `anxin.profile.v2`. v1 profiles held unregistered code
 
 Lookup states (`Anxin.codes.state`): missing / active / done / expired, each with its own message.
 
-Parent side: `/shot/` now shows the code (the parent hands it over there) and watches the lock live.
-When the 醫檢師 submits, the chip flips to 「醫檢師已完成紀錄」. `/home/` reads it once and greys the
-code card. Both check `holderUid` as well. If Firebase is unreachable, both pages keep their current state.
+Parent side: `/shot/` shows the code (the parent hands it over there). When the 醫檢師 submits, the
+parent's phone switches to the **打針完畢 page** on its own; see `03-shot-feedback.md`.
+`/home/` greys the code card once the parent has seen that page.
 
 ## Staff login
 

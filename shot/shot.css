@@ -63,28 +63,6 @@
   font-variant-numeric: tabular-nums;
 }
 
-/* 已完成：說明轉綠並加勾勾（不只靠顏色），數字退成灰階 */
-.shot-code.is-done {
-  color: var(--success);
-  font-weight: 700;
-}
-
-.shot-code.is-done .shot-code-digits {
-  color: var(--idle);
-}
-
-.shot-code.is-done #shotCodeText::before {
-  content: "";
-  display: inline-block;
-  width: 15px;
-  height: 15px;
-  margin-inline-end: var(--sp-1);
-  vertical-align: -2px;
-  background: currentColor;
-  -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M5 12.4 10 17.4 19 7.8' fill='none' stroke='%23000' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") center / contain no-repeat;
-  mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M5 12.4 10 17.4 19 7.8' fill='none' stroke='%23000' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") center / contain no-repeat;
-}
-
 /* 單手也按得到：比一般按鈕更高 */
 .shot-done {
   margin-top: var(--sp-6);
@@ -96,4 +74,67 @@
   background: none;
   border: 0;
   font-size: .95rem;
+}
+
+/* ═══ 打針完畢（醫檢師送出回饋後自動切換） ═══════════════════ */
+
+.finished {
+  display: none;
+  justify-items: center;
+  text-align: center;
+  padding-block: var(--sp-6) var(--sp-7);
+}
+
+.is-finished .finished {
+  display: grid;
+}
+
+.is-finished .shot-stage {
+  display: none;
+}
+
+/* 綠色勾勾輕輕彈出：整頁唯一的動畫 */
+.finished-badge {
+  display: grid;
+  place-items: center;
+  width: 84px;
+  height: 84px;
+  margin-bottom: var(--sp-5);
+  border-radius: 50%;
+  background: var(--success-wash);
+  color: var(--success);
+  box-shadow: var(--sh-md);
+  animation: finished-pop 420ms var(--ease);
+}
+
+.finished-badge .icon {
+  width: 40px;
+  height: 40px;
+  stroke-width: 2.6;
+}
+
+@keyframes finished-pop {
+  from {
+    opacity: 0;
+    transform: scale(.6);
+  }
+}
+
+/* 焦點移到標題只是為了讓報讀軟體唸出「打針完畢」；標題不能操作，不需要焦點框
+   （家長什麼都沒按，畫面自己換過來，瀏覽器會畫出鍵盤用的焦點框，看起來像故障） */
+#finishedTitle:focus {
+  outline: none;
+}
+
+.finished-ask {
+  margin-top: var(--sp-6);
+  font-size: 1.1rem;
+  font-weight: 700;
+}
+
+.finished-actions {
+  display: grid;
+  gap: var(--sp-3);
+  width: 100%;
+  margin-top: var(--sp-4);
 }
