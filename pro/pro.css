@@ -189,10 +189,9 @@
   font-variant-numeric: tabular-nums;
 }
 
-/* 「特別注意」是醫檢師最需要看到的一行：左側加一條深橘線 */
+/* 「特別注意」是醫檢師最需要看到的一行：淡橘底 + 粗體標題，不另加色條 */
 .summary-row.is-alert {
   background: var(--primary-wash);
-  box-shadow: inset 4px 0 0 var(--primary-deep);
 }
 
 .summary-row.is-alert dt {

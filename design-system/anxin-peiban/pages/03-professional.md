@@ -61,7 +61,7 @@ code card. Both check `holderUid` as well. If Firebase is unreachable, both page
 
 Login → lookup. The code field is the hero: 2rem tabular digits with wide tracking, so it can be
 matched against the parent's screen at a glance. Digits only; the lookup fires on the 4th digit.
-「特別注意」 is the row a 醫檢師 most needs to see, so it gets the wash background and a deep-orange left rule.
+「特別注意」 is the row a 醫檢師 most needs to see, so it gets the wash background and a bold label (no side stripe).
 
 ### The comparison scale (spec: shallow fill vs thicker, deeper border)
 
