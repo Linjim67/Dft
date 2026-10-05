@@ -144,7 +144,6 @@
           <span class="btn-label">完成，開始陪伴</span>
         </button>
         <p class="field-error" id="storage-error" role="alert" hidden></p>
-        <p class="form-foot">送出後會拿到一組 4 位數代碼，到時候要交給醫檢師。</p>
       </form>
     </div>
 
@@ -152,6 +151,8 @@
   </main> 
 
   <div class="live-region" id="liveRegion" role="status" aria-live="polite"></div>
+  <!-- 暫時代碼要向伺服器登記（不重複）；script.js 透過 Anxin.whenFirebase() 等它 -->
+  <script type="module" src="/shared/firebase.js"></script>
   <script src="/script.js"></script>
 </body>
 
