@@ -68,6 +68,13 @@
 
   var MODES = ['manual', 'auto'];
 
+  /* 病毒入侵最後幾秒不再有新病毒、要全部消滅才結束（要和 engine.js 的 INVASION_LAST_MS 一致）。
+     孩子的手機回報的 inv 在入侵中至少是 1，所以 inv ≤ 這個數 = 最後階段 */
+  var INVASION_LAST_S = 2;
+  function invasionEnding(state) {
+    return !!(state && state.inv && state.inv <= INVASION_LAST_S);
+  }
+
   /* 孩子的手機收到不能做的指令時回的原因 → 家長看到的話 */
   var REASONS = {
     'not-playing': '孩子現在不在遊戲中',
@@ -75,6 +82,7 @@
     locked: '那個洞還在維修中',
     boss: '大魔王在場，等它離開再放',
     invasion: '病毒入侵中，只能放病毒',
+    'inv-ending': '病毒入侵快結束了，不能再放',
     'no-invasion': '病毒只能在「病毒入侵」時放',
     active: '這個事件正在進行中',
     'too-late': '這回合剩下的時間不夠了',
@@ -178,6 +186,8 @@
     refillLine: refillLine,
     EVENTS: EVENTS,
     MODES: MODES,
+    INVASION_LAST_S: INVASION_LAST_S,
+    invasionEnding: invasionEnding,
     REASONS: REASONS,
     STALE_MS: 12000,       /* 這麼久沒收到孩子手機的狀態，就提醒家長可能斷線 */
     HEARTBEAT_MS: 5000,    /* 孩子的手機至少這麼常回報一次（就算畫面沒變） */

@@ -862,21 +862,6 @@ body.is-playing .topbar {
   }
 }
 
-/* 角標：皇冠 +「大魔王」文字；放在血條下面，兩者不重疊 */
-.v-boss .coat-badge {
-  top: 14px;
-  display: inline-flex;
-  align-items: center;
-  gap: 2px;
-  padding-inline-start: 3px;
-  background: #92400E;
-}
-
-.coat-badge svg {
-  width: 14px;
-  height: 14px;
-}
-
 /* 洞後面一圈金光，一眼就知道「就是它」 */
 .hole.is-boss::before {
   content: "";
@@ -896,6 +881,135 @@ body.is-playing .topbar {
 
 .board.is-boss {
   box-shadow: var(--sh-md), 0 0 0 3px #B45309;
+}
+
+/* ── 打倒大魔王（BOSS_DEFEAT_MS = 1s）：不縮回洞裡，留在原地播完 ──
+   閃白光 → 暈頭轉向左右晃 → 轉圈縮小不見；同時一圈金色星星往外噴、一道光環擴散 */
+.hole.is-defeated .mole {
+  transform: translateY(6%);
+  transition: none;
+}
+
+.hole.is-defeated .mole-clip {
+  overflow: visible;
+}
+
+.hole.is-defeated .mole-art {
+  transform-origin: 50% 60%;
+  animation: boss-defeat 1000ms cubic-bezier(.4, 0, .6, 1) forwards;
+}
+
+@keyframes boss-defeat {
+  0% {
+    transform: none;
+  }
+
+  10% {
+    transform: scale(1.12);
+    filter: sepia(1) saturate(2) hue-rotate(-12deg) brightness(2.2) drop-shadow(0 0 10px #FEF3C7);
+  }
+
+  22% {
+    transform: scale(.94, 1.06);
+  }
+
+  34% {
+    transform: translateX(-6%) rotate(-12deg);
+  }
+
+  46% {
+    transform: translateX(6%) rotate(12deg);
+  }
+
+  56% {
+    transform: rotate(-4deg);
+    opacity: 1;
+  }
+
+  100% {
+    transform: translateY(-18%) rotate(540deg) scale(0);
+    opacity: 0;
+  }
+}
+
+.boss-burst {
+  position: absolute;
+  left: 50%;
+  top: 42%;
+  z-index: 4;
+  width: 0;
+  height: 0;
+  pointer-events: none;
+}
+
+/* 光環：從中間擴散出去 */
+.boss-burst b {
+  position: absolute;
+  left: -40px;
+  top: -40px;
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  border: 4px solid #FCD34D;
+  opacity: 0;
+  animation: burst-ring 700ms 420ms ease-out forwards;
+}
+
+@keyframes burst-ring {
+  from {
+    opacity: .95;
+    transform: scale(.2);
+  }
+
+  to {
+    opacity: 0;
+    transform: scale(1.9);
+  }
+}
+
+/* 星星：十顆，沿著 --a 的方向飛出去 --d 的距離 */
+.boss-burst i {
+  position: absolute;
+  left: -9px;
+  top: -9px;
+  width: 18px;
+  height: 18px;
+  background: #FBBF24;
+  clip-path: polygon(50% 0, 62% 36%, 100% 38%, 70% 60%, 80% 100%, 50% 76%, 20% 100%, 30% 60%, 0 38%, 38% 36%);
+  filter: drop-shadow(0 0 2px #fff);
+  opacity: 0;
+  animation: burst-star 640ms 380ms cubic-bezier(.15, .7, .3, 1) forwards;
+}
+
+.boss-burst i:nth-child(odd) {
+  background: #FDE68A;
+}
+
+@keyframes boss-defeat-still {
+  20% {
+    opacity: 1;
+    filter: sepia(1) saturate(2) hue-rotate(-12deg) brightness(2.2);
+  }
+
+  100% {
+    opacity: 0;
+  }
+}
+
+@keyframes burst-star {
+  0% {
+    opacity: 1;
+    transform: rotate(var(--a)) translateY(0) scale(.4);
+  }
+
+  70% {
+    opacity: 1;
+  }
+
+  100% {
+    opacity: 0;
+    transform: rotate(var(--a)) translateY(calc(-1 * var(--d))) scale(1) rotate(160deg);
+  }
 }
 
 /* 病毒入侵：棋盤變成淡綠＋綠框；按住拖曳不能被瀏覽器當成捲動或縮放 */
@@ -1606,6 +1720,8 @@ body.is-playing .topbar {
   .hole.is-nope .mole-art,
   .hole.is-up .v-boss .mole-art,
   .hole.is-boss::before,
+  .boss-burst b,
+  .boss-burst i,
   .hole.is-wiping .mole-art,
   #hudTime.is-tick,
   .hole.has-bubble .bubble,
@@ -1613,6 +1729,15 @@ body.is-playing .topbar {
   .board.is-quake,
   .callout.is-on {
     animation: none;
+  }
+
+  /* 打倒大魔王：不轉不晃，只閃一下再淡出 */
+  .hole.is-defeated .mole-art {
+    animation: boss-defeat-still 1000ms ease-out forwards;
+  }
+
+  .boss-burst {
+    display: none;
   }
 
   /* 地震改成棋盤歪一邊（不搖），一樣看得出「地震了」 */

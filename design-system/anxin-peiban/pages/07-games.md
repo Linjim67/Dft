@@ -67,7 +67,9 @@ The `MIN_RATE` floor exists because `I(30) = 0`; without it each round opens wit
   stay challengeable. **The answer is not revealed on a wrong try**, or the retry would be
   meaningless. Leaving without answering (「先不要」) is not a failure.
 - **Coatings unlock by level**: Lv1 silver · Lv2 + 金色大魔王 · Lv3 + iron. Each carries a text
-  badge (×1.5 / 👑大魔王 / ×2) — never colour alone.
+  badge (×1.5 / ×2) — never colour alone. The 大魔王 has **no badge** (2026-10-05): its gold, the
+  glow, the board's gold ring and the 「大魔王來了！」 callout already say it; screen readers still
+  hear 「大魔王」 in the hole's label.
 - **Point rewards** unlock automatically at lifetime-point thresholds (the same "reach a
   threshold" rule as collections): 停留更久 1.5k / 10k / 24k · 更多洞 4k / 16k · 更強的槌子 14k / 32k.
   Tuned by simulation so a perfect player earns about one reward per round through round 6,
@@ -176,7 +178,8 @@ mix from round 3. **病毒 is never in the normal mix** (`pickCharacter` skips `
 ## 病毒入侵 — 7 seconds of viruses, hold to disinfect
 
 From round 3 (infinity mode too), once per round at a random moment that **starts between 6s and
-20s** (`invasionAt`), so it always ends by 27s:
+20s** (`invasionAt`); viruses stop coming by 25s and it ends once they are all wiped (or at the
+round end):
 
 - **Start:** everyone else ducks (not an escape, not counted in the medal's 「出現」). For 7s only
   viruses appear, **twice as often** as normal spawns (`invasionSpawnMs`, 250ms floor); stays still
@@ -200,8 +203,16 @@ From round 3 (infinity mode too), once per round at a random moment that **start
   by 0.5s it was gone (+200).
 - **Escapes during the invasion don't break the streak** — viruses come thick and fast; it's a
   bonus phase. They still count against the medal's catch rate.
-- **End:** viruses still up vanish (not counted), 「消毒完成！」, and normal spawns resume after 600ms.
-  If the round ends first, it is closed silently and the next round starts clean.
+- **Last 2 seconds (`INVASION_LAST_MS`): no new viruses**, and the ones on the board **stop
+  escaping** — the invasion **only ends when every virus is wiped**, even past the 7s. Callout
+  「把病毒消滅光！」 (skipped if the board is already clean), and the chip switches from 「N 秒」 to
+  **「剩 N 隻」**. The parent's phone can't add viruses then either (child refuses `inv-ending`; the
+  remote stops offering holes and says 「病毒入侵快結束了」 — it reads `inv ≤ 2`, since the child
+  reports `inv ≥ 1` for as long as the invasion lasts).
+- **End:** after the last virus, 「消毒完成！」, and normal spawns resume after 600ms. If the round
+  ends first, it is closed silently (leftovers not counted) and the next round starts clean.
+  Verified in Chromium: spawns at 6.7 / 5.2 / 3.8 / 2.3s left, none after; 1.5s past the 7s the
+  invasion was still on with 「剩 2 隻」; it ended with 「消毒完成！」 right after the second wipe.
 - **No boss overlaps it:** a 大魔王 is only allowed if it can finish its 8s before the invasion
   starts (`bossAllowed(…, msToInvasion)`), never during it, and never as a virus.
 - Pausing freezes the countdown (it runs on game time).
@@ -241,18 +252,25 @@ full 8s × 停留更久 is left, so the round end never swallows it.
 
 - **Arrival:** everyone else ducks (not an escape — no streak loss, and not counted in the medal's
   「出現」); no new spawns while it is up. Callout 「大魔王來了！」.
-- **Look:** gold coat that bobs, a pulsing gold glow behind the hole, a 👑「大魔王」 badge under its
-  HP bar, and the board gets a 3px #B45309 ring (4.7:1).
+- **Look:** gold coat that bobs, a pulsing gold glow behind the hole, and the board gets a 3px
+  #B45309 ring (4.7:1). No 「大魔王」 badge next to it.
 - **HP bar:** **right above the boss, exactly like iron's** (the same green 8px bar, no boss-only
   style) — it shrinks with every tap.
-- **HP by age:** little 8 · kid 12 · junior 16 · teen 20 — all ≈ 3–4s at that age's top tapping
-  speed (≈ 2.5 / 4 / 5 / 6.5 per second). 更強的槌子 takes 2–3 HP per tap. Never a virus (viruses
+- **HP by age:** little 13 · kid 19 · junior 26 · teen 32 (×1.6 of the old 8 / 12 / 16 / 20 on
+  2026-10-05) — all ≈ 5s at that age's top tapping speed (≈ 2.5 / 4 / 5 / 6.5 per second), inside
+  the 8s stay. 更強的槌子 takes 2–3 HP per tap. Never a virus (viruses
   only come in 病毒入侵, where bosses are not allowed).
 - **Stay:** a fixed **8s** (× 停留更久), not age- or level-scaled.
 - **Knock-out:** 5× points (500) × the streak multiplier, +1 collection, sticker
-  大魔王剋星, callout 「打倒大魔王！」. **Escape:** 「大魔王跑掉了！」 and the streak resets.
-  Spawning resumes 700ms after it leaves.
-- Reduced motion: no bob and no glow pulse (the glow stays, static).
+  大魔王剋星, callout 「打倒大魔王！」, a longer buzz. It **doesn't drop into the hole**: a 1s defeat
+  animation (`BOSS_DEFEAT_MS`, `.is-defeated`) — white flash and swell → squash → dizzy wobble left
+  and right → spins 540° while shrinking to nothing; from 0.38s a gold ring expands and ten gold
+  stars fly out (`.boss-burst`, injected into the hole, removed after). The HP bar goes away. The
+  hole and all spawning wait until the animation is over; then the mole is put back down with
+  transitions off, so it never slides down a second time.
+- **Escape:** 「大魔王跑掉了！」 and the streak resets. Spawning resumes 700ms after it leaves.
+- Reduced motion: no bob and no glow pulse (the glow stays, static); the defeat is a flash and a
+  fade, no spin and no stars.
 
 ## No first-visit tutorial
 

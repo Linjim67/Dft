@@ -173,10 +173,8 @@
       return base + '：' + COAT_NAME[h.mole.variant] + E.BY_ID[h.mole.char].name;
     }
 
-    var BADGE = {
-      normal: '', silver: '×1.5', iron: '×2',
-      boss: '<svg aria-hidden="true"><use href="#icon-crown"></use></svg>大魔王'
-    };
+    /* 大魔王不貼角標：金色、金光、棋盤金框和「大魔王來了！」已經夠清楚（讀螢幕的人聽 aria-label） */
+    var BADGE = { normal: '', silver: '×1.5', iron: '×2', boss: '' };
 
     function raise(h, char, variant) {
       var boss = variant === 'boss';
@@ -240,6 +238,7 @@
     function spawn() {
       if (S.boss) return; /* 大魔王在場：專心打它 */
       if (S.mode === 'manual' && !S.invasion) return; /* 雙機手動：只有家長放的角色（病毒入侵照樣冒病毒） */
+      if (S.invasion && S.invasion.closing) return; /* 入侵最後 2 秒：不再冒新病毒 */
       var free = S.holes.filter(function (h) { return h.open && !h.mole && S.clock >= h.freeAt; });
       if (!free.length) return;
       var h = free[Math.floor(Math.random() * free.length)];
@@ -292,10 +291,38 @@
       progress.totalPoints += pts;
       progress.clicks[m.char] = (progress.clicks[m.char] || 0) + 1;
       popScore(h, pts, m.variant);
-      if (navigator.vibrate) { try { navigator.vibrate(12); } catch (e) { /* 忽略 */ } }
-      lower(h, true);
+      if (navigator.vibrate) { try { navigator.vibrate(m.variant === 'boss' ? [20, 40, 30] : 12); } catch (e) { /* 忽略 */ } }
+      if (m.variant === 'boss') defeatBoss(h);
+      else lower(h, true);
       $('hudScore').textContent = fmt(S.runScore);
       renderMult();
+    }
+
+    /* 打倒大魔王：不直接縮回洞裡。閃一下、暈頭轉向、轉圈縮小，星星往外噴；
+       播完（BOSS_DEFEAT_MS）這個洞才空出來，其他角色也等播完才冒出來 */
+    function defeatBoss(h) {
+      lower(h, false);
+      h.freeAt = S.clock + C.BOSS_DEFEAT_MS;
+      S.nextSpawnAt = Math.max(S.nextSpawnAt, S.clock + C.BOSS_DEFEAT_MS);
+      h.el.classList.remove('has-hp'); /* 血條空了，不用再留著 */
+      h.el.classList.add('is-defeated');
+      var burst = document.createElement('span');
+      burst.className = 'boss-burst';
+      burst.setAttribute('aria-hidden', 'true');
+      var rays = '<b></b>';
+      for (var k = 0; k < 10; k++) rays += '<i style="--a:' + (k * 36 + 18) + 'deg;--d:' + (k % 2 ? 44 : 62) + 'px"></i>';
+      burst.innerHTML = rays;
+      h.el.appendChild(burst);
+      var el = h.el;
+      var moleEl = h.moleEl;
+      window.setTimeout(function () {
+        if (burst.parentNode) burst.parentNode.removeChild(burst);
+        /* 角色已經縮不見了：直接把它放回洞底（不要看到它再滑下去一次） */
+        moleEl.style.transition = 'none';
+        el.classList.remove('is-defeated');
+        void moleEl.offsetWidth;
+        moleEl.style.transition = '';
+      }, C.BOSS_DEFEAT_MS);
     }
 
     function damage(h, amount) {
@@ -373,10 +400,16 @@
     var invasionHint = $('invasionHint');
     var invasionLeft = $('invasionLeft');
 
-    /* 入侵剩幾秒：寫在棋盤下方的提示裡 */
+    function virusesLeft() {
+      return S.holes.filter(isVirusHole).length;
+    }
+
+    /* 寫在棋盤下方的提示裡：入侵剩幾秒；最後 2 秒起改成「還剩幾隻病毒」 */
     function renderInvasion() {
       if (!S.invasion) return;
-      invasionLeft.textContent = Math.ceil(Math.max(0, S.invasion.until - S.clock) / 1000) + ' 秒';
+      var text = S.invasion.closing ? '剩 ' + virusesLeft() + ' 隻'
+        : Math.ceil(Math.max(0, S.invasion.until - S.clock) / 1000) + ' 秒';
+      if (invasionLeft.textContent !== text) invasionLeft.textContent = text;
     }
 
     function setInvasionLook(on) {
@@ -408,6 +441,14 @@
         return;
       }
       callout('病毒入侵！');
+    }
+
+    /* 入侵最後 2 秒：不再冒新病毒，場上的病毒也不會跑掉，全部消滅才結束 */
+    function closeInvasion() {
+      S.invasion.closing = true;
+      S.holes.forEach(function (h) { if (isVirusHole(h)) h.mole.downAt = Infinity; });
+      if (virusesLeft()) callout('把病毒消滅光！');
+      notify();
     }
 
     function endInvasion(quiet) {
@@ -586,14 +627,15 @@
       });
 
       if (S.invasion) {
-        if (S.clock >= S.invasion.until) endInvasion();
+        if (!S.invasion.closing && S.invasion.until - S.clock <= C.INVASION_LAST_MS) closeInvasion();
       } else if (S.invasionAt !== null && S.clock >= S.invasionAt && !S.boss) {
         startInvasion();
         if (!S.running) return; /* 第一次入侵：教學對話框開著，時間停住 */
       }
       if (S.invasion) {
         wipeTick(dt); /* 手指按著（不動也算），就一直消毒 */
-        renderInvasion();
+        if (S.invasion.closing && !virusesLeft()) endInvasion(); /* 最後一隻也消滅了 */
+        else renderInvasion();
       }
       tickEvents();
 
@@ -1074,6 +1116,7 @@
       if (!h || !h.open) return no('locked');
       if (h.mole || S.clock < h.freeAt) return no('busy');
       if (S.boss) return no('boss');
+      if (S.invasion && S.invasion.closing) return no('inv-ending'); /* 最後 2 秒不再有新病毒 */
       var ch = E.BY_ID[char];
       if (!ch) return no('bad');
       if (S.invasion && !ch.wipe) return no('invasion');
@@ -1162,7 +1205,8 @@
           var m = h.mole;
           return { o: h.open, c: m ? m.char : null, v: m ? m.variant : null, b: !!h.bubble, p: m ? hpPercent(m) : 0 };
         }),
-        inv: S.invasion ? Math.ceil(Math.max(0, S.invasion.until - S.clock) / 1000) : 0,
+        /* 入侵中至少是 1：倒數到 0 之後還在等孩子消滅最後幾隻；≤ 2 = 最後階段（遙控器據此顯示） */
+        inv: S.invasion ? Math.max(1, Math.ceil((S.invasion.until - S.clock) / 1000)) : 0,
         boss: !!S.boss,
         quake: quakeOn(),
         bubbles: bubbleCount(),

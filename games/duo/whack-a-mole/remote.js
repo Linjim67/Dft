@@ -76,6 +76,7 @@
   function manual() { return !room || room.mode === 'manual'; }
   function round() { return (state && state.round) || 1; }
   function invading() { return canPlay() && !!state.inv; }
+  function ending() { return invading() && D.invasionEnding(state); } /* 入侵最後階段：不能再放 */
 
   /* 事件現在能不能按，不能的話寫原因（不只把按鈕變灰） */
   function eventBlock(id, now) {
@@ -137,6 +138,7 @@
     }
     var hint;
     if (!canPlay()) hint = '孩子開始玩之後，點一個空洞就會放「' + itemName(items[0]) + '」。';
+    else if (ending()) hint = '病毒入侵快結束了：等孩子把剩下的病毒消滅光。';
     else if (invading()) hint = '病毒入侵中，隊伍換成病毒：點空洞放病毒。';
     else hint = '點一個空洞，就放「' + itemName(items[0]) + '」。';
     if ($('lineHint').textContent !== hint) $('lineHint').textContent = hint;
@@ -152,7 +154,10 @@
     $('stormBtn').hidden = !!why || active;
     $('stormWait').hidden = !why && !active;
     $('storm').classList.toggle('is-active', active);
-    if (active) {
+    if (active && ending()) {
+      setText('stormWaitName', '病毒入侵快結束了');
+      setText('stormWaitNote', '不會再有新病毒，孩子把剩下的消滅光就結束');
+    } else if (active) {
       setText('stormWaitName', '病毒入侵中・還有 ' + state.inv + ' 秒');
       setText('stormWaitNote', manual() ? '病毒會自己冒出來，你也可以點空洞放' : '病毒會自己冒出來');
     } else if (why) {
@@ -167,7 +172,7 @@
     var base = '第 ' + (i + 1) + ' 個洞';
     if (!h || !h.o) return base + '：維修中';
     if (h.c) return base + '：' + itemName({ c: h.c, v: h.v }) + (h.b ? '（泡泡蓋住）' : '');
-    if (manual() && canPlay()) return base + '：空的，點一下放「' + itemName(next) + '」';
+    if (manual() && canPlay() && !ending()) return base + '：空的，點一下放「' + itemName(next) + '」';
     return base + '：空的';
   }
 
@@ -185,7 +190,7 @@
   function renderMirror() {
     var holes = state && state.holes && state.holes.length ? state.holes : [];
     var now = Date.now();
-    var placing = manual() && canPlay();
+    var placing = manual() && canPlay() && !ending();
     var next = shownLine()[0];
     for (var i = 0; i < 6; i++) {
       var h = holes[i];
@@ -351,6 +356,7 @@
     if (!h || !h.o) { toast(D.reasonText('locked')); return; }
     if (h.c || pending[i]) { toast(D.reasonText('busy')); return; }
     if (state.boss) { toast(D.reasonText('boss')); return; }
+    if (ending()) { toast(D.reasonText('inv-ending')); return; }
     if (!duo) return;
     var next = takeNext();
     var meta = { kind: 'place', h: i, item: next.item, fromLine: next.fromLine };
