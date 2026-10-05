@@ -187,7 +187,8 @@ From round 3 (infinity mode too), once per round at a random moment that **start
   hold (`setPointerCapture`), the swab ghost follows the finger, and the hole under the finger is
   tracked (on press and on every move). **A virus must be wiped for a while** — every frame adds
   the elapsed time to the virus under the finger, even if the finger doesn't move:
-  **normal 0.4s · silver 0.75s · iron 1.2s** (`WIPE_MS`; iron was "3 hits" → 3 × 0.4s).
+  **normal 0.2s · silver 0.375s · iron 0.6s** (`WIPE_MS`; halved on 2026-10-05 from
+  0.4 / 0.75 / 1.2s, which was too slow to clear viruses in a 7s invasion).
   - A quick touch is not enough; the virus's bar (same bar as iron's HP) drains as it is wiped, and
     the virus wiggles (`.is-wiping`) only while the finger is on it.
   - Wiping **adds up**: lift halfway, come back, and it carries on.
@@ -219,7 +220,8 @@ The start screen's rules card only teases it: 「還會突然病毒入侵 7 秒�
 
 Keyboard: `1`–`6` hit holes; during the invasion **holding a number key = holding a finger** on
 that hole (keydown starts it, keyup stops it, auto-repeat is ignored). Enter / Space on a focused
-hole can't be held, so each press wipes 0.25s (`WIPE_TAP_MS`). `Esc` pauses; Ctrl/Cmd combos are
+hole can't be held, so each press wipes 0.25s (`WIPE_TAP_MS`): 1 press for a normal virus,
+2 silver, 3 iron. `Esc` pauses; Ctrl/Cmd combos are
 left alone.
 
 ## No 連擊 bar
