@@ -807,7 +807,7 @@
       var g = tr[i];
       if (g.x < c0 - 2 || g.x > c1 + 2) continue;
       if (top && g.k !== 'portal') continue;
-      drawTrigger(g, camX, gY);
+      drawTrigger(g, camX, gY, t);
     }
 
     /* 障礙物、星星 */
@@ -927,7 +927,7 @@
 
   var PORTAL_ICON = { cube: 'egg', rot: 'egg', duo: 'egg', ship: 'ship', ufo: 'ufo', boss: 'doctor' };
 
-  function drawTrigger(g, camX, gY) {
+  function drawTrigger(g, camX, gY, t) {
     var T = V.T, sx = (g.x - camX) * T, run = G.run;
     if (g.k === 'portal') {
       /* 小小的門，剛好卡在漏斗最窄的地方 */
@@ -955,31 +955,107 @@
     } else if (g.k === 'check') {
       blit(run.cp && run.cp.x >= g.x ? 'flagOn' : 'flagOff', sx - 0.12 * T, gY - 1.2 * T, 0.6, 1.2);
     } else if (g.k === 'goal') {
-      drawGoal(sx, gY);
+      drawGoal(sx, gY, g, t);
     }
   }
 
-  function drawGoal(sx, gY) {
-    var T = V.T;
+  /* 終點：氣球拱門＋「終點」彩帶布條＋紅色終點線（小膠囊衝過去就斷開）＋地上的黑白格子線。
+     氣球輕輕飄（減少動態時不動）；星星只是慢慢變亮變暗，不閃爍 */
+  var BALLOONS = ['#F97316', '#FACC15', '#4ADE80', '#38BDF8', '#F472B6'];
+
+  function drawGoal(cx, gY, g, t) {
+    var T = V.T, run = G.run;
+    var RX = 1.7, RY = 4.0, N = 13, R = 0.34;
+    var bob = function (i) { return reduce ? 0 : Math.sin(t / 420 + i * 0.9) * 0.05 * T; };
+    var broken = run.x >= g.x - 0.35;
     ctx.save();
-    ctx.fillStyle = '#7C2D12';
-    rrect(sx, gY - 4 * T, 0.22 * T, 4 * T, 0.1 * T); ctx.fill();
-    rrect(sx + 1.8 * T, gY - 4 * T, 0.22 * T, 4 * T, 0.1 * T); ctx.fill();
+
+    /* 地上的黑白格子終點線 */
+    var q = 0.3 * T;
+    for (var r = 0; r < 3; r++) {
+      for (var c = 0; c < 2; c++) {
+        ctx.fillStyle = (r + c) % 2 ? '#1C1917' : '#FFFFFF';
+        ctx.fillRect(cx - q + c * q, gY + r * q, q, q);
+      }
+    }
+
+    /* 氣球拱門（從左邊地上沿著半橢圓到右邊地上） */
+    function balloon(x, y, rad, color) {
+      ctx.fillStyle = color;
+      ctx.strokeStyle = 'rgba(124,45,18,.55)';
+      ctx.lineWidth = Math.max(1.5, 0.05 * T);
+      ctx.beginPath(); ctx.ellipse(x, y, rad, rad * 1.12, 0, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+      ctx.fillStyle = 'rgba(255,255,255,.7)';
+      ctx.beginPath(); ctx.ellipse(x - rad * 0.35, y - rad * 0.4, rad * 0.22, rad * 0.3, -0.5, 0, Math.PI * 2); ctx.fill();
+    }
+    var pts = [];
+    for (var i = 0; i < N; i++) {
+      var th = Math.PI - (i / (N - 1)) * Math.PI;
+      pts.push([cx + RX * Math.cos(th) * T, gY - (RY * Math.sin(th) + R * 0.9) * T + bob(i)]);
+    }
+    for (i = 0; i < N; i++) balloon(pts[i][0], pts[i][1], R * T, BALLOONS[i % BALLOONS.length]);
+    /* 兩邊地上再放一小串，比較穩 */
+    [-1, 1].forEach(function (side, k) {
+      balloon(cx + side * (RX + 0.42) * T, gY - 0.36 * T + bob(20 + k), 0.3 * T, BALLOONS[(k * 2 + 1) % 5]);
+      balloon(cx + side * (RX + 0.2) * T, gY - 0.95 * T + bob(22 + k), 0.28 * T, BALLOONS[(k * 2 + 3) % 5]);
+    });
+
+    /* 紅色終點線：小膠囊碰到就斷成兩半垂下來 */
+    var ly = gY - 1.15 * T, lx0 = cx - (RX - 0.1) * T, lx1 = cx + (RX - 0.1) * T;
+    ctx.lineCap = 'round';
+    ctx.strokeStyle = '#DC2626';
+    ctx.lineWidth = Math.max(3, 0.1 * T);
+    ctx.beginPath();
+    if (!broken) {
+      ctx.moveTo(lx0, ly); ctx.quadraticCurveTo(cx, ly + 0.25 * T, lx1, ly);
+    } else {
+      ctx.moveTo(lx0, ly); ctx.quadraticCurveTo(lx0 + 0.25 * T, ly + 0.5 * T, lx0 + 0.15 * T, ly + 0.95 * T);
+      ctx.moveTo(lx1, ly); ctx.quadraticCurveTo(lx1 - 0.25 * T, ly + 0.5 * T, lx1 - 0.15 * T, ly + 0.95 * T);
+    }
+    ctx.stroke();
+    ctx.strokeStyle = 'rgba(255,255,255,.75)';
+    ctx.lineWidth = Math.max(1, 0.03 * T);
+    ctx.stroke();
+
+    /* 拱門頂的彩帶布條「終點」，兩邊尾巴往下折 */
+    var bw = 2.5 * T, bh = 0.78 * T, by = gY - (RY + 0.15) * T, bx = cx - bw / 2;
     ctx.fillStyle = '#15803D';
-    rrect(sx - 0.25 * T, gY - 4.6 * T, 2.5 * T, 0.95 * T, 0.3 * T); ctx.fill();
+    [-1, 1].forEach(function (side) {
+      var ex = side < 0 ? bx - 0.35 * T : bx + bw + 0.35 * T, ix = side < 0 ? bx + 0.2 * T : bx + bw - 0.2 * T;
+      ctx.beginPath();
+      ctx.moveTo(ix, by - bh / 2 + 0.18 * T); ctx.lineTo(ex, by - bh / 2 + 0.18 * T);
+      ctx.lineTo(ex + side * -0.22 * T, by + 0.18 * T); ctx.lineTo(ex, by + bh / 2 + 0.18 * T);
+      ctx.lineTo(ix, by + bh / 2 + 0.18 * T);
+      ctx.closePath(); ctx.fill();
+    });
+    ctx.fillStyle = '#16A34A';
+    ctx.strokeStyle = '#14532D';
+    ctx.lineWidth = 2;
+    rrect(bx, by - bh / 2, bw, bh, 0.16 * T); ctx.fill(); ctx.stroke();
     ctx.fillStyle = '#fff';
     ctx.font = '700 ' + Math.round(0.5 * T) + 'px ' + FONT;
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
-    ctx.fillText('終點', sx + 1 * T, gY - 4.12 * T);
-    /* 格子旗 */
-    var q = 0.25 * T;
-    for (var i = 0; i < 7; i++) {
-      for (var j = 0; j < 2; j++) {
-        ctx.fillStyle = (i + j) % 2 ? '#1C1917' : '#FFFFFF';
-        ctx.fillRect(sx + 0.22 * T + i * q, gY - 3.6 * T + j * q, q, q);
-      }
-    }
+    ctx.fillText('終點', cx, by + 1);
+    blit('star', bx + 0.12 * T, by - 0.3 * T, 0.6, 0.6);
+    blit('star', bx + bw - 0.72 * T, by - 0.3 * T, 0.6, 0.6);
+
+    /* 四顆小亮光，慢慢變亮變暗（約 1 秒一次，不閃爍） */
+    [[-2.3, 3.2], [2.4, 3.4], [-1.2, 4.9], [1.4, 4.85]].forEach(function (p, k) {
+      var a = reduce ? 0.8 : 0.55 + 0.4 * Math.sin(t / 500 + k * 1.7);
+      sparkle(cx + p[0] * T, gY - p[1] * T, 0.16 * T, a);
+    });
+    ctx.restore();
+  }
+
+  function sparkle(x, y, r, a) {
+    ctx.save();
+    ctx.globalAlpha = clamp(a, 0, 1);
+    ctx.fillStyle = '#FACC15';
+    ctx.beginPath();
+    ctx.moveTo(x, y - r); ctx.quadraticCurveTo(x, y, x + r, y); ctx.quadraticCurveTo(x, y, x, y + r);
+    ctx.quadraticCurveTo(x, y, x - r, y); ctx.quadraticCurveTo(x, y, x, y - r);
+    ctx.fill();
     ctx.restore();
   }
 

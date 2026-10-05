@@ -646,6 +646,15 @@ and 「換一張新地圖」.
 
 ## Screen
 
+- **The finish is a celebration, not a sign.** It has:
+  - an arch of 13 balloons (orange, yellow, green, sky, pink) with two small bunches at the base;
+  - a green ribbon banner 「終點」 between two gold stars, and a red finish tape that snaps in two
+    and hangs from both sides when the capsule breaks it;
+  - a black-and-white checkered line on the ground.
+
+  The balloons bob gently, and four sparkles slowly brighten and dim (about 1 s, no flashing). With
+  reduced motion everything holds still. It is drawn on the canvas, centred on the goal, so the
+  capsule finishes *inside* the arch.
 - Canvas 9 tiles high; tile = min(height / 9, width / 11). Portrait 375 px → 32 px tiles, ~8 tiles of
   look-ahead. The capsule sits 2.8 tiles from the left edge.
 - **Portrait leaves space under the canvas: it becomes a big orange 「跳」 / 「飛」 pad** (dark ink on
