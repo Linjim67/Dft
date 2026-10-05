@@ -609,9 +609,17 @@ So he is a **playmate in a water fight**:
 - **Aiming is a laser pointer**: a thin bright line with a red glow that fades out on both sides,
   ending in a glowing dot on the capsule. It brightens as the syringe fills. A "!" bubble shows
   over his head.
-- The label 「跳！」 (low) or 「別跳！」 (high) sits next to the dot — text, not colour alone.
+- **No 「跳！／別跳！」 labels** (product owner): the laser alone tells. The dot's *position* — at the
+  feet or at head height — carries low vs high, so it isn't colour alone. The one-time hint says
+  「紅色雷射指到哪裡，水就射到哪裡」.
 - When the bag runs dry he is **beaten**: a happy face, a little white flag and
   「點滴用完了，你贏了！」, then he rolls away and the goal appears 14 tiles on.
+
+**After a crash in this level the capsule gets 0.5 s of invincibility** (real time, converted to game
+time so it's 0.5 s at every age). It starts when play resumes after the 0.65 s blink at the flag and
+keeps blinking (~2.3 Hz, partial opacity) while it lasts. Needles and water don't count, and running
+into a box side puts the capsule on top instead of crashing. Respawning at the phase checkpoint can
+otherwise land a child right in front of the next shot. Other levels don't get it.
 
 **The arena floor is flat, with obstacles timed between the shots.** (A hilly version was tried and
 dropped at the product owner's request — flat ground, obstacles instead.) The doctor's schedule is
@@ -666,13 +674,14 @@ and 「換一張新地圖」.
   - all six levels finish **with all 3 stars**;
   - all-difficulty-3 sections pass in every mode;
   - three infinity seeds pass through round 1, the boss and into round 2.
-- **Tests:** 50 engine/level tests, including:
+- **Tests:** 54 engine/level tests, including:
   - the funnel shape;
   - rolling through it without leaving the ground;
   - a ship being pushed through by the ceiling;
   - the UFO column rule checked column by column;
   - the IV bag only ever draining, and empty at the win;
-  - every boss obstacle being ≥ 1 s from any shot, with each star over a needle.
+  - every boss obstacle being ≥ 1 s from any shot, with each star over a needle;
+  - the post-respawn invincibility lasting 0.5 s of real time at ×0.7, ×1 and ×2 speed.
 
   Plus 18 jsdom page tests.
 - **Real Chromium:** touch taps, ship hold over CDP touch, landscape, and an AA contrast audit

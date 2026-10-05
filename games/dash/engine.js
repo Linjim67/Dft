@@ -84,7 +84,10 @@
       PAIR: { 'low,low': 0.8, 'low,high': 0.75, 'high,low': 0.62 },
       FIRST: ['low', 'low', 'high'],   /* 開場三發固定：先學會跳，再學會不要跳 */
       SHOTS: 12,
-      OUTRO: 14               /* 打完之後，終點在幾格外（醫生先舉白旗、滾走） */
+      OUTRO: 14,              /* 打完之後，終點在幾格外（醫生先舉白旗、滾走） */
+      /* 打醫生的關卡：撞到後從旗子重來，有 0.5 秒（真實時間）無敵——
+         針、水柱都不算；撞到藥盒側面就直接站上去。小膠囊一直閃爍 */
+      INVULN_S: 0.5
     }
   };
 
@@ -249,7 +252,7 @@
       world: world, t: 0, x: 0, prevX: 0, mode: first ? first.mode : 'cube',
       p: newPlayer(), p2: null, ti: 0, speedMul: 1,
       baseScale: opt.timeScale || 1, acc: 0,
-      dead: false, done: false, deaths: 0, got: {}, gotN: 0,
+      dead: false, done: false, deaths: 0, invuln: 0, got: {}, gotN: 0,
       rot: { angle: 0, dir: 1, view: 0 }, boss: null,
       checkpoints: opt.checkpoints !== false, cp: null,
       passCol: Math.floor(-1.5), ev: []
@@ -384,6 +387,11 @@
           P.y = b.y - H;
           if (P.vy > 0) P.vy = 0;
           moved = true;
+        } else if (run.invuln > 0) {
+          /* 無敵：撞到藥盒側面就直接站上去 */
+          P.y = b.y + 1 + H;
+          if (P.vy < 0) P.vy = 0;
+          moved = true;
         } else {
           return crash(run, 'block');
         }
@@ -417,6 +425,10 @@
       } else if (oy + H <= b.y + C.EPS) {
         P.y = b.y - H;
         if (P.vy > 0) P.vy = 0;
+      } else if (run.invuln > 0) {
+        P.y = b.y + 1 + H;
+        if (P.vy < 0) P.vy = 0;
+        ground = true;
       } else {
         return crash(run, 'block');
       }
@@ -450,7 +462,7 @@
         if (b.dir < 0) { y0 = b.y + 1 - N.tip; y1 = b.y + 1 - N.base; }
         else { y0 = b.y + N.base; y1 = b.y + N.tip; }
         if (overlap(x - hz, x + hz, cx - N.half - pad, cx + N.half + pad) &&
-          overlap(P.y - hz, P.y + hz, y0 - pad, y1 + pad)) return crash(run, 'needle');
+          overlap(P.y - hz, P.y + hz, y0 - pad, y1 + pad) && !(run.invuln > 0)) return crash(run, 'needle');
       } else if (b.k === 'pad') {
         if (m === 'cube' && P.vy <= 0 &&
           overlap(x - H, x + H, b.x + 0.5 - C.PAD.half, b.x + 0.5 + C.PAD.half) &&
@@ -587,7 +599,8 @@
       w.x -= B.SHOT_V * C.DT;
       if (w.x < run.x - 8) { b.shots.splice(i, 1); continue; }
       var yc = shotY(run.world, w.x, w.lane), hh = laneHalf(w.lane);
-      if (overlap(run.x - hz, run.x + hz, w.x - B.LEN / 2 - pad, w.x + B.LEN / 2 + pad) &&
+      if (!(run.invuln > 0) &&
+        overlap(run.x - hz, run.x + hz, w.x - B.LEN / 2 - pad, w.x + B.LEN / 2 + pad) &&
         overlap(P.y - hz, P.y + hz, yc - hh - pad, yc + hh + pad)) {
         crash(run, 'water');
         return;
@@ -607,6 +620,7 @@
      ───────────────────────────────────────────────────────────── */
 
   function step(run, held, press) {
+    if (run.invuln > 0) run.invuln = Math.max(0, run.invuln - CONFIG.DT);
     var R = run.rot, d = R.angle - R.view, e = CONFIG.ROT_EASE * CONFIG.DT;
     R.view = Math.abs(d) <= e ? R.angle : R.view + (d > 0 ? e : -e);
     var C = CONFIG;
@@ -661,6 +675,8 @@
     run.acc = 0;
     run.dead = false;
     run.deaths++;
+    /* 打醫生的關卡：重來後 0.5 秒（真實時間）無敵；遊戲時間跑得比真實時間快／慢，換算一下 */
+    run.invuln = run.world.bossAt != null ? C.BOSS.INVULN_S * run.baseScale * run.speedMul : 0;
   }
 
   /* 進度 0–1；無限挑戰沒有終點 → null */

@@ -37,7 +37,7 @@
     ship: { hint: '體溫計火箭：按住往上飛，放開往下', tap: '按住這裡往上飛', word: '飛' },
     ufo: { hint: '藥杯飛碟：點一下往上飛一下', tap: '點一下往上飛一下', word: '飛' },
     duo: { hint: '上下兩個一起跳！藍色虛線框是不一樣的地方', tap: '點這裡，兩個一起跳', word: '跳' },
-    boss: { hint: '看到「跳！」就跳，看到「別跳！」就不要跳', tap: '點這裡也可以跳', word: '跳' }
+    boss: { hint: '紅色雷射指到哪裡，水就射到哪裡', tap: '點這裡也可以跳', word: '跳' }
   };
 
   /* 無痕模式下 localStorage 可能丟例外：退回記憶體 */
@@ -1008,7 +1008,8 @@
     var y = G.phase === 'play' ? P.py + (P.y - P.py) * a : P.y;
     var dead = run.dead;
     ctx.save();
-    if (G.phase === 'respawn' && Math.floor(t / 220) % 2) ctx.globalAlpha = 0.35;
+    /* 從旗子重來：先停著閃，打醫生的關卡再加 0.5 秒邊跑邊閃（無敵） */
+    if ((G.phase === 'respawn' || run.invuln > 0) && Math.floor(t / 220) % 2) ctx.globalAlpha = 0.35;
     ctx.translate(PX * T, gY - y * T);
     streaks(pm, t);
     if (pm === 'cube') {
@@ -1078,7 +1079,8 @@
     else if (tells.length) exclaim(docX + 0.55 * T, dY - 3.25 * T);
   }
 
-  /* 雷射筆：細細一條亮線，兩旁的紅光越往外越淡；貼著地面、離地固定高度，終點是小膠囊身上的紅點 */
+  /* 雷射筆：細細一條亮線，兩旁的紅光越往外越淡；貼著地面、離地固定高度，終點是小膠囊身上的紅點。
+     不寫「跳／別跳」：紅點在腳邊還是頭上，就是提示（位置不同，不只靠顏色） */
   function laser(tl, camX, gY, tipX, dY) {
     var T = V.T, w = G.run.world, mid = laneY(tl.lane);
     var a = 0.35 + 0.65 * tl.frac;            /* 蓄力越滿越亮 */
@@ -1115,18 +1117,6 @@
     rg.addColorStop(1, 'rgba(239,68,68,0)');
     ctx.fillStyle = rg;
     ctx.beginPath(); ctx.arc(dx, dy, 0.42 * T, 0, Math.PI * 2); ctx.fill();
-    /* 文字：跳！／別跳！（不只靠顏色） */
-    var text = tl.lane === 'low' ? '跳！' : '別跳！';
-    ctx.font = '700 ' + Math.round(0.44 * T) + 'px ' + FONT;
-    var tw = ctx.measureText(text).width, ph = 0.62 * T, pw = tw + 0.4 * T;
-    var lx = Math.max(4, (PX - 0.6) * T - pw), ly = dy - ph / 2;
-    ctx.fillStyle = tl.lane === 'low' ? '#B91C1C' : '#1E3A8A';
-    rrect(lx, ly, pw, ph, ph / 2);
-    ctx.fill();
-    ctx.fillStyle = '#fff';
-    ctx.textAlign = 'center';
-    ctx.textBaseline = 'middle';
-    ctx.fillText(text, lx + pw / 2, ly + ph / 2 + 1);
     ctx.restore();
   }
 
