@@ -66,6 +66,13 @@
       <p class="dc-best" id="bestLine" hidden></p>
 
       <button class="btn btn-primary" type="button" id="startBtn">開始畫</button>
+
+      <!-- 每日排行榜：只有分數、沒有名字；今天不到三個人挑戰時，空著的名次放預設分數 -->
+      <section class="dc-lb" aria-labelledby="lbIntroTitle">
+        <h2 class="dc-lb-title" id="lbIntroTitle"><svg viewBox="0 0 24 24" class="icon lb-icon" aria-hidden="true"><path d="M8 4h8v5a4 4 0 0 1-8 0V4ZM8 6H5v1.5A3.5 3.5 0 0 0 8.5 11M16 6h3v1.5a3.5 3.5 0 0 1-3.5 3.5M12 13v4M8.5 20h7M10 17h4v3h-4z" /></svg>今日排行榜</h2>
+        <ol class="dc-lb-list" id="lbIntro"></ol>
+        <p class="dc-lb-note" id="lbIntroNote">只顯示分數，不會公布名字。每天台灣時間 0 點重新開始。</p>
+      </section>
     </section>
 
     <!-- ══════════ 畫畫 ══════════ -->
@@ -121,6 +128,12 @@
       <p class="dc-winner" id="winnerLine"></p>
       <ul class="dc-board" id="scoreBoard"></ul>
       <p class="dc-record" id="recordLine" hidden></p>
+
+      <section class="dc-lb" aria-labelledby="lbResultsTitle">
+        <h2 class="dc-lb-title" id="lbResultsTitle"><svg viewBox="0 0 24 24" class="icon lb-icon" aria-hidden="true"><path d="M8 4h8v5a4 4 0 0 1-8 0V4ZM8 6H5v1.5A3.5 3.5 0 0 0 8.5 11M16 6h3v1.5a3.5 3.5 0 0 1-3.5 3.5M12 13v4M8.5 20h7M10 17h4v3h-4z" /></svg>今日排行榜</h2>
+        <p class="dc-lb-me" id="lbMe" role="status"></p>
+        <ol class="dc-lb-list" id="lbResults"></ol>
+      </section>
       <div class="dc-actions">
         <button class="btn btn-primary" type="button" id="againBtn">再玩一次</button>
         <a class="quiet-link" href="/games/solo/">回小遊戲選單</a>
@@ -130,6 +143,8 @@
 
   <div class="live-region" id="liveRegion" role="status" aria-live="polite"></div>
 
+  <!-- 排行榜用 Firebase（module，延後載入）；draw-circle.js 透過 Anxin.whenFirebase() 等它，連不上就顯示預設分數 -->
+  <script type="module" src="/shared/firebase.js"></script>
   <script src="/games/draw-circle/circle.js"></script>
   <script src="/games/draw-circle/draw-circle.js"></script>
 </body>

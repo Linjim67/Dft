@@ -258,6 +258,126 @@
   font-weight: 700;
 }
 
+/* ── 每日排行榜 ── */
+.dc-lb {
+  margin-top: var(--sp-5);
+  padding: var(--sp-4);
+  background: var(--card);
+  border-radius: var(--r-lg);
+  box-shadow: var(--sh-md);
+  text-align: start;
+}
+
+.dc-lb-title {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  font-size: 1.08rem;
+  font-weight: 700;
+  line-height: 1.4;
+}
+
+.lb-icon {
+  width: 22px;
+  height: 22px;
+  color: #A16207;
+}
+
+.dc-lb-list {
+  display: grid;
+  gap: var(--sp-2);
+  margin: var(--sp-3) 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.lb-row {
+  display: grid;
+  grid-template-columns: 36px 1fr auto;
+  align-items: center;
+  gap: var(--sp-3);
+  min-height: 48px;
+  padding: 0 var(--sp-3);
+  border-radius: var(--r-md);
+  background: var(--bg-sunk);
+}
+
+/* 名次：金、銀、銅（深色底白字，數字本身就說了名次，不只靠顏色） */
+.lb-rank {
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  color: #fff;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.rank-1 .lb-rank {
+  background: #B45309;
+  box-shadow: 0 0 0 3px #FDE68A;
+}
+
+.rank-2 .lb-rank {
+  background: #57534E;
+  box-shadow: 0 0 0 3px #E7E5E4;
+}
+
+.rank-3 .lb-rank {
+  background: #9A3412;
+  box-shadow: 0 0 0 3px #FED7AA;
+}
+
+.lb-score {
+  color: var(--fg-muted);
+  font-weight: 700;
+}
+
+.lb-score strong {
+  font-size: 1.3rem;
+  color: var(--fg);
+  font-variant-numeric: tabular-nums;
+}
+
+.lb-tag {
+  padding: 1px var(--sp-2);
+  border-radius: var(--r-pill);
+  background: var(--card);
+  color: var(--fg-muted);
+  font-size: .78rem;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+/* 自己的那一行：淡橘底＋深橘框＋「你」 */
+.lb-row.is-mine {
+  background: var(--primary-wash);
+  box-shadow: inset 0 0 0 2px var(--primary-deep);
+}
+
+.lb-tag.is-me {
+  background: var(--primary-deep);
+  color: #fff;
+}
+
+.dc-lb-note {
+  margin-top: var(--sp-3);
+  font-size: .85rem;
+  line-height: 1.55;
+  color: var(--fg-muted);
+}
+
+.dc-lb-me {
+  margin-top: var(--sp-2);
+  font-weight: 700;
+  color: var(--fg);
+}
+
+.dc-lb-me:empty {
+  display: none;
+}
+
 .dc-warn {
   margin-top: var(--sp-4);
   padding: var(--sp-3) var(--sp-4);

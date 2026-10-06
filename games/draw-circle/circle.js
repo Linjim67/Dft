@@ -159,9 +159,35 @@
     };
   }
 
+  /* ─────────────────────────────────────────────────────────────
+     每日排行榜（純函式；資料進出在 /shared/firebase.js 的 circle）
+     - 一天 = 台灣時間（UTC+8）的日期，寫成 YYYYMMDD
+     - 只有分數，沒有名字
+     - 今天的挑戰者不到三人時，空著的名次用預設分數補上（73、68、64），標成「預設」
+     ───────────────────────────────────────────────────────────── */
+
+  var BOARD_DEFAULTS = [73, 68, 64];
+
+  function dayKey(ms) {
+    return new Date(ms + 8 * 3600 * 1000).toISOString().slice(0, 10).replace(/-/g, '');
+  }
+
+  /* real：今天真正的前幾名 [{ score, mine }]（高到低）→ 一定回傳三名 [{ score, mine, isDefault }] */
+  function board(real, defaults) {
+    var list = (real || []).slice(0, 3).map(function (r) {
+      return { score: r.score, mine: !!r.mine, isDefault: false };
+    });
+    var d = (defaults || BOARD_DEFAULTS).slice().sort(function (a, b) { return b - a; });
+    for (var i = 0; list.length < 3 && i < d.length; i++) list.push({ score: d[i], mine: false, isDefault: true });
+    /* 同分時真正的挑戰者排在預設分數前面 */
+    list.sort(function (a, b) { return b.score - a.score || (a.isDefault ? 1 : 0) - (b.isDefault ? 1 : 0); });
+    return list;
+  }
+
   var CircleScore = {
     CONFIG: CONFIG, resample: resample, fitCircle: fitCircle, sweep: sweep,
-    scoreStroke: scoreStroke, rate: rate, pathLength: pathLength
+    scoreStroke: scoreStroke, rate: rate, pathLength: pathLength,
+    BOARD_DEFAULTS: BOARD_DEFAULTS, dayKey: dayKey, board: board
   };
   root.CircleScore = CircleScore;
   if (typeof module !== 'undefined' && module.exports) module.exports = CircleScore;

@@ -556,6 +556,33 @@ removed at the product owner's request; the dashed green circle explains itself.
 
   In 比賽 mode both rows are shown, named, so the child can see the parent's score while drawing.
   Each slot's `aria-label` reads e.g. 「第 2 次 63 分，最高」.
+- **今日排行榜 (daily top 3)** — on the cover (under 開始畫) and on the results screen.
+  - **Only scores, never names.** Firestore `circleDays/{YYYYMMDD}/scores/{anonymous uid}` =
+    `{ score, at }`; the rules whitelist exactly those two keys, so a name can't be stored even by a
+    modified client.
+  - **A "day" is Taiwan time** (UTC+8; resets at 0:00). The client computes the id
+    (`CircleScore.dayKey`); the rules recompute it from the server clock and refuse any other day.
+  - **One entry per phone per day, best only.** Each phone writes only its own uid, inside a
+    transaction that reads first and writes only if higher; the rules also require `score` to rise.
+    Whole numbers 0–100 only; `at` must be server time; nobody can delete.
+  - **What is submitted:** the child's best of the round. In 比賽 mode the parent's score is never
+    sent.
+  - **Defaults 73 · 68 · 64** (product owner). With nobody today, the board shows them. With one or
+    two players, real scores always show and defaults fill only the empty places (highest first).
+    Default rows are tagged 「預設」 so the board never passes off made-up scores as other children.
+    Ties put the real player above the default.
+  - The phone's own row is tagged 「你」 on orange — visible only on that phone, so it isn't a name.
+    After a round: 「你今天最好的 82 分，排第 1 名！」 or 「…再 9 分就能上榜！」.
+  - Ranks are gold / silver / bronze discs with white numerals; the numeral carries the rank, so it
+    isn't colour alone.
+  - **Offline or rules not published:** the defaults still show, with 「連不上排行榜，先顯示預設分數。」;
+    the game is unaffected.
+  - **Tested:**
+    - 12 emulator rule cases (other phone's entry, wrong day, 101 / 72.5 / '90', extra `name`,
+      client time, lowering, delete — all refused);
+    - a 4-phone emulator run in Chromium (empty day → defaults; marked 「你」; another phone sees the
+      score with no name; a worse round keeps the better score; the 4th player told the gap);
+    - 5 jsdom cases.
 - No instruction line under the turn title (「用一根手指，一筆畫一個圓」 was removed; the pad's animation
   teaches it). The line appears only in 比賽 mode, when the phone changes hands: 「把手機交給爸爸媽媽」.
 - **自己玩** or **和爸爸媽媽比賽** (one phone, turns alternate child → parent, with a

@@ -157,6 +157,20 @@ service cloud.firestore {
     }
 
     // 回饋（#03）：只能新增；任何人都不能讀、改、刪。
+    // 畫圓圈・每日排行榜（#07）：每支手機（匿名 uid）每天一筆最高分，只有分數，不放名字。
+    // 只能寫「今天」（台灣時間）、只能寫自己的、分數只能往上；誰都不能刪。
+    match /circleDays/{day}/scores/{uid} {
+      allow read: if request.auth != null;
+      allow create: if request.auth != null && request.auth.uid == uid
+        && isTaipeiToday(day)
+        && validCircleScore(request.resource.data);
+      allow update: if request.auth != null && request.auth.uid == uid
+        && isTaipeiToday(day)
+        && validCircleScore(request.resource.data)
+        && request.resource.data.score > resource.data.score;
+      allow delete: if false;
+    }
+
     // keys().hasOnly 是白名單：帶有 nickname（或任何多出來的欄位）的文件
     // 會在伺服器端直接被拒絕，不只是前端「沒送」而已。
     match /feedback/{feedbackId} {
@@ -383,6 +397,19 @@ service cloud.firestore {
       && isLevel(p.fearLevel)
       && isLevel(p.worryLevel)
       && p.specialNeeds is string && p.specialNeeds.size() <= 200;
+  }
+
+  // 台灣時間（UTC+8）的今天，YYYYMMDD
+  function isTaipeiToday(day) {
+    let t = request.time + duration.value(8, 'h');
+    return day.matches('^[0-9]{8}$')
+      && int(day) == t.year() * 10000 + t.month() * 100 + t.day();
+  }
+
+  function validCircleScore(d) {
+    return d.keys().hasOnly(['score', 'at']) && d.keys().hasAll(['score', 'at'])
+      && d.score is int && d.score >= 0 && d.score <= 100
+      && d.at == request.time;
   }
 
   // 只有 clicks / dwellMs / replyCount / lastActivityAt 這幾個欄位可被更新

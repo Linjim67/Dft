@@ -5,7 +5,7 @@
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js';
 import {
   getFirestore, collection, addDoc, serverTimestamp,
-  doc, getDoc, setDoc, updateDoc, deleteDoc, onSnapshot, query, where, Timestamp,
+  doc, getDoc, getDocs, setDoc, updateDoc, deleteDoc, onSnapshot, query, where, orderBy, limit, Timestamp,
   runTransaction, writeBatch, connectFirestoreEmulator
 } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
 import {
@@ -266,7 +266,42 @@ const staff = {
   }
 };
 
+/* ─────────────────────────────────────────────────────────────
+   畫圓圈・每日排行榜（#07）：circleDays/{YYYYMMDD 台灣時間}/scores/{匿名 uid}
+   每支手機每天一筆（只留最高分），只有分數和時間，沒有名字。
+   哪一天、補預設分數、排名在 CircleScore（可測試）；這裡只做資料進出。
+   ───────────────────────────────────────────────────────────── */
+
+const circleScores = (day) => collection(db, 'circleDays', day, 'scores');
+
+const circle = {
+  /* 今天前三名（只有分數；mine = 是不是這支手機）＋這支手機今天的最高分 */
+  async today(day) {
+    const u = await ensureAuth();
+    const [snap, me] = await Promise.all([
+      getDocs(query(circleScores(day), orderBy('score', 'desc'), limit(3))),
+      getDoc(doc(circleScores(day), u.uid))
+    ]);
+    return {
+      top: snap.docs.map((d) => ({ score: d.data().score, mine: d.id === u.uid })),
+      mine: me.exists() ? me.data().score : null
+    };
+  },
+
+  /* 只會往上：交易裡先讀自己今天的分數，這次比較高才寫入。回傳今天的最高分 */
+  async submit(day, score) {
+    const u = await ensureAuth();
+    const ref = doc(circleScores(day), u.uid);
+    return runTransaction(db, async (tx) => {
+      const cur = await tx.get(ref);
+      if (cur.exists() && cur.data().score >= score) return cur.data().score;
+      tx.set(ref, { score, at: serverTimestamp() });
+      return score;
+    });
+  }
+};
+
 /* 給一般 <script> 用的橋：頁面邏輯維持非 module（可測試），
    gstatic 被擋或太慢時，表單照樣顯示，只是送出時會得到明確的錯誤。 */
-window.AnxinFirebase = { submitFeedback, ensureAuth, duo, codes, staff };
+window.AnxinFirebase = { submitFeedback, ensureAuth, duo, codes, staff, circle };
 window.dispatchEvent(new Event('anxin:firebase'));

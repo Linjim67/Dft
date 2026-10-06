@@ -363,6 +363,7 @@
     record.best = Math.max(record.best, mine);
     record.plays += 1;
     saveRecord();
+    submitToBoard(mine);
 
     show('results', $('resultsTitle'));
     Anxin.announce(live, w.textContent);
@@ -378,5 +379,69 @@
   }
 
   /* 測試用 */
-  window.__dc = { state: S, record: function () { return record; } };
+  /* ─────────────────────────────────────────────────────────────
+     每日排行榜：今天（台灣時間）前三名，只有分數。
+     送出的是小朋友這一輪最好的一次（比賽模式也只送小朋友的）；每支手機每天只留最高分。
+     連不上 Firebase：照樣顯示預設分數，寫一行說明，遊戲不受影響。
+     ───────────────────────────────────────────────────────────── */
+
+  var LB = { state: 'loading', top: [], mine: null };
+  var MEDAL = ['第 1 名', '第 2 名', '第 3 名'];
+
+  function firebase() {
+    return Anxin.whenFirebase ? Anxin.whenFirebase(12000) : Promise.reject(new Error('no firebase'));
+  }
+
+  function renderBoard(el) {
+    var rows = CS.board(LB.state === 'ok' ? LB.top : []);
+    el.innerHTML = rows.map(function (r, i) {
+      var tag = r.isDefault ? '<span class="lb-tag">預設</span>' : r.mine ? '<span class="lb-tag is-me">你</span>' : '';
+      var label = MEDAL[i] + ' ' + r.score + ' 分' + (r.isDefault ? '（預設）' : r.mine ? '（你）' : '');
+      return '<li class="lb-row rank-' + (i + 1) + (r.mine && !r.isDefault ? ' is-mine' : '') + (r.isDefault ? ' is-default' : '') +
+        '" aria-label="' + label + '"><span class="lb-rank" aria-hidden="true">' + (i + 1) + '</span>' +
+        '<span class="lb-score"><strong>' + r.score + '</strong> 分</span>' + tag + '</li>';
+    }).join('');
+    return rows;
+  }
+
+  function renderBoards() {
+    renderBoard($('lbIntro'));
+    $('lbIntroNote').textContent = LB.state === 'off'
+      ? '連不上排行榜，先顯示預設分數。'
+      : '只顯示分數，不會公布名字。每天台灣時間 0 點重新開始。';
+    var rows = renderBoard($('lbResults'));
+    var me = $('lbMe');
+    if (LB.state === 'sending') me.textContent = '分數送出中…';
+    else if (LB.state === 'off') me.textContent = '連不上排行榜，這次的分數沒有送出。';
+    else if (LB.mine != null) {
+      var rank = -1;
+      rows.forEach(function (r, i) { if (rank < 0 && r.mine && !r.isDefault) rank = i; });
+      me.textContent = rank >= 0
+        ? '你今天最好的 ' + LB.mine + ' 分，排第 ' + (rank + 1) + ' 名！'
+        : '你今天最好的 ' + LB.mine + ' 分，再 ' + (rows[2].score - LB.mine + 1) + ' 分就能上榜！';
+    } else me.textContent = '';
+  }
+
+  function loadBoard() {
+    var day = CS.dayKey(Date.now());
+    return firebase()
+      .then(function (F) { return F.circle.today(day); })
+      .then(function (r) { LB = { state: 'ok', top: r.top, mine: r.mine }; },
+        function () { LB = { state: 'off', top: [], mine: null }; })
+      .then(renderBoards);
+  }
+
+  function submitToBoard(score) {
+    var day = CS.dayKey(Date.now());
+    LB.state = 'sending';
+    renderBoards();
+    return firebase()
+      .then(function (F) { return F.circle.submit(day, score); })
+      .then(loadBoard, function () { LB = { state: 'off', top: [], mine: null }; renderBoards(); });
+  }
+
+  renderBoards();
+  loadBoard();
+
+  window.__dc = { state: S, record: function () { return record; }, board: function () { return LB; }, loadBoard: loadBoard };
 })();
