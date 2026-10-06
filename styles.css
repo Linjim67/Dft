@@ -257,9 +257,8 @@ button {
   margin-bottom: var(--sp-5);
   padding: var(--sp-4);
   background: var(--danger-wash);
-  border-left: 5px solid var(--danger);
   border-radius: var(--r-md);
-  box-shadow: var(--sh-sm);
+  box-shadow: var(--sh-sm), inset 0 0 0 2px var(--danger);
 }
 
 .error-summary-head {
@@ -921,8 +920,9 @@ form .btn-primary {
 
 @media (hover: hover) and (pointer: fine) {
 
+  /* 不加深底色（#FFE2C4 上的深橘字只有 4.17:1）：改成浮起陰影＋框線加深，和 .pill-cta 一樣 */
   .btn-primary:hover {
-    background: #FFE2C4;
+    box-shadow: var(--sh-lg);
   }
 
   .btn-quiet:hover {

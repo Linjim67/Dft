@@ -201,7 +201,7 @@
       /* 血條：要打好幾下的（鐵甲、大魔王），以及要擦一陣子的病毒 */
       h.el.classList.toggle('has-hp', hp > 1 || isVirus);
       h.el.classList.toggle('is-boss', boss);
-      h.hpFill.style.width = '100%';
+      h.hpFill.style.transform = 'scaleX(1)';
       h.el.classList.remove('is-hit', 'is-nope', 'is-hurt', 'is-wiping');
       h.el.dataset.char = char;
       h.el.classList.add('is-up');
@@ -329,7 +329,7 @@
       var m = h.mole;
       m.hp = Math.max(0, m.hp - amount);
       if (m.hp > 0) {
-        h.hpFill.style.width = Math.round(100 * m.hp / m.maxHp) + '%';
+        h.hpFill.style.transform = 'scaleX(' + Math.round(100 * m.hp / m.maxHp) / 100 + ')';
         retrigger(h.el, 'is-hurt');
         notify();
         return;
@@ -346,7 +346,7 @@
         return;
       }
       m.downAt = Math.max(m.downAt, S.clock + 200);
-      h.hpFill.style.width = Math.round(100 * (1 - m.wiped / m.wipeNeed)) + '%';
+      h.hpFill.style.transform = 'scaleX(' + Math.round(100 * (1 - m.wiped / m.wipeNeed)) / 100 + ')';
       notify();
     }
 

@@ -59,6 +59,11 @@ The `MIN_RATE` floor exists because `I(30) = 0`; without it each round opens wit
     #C2410C inset border** (not colour alone); `aria-label`「止血帶：挑戰小知識，答對就升級」. No extra
     text in the card — the look is the hint. Contrast on the yellow: text 8.7:1, muted 7.1:1,
     border 4.8:1.
+  - **It gently breathes** — scale 1 → 1.045 → 1 every 1.6 s with a slightly deeper shadow at the
+    peak — to draw a child's finger to it. Pressing stops the pulse; reduced motion turns it off.
+- **No how-to list on the cover** (product owner): the start screen is the title, the collection and
+  stickers, and 開始遊戲. The rules teach themselves in play (round 3's 酒精棉片 and the 病毒入侵
+  dialog still explain themselves when they first appear).
   - Cards that aren't ready (or are locked after a wrong answer, or waiting for the question bank)
     stay plain `<div>`s with a status line, and do nothing when tapped.
   - The line above the list says 「有 N 位角色可以挑戰小知識：點一下黃色的卡片！」.
@@ -511,6 +516,14 @@ it bulged, rather than only receiving a number.
 
 ## Play
 
+- **The how-to is an animation, not text on the cover.** The cover keeps only the title, the mode
+  choice and 開始畫. On the empty drawing pad, a pointing finger draws a circle in one stroke, starting
+  at the top and going clockwise. An orange line grows behind it over a faint dashed guide. The
+  finger lifts, the circle fades and the loop repeats every 3.2 s, under the caption 「一筆畫一個圓」.
+  The moment a finger touches the pad the demo disappears, and it comes back for the next try. It is
+  SMIL in an inline SVG, so the line and the finger share one clock. With reduced motion it is paused
+  on the finished circle with the finger still on it. It is decorative (`aria-hidden`); the heading
+  line 「用一根手指，一筆畫一個圓」 carries the instruction as text.
 - **自己玩** or **和爸爸媽媽比賽** (one phone, turns alternate child → parent, with a
   「把手機交給…」 prompt). Three tries each; the best counts. The multi-phone (M) version waits
   on the QR pairing.

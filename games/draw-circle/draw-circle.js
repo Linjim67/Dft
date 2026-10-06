@@ -212,6 +212,19 @@
     Anxin.announce(live, r.score + ' 分，' + r.rating.text);
   }
 
+  /* 減少動態：教學動畫停在「圓剛畫完、手指還在」那一格，不動 */
+  (function () {
+    var demo = $('padDemo');
+    var mq = window.matchMedia ? window.matchMedia('(prefers-reduced-motion: reduce)') : null;
+    function apply() {
+      if (!demo || typeof demo.pauseAnimations !== 'function') return;
+      if (mq && mq.matches) { demo.pauseAnimations(); demo.setCurrentTime(1.98); }
+      else demo.unpauseAnimations();
+    }
+    apply();
+    if (mq && mq.addEventListener) mq.addEventListener('change', apply);
+  })();
+
   function resetPad() {
     S.phase = 'ready';
     S.points = [];

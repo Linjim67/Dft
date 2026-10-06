@@ -48,12 +48,6 @@
         <p class="page-lede">一筆畫出一個圓，看看有多圓！每個人可以畫三次。</p>
       </div>
 
-      <ol class="dc-steps">
-        <li><span class="dc-num" aria-hidden="true">1</span><span>用一根手指，<strong>一筆</strong>畫一個圓</span></li>
-        <li><span class="dc-num" aria-hidden="true">2</span><span>畫完放開手指，馬上就會算分數</span></li>
-        <li><span class="dc-num" aria-hidden="true">3</span><span>三次裡面<strong>最高分</strong>的那一次算數</span></li>
-      </ol>
-
       <fieldset class="field dc-mode">
         <legend class="field-label">要怎麼玩？</legend>
         <div class="segmented dc-segmented">
@@ -84,7 +78,23 @@
       <!-- 手繪是這個遊戲的本質（WCAG 2.5.7 的「必要」例外）；分數另外以文字播報 -->
       <div class="pad-wrap">
         <canvas class="pad" id="pad" role="img" aria-label="畫圓圈的畫布：用手指一筆畫一個圓"></canvas>
-        <p class="pad-empty" id="padEmpty" aria-hidden="true">在這裡畫</p>
+        <!-- 教學用動畫：一根手指從上面開始、一筆畫一個圓（畫完會淡掉、再重來）；一開始畫就不見 -->
+        <div class="pad-empty" id="padEmpty" aria-hidden="true">
+          <svg class="pad-demo" id="padDemo" viewBox="0 0 200 200">
+            <circle class="demo-guide" cx="100" cy="100" r="60" />
+            <path class="demo-stroke" d="M100 40A60 60 0 1 1 99.9 40" pathLength="100">
+              <animate attributeName="stroke-dashoffset" values="100;0;0;0" keyTimes="0;.62;.86;1" dur="3.2s" repeatCount="indefinite" />
+              <animate attributeName="opacity" values="1;1;1;0" keyTimes="0;.62;.86;1" dur="3.2s" repeatCount="indefinite" />
+            </path>
+            <g class="demo-hand">
+              <animateMotion path="M100 40A60 60 0 1 1 99.9 40" keyPoints="0;1;1;1" keyTimes="0;.62;.86;1" calcMode="linear" dur="3.2s" repeatCount="indefinite" />
+              <animate attributeName="opacity" values="1;1;0;0;1" keyTimes="0;.66;.8;.97;1" dur="3.2s" repeatCount="indefinite" />
+              <circle class="demo-tip" r="7" />
+              <path d="M9 11V5a2 2 0 0 1 4 0v5l4.3.9a2 2 0 0 1 1.6 2.2l-.6 4.4A3 3 0 0 1 15.3 20H11a3 3 0 0 1-2.5-1.3L5.6 14.5a1.7 1.7 0 0 1 2.6-2.2L9 13Z" transform="scale(2.3) translate(-11 -3)" />
+            </g>
+          </svg>
+          <span class="pad-demo-text">一筆畫一個圓</span>
+        </div>
       </div>
 
       <div class="dc-result" id="resultBox" hidden>
