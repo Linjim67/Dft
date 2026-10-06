@@ -48,6 +48,15 @@
         <p class="page-lede">小膠囊要衝到終點！跳過針頭、坐火箭、開飛碟，還要和醫生玩水槍。</p>
       </div>
 
+      <!-- 直式手機才出現：請小朋友把手機橫過來玩 -->
+      <p class="dash-turn">
+        <svg class="turn-phone" viewBox="0 0 48 48" aria-hidden="true">
+          <path class="turn-arrow" d="M39 17a17 17 0 0 0-14-10m0 0 3.5-3M25 7l3.5 3" />
+          <g class="turn-body"><rect x="15" y="10" width="18" height="30" rx="3.5" /><path d="M21.5 35.5h5" /></g>
+        </svg>
+        <span><b>把手機橫過來玩</b><span class="turn-sub">畫面比較大，可以看得更遠</span></span>
+      </p>
+
       <ul class="dash-how">
         <li><span class="how-key">點一下</span><span>跳起來</span></li>
         <li><span class="how-key">按住</span><span>一直跳／火箭往上飛</span></li>
@@ -56,11 +65,6 @@
 
       <h2 class="section-title dash-list-title">選一關</h2>
       <ol class="level-list" id="levelList"></ol>
-
-      <p class="dash-tip">
-        <svg viewBox="0 0 24 24" class="icon" aria-hidden="true"><rect x="3" y="7" width="18" height="10" rx="2" /><path d="M7 7v10" /></svg>
-        <span>把手機橫過來，可以看得更遠。</span>
-      </p>
     </section>
 
     <!-- ══════════ 遊戲中 ══════════ -->
@@ -105,6 +109,18 @@
           <span class="tap-pad" id="tapPad"><span id="tapWord">跳</span></span>
           <span class="tap-hint" id="tapHint">點這裡也可以跳</span>
         </div>
+
+        <!-- 直式手機、開始之前：請小朋友把手機橫過來（轉過來就自動收起來） -->
+        <div class="rotate-ask" id="rotateAsk" hidden role="group" aria-labelledby="rotateTitle">
+          <svg class="turn-phone rotate-phone" viewBox="0 0 48 48" aria-hidden="true">
+            <path class="turn-arrow" d="M39 17a17 17 0 0 0-14-10m0 0 3.5-3M25 7l3.5 3" />
+            <g class="turn-body"><rect x="15" y="10" width="18" height="30" rx="3.5" /><path d="M21.5 35.5h5" /></g>
+          </svg>
+          <p class="rotate-title" id="rotateTitle">把手機橫過來玩</p>
+          <p class="rotate-sub">畫面會變大，看得比較遠。<br>轉過來就可以開始了！</p>
+          <button class="btn btn-quiet rotate-skip" type="button" id="rotateSkip">直的也可以玩</button>
+          <p class="rotate-note">畫面沒有跟著轉？請家長先關掉手機的「螢幕方向鎖定」。</p>
+        </div>
       </div>
     </section>
   </main>
@@ -123,6 +139,28 @@
       <a class="quiet-link" href="/games/solo/">小遊戲選單</a>
       <a class="quiet-link" href="/shot/">開始打針</a>
     </p>
+  </dialog>
+
+  <!-- 醫生第一次出現：三張會動的小圖說明怎麼躲水、怎麼贏（圖由 dash.js 畫） -->
+  <dialog class="dlg dash-brief" id="briefDlg" aria-labelledby="briefTitle">
+    <h2 class="dlg-title" id="briefTitle">醫生來玩水槍大戰！</h2>
+    <ol class="brief-steps">
+      <li class="brief-step">
+        <span class="brief-demo" id="briefJump"></span>
+        <p class="brief-text"><b>水在腳邊</b><span>圈圈縮到最小就跳</span></p>
+      </li>
+      <li class="brief-step">
+        <span class="brief-demo" id="briefStay"></span>
+        <p class="brief-text"><b>水在頭上</b><span>不用跳，待在地上</span></p>
+      </li>
+      <li class="brief-step">
+        <span class="brief-demo" id="briefWin"></span>
+        <p class="brief-text"><b>點滴袋用完</b><span>你就贏了</span></p>
+      </li>
+    </ol>
+    <div class="dlg-actions">
+      <button class="btn btn-primary" type="button" id="briefGo">知道了，開始！</button>
+    </div>
   </dialog>
 
   <dialog class="dlg dash-win" id="winDlg" aria-labelledby="winTitle" aria-describedby="winLine">

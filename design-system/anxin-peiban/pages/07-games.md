@@ -677,9 +677,9 @@ So he is a **playmate in a water fight**:
 - **Aiming is a laser pointer**: a thin bright line with a red glow that fades out on both sides,
   ending in a glowing dot on the capsule. It brightens as the syringe fills. A "!" bubble shows
   over his head.
-- **No 「跳！／別跳！」 labels** (product owner): the laser alone tells. The dot's *position* — at the
-  feet or at head height — carries low vs high, so it isn't colour alone. The one-time hint says
-  「紅色雷射指到哪裡，水就射到哪裡」.
+- **No 「跳！／別跳！」 labels on the canvas** (product owner): no per-shot text. The dot's *position*
+  (at the feet or at head height) carries low vs high, so it isn't colour alone. What teaches the two
+  dodges is below.
 - When the bag runs dry he is **beaten**: a happy face, a little white flag and
   「點滴用完了，你贏了！」, then he rolls away and the goal appears 14 tiles on.
 
@@ -688,6 +688,60 @@ time so it's 0.5 s at every age). It starts when play resumes after the 0.65 s b
 keeps blinking (~2.3 Hz, partial opacity) while it lasts. Needles and water don't count, and running
 into a box side puts the capsule on top instead of crashing. Respawning at the phase checkpoint can
 otherwise land a child right in front of the next shot. Other levels don't get it.
+
+### Making the attack understandable (2026-10-06)
+
+The product owner found the attack hard to understand with the laser alone. Measured on the engine:
+**a low shot can only be cleared by a jump 0.03–0.29 s (game time) *after* it fires.** Any jump while
+the syringe is still charging lands too early, and that is exactly what a child does when they see
+something coming. A high shot needs no input at all. Before this change, nothing showed *when* to
+jump, and nothing said that "don't jump" was the answer for high shots. So:
+
+- **Danger band.** While a shot charges, the strip the water will fly through is shaded light red,
+  from the syringe to the left edge, with dashed top and bottom edges that march toward the capsule.
+  The laser stays in the middle of it. A low band covers the capsule; a high band floats above its
+  head with a visible gap. The second shot of a pair is drawn at half strength.
+- **Jump ring (low shots only).** A dark-orange ring with a white halo shrinks onto a dashed target
+  circle around the capsule, with an up-arrow above it. When it reaches the target (`BOSS.CUE` =
+  0.15 s after the shot fires, the middle of the window), the ring thickens, a yellow glow appears and
+  the arrow turns solid and hops: that moment means jump. It holds for `CUE_HOLD` 0.14 s. In a
+  low→low pair the second ring starts only when the first one is finished, so there is never more
+  than one ring. Tested: a bot that taps only when the ring closes, anywhere from −0.12 to +0.12 s,
+  beats the whole fight on 4 schedules. The ring shrinks at a constant speed, so children can
+  anticipate it instead of reacting late. Contrast against the sky: 3.7–4.7:1.
+- **Duck (high shots).** When the next water to arrive is high and the capsule is on the ground, it
+  squashes down (×1.14 wide, ×0.78 tall) and turns upright with its face forward, then goes back to
+  rolling. The visible gap between the band and the crouched capsule says "stay down" without words.
+  This is drawing only: the hitbox is unchanged (the high lane starts at 1.1, well above it).
+- **Dodge check.** Each shot that passes the capsule (a new engine event, `dodge`) pops a green
+  check (#15803D, a glyph and not only a colour) above both lanes, so it never overlaps the next
+  water. It floats up and fades in 0.7 s.
+- **First-time brief.** The first time the doctor appears in a run, the game holds on a dialog titled
+  「醫生來玩水槍大戰！」 with three looping SMIL demos, drawn the same way as in the game:
+  - 「水在腳邊・圈圈縮到最小就跳」: the ring shrinks, the capsule jumps over low water;
+  - 「水在頭上・不用跳，待在地上」: the capsule crouches as high water flies over;
+  - 「點滴袋用完・你就贏了」: the bag drains, the doctor smiles and raises a white flag.
+
+  Details:
+  - Rows in portrait, three columns from 560 px wide. It fits 320×568 and 568×320 with no scrolling.
+  - It appears only until level 6 has been won.
+  - Taps in its first 0.7 s are ignored, because a child mashing the screen would otherwise close it
+    unread.
+  - No game time passes while it is open, and it opens at the portal, 1.5 s before the warm-up
+    needle.
+  - Reduced motion pauses each demo on its key frame: over the water, under the water, flag raised.
+  - The SVG is inserted after the dialog opens; SMIL inserted while the dialog was hidden did not
+    run in Chromium.
+- **Coaching after a water hit.** The crash event now carries the lane and whether the capsule was on
+  the ground. The usual hint pill then shows one line for 4.8 s:
+  - high: 「水在頭上就不用跳，待在地上」;
+  - low, after a jump in the last 0.75 s that was already falling: 「跳太早了！等圈圈縮到最小再跳」;
+  - otherwise: 「圈圈縮到最小的時候就跳！」.
+
+  In 無限挑戰 the same line is added to the game-over text as 「下一次：…」. These lines appear only
+  after a hit; they are not labels on every shot.
+- The hint after the brief is now 「圈圈縮小就跳　水在頭上不用跳」, short enough for one line at 375 px.
+  All three hint pills use `text-wrap: balance` for narrower phones.
 
 **The arena floor is flat, with obstacles timed between the shots.** (A hilly version was tried and
 dropped at the product owner's request — flat ground, obstacles instead.) The doctor's schedule is
@@ -732,6 +786,20 @@ and 「換一張新地圖」.
   canvas, where ship gates are.
 - 「點一下開始」 overlay: the first tap only starts the run, and a finger still held from it is ignored
   until lifted.
+- **Asking for landscape** (product owner, 2026-10-06). Landscape gives 33 px tiles and about
+  18 tiles of look-ahead on a 740×360 phone. Portrait gives 32 px tiles and about 8.
+  - **Level list:** a wash-orange callout under the lede says 「把手機橫過來玩・畫面比較大，可以看得
+    更遠」, with a phone icon that turns sideways every 2.8 s. It replaces the small muted tip that
+    was at the bottom of the list.
+  - **Game:** before the first tap, a full-stage panel covers the canvas and the 跳 pad. It shows the
+    same icon at 112 px, 「把手機橫過來玩」 and 「畫面會變大，看得比較遠。轉過來就可以開始了！」.
+    Turning the phone hides it, and 「點一下開始」 is underneath.
+  - Both appear only when `(orientation: portrait) and (pointer: coarse) and (max-width: 600px)`
+    matches, so tablets and desktops never see them.
+  - Phones with rotation lock can't turn, so the panel always offers 「直的也可以玩」 (remembered for
+    the browser session) and a parent line, 「畫面沒有跟著轉？請家長先關掉手機的「螢幕方向鎖定」。」.
+  - Taps on the panel never start the run.
+  - Reduced motion draws the phone already sideways.
 - Top bar hidden while playing (same as 打地鼠); pause holds 繼續 / 重新開始 / 選關卡 + 小遊戲選單 /
   開始打針. Auto-pause when the page is hidden.
 - Keyboard: Space / ↑ / W jump (hold works), Esc / P pause. Focus moves to the canvas only when the
@@ -778,15 +846,21 @@ round, up to ×1.3.
   - all six levels finish **with all 3 stars**;
   - all-difficulty-3 sections pass in every mode;
   - three infinity seeds pass through round 1, the boss and into round 2.
-- **Tests:** 54 engine/level tests, including:
+- **Tests:** 58 engine/level tests, including:
   - the funnel shape;
   - rolling through it without leaving the ground;
   - a ship being pushed through by the ceiling;
   - the UFO column rule checked column by column;
   - the IV bag only ever draining, and empty at the win;
   - every boss obstacle being ≥ 1 s from any shot, with each star over a needle;
-  - the post-respawn invincibility lasting 0.5 s of real time at ×0.7, ×1 and ×2 speed.
+  - the post-respawn invincibility lasting 0.5 s of real time at ×0.7, ×1 and ×2 speed;
+  - the jump ring: one ring per low shot, closing `CUE` after the shot; tapping on it (±0.12 s) beats
+    the fight; a water crash reports its lane.
 
-  Plus 18 jsdom page tests.
+  Plus 24 jsdom page tests, which add:
+  - the brief: it holds game time, ignores early taps, and is skipped once level 6 is won;
+  - the three coaching lines;
+  - nothing on the canvas says 跳 or 別跳;
+  - the rotate panel: blocks the start, 直的也可以玩 is remembered, never shown in landscape.
 - **Real Chromium:** touch taps, ship hold over CDP touch, landscape, and an AA contrast audit
   (124 text elements).

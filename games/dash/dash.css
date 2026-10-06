@@ -188,19 +188,99 @@
   stroke: #A16207;
 }
 
-.dash-tip {
-  display: flex;
+.level-list {
+  margin-bottom: var(--sp-6);
+}
+
+/* ── 把手機橫過來：手機圖示慢慢轉成橫的（減少動態時直接畫橫的） ── */
+.turn-phone {
+  flex: 0 0 auto;
+  width: 48px;
+  height: 48px;
+  fill: none;
+  stroke: var(--primary-deep);
+  stroke-width: 2.4;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.turn-body {
+  transform-box: view-box;
+  transform-origin: 24px 25px;
+  animation: turn-phone 2.8s var(--ease) infinite;
+}
+
+.turn-body rect {
+  fill: var(--primary-wash);
+}
+
+.turn-arrow {
+  animation: turn-arrow 2.8s var(--ease) infinite;
+}
+
+@keyframes turn-phone {
+
+  0%,
+  22% {
+    transform: rotate(0deg);
+  }
+
+  48%,
+  86% {
+    transform: rotate(-90deg);
+  }
+
+  100% {
+    transform: rotate(0deg);
+  }
+}
+
+@keyframes turn-arrow {
+
+  0%,
+  12% {
+    opacity: 0;
+  }
+
+  22%,
+  48% {
+    opacity: 1;
+  }
+
+  60%,
+  100% {
+    opacity: 0;
+  }
+}
+
+/* 選關卡：只有直式的手機才需要這張提示 */
+.dash-turn {
+  display: none;
   align-items: center;
-  gap: var(--sp-2);
-  margin: var(--sp-5) 0 var(--sp-6);
+  gap: var(--sp-3);
+  margin: 0 0 var(--sp-3);
+  padding: var(--sp-3) var(--sp-4);
+  border-radius: var(--r-lg);
+  background: var(--primary-wash);
+  color: var(--fg);
+  line-height: 1.5;
+}
+
+.dash-turn b {
+  display: block;
+  font-size: 1.05rem;
+}
+
+.turn-sub {
+  display: block;
   font-size: .9rem;
   color: var(--fg-muted);
 }
 
-.dash-tip .icon {
-  flex: 0 0 auto;
-  width: 22px;
-  height: 22px;
+@media (orientation: portrait) and (pointer: coarse) and (max-width: 600px) {
+  .dash-turn {
+    display: flex;
+  }
 }
 
 /* ═══ 遊戲中 ═══════════════════════════════════════════════════ */
@@ -437,6 +517,7 @@ body.is-playing .topbar {
   font-weight: 700;
   line-height: 1.5;
   text-align: center;
+  text-wrap: balance;
   pointer-events: none;
   animation: hint-in var(--t-base) var(--ease);
 }
@@ -538,6 +619,7 @@ body.is-playing .topbar {
 /* 剛換玩法：說明直接寫在大按鈕下面（深色底，比較醒目） */
 .tap-hint.is-new {
   max-width: calc(100% - 2 * var(--sp-3));
+  text-wrap: balance;
   padding: 2px var(--sp-4);
   border-radius: var(--r-md);
   background: rgba(41, 37, 36, .9);
@@ -553,6 +635,163 @@ body.is-playing .topbar {
 /* 空間不夠（橫式）：不顯示下面那塊，說明改疊在畫面最下面的地板上 */
 .tap-zone.is-tight {
   display: none;
+}
+
+/* 直式手機、開始前：蓋住整個舞台（畫面＋下面的大按鈕），請小朋友把手機橫過來 */
+.rotate-ask {
+  position: absolute;
+  inset: 0;
+  z-index: 4;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--sp-2);
+  padding: var(--sp-5) var(--sp-4);
+  border-radius: var(--r-lg);
+  background: var(--bg);
+  box-shadow: var(--sh-md);
+  text-align: center;
+  cursor: default;
+}
+
+.rotate-ask[hidden] {
+  display: none;
+}
+
+.rotate-phone {
+  width: 112px;
+  height: 112px;
+  stroke-width: 2;
+}
+
+.rotate-title {
+  margin-top: var(--sp-2);
+  font-size: 1.5rem;
+  font-weight: 700;
+  line-height: 1.4;
+  color: var(--fg);
+}
+
+.rotate-sub {
+  color: var(--fg-muted);
+  line-height: 1.6;
+}
+
+.rotate-skip {
+  width: auto;
+  min-width: 12rem;
+  margin-top: var(--sp-4);
+}
+
+.rotate-note {
+  max-width: 20rem;
+  text-wrap: balance;
+  margin-top: var(--sp-2);
+  font-size: .85rem;
+  line-height: 1.6;
+  color: var(--fg-muted);
+}
+
+/* ── 醫生的說明：三張會動的小圖（直式一張一列，夠寬就排成三欄） ── */
+.dash-brief {
+  width: min(40rem, calc(100% - 2 * var(--sp-4)));
+}
+
+.dash-brief .dlg-title {
+  text-align: center;
+}
+
+.brief-steps {
+  display: grid;
+  gap: var(--sp-3);
+  margin: var(--sp-4) 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.brief-step {
+  display: grid;
+  grid-template-columns: 120px 1fr;
+  align-items: center;
+  gap: var(--sp-3);
+}
+
+.brief-demo {
+  display: block;
+  overflow: hidden;
+  border-radius: var(--r-sm);
+  background: linear-gradient(#FFF1F2, #FECDD3);
+}
+
+.brief-demo svg {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+.brief-text {
+  line-height: 1.5;
+}
+
+.brief-text b {
+  display: block;
+  font-size: 1.1rem;
+  color: var(--fg);
+}
+
+.brief-text span {
+  display: block;
+  font-size: .95rem;
+  color: var(--fg-muted);
+}
+
+@media (min-width: 560px) {
+  .brief-steps {
+    grid-template-columns: repeat(3, 1fr);
+  }
+
+  .brief-step {
+    grid-template-columns: 1fr;
+    justify-items: center;
+    text-align: center;
+  }
+
+  .brief-demo {
+    width: 100%;
+    max-width: 168px;
+  }
+}
+
+@media (max-height: 520px) {
+  .dash-brief {
+    padding: var(--sp-4);
+  }
+
+  .dash-brief .dlg-title {
+    font-size: 1.15rem;
+  }
+
+  .dash-brief .dlg-actions {
+    margin-top: var(--sp-3);
+  }
+
+  .brief-steps {
+    margin-top: var(--sp-2);
+    gap: var(--sp-2);
+  }
+
+  .brief-step {
+    gap: var(--sp-1);
+  }
+
+  .brief-demo {
+    max-width: 132px;
+  }
+
+  .dash-brief .btn {
+    min-height: 48px;
+  }
 }
 
 /* ═══ 對話框 ═══════════════════════════════════════════════════ */
@@ -634,8 +873,15 @@ body.is-playing .topbar {
 
   .mode-hint,
   .boss-fill,
-  .tap-pad {
+  .tap-pad,
+  .turn-arrow {
     animation: none;
     transition: none;
+  }
+
+  /* 手機圖示直接畫成橫的 */
+  .turn-body {
+    animation: none;
+    transform: rotate(-90deg);
   }
 }

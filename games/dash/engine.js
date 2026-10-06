@@ -79,6 +79,10 @@
       LOW: [0.05, 0.75],      /* 低的水柱：要跳 */
       HIGH: [1.1, 1.9],       /* 高的水柱：不要跳 */
       TELL_S: 1.0,            /* 先預告 1 秒才發射 */
+      /* 低的水柱什麼時候跳：射出「之後」0.03–0.29 秒（遊戲時間）才躲得過，射出前跳一定太早。
+         提示圈圈在射出後 CUE 秒縮到最小（正好在中間），停 CUE_HOLD 秒再消失 */
+      CUE: 0.15,
+      CUE_HOLD: 0.14,
       INTRO_S: 2.2,
       GAP: [1.6, 1.25],       /* 一招打完到下一招開始預告（第一階段、第二階段） */
       PAIR: { 'low,low': 0.8, 'low,high': 0.75, 'high,low': 0.62 },
@@ -290,9 +294,12 @@
     }
   }
 
-  function crash(run, why) {
+  /* extra：水柱撞到的時候帶上是哪一排、撞到時小膠囊在地上還是空中（畫面用來教下一次怎麼躲） */
+  function crash(run, why, extra) {
     run.dead = true;
-    emit(run, 'crash', { why: why, x: run.x, y: run.p.y });
+    var e = { why: why, x: run.x, y: run.p.y };
+    if (extra) for (var k in extra) e[k] = extra[k];
+    emit(run, 'crash', e);
     return false;
   }
 
@@ -559,6 +566,25 @@
     return out;
   }
 
+  /* 「什麼時候跳」的圈圈：只給低的水柱（高的不用跳）。
+     圈圈從預告開始縮小，在射出後 CUE 秒縮到最小 = 現在跳；連續兩發低的，第二個圈圈等第一個用完才開始。
+     回傳 { lane, k: 0–1 縮了多少, now: 該跳了, at } 或 null */
+  function bossCue(b) {
+    var B = CONFIG.BOSS;
+    if (!b || b.state !== 'fight') return null;
+    var prevEnd = -Infinity;
+    for (var i = 0; i < b.list.length; i++) {
+      var s = b.list[i];
+      if (s.lane !== 'low') continue;
+      var done = s.at + B.CUE, start = Math.max(s.at - B.TELL_S, prevEnd);
+      prevEnd = done + B.CUE_HOLD;
+      if (b.bt >= prevEnd) continue;
+      if (b.bt < start) return null;
+      return { lane: s.lane, at: s.at, k: clamp((b.bt - start) / (done - start), 0, 1), now: b.bt >= done };
+    }
+    return null;
+  }
+
   /* 點滴袋還剩多少（0–1）：每一發蓄力時，水從點滴袋慢慢流進針筒 */
   function bossBag(b) {
     if (!b) return 1;
@@ -596,8 +622,13 @@
       if (!(run.invuln > 0) &&
         overlap(run.x - hz, run.x + hz, w.x - B.LEN / 2 - pad, w.x + B.LEN / 2 + pad) &&
         overlap(P.y - hz, P.y + hz, yc - hh - pad, yc + hh + pad)) {
-        crash(run, 'water');
+        crash(run, 'water', { lane: w.lane, grounded: P.grounded, vy: P.vy });
         return;
+      }
+      /* 水柱整條過了小膠囊 = 躲過了（畫面給一個勾） */
+      if (!w.passed && w.x + B.LEN / 2 < run.x - hz) {
+        w.passed = true;
+        emit(run, 'dodge', { lane: w.lane });
       }
     }
     if (b.bt >= b.end) {
@@ -779,6 +810,7 @@
     progress: progress,
     bossSchedule: bossSchedule,
     bossTells: bossTells,
+    bossCue: bossCue,
     bossBag: bossBag,
     shotY: shotY,
     laneMid: laneMid,

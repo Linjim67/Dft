@@ -37,7 +37,14 @@
     ship: { hint: '體溫計火箭：按住往上飛，放開往下', tap: '按住這裡往上飛', word: '飛' },
     ufo: { hint: '藥杯飛碟：點一下往上飛一下', tap: '點一下往上飛一下', word: '飛' },
     duo: { hint: '上下兩個一起跳！藍色虛線框是不一樣的地方', tap: '點這裡，兩個一起跳', word: '跳' },
-    boss: { hint: '紅色雷射指到哪裡，水就射到哪裡', tap: '點這裡也可以跳', word: '跳' }
+    boss: { hint: '圈圈縮小就跳　水在頭上不用跳', tap: '點這裡也可以跳', word: '跳' }
+  };
+
+  /* 被水射到之後，下一次怎麼躲（只在撞到後出現一次，不是每一發都貼標籤） */
+  var COACH = {
+    high: '水在頭上就不用跳，待在地上',
+    early: '跳太早了！等圈圈縮到最小再跳',
+    late: '圈圈縮到最小的時候就跳！'
   };
 
   /* 無痕模式下 localStorage 可能丟例外：退回記憶體 */
@@ -137,7 +144,8 @@
     input: { held: false, presses: 0 }, pointers: {}, nPointers: 0, keyHeld: false, suppress: false,
     seen: {}, parts: [], angle: 0, aimY: 0.9, lastLane: null,
     squashAt: 0, squashKind: '', recoilAt: 0, crashUntil: 0, holdUntil: 0, doneAt: 0,
-    saved: false, started: false, raf: 0, last: 0, hintTimer: 0, round: 1, dlgAction: null, hud: {}
+    saved: false, started: false, raf: 0, last: 0, hintTimer: 0, round: 1, dlgAction: null, hud: {},
+    duck: 0, dodges: [], jumpBt: -9, coach: '', briefed: false, briefAt: 0, portraitOk: false
   };
 
   function title() {
@@ -178,6 +186,11 @@
     G.hud = {};
     G.roll = 0;
     G.rollX = 0;
+    G.duck = 0;
+    G.dodges = [];
+    G.jumpBt = -9;
+    G.coach = '';
+    G.briefed = false;
     resetInput();
 
     $('hudTitle').textContent = title();
@@ -192,13 +205,50 @@
     show('play');
     fit(true);
     updateHud();
-    $('goBtn').focus({ preventScroll: true });
+    if (!rotateCheck()) $('goBtn').focus({ preventScroll: true });
     startLoop();
   }
 
+  /* ─────────────────────────────────────────────────────────────
+     直式手機：開始前請小朋友把手機橫過來（畫面大很多、看得比較遠）。
+     轉過來就自動收起來；螢幕方向被鎖住的手機轉不過來，所以一定留「直的也可以玩」。
+     ───────────────────────────────────────────────────────────── */
+
+  var portraitMq = window.matchMedia ? window.matchMedia('(orientation: portrait) and (pointer: coarse) and (max-width: 600px)') : null;
+  var SKIP_KEY = 'anxin.dash.portrait';
+
+  function portraitOk() {
+    try { return window.sessionStorage.getItem(SKIP_KEY) === '1'; } catch (e) { return !!G.portraitOk; }
+  }
+
+  /* 回傳：現在是否正在請小朋友轉手機 */
+  function rotateCheck() {
+    var ask = G.phase === 'ready' && !!(portraitMq && portraitMq.matches) && !portraitOk();
+    var box = $('rotateAsk');
+    if (box.hidden === !ask) return ask;
+    box.hidden = !ask;
+    if (ask) say('把手機橫過來玩，畫面會比較大');
+    else if (G.phase === 'ready') {
+      try { $('goBtn').focus({ preventScroll: true }); } catch (e) { /* 忽略 */ }
+    }
+    return ask;
+  }
+
+  if (portraitMq) {
+    var onTurn = function () { if (G.run) rotateCheck(); };
+    if (portraitMq.addEventListener) portraitMq.addEventListener('change', onTurn);
+    else if (portraitMq.addListener) portraitMq.addListener(onTurn);
+  }
+
+  $('rotateSkip').addEventListener('click', function () {
+    G.portraitOk = true;
+    try { window.sessionStorage.setItem(SKIP_KEY, '1'); } catch (e) { /* 忽略 */ }
+    rotateCheck();
+  });
+
   /* fromKey：用鍵盤開始的才把焦點移到畫面上（手指點的不要出現焦點框） */
   function begin(fromKey) {
-    if (G.phase !== 'ready') return;
+    if (G.phase !== 'ready' || !$('rotateAsk').hidden) return;
     G.phase = 'play';
     G.started = true;
     $('readyBox').hidden = true;
@@ -231,6 +281,7 @@
   }
 
   function press(fromKey) {
+    if (!$('rotateAsk').hidden) return;
     if (G.phase === 'ready') { begin(fromKey); G.suppress = true; }
     else if (G.phase === 'play') G.input.presses++;
     syncHeld();
@@ -243,6 +294,8 @@
 
   stage.addEventListener('pointerdown', function (ev) {
     if (!G.run || ev.button > 0) return;
+    /* 「把手機橫過來」的提示上面：讓按鈕自己處理，不算開始 */
+    if (ev.target.closest && ev.target.closest('#rotateAsk')) return;
     ev.preventDefault();
     if (!G.pointers[ev.pointerId]) { G.pointers[ev.pointerId] = true; G.nPointers++; }
     try { stage.setPointerCapture(ev.pointerId); } catch (e) { /* 忽略 */ }
@@ -264,7 +317,7 @@
   var JUMP_KEYS = { ' ': 1, Spacebar: 1, ArrowUp: 1, w: 1, W: 1 };
 
   function dialogOpen() {
-    return ['pauseDlg', 'winDlg', 'overDlg'].some(function (id) { return $(id).hasAttribute('open'); });
+    return ['pauseDlg', 'winDlg', 'overDlg', 'briefDlg'].some(function (id) { return $(id).hasAttribute('open'); });
   }
 
   document.addEventListener('keydown', function (ev) {
@@ -296,6 +349,127 @@
   var pauseDlg = Anxin.wireDialog($('pauseDlg'));
   var winDlg = Anxin.wireDialog($('winDlg'));
   var overDlg = Anxin.wireDialog($('overDlg'));
+  var briefDlg = Anxin.wireDialog($('briefDlg'));
+
+  /* ── 醫生第一次出現：先停下來，用三張會動的小圖說明怎麼玩（還沒打贏過醫生才出現） ──
+     小朋友正在一直點畫面，對話框剛跳出來的 0.7 秒內按「開始」不算，免得還沒看就關掉 */
+  var BRIEF_LOCK_MS = 700;
+
+  function needBrief() {
+    var l6 = rec.levels['6'];
+    return !G.briefed && !(l6 && l6.done);
+  }
+
+  function openBrief() {
+    G.briefed = true;
+    G.phase = 'brief';
+    G.briefAt = now();
+    resetInput();
+    briefDlg.open();
+    briefDemos(reduce);   /* 對話框打開之後才放進去：藏起來的時候放進去的 SMIL 不會動 */
+    say('醫生來玩水槍大戰！水在腳邊：圈圈縮到最小就跳。水在頭上：不用跳。點滴袋用完，你就贏了。');
+  }
+
+  function briefTooSoon() { return now() - G.briefAt < BRIEF_LOCK_MS; }
+
+  /* 三張示範小圖（SMIL，一圈 2.4 秒，和遊戲裡畫的一樣：橘色圈圈、水柱、綠色的勾）。
+     減少動態時停在最能說明的那一格：跳在水柱正上方／水從蹲著的頭上飛過／舉白旗 */
+  var DEMO_S = 2.4;
+  var DEMO_STILL = { briefJump: 1.5, briefStay: 1.45, briefWin: 2.3 };
+
+  function demoSvg(body) {
+    return '<svg viewBox="0 0 120 84" aria-hidden="true" focusable="false">' +
+      '<rect y="72" width="120" height="12" fill="#FDA4AF"/><path d="M0 72.5H120" stroke="#9F1239" stroke-opacity=".5" stroke-width="2"/>' +
+      body + '</svg>';
+  }
+
+  function anim(attr, values, keyTimes, extra) {
+    return '<animate attributeName="' + attr + '" values="' + values + '" keyTimes="' + keyTimes + '" dur="' + DEMO_S +
+      's" repeatCount="indefinite"' + (extra || '') + '/>';
+  }
+
+  /* 水柱：從右邊飛進來、飛出左邊 */
+  function demoWater(y) {
+    return '<g><animateTransform attributeName="transform" type="translate" values="0 0;0 0;-150 0;-150 0" keyTimes="0;.4;.78;1" dur="' +
+      DEMO_S + 's" repeatCount="indefinite"/>' +
+      '<rect x="120" y="' + y + '" width="26" height="11" rx="5.5" fill="#38BDF8" stroke="#075985" stroke-width="1.6"/>' +
+      '<rect x="124" y="' + (y + 2) + '" width="10" height="2.4" rx="1.2" fill="#fff" opacity=".75"/></g>';
+  }
+
+  function demoCheck(x, y) {
+    return '<g opacity="0">' + anim('opacity', '0;0;1;1;0', '0;.8;.82;.94;1') +
+      '<circle cx="' + x + '" cy="' + y + '" r="7" fill="#15803D" stroke="#fff" stroke-width="1.6"/>' +
+      '<path d="M' + (x - 3.2) + ' ' + y + 'l2.4 2.6 4.2-4.8" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></g>';
+  }
+
+  function briefDemos(still) {
+    var egg = ART.source('egg');
+    var jump =
+      /* 目標小圈（虛線）→ 大圈圈縮過來 → 縮到最小那一刻亮一下，跳！ */
+      '<circle cx="30" cy="60" r="15" fill="none" stroke="#7C2D12" stroke-opacity=".55" stroke-width="1.4" stroke-dasharray="3 2.4">' +
+      anim('opacity', '1;1;0;0', '0;.49;.5;1') + '</circle>' +
+      '<circle cx="30" cy="60" r="18" fill="#FDE047" opacity="0">' + anim('opacity', '0;0;.6;0;0', '0;.49;.5;.62;1') + '</circle>' +
+      '<circle cx="30" cy="60" r="34" fill="none" stroke="#C2410C" stroke-width="2.6">' +
+      anim('r', '34;15;15', '0;.5;1') + anim('opacity', '0;1;1;0;0', '0;.08;.56;.6;1') + '</circle>' +
+      demoWater(60) +
+      '<g><animateTransform attributeName="transform" type="translate" values="0 0;0 0;0 -30;0 0;0 0" keyTimes="0;.5;.62;.8;1"' +
+      ' calcMode="spline" keySplines="0 0 1 1;.2 .7 .4 1;.6 0 .8 .3;0 0 1 1" dur="' + DEMO_S + 's" repeatCount="indefinite"/>' +
+      '<image href="' + egg + '" x="18" y="48" width="24" height="24"/></g>' +
+      /* 頭上的箭頭：縮到最小時變成實心 */
+      '<path d="M30 28l6 6h-3.2v5h-5.6v-5H24Z" stroke="#C2410C" stroke-width="1.6" stroke-linejoin="round" fill="#FFEDD5">' +
+      anim('fill', '#FFEDD5;#FFEDD5;#C2410C;#C2410C', '0;.49;.5;1') + anim('opacity', '0;1;1;0;0', '0;.08;.56;.6;1') + '</path>' +
+      demoCheck(48, 40);
+    var stay =
+      demoWater(29) +
+      /* 蹲低低：從底部壓扁一點點 */
+      '<g transform="translate(30 72)"><g><animateTransform attributeName="transform" type="scale" values="1 1;1 1;1.14 .78;1.14 .78;1 1;1 1"' +
+      ' keyTimes="0;.3;.36;.78;.85;1" dur="' + DEMO_S + 's" repeatCount="indefinite"/>' +
+      '<image href="' + egg + '" x="-12" y="-24" width="24" height="24"/></g></g>' +
+      demoCheck(48, 52);
+    var win =
+      /* 點滴架：袋子裡的水慢慢變少 */
+      '<path d="M30 71V9M22 9h12M22 71l8-3 8 3" fill="none" stroke="#78716C" stroke-width="2" stroke-linecap="round"/>' +
+      '<rect x="14" y="13" width="18" height="28" rx="4" fill="#fff"/>' +
+      '<clipPath id="bagClip"><rect x="14" y="13" width="18" height="28" rx="4"/></clipPath>' +
+      '<rect x="14" y="16" width="18" height="26" fill="#7DD3FC" clip-path="url(#bagClip)">' +
+      anim('y', '16;16;41;41', '0;.08;.7;1') + '</rect>' +
+      '<rect x="14" y="13" width="18" height="28" rx="4" fill="none" stroke="#57534E" stroke-width="1.6"/>' +
+      '<path d="M23 41v6" stroke="#57534E" stroke-width="1.6"/>' +
+      /* 醫生：袋子空了就笑咪咪舉白旗 */
+      '<image href="' + ART.source('doctor') + '" x="62" y="10" width="38" height="63">' +
+      anim('opacity', '1;1;0;0', '0;.7;.7;1', ' calcMode="discrete"') + '</image>' +
+      '<image href="' + ART.source('doctorHappy') + '" x="62" y="10" width="38" height="63" opacity="0">' +
+      anim('opacity', '0;0;1;1', '0;.7;.7;1', ' calcMode="discrete"') + '</image>' +
+      '<g opacity="0">' + anim('opacity', '0;0;1;1', '0;.7;.7;1', ' calcMode="discrete"') +
+      '<path d="M58 54V26" stroke="#78716C" stroke-width="2" stroke-linecap="round"/>' +
+      '<path d="M58 26q-6 2-12 0v9q6 2 12 0Z" fill="#fff" stroke="#57534E" stroke-width="1.4" stroke-linejoin="round"/></g>';
+    var parts = { briefJump: jump, briefStay: stay, briefWin: win };
+    Object.keys(parts).forEach(function (id) {
+      var host = $(id);
+      host.innerHTML = demoSvg(parts[id]);
+      var s = host.firstChild;
+      if (!s || typeof s.pauseAnimations !== 'function') return;
+      if (still) { s.pauseAnimations(); s.setCurrentTime(DEMO_STILL[id]); }
+      else { s.setCurrentTime(0); s.unpauseAnimations(); }
+    });
+  }
+
+  $('briefGo').addEventListener('click', function () {
+    if (briefTooSoon()) return;
+    $('briefDlg').close();
+  });
+
+  $('briefDlg').addEventListener('cancel', function (ev) {
+    if (briefTooSoon()) ev.preventDefault();
+  });
+
+  $('briefDlg').addEventListener('close', function () {
+    if (G.phase !== 'brief') return;
+    G.phase = 'play';
+    G.last = now();
+    resetInput();
+    hint('boss');
+  });
 
   function pause() {
     if (['ready', 'play', 'crash', 'respawn'].indexOf(G.phase) < 0) return;
@@ -416,6 +590,7 @@
     if (G.phase === 'play') {
       var evs = E.advance(run, dt, G.input);
       if (evs.length) handle(evs, t);
+      if (G.phase === 'play' && run.boss && run.boss.state === 'fight' && needBrief()) openBrief();
     } else if (G.phase === 'crash' && t >= G.crashUntil) {
       afterCrash(t);
     } else if (G.phase === 'respawn' && t >= G.holdUntil) {
@@ -430,6 +605,8 @@
     if (moved > 0 && moved < 2) G.roll = (G.roll + moved / ROLL_R) % (Math.PI * 2);
     G.rollX = run.x;
     if (Math.abs(G.angle - target) < 0.01) G.angle = target;
+    var dk = duckTarget(run);
+    G.duck = reduce ? dk : G.duck + clamp(dk - G.duck, -dt * 8, dt * 8);
     stepParticles(dt);
     updateHud();
     render(t);
@@ -442,6 +619,7 @@
       switch (e.type) {
         case 'jump':
           G.squashAt = t; G.squashKind = 'jump';
+          if (run.boss) G.jumpBt = run.boss.bt;
           puff(run.x - 0.2, run.p.y - 0.4, 3, '#FFFFFF');
           break;
         case 'land':
@@ -459,7 +637,9 @@
           say(G.level === 'inf' ? '拿到星星！' : '拿到星星！' + run.gotN + ' / 3');
           break;
         case 'mode':
-          hint(e.mode);
+          /* 醫生第一次出現會先跳說明對話框，說明的一行字等對話框關掉再出現 */
+          if (e.mode === 'boss' && needBrief()) setMode('boss');
+          else hint(e.mode);
           $('bossBar').hidden = true;
           $('hudProgress').hidden = false;
           break;
@@ -484,11 +664,15 @@
           G.recoilAt = t;
           G.lastLane = e.lane;
           break;
+        case 'dodge':
+          G.dodges.push(t);
+          break;
         case 'bossDone':
           G.doneAt = t;
           showHint('點滴袋空了，打敗醫生！');
           break;
         case 'crash':
+          G.coach = e.why === 'water' ? coachFor(e) : '';
           crashed(t);
           break;
         case 'goal':
@@ -514,7 +698,7 @@
     showHint((MODES[mode] || MODES.cube).hint);
   }
 
-  function showHint(text) {
+  function showHint(text, ms, spoken) {
     var tight = $('tapZone').classList.contains('is-tight');
     var el = tight ? $('modeHint') : $('tapHint');
     window.clearTimeout(G.hintTimer);
@@ -527,8 +711,15 @@
       $('modeHint').hidden = true;
       $('tapHint').classList.remove('is-new');
       if (G.run) setMode(G.run.mode);
-    }, 3200);
-    say(text);
+    }, ms || 3200);
+    say(spoken || text);
+  }
+
+  /* 被水射到：是哪一排、那時候在地上還是空中 → 下一次怎麼躲 */
+  function coachFor(e) {
+    if (e.lane === 'high') return COACH.high;
+    var b = G.run.boss, jumped = b && b.bt - G.jumpBt < 0.75;
+    return jumped && (e.grounded || e.vy <= 0) ? COACH.early : COACH.late;
   }
 
   function crashed(t) {
@@ -537,7 +728,9 @@
     G.crashUntil = t + (run.world.endless ? 900 : 700);
     G.input.presses = 0;
     burst(run.x, run.p.y);
-    if (!run.world.endless) say('撞到了，沒關係，從旗子那裡再來一次');
+    if (run.world.endless) return;
+    if (G.coach) showHint(G.coach, 4800, '撞到了，沒關係。' + G.coach);
+    else say('撞到了，沒關係，從旗子那裡再來一次');
   }
 
   function afterCrash(t) {
@@ -594,7 +787,7 @@
     G.saved = true;
     $('overTitle').textContent = '跑了 ' + dist + ' 公尺！';
     $('overLine').textContent = '到了第 ' + G.round + ' 輪' + (run.gotN ? '，拿到 ' + run.gotN + ' 顆星星' : '') + '。' +
-      (better ? '這是新紀錄！' : '最遠紀錄是 ' + rec.inf.best + ' 公尺。');
+      (better ? '這是新紀錄！' : '最遠紀錄是 ' + rec.inf.best + ' 公尺。') + (G.coach ? '下一次：' + G.coach : '');
     $('overSeed').textContent = '地圖編號 ' + G.seed + '（同一個編號＝同一張地圖）';
     overDlg.open();
   }
@@ -1093,6 +1286,12 @@
       /* 滾著前進（畫面插值到這一幀的位置）；撞到時轉正，看得到暈暈的臉；減少動態時只微微傾斜 */
       var xr = G.phase === 'play' ? run.prevX + (run.x - run.prevX) * a : run.x;
       var spin = dead ? 0 : reduce ? tilt * Math.PI / 180 : G.roll - (run.x - xr) / ROLL_R;
+      /* 蹲下來的時候轉正（臉朝前），起來再接著滾 */
+      if (G.duck > 0 && !dead) {
+        var up = ((spin % (2 * Math.PI)) + 2 * Math.PI) % (2 * Math.PI);
+        if (up > Math.PI) up -= 2 * Math.PI;
+        spin = up * (1 - G.duck);
+      }
       var sxs = 1, sys = 1;
       if (!reduce && G.squashAt && !dead) {
         var k = (t - G.squashAt) / 130;
@@ -1101,6 +1300,8 @@
           if (G.squashKind === 'land') { sxs = 1 + amt; sys = 1 - amt; } else { sxs = 1 - amt * 0.6; sys = 1 + amt; }
         }
       }
+      /* 水在頭上：小膠囊蹲低低（只是畫面，碰撞範圍不變——本來就碰不到高的水） */
+      if (G.duck > 0 && !dead) { sxs *= 1 + 0.14 * G.duck; sys *= 1 - 0.22 * G.duck; }
       ctx.translate(0, 0.45 * T);
       ctx.scale(sxs, sys);
       ctx.translate(0, -0.45 * T);
@@ -1133,7 +1334,10 @@
     var tells = E.bossTells(b);
     var charge = tells.length ? tells[0].frac : 0;
 
-    for (var i = tells.length - 1; i >= 0; i--) laser(tells[i], camX, gY, docX - B.TIP * T, dY);
+    for (var i = tells.length - 1; i >= 0; i--) {
+      laneBand(tells[i], gY, docX - B.TIP * T, t, i === 0);
+      laser(tells[i], camX, gY, docX - B.TIP * T, dY);
+    }
 
     var bag = ivStand(docX + 0.72 * T, dY, E.bossBag(b), t);
     blit(done ? 'doctorHappy' : 'doctor', docX - 0.9 * T, dY - 3 * T, 1.8, 3);
@@ -1153,10 +1357,135 @@
     if (b.bt < B.INTRO_S && !done) bubble(docX, dY - 3.15 * T, '來玩水槍大戰！');
     else if (done) bubble(docX, dY - 3.15 * T, '點滴用完了，你贏了！');
     else if (tells.length) exclaim(docX + 0.55 * T, dY - 3.25 * T);
+
+    var P = G.run.p;
+    if (!G.run.dead && G.phase !== 'respawn') jumpRing(E.bossCue(b), P, gY, t);
+    dodgeMarks(P, gY, t);
+  }
+
+  /* 現在最先會碰到的是哪一排水：還在飛、沒過小膠囊的 → 正在蓄力的 */
+  function nextLane(run) {
+    var b = run.boss, best = null;
+    if (!b || b.state !== 'fight') return null;
+    for (var i = 0; i < b.shots.length; i++) {
+      var s = b.shots[i];
+      if (!s.passed && (!best || s.x < best.x)) best = s;
+    }
+    if (best) return best.lane;
+    var tl = E.bossTells(b);
+    return tl.length ? tl[0].lane : null;
+  }
+
+  function duckTarget(run) {
+    return run.boss && !run.dead && run.p.grounded && E.physMode(run.mode) === 'cube' && nextLane(run) === 'high' ? 1 : 0;
+  }
+
+  /* 水會經過的那一條：淡淡的紅色帶子＋上下兩條往小膠囊跑的虛線（水從右邊來）。
+     低的帶子蓋在小膠囊身上、高的帶子在頭上——看得出「會不會射到我」，不只靠雷射那一條細線 */
+  function laneBand(tl, gY, tipX, t, first) {
+    var T = V.T, l = tl.lane === 'low' ? B.LOW : B.HIGH;
+    var a = (first ? 1 : 0.45) * (0.3 + 0.7 * tl.frac);
+    var y0 = gY - l[1] * T, y1 = gY - l[0] * T, x0 = -0.5 * T;
+    ctx.save();
+    ctx.fillStyle = 'rgba(239,68,68,' + (0.15 * a).toFixed(3) + ')';
+    ctx.fillRect(x0, y0, tipX - x0, y1 - y0);
+    ctx.strokeStyle = 'rgba(185,28,28,' + (0.75 * a).toFixed(3) + ')';
+    ctx.lineWidth = Math.max(1.5, 0.05 * T);
+    ctx.setLineDash([0.3 * T, 0.22 * T]);
+    ctx.lineDashOffset = reduce ? 0 : (t / 1000) * 2.2 * T;
+    ctx.beginPath();
+    ctx.moveTo(x0, y0); ctx.lineTo(tipX, y0);
+    ctx.moveTo(x0, y1); ctx.lineTo(tipX, y1);
+    ctx.stroke();
+    ctx.restore();
+  }
+
+  /* 什麼時候跳：一個大圈圈往小膠囊縮，縮到和虛線小圈一樣大 = 現在跳！頭上一個往上的箭頭。
+     只給低的水柱；高的水柱沒有圈圈（不用跳），小膠囊自己蹲低低 */
+  function jumpRing(cue, P, gY, t) {
+    if (!cue || E.physMode(G.run.mode) !== 'cube') return;
+    var T = V.T, cx = PX * T, cy = gY - P.y * T;
+    var r0 = 0.72 * T, r = r0 + (2.4 * T - r0) * (1 - cue.k);
+    var fade = clamp(cue.k / 0.12, 0, 1);
+    ctx.save();
+    ctx.globalAlpha = fade;
+    if (cue.now) {
+      var g = ctx.createRadialGradient(cx, cy, r0 * 0.4, cx, cy, r0 * 1.5);
+      g.addColorStop(0, 'rgba(253,224,71,.55)');
+      g.addColorStop(1, 'rgba(253,224,71,0)');
+      ctx.fillStyle = g;
+      ctx.beginPath(); ctx.arc(cx, cy, r0 * 1.5, 0, Math.PI * 2); ctx.fill();
+    } else {
+      /* 目標：虛線小圈 */
+      ctx.setLineDash([0.16 * T, 0.12 * T]);
+      ctx.strokeStyle = 'rgba(124,45,18,.55)';
+      ctx.lineWidth = Math.max(1.5, 0.045 * T);
+      ctx.beginPath(); ctx.arc(cx, cy, r0, 0, Math.PI * 2); ctx.stroke();
+      ctx.setLineDash([]);
+    }
+    /* 縮小中的圈圈：白邊＋深橘色 */
+    ctx.strokeStyle = 'rgba(255,255,255,.9)';
+    ctx.lineWidth = Math.max(4, (cue.now ? 0.2 : 0.15) * T);
+    ctx.beginPath(); ctx.arc(cx, cy, r, 0, Math.PI * 2); ctx.stroke();
+    ctx.strokeStyle = '#C2410C';
+    ctx.lineWidth = Math.max(2.5, (cue.now ? 0.12 : 0.085) * T);
+    ctx.stroke();
+    /* 往上的箭頭：縮到最小時變大、跳一下 */
+    var lift = cue.now && !reduce ? 0.18 * T : 0;
+    upArrow(cx, cy - r0 - 0.28 * T - lift, (cue.now ? 0.36 : 0.27) * T, cue.now);
+    ctx.restore();
+  }
+
+  function upArrow(cx, tipY, s, solid) {
+    ctx.save();
+    ctx.lineJoin = 'round';
+    ctx.lineCap = 'round';
+    ctx.beginPath();
+    ctx.moveTo(cx, tipY);
+    ctx.lineTo(cx + s, tipY + s);
+    ctx.lineTo(cx + s * 0.42, tipY + s);
+    ctx.lineTo(cx + s * 0.42, tipY + s * 1.7);
+    ctx.lineTo(cx - s * 0.42, tipY + s * 1.7);
+    ctx.lineTo(cx - s * 0.42, tipY + s);
+    ctx.lineTo(cx - s, tipY + s);
+    ctx.closePath();
+    ctx.strokeStyle = '#fff';
+    ctx.lineWidth = Math.max(4, 0.16 * V.T);
+    ctx.stroke();
+    ctx.fillStyle = solid ? '#C2410C' : '#FFEDD5';
+    ctx.fill();
+    ctx.strokeStyle = '#C2410C';
+    ctx.lineWidth = Math.max(2, 0.06 * V.T);
+    ctx.stroke();
+    ctx.restore();
+  }
+
+  /* 躲過一發：小膠囊頭上方冒一個綠色的勾，往上飄、慢慢淡掉（0.7 秒） */
+  function dodgeMarks(P, gY, t) {
+    var T = V.T, list = G.dodges;
+    for (var i = list.length - 1; i >= 0; i--) {
+      var k = (t - list[i]) / 700;
+      if (k >= 1 || k < 0) { list.splice(i, 1); continue; }
+      /* 放在兩排水的上面，不會和下一發水柱疊在一起 */
+      var x = PX * T, y = gY - (P.y + 2.05 + (reduce ? 0 : 0.45 * k)) * T, r = 0.27 * T;
+      ctx.save();
+      ctx.globalAlpha = k < 0.6 ? 1 : (1 - k) / 0.4;
+      ctx.fillStyle = '#15803D';
+      ctx.strokeStyle = '#fff';
+      ctx.lineWidth = Math.max(2, 0.06 * T);
+      ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+      ctx.lineCap = 'round';
+      ctx.lineJoin = 'round';
+      ctx.lineWidth = Math.max(2, 0.07 * T);
+      ctx.beginPath();
+      ctx.moveTo(x - r * 0.45, y + r * 0.02); ctx.lineTo(x - r * 0.1, y + r * 0.36); ctx.lineTo(x + r * 0.48, y - r * 0.32);
+      ctx.stroke();
+      ctx.restore();
+    }
   }
 
   /* 雷射筆：細細一條亮線，兩旁的紅光越往外越淡；貼著地面、離地固定高度，終點是小膠囊身上的紅點。
-     不寫「跳／別跳」：紅點在腳邊還是頭上，就是提示（位置不同，不只靠顏色） */
+     每一發不貼文字標籤：紅點在腳邊還是頭上、紅色帶子、縮小的圈圈、蹲下來的小膠囊一起說明（不只靠顏色） */
   function laser(tl, camX, gY, tipX, dY) {
     var T = V.T, w = G.run.world, mid = laneY(tl.lane);
     var a = 0.35 + 0.65 * tl.frac;            /* 蓄力越滿越亮 */
@@ -1460,7 +1789,7 @@
 
   /* 測試用 */
   window.__dash = {
-    G: G, V: V, start: start, begin: begin, tick: tick, pause: pause, handle: handle,
+    G: G, V: V, start: start, begin: begin, tick: tick, pause: pause, handle: handle, openBrief: openBrief,
     record: function () { return rec; }, speed: speed
   };
 })();
