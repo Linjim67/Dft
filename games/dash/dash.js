@@ -24,12 +24,12 @@
     orange: { sky: ['#FFF7ED', '#FFE4C4'], ground: '#FDBA74', seam: '#E9A066' },
     yellow: { sky: ['#FEFCE8', '#FEF08A'], ground: '#FCD34D', seam: '#E2B53C' },
     sky: { sky: ['#F0F9FF', '#BAE6FD'], ground: '#7DD3FC', seam: '#56BBE6' },
-    mint: { sky: ['#F0FDF4', '#BBF7D0'], ground: '#86EFAC', seam: '#5DD58A' },
+    lavender: { sky: ['#F8F6FC', '#E6E0F5'], ground: '#C8BDE6', seam: '#AFA1D6' },
     pink: { sky: ['#FDF2F8', '#FBCFE8'], ground: '#F9A8D4', seam: '#E687BD' },
     dusk: { sky: ['#FFF1F2', '#FECDD3'], ground: '#FDA4AF', seam: '#EF8391' }
   };
   /* 無限挑戰：天空的顏色跟著玩法換，一進傳送門就知道換了 */
-  var MODE_THEME = { cube: 'orange', rot: 'pink', ship: 'yellow', ufo: 'sky', duo: 'mint', boss: 'dusk' };
+  var MODE_THEME = { cube: 'orange', rot: 'pink', ship: 'yellow', ufo: 'sky', duo: 'lavender', boss: 'dusk' };
 
   var MODES = {
     cube: { hint: '點一下：跳　按住：一直跳', tap: '點這裡也可以跳', word: '跳' },

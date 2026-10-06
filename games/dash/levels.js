@@ -248,7 +248,7 @@
       ]
     },
     {
-      id: 4, name: '雙胞胎', sub: '上下兩個一起跳', theme: 'mint', seed: 4409,
+      id: 4, name: '雙胞胎', sub: '上下兩個一起跳', theme: 'lavender', seed: 4409,
       sections: [
         { mode: 'cube', len: 25, d: [1, 1] },
         { mode: 'duo', len: 220, d: [1, 2] },

@@ -725,6 +725,11 @@ difficulty. Stars go on star-capable patterns at about 20 / 50 / 80 % of the lev
 upside down (as in GD dual mode), and both capsules obey the same tap. Patterns are mostly identical;
 where they differ, the differing obstacles are **blue and outlined with a dashed box** in both halves —
 colour plus outline, never colour alone. The difference is computed cell by cell, not hand-tagged.
+**Lavender, not mint** (product owner, 2026-10-07: the #86EFAC green was too bright). The sky runs
+#F8F6FC → #E6E0F5, the floor is #C8BDE6 with #AFA1D6 seams, and the box band is #C4B5FD. No other level
+uses this hue. It is calm next to the orange capsule and keeps the blue difference boxes and red needles
+easy to read. Sage turned muddy, and teal came too close to 藥杯飛碟's blue and the difference blue.
+Infinity's twin sections use the same theme.
 
 **轉轉 (e).** Each jump and each needle passed turns the view 3°; at ±15° it turns back the other way.
 A literal cumulative 3° would put the course upside down after 60 events. The view eases to the new

@@ -44,7 +44,7 @@
     orange: { band: '#FDBA74' },
     yellow: { band: '#FDE047' },
     sky: { band: '#7DD3FC' },
-    mint: { band: '#6EE7B7' },
+    lavender: { band: '#C4B5FD' },
     pink: { band: '#F9A8D4' },
     dusk: { band: '#FCA5A5' }
   };
