@@ -49,6 +49,14 @@ The `MIN_RATE` floor exists because `I(30) = 0`; without it each round opens wit
 - **Weights** ∝ `max(100 − C_x, 10) × (1 + 5% × level)`, where `C_x` = lifetime catches of that
   character. Rarely-caught characters appear more — the game nudges children to collect all four.
 - **Collection** counts characters *caught* (an iron one counts once, not three times).
+  - **One row per character** (2026-10-06): art · name with its level stars · **「x / y」 on the
+    right** (caught / needed for the next challenge; 「12 / 10」 once ready, 「已滿級」 at Lv 3) ·
+    progress bar across the bottom. Replaced 「收集 x 個」 + 「再收集 y 個就能挑戰」; screen readers
+    hear 「收集 12 / 50 個」. Two columns were too narrow for the count beside 「酒精棉片」.
+  - **Only characters a child has met for a full round are listed** (`inCollection`): 止血帶 and
+    針筒 from the start; 酒精棉片 and 病毒 (both from round 3) once round 3 has ended
+    (`bestRound ≥ 3`) — they appear on that round's summary. The challenge count ignores hidden
+    ones. (The old 「第 3 回合登場」 placeholder cards are gone.)
 - **Tiers** 10 / 50 / 100 make a character *eligible*; answering its 小知識 correctly is what
   actually levels it up.
 - **Challenges are manual and unlimited.** As soon as a character reaches its threshold, **its
@@ -59,7 +67,7 @@ The `MIN_RATE` floor exists because `I(30) = 0`; without it each round opens wit
     #C2410C inset border** (not colour alone); `aria-label`「止血帶：挑戰小知識，答對就升級」. No extra
     text in the card — the look is the hint. Contrast on the yellow: text 8.7:1, muted 7.1:1,
     border 4.8:1.
-  - **It gently breathes** — scale 1 → 1.045 → 1 every 1.6 s with a slightly deeper shadow at the
+  - **It gently breathes** — scale 1 → 1.02 → 1 (a full-width row needs less) every 1.6 s with a slightly deeper shadow at the
     peak — to draw a child's finger to it. Pressing stops the pulse; reduced motion turns it off.
 - **No how-to list on the cover** (product owner): the start screen is the title, the collection and
   stickers, and 開始遊戲. The rules teach themselves in play (round 3's 酒精棉片 and the 病毒入侵
@@ -67,6 +75,13 @@ The `MIN_RATE` floor exists because `I(30) = 0`; without it each round opens wit
   - Cards that aren't ready (or are locked after a wrong answer, or waiting for the question bank)
     stay plain `<div>`s with a status line, and do nothing when tapped.
   - The line above the list says 「有 N 位角色可以挑戰小知識：點一下黃色的卡片！」.
+- **The quiz screen** (2026-10-06): kicker 「小知識時間」, the character, then **the question is the
+  page's `<h1>`** (focused on open). The old title 「答對了，止血帶就會升級！」 and the line
+  「不確定的話，先問問爸爸媽媽喔！」 are gone; the hint link reads 「想不到？看提示」.
+- **Right** → no 「答對了」, no explanation: the chosen option turns **solid green with white text
+  and a ✓** (5.0:1), and a yellow card says **「止血帶升級至 Lv 1」** with the perk in small type —
+  Lv1 「銀色止血帶登場：分數 ×1.5，止血帶也會更常出現」 · Lv2 金色…大魔王 ×5 · Lv3 鐵甲… ×2 (every
+  level also adds +5% to how often it appears). The hint link hides once answered.
 - **Wrong** → that character is locked until *the next round ends*, then the *identical* question
   returns. Tracked with lifetime `roundsPlayed`, so it survives closing the page. Other characters
   stay challengeable. **The answer is not revealed on a wrong try**, or the retry would be
@@ -128,8 +143,10 @@ hit-a-mole guide (hole artwork specified at 250×50, a flat 5:1 ellipse). Takeaw
   genuinely emerges;
 - **grass tufts**, for the arcade's outdoor cheerfulness — but the field itself stays warm, because a
   green lawn would swallow the green virus.
-Locked holes are boarded over with two planks. Geometry: viewBox 100×48 at the hole's bottom; the
-opening's centre line sits 24% up, which is where the character clip ends.
+Locked holes are boarded over with two planks — **nothing else** (the cone icon and 「維修中」
+label were removed on 2026-10-06 to keep the board clean; the parent's remote still writes 維修中).
+Geometry: viewBox 100×48 at the hole's bottom; the opening's centre line sits 24% up, which is
+where the character clip ends.
 
 **Layout.** The board fills whatever space remains (`board-wrap` is a size container; each cell is the
 smaller of what fits by width and by height). Portrait → **2 × 3** (holes ~150px, characters ~110px,
@@ -152,7 +169,9 @@ scroll. **No swab tray** any more (see 病毒入侵): the board takes the whole 
   bronze ≥ 40% +100; no medal under 3 appearances. The bonus counts toward rewards.
 - **Sticker book** (8, kept per child): 第一次敲到 · 病毒清潔員 · 大魔王剋星 · 10 連擊 · 鐵甲剋星 ·
   小博士 · 金牌選手 · 六回合完成. Earned = solid ring + 「已獲得」; unearned = greyed, dashed, with
-  how-to-earn text. New ones are listed on the round summary.
+  how-to-earn text. New ones are listed on the round summary. On the start screen the book is
+  **folded** (`<details>`, closed by default): the 48px-tall title row 「我的貼紙 2 / 8」 with a
+  chevron opens it.
 
 ## Difficulty — tuned by simulation
 

@@ -136,8 +136,7 @@
     var LOCKED_HTML =
       '<svg class="hole-back" aria-hidden="true"><use href="#hole-back"></use></svg>' +
       '<svg class="hole-boards" aria-hidden="true"><use href="#hole-boards"></use></svg>' +
-      '<svg class="hole-front" aria-hidden="true"><use href="#hole-front"></use></svg>' +
-      '<span class="locked-sign"><svg aria-hidden="true"><use href="#icon-cone"></use></svg>維修中</span>';
+      '<svg class="hole-front" aria-hidden="true"><use href="#hole-front"></use></svg>';
 
     function buildBoard() {
       var open = E.unlocks(progress.totalPoints).holes.value;
@@ -794,8 +793,9 @@
 
     var STAR = '<svg class="star" aria-hidden="true"><use href="#icon-star"></use></svg>';
 
+    /* 收藏：一列一個角色。名字和等級（星星）右邊是「收集了幾個 / 要幾個才能挑戰」 */
     function renderCollection(ul) {
-      ul.innerHTML = E.CHARACTERS.map(function (c) {
+      ul.innerHTML = E.CHARACTERS.filter(function (c) { return E.inCollection(progress, c.id); }).map(function (c) {
         var clicks = progress.clicks[c.id] || 0;
         var lv = progress.level[c.id] || 0;
         var ready = E.tierOf(clicks) > lv;
@@ -806,16 +806,16 @@
         for (var i = 0; i < C.MAX_LEVEL; i++) stars += '<span class="star-slot' + (i < lv ? ' is-on' : '') + '">' + STAR + '</span>';
         var locked = ready && E.isLocked(progress, c.id);
         var canGo = ready && !locked && !!bank;
-        var status = !next ? '已經滿級！'
-          : (locked ? '下一回合結束後可以再挑戰'
-            : (ready ? '題目載入中…'
-              : (clicks === 0 && (c.from || 1) > 1 ? '第 ' + c.from + ' 回合登場'
-                : '再收集 ' + (next - clicks) + ' 個就能挑戰')));
+        /* 只有「還不能挑戰」的原因才另外寫一行；差幾個看右邊的 x / y 就知道 */
+        var status = locked ? '下一回合結束後可以再挑戰' : (ready && !bank ? '題目載入中…' : '');
+        var count = next
+          ? '<span class="sr-only">收集 </span>' + clicks + '<span class="coll-of"> / ' + next + '</span><span class="sr-only"> 個</span>'
+          : '已滿級';
         var inner =
           '<svg class="coll-art" aria-hidden="true"><use href="#ch-' + c.id + '"></use></svg>' +
           '<span class="coll-name">' + esc(c.name) + '</span>' +
           '<span class="coll-stars" role="img" aria-label="等級 ' + lv + ' / ' + C.MAX_LEVEL + '">' + stars + '</span>' +
-          '<span class="coll-count">收集 ' + clicks + ' 個</span>' +
+          '<span class="coll-count' + (next ? '' : ' is-max') + '">' + count + '</span>' +
           '<span class="coll-bar" aria-hidden="true"><span style="width:' + pct + '%"></span></span>';
         /* 可以挑戰：整張卡片就是按鈕（淡黃底＋深色外框），點一下直接開始；不另外放按鈕 */
         if (canGo) {
@@ -823,7 +823,7 @@
             ' aria-label="' + esc(c.name) + '：挑戰小知識，答對就升級">' + inner + '</button></li>';
         }
         return '<li class="coll-cell"><div class="coll-item">' + inner +
-          '<span class="coll-status">' + status + '</span></div></li>';
+          (status ? '<span class="coll-status">' + status + '</span>' : '') + '</div></li>';
       }).join('');
     }
 
@@ -859,12 +859,13 @@
        答錯不公布答案：規格是下一回合結束再挑戰「同一題」
        ───────────────────────────────────────────────────────────── */
 
-    var COAT_NOTE = [
-      '',
-      '之後會出現銀色的它：分數更高，但跑得更快！',
-      '金色大魔王會出現了：要連續敲很多下才打得倒，打倒有 5 倍分數！',
-      '鐵甲版本登場：停得比較久，但要敲好幾下才打得倒！'
-    ];
+    /* 升級帶來的好處（小字）：新的鍍層分數更高；每升一級，這個角色也更常出現（+5%） */
+    function perkText(name, lv) {
+      var more = '，' + name + '也會更常出現';
+      if (lv === 1) return '銀色' + name + '登場：分數 ×1.5' + more;
+      if (lv === 2) return '金色' + name + '大魔王登場：打倒它分數 ×5' + more;
+      return '鐵甲' + name + '登場：多敲幾下，分數 ×2' + more;
+    }
 
     function shuffle(a) {
       for (var i = a.length - 1; i > 0; i--) {
@@ -899,12 +900,12 @@
       var q = quiz.question;
       S.quiz = { character: quiz.character, question: q, done: false, from: from };
       setArt($('quizArt'), quiz.character);
-      $('quizCharName').textContent = E.BY_ID[quiz.character].name;
       $('quizParent').hidden = band !== 'little';
       $('quizPrompt').textContent = q.prompt;
       $('quizHint').textContent = q.hint;
       $('quizHint').hidden = true;
       $('hintBtn').hidden = false;
+      $('quizHelp').hidden = false;
       $('quizResult').hidden = true;
       $('quizNext').hidden = true;
       $('quizSkip').hidden = false;
@@ -918,7 +919,7 @@
       }).join('');
       $('quizOptions').classList.toggle('is-tf', q.type === 'tf');
 
-      show('quiz', $('quizTitle'));
+      show('quiz', $('quizPrompt'));
     }
 
     $('quizOptions').addEventListener('click', function (ev) {
@@ -934,14 +935,17 @@
       b.classList.add(ok ? 'is-right' : 'is-wrong');
 
       var r = $('quizResult');
-      var name = esc(E.BY_ID[charId].name);
+      var name = E.BY_ID[charId].name;
+      var said;
       E.recordAnswer(progress, charId, q.id, ok);
       if (ok) award('quiz');
+      $('quizHelp').hidden = true; /* 答完了，提示用不到了 */
       if (ok) {
+        /* 答對：選項變綠就夠了，不另外說「答對了」、不給詳解；只說升到幾級、有什麼好處 */
         var lv = progress.level[charId];
-        r.className = 'quiz-result is-right';
-        r.innerHTML = '<strong>答對了！</strong><span>' + esc(q.explain) + '</span>' +
-          '<span class="quiz-levelup">' + name + ' 升級到 Lv ' + lv + '！' + COAT_NOTE[lv] + '</span>';
+        said = name + '升級至 Lv ' + lv;
+        r.className = 'quiz-result is-levelup';
+        r.innerHTML = '<strong>' + esc(said) + '</strong><span class="quiz-perk">' + esc(perkText(name, lv)) + '</span>';
       } else {
         r.className = 'quiz-result is-wrong';
         r.innerHTML = '<strong>差一點點！</strong>' +
@@ -952,7 +956,7 @@
       $('quizSkip').hidden = true;
       $('quizNext').hidden = false;
       $('quizNext').focus();
-      Anxin.announce(live, ok ? '答對了' : '差一點點，玩完下一回合再挑戰');
+      Anxin.announce(live, ok ? said : '差一點點，玩完下一回合再挑戰');
     });
 
     $('hintBtn').addEventListener('click', function () {
@@ -968,7 +972,9 @@
        ───────────────────────────────────────────────────────────── */
 
     function renderChallengeHint(el) {
-      var n = bank ? E.CHARACTERS.filter(function (c) { return E.canChallenge(progress, c.id); }).length : 0;
+      var n = bank ? E.CHARACTERS.filter(function (c) {
+        return E.inCollection(progress, c.id) && E.canChallenge(progress, c.id);
+      }).length : 0;
       el.textContent = n ? '有 ' + n + ' 位角色可以挑戰小知識：點一下黃色的卡片！' : '';
       el.hidden = !n;
     }

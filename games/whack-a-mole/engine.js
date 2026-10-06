@@ -187,6 +187,13 @@
     return n;
   }
 
+  /* 收藏只放打完過「它登場的那一回合」的角色：止血帶、針筒一開始就有；
+     酒精棉片、病毒第 3 回合登場，第 3 回合打完（bestRound ≥ 3）才放進收藏 */
+  function inCollection(progress, charId) {
+    var from = BY_ID[charId].from || 1;
+    return from <= 1 || (Number(progress.bestRound) || 0) >= from;
+  }
+
   function weightOf(clicks, level) {
     return Math.max(CONFIG.WEIGHT_CEIL - clicks, CONFIG.WEIGHT_FLOOR) *
       (1 + CONFIG.UPGRADE_WEIGHT_BONUS * level);
@@ -481,6 +488,7 @@
     weightOf: weightOf,
     pickCharacter: pickCharacter,
     availableAt: availableAt,
+    inCollection: inCollection,
     pickVariant: pickVariant,
     eligible: eligible,
     upMs: upMs,

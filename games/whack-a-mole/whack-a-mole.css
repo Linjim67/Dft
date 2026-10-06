@@ -79,20 +79,20 @@
 
 .collection {
   display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: var(--sp-3);
+  gap: var(--sp-2);
 }
 
+/* 一列一個角色：圖｜名字＋星星｜收集 x / y；下面一條進度條 */
 .coll-item {
   display: grid;
-  grid-template-columns: 44px 1fr;
+  grid-template-columns: 44px 1fr auto;
   grid-template-areas:
-    "art name"
-    "art stars"
-    "count count"
-    "bar bar"
-    "status status";
-  column-gap: var(--sp-2);
+    "art name count"
+    "art stars count"
+    "bar bar bar"
+    "status status status";
+  align-items: center;
+  column-gap: var(--sp-3);
   padding: var(--sp-3);
   background: var(--card);
   border-radius: var(--r-md);
@@ -123,9 +123,10 @@ button.coll-item {
   animation: ready-pulse 1.6s ease-in-out infinite;
 }
 
+/* 整列很寬：放大一點點就夠明顯，不會擠到旁邊 */
 @keyframes ready-pulse {
   50% {
-    transform: scale(1.045);
+    transform: scale(1.02);
     box-shadow: var(--sh-md), inset 0 0 0 2px var(--primary-deep);
   }
 }
@@ -175,17 +176,29 @@ button.coll-item {
 .coll-count {
   font-family: var(--font-num);
   grid-area: count;
-  margin-top: var(--sp-2);
-  font-size: .82rem;
-  color: var(--fg-muted);
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: var(--fg);
   font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.coll-of {
+  font-size: .9rem;
+  color: var(--fg-muted);
+}
+
+.coll-count.is-max {
+  font-family: inherit;
+  font-size: .9rem;
+  color: #B45309;
 }
 
 .coll-bar {
   grid-area: bar;
   display: block;
   height: 6px;
-  margin-top: var(--sp-1);
+  margin-top: var(--sp-2);
   border-radius: var(--r-pill);
   background: var(--bg-sunk);
   overflow: hidden;
@@ -204,6 +217,18 @@ button.coll-item {
   font-size: .78rem;
   line-height: 1.4;
   color: var(--fg-muted);
+}
+
+/* 只給讀螢幕的人：「收集 12 / 50 個」 */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
 }
 
 .challenge-hint {
@@ -739,25 +764,9 @@ body.is-playing .topbar {
   color: #2E1406;
 }
 
-/* 維修中：木板封住洞口 + 三角錐 + 文字 */
+/* 還沒開放的洞：只有木板封住洞口（不寫「維修中」、不放三角錐，遊戲畫面乾淨一點） */
 .hole.is-locked {
   cursor: default;
-}
-
-.locked-sign {
-  position: absolute;
-  inset: 8% 0 auto;
-  display: grid;
-  justify-items: center;
-  gap: 2px;
-  font-size: .82rem;
-  font-weight: 700;
-  color: var(--fg-muted);
-}
-
-.locked-sign svg {
-  width: 30px;
-  height: 30px;
 }
 
 /* 連擊里程碑、大魔王：大字從棋盤中間跳出來（不擋點擊） */
@@ -1189,13 +1198,6 @@ body.is-playing .topbar {
   margin: var(--sp-3) auto var(--sp-2);
 }
 
-.quiz-title {
-  font-size: 1.3rem;
-  line-height: 1.4;
-  font-weight: 700;
-  text-wrap: balance;
-}
-
 .quiz-parent {
   margin-top: var(--sp-2);
   font-size: .9rem;
@@ -1204,7 +1206,7 @@ body.is-playing .topbar {
 }
 
 .quiz-prompt {
-  margin: var(--sp-5) 0 var(--sp-4);
+  margin: var(--sp-4) 0;
   padding: var(--sp-4);
   background: var(--card);
   border-radius: var(--r-lg);
@@ -1247,17 +1249,40 @@ body.is-playing .topbar {
   opacity: .55;
 }
 
-/* 選到的答案不淡化，並用粗框＋結果文字標示（不只靠紅綠） */
+/* 選到的答案不淡化，並用粗框標示（答錯另有文字說明，不只靠紅色） */
 .quiz-opt.is-right,
 .quiz-opt.is-wrong {
   opacity: 1;
   box-shadow: inset 0 0 0 2px currentColor;
 }
 
+/* 答對：整個選項變成綠底白字＋打勾，不再另外寫「答對了」（白字對 #15803D 5.0:1） */
 .quiz-opt.is-right {
-  background: var(--success-wash);
-  color: var(--success);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--sp-2);
+  background: var(--success);
+  color: #fff;
   border-color: var(--success);
+  box-shadow: var(--sh-md);
+  animation: right-pop 360ms var(--ease);
+}
+
+.quiz-opt.is-tf.is-right {
+  justify-content: center;
+}
+
+.quiz-opt.is-right::after {
+  content: "✓";
+  font-size: 1.2em;
+  line-height: 1;
+}
+
+@keyframes right-pop {
+  40% {
+    transform: scale(1.04);
+  }
 }
 
 .quiz-opt.is-wrong {
@@ -1268,11 +1293,6 @@ body.is-playing .topbar {
 
 .quiz-help {
   margin-top: var(--sp-4);
-}
-
-.quiz-ask {
-  font-size: .9rem;
-  color: var(--fg-muted);
 }
 
 .quiz-help .quiet-link,
@@ -1304,13 +1324,33 @@ body.is-playing .topbar {
   font-size: 1.15rem;
 }
 
-.quiz-result.is-right {
-  background: var(--success-wash);
-  color: var(--fg);
+/* 升級：大字「止血帶升級至 Lv 1」，下面小字寫升級的好處 */
+.quiz-result.is-levelup {
+  justify-items: center;
+  gap: var(--sp-1);
+  background: #FEF9C3;
+  box-shadow: inset 0 0 0 2px #B45309;
+  text-align: center;
+  animation: levelup-in 420ms var(--ease);
 }
 
-.quiz-result.is-right strong {
-  color: var(--success);
+.quiz-result.is-levelup strong {
+  font-size: 1.35rem;
+  color: #92400E;
+}
+
+.quiz-perk {
+  font-size: .88rem;
+  line-height: 1.5;
+  color: var(--fg-muted);
+  text-wrap: balance;
+}
+
+@keyframes levelup-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px) scale(.97);
+  }
 }
 
 .quiz-result.is-wrong {
@@ -1319,12 +1359,6 @@ body.is-playing .topbar {
 }
 
 .quiz-result.is-wrong strong {
-  color: var(--primary-deep);
-}
-
-.quiz-levelup {
-  margin-top: var(--sp-2);
-  font-weight: 700;
   color: var(--primary-deep);
 }
 
@@ -1470,6 +1504,49 @@ body.is-playing .topbar {
 }
 
 /* ═══ 貼紙簿 ═════════════════════════════════════════════════ */
+
+/* 貼紙簿摺起來：整個標題列就是開關（至少 48px 高），右邊的箭頭打開時轉向上 */
+.sticker-fold > summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--sp-2);
+  min-height: 48px;
+  margin: var(--sp-5) 0 0;
+  padding: 0 var(--sp-1);
+  border-radius: var(--r-sm);
+  list-style: none;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.sticker-fold > summary::-webkit-details-marker {
+  display: none;
+}
+
+.sticker-fold > summary .section-title {
+  margin: 0;
+}
+
+.sticker-fold > summary:focus-visible {
+  outline: 3px solid var(--primary-deep);
+  outline-offset: 2px;
+}
+
+.fold-chevron {
+  width: 22px;
+  height: 22px;
+  color: var(--fg-muted);
+  transition: transform var(--t-base) var(--ease);
+}
+
+.sticker-fold[open] .fold-chevron {
+  transform: rotate(180deg);
+}
+
+.sticker-fold[open] .stickers {
+  margin-top: var(--sp-2);
+}
 
 .sticker-count {
   font-family: var(--font-num);
@@ -1695,6 +1772,8 @@ body.is-playing .topbar {
   .hole.is-nope .mole-art,
   .hole.is-up .v-boss .mole-art,
   .hole.is-boss::before,
+  .quiz-opt.is-right,
+  .quiz-result.is-levelup,
   .boss-burst b,
   .boss-burst i,
   .hole.is-wiping .mole-art,
