@@ -839,22 +839,14 @@ and 「換一張新地圖」.
 
 ## Screen
 
-- **Crossing the finish line takes the controls away.** The camera stops on the arch and taps are
-  ignored. The capsule keeps doing what it was doing — rolling on the ground (a mid-air finish lands
-  first), or flying level as a rocket or UFO — and accelerates (+26 tiles/s²) off the right edge, with
-  its speed trails. 「過關了」 opens only once it has left the screen, about 1 s later, or after 2.5 s if
-  the tab stops drawing. With reduced motion there is no dash; the dialog opens after 0.25 s.
+- **The finish is an invisible line.** Nothing is drawn there (product owner): no arch, banner, tape,
+  checkered line or confetti. At the goal's x the camera stops and taps are ignored. The capsule keeps
+  doing what it was doing — rolling (a mid-air finish lands first), or flying level as a rocket or
+  UFO — and **leaves the right edge at its running speed (constant, no speed-up)**, with its speed
+  trails. 「過關了」 opens once it is off screen (safety timer: the exit time + 1 s). With reduced motion
+  there is no run-off; the dialog opens after 0.25 s.
 - No 「完成」 badge on finished levels in the list — their stars are the record. The dodged-shot green
   check in the doctor fight was removed too (product owner).
-- **The finish is a celebration, not a sign.** It has:
-  - an arch of 13 balloons (orange, yellow, green, sky, pink) with two small bunches at the base;
-  - a green ribbon banner 「終點」 between two gold stars, and a red finish tape that snaps in two
-    and hangs from both sides when the capsule breaks it;
-  - a black-and-white checkered line on the ground.
-
-  The balloons bob gently, and four sparkles slowly brighten and dim (about 1 s, no flashing). With
-  reduced motion everything holds still. It is drawn on the canvas, centred on the goal, so the
-  capsule finishes *inside* the arch.
 - Canvas 9 tiles high; tile = min(height / 9, width / 11). Portrait 375 px → 32 px tiles, ~8 tiles of
   look-ahead. The capsule sits 2.8 tiles from the left edge.
 - **Portrait leaves space under the canvas: it becomes a big orange 「跳」 / 「飛」 pad** (dark ink on
