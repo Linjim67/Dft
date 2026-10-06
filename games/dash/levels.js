@@ -231,7 +231,7 @@
       ]
     },
     {
-      id: 2, name: '快快跑', sub: '越跑越快', theme: 'yellow', seed: 2203,
+      id: 2, name: '快快跑', sub: '越跑越快', theme: 'butter', seed: 2203,
       sections: [
         { mode: 'cube', len: 100, d: [1, 2] },
         { mode: 'cube', len: 90, d: [2, 2], speed: 1.2 },

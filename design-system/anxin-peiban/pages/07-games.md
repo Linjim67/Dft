@@ -731,6 +731,12 @@ uses this hue. It is calm next to the orange capsule and keeps the blue differen
 easy to read. Sage turned muddy, and teal came too close to 藥杯飛碟's blue and the difference blue.
 Infinity's twin sections use the same theme.
 
+**快快跑 is butter, not neon yellow** (product owner, 2026-10-07). The sky runs #FFFCF3 → #F8EDCF, the
+floor is #EDD9A3 with #D6BF85 seams, and the box band is #F2D88E. The old #FEF08A / #FCD34D was too bright.
+It was also the same yellow as the stars and bounce pads (#FACC15), so they disappeared into the level.
+On cream they stand out. Sand turned grey, and peach came too close to 出發囉's orange. Infinity's rocket
+sections use the same theme.
+
 **轉轉 (e).** Each jump and each needle passed turns the view 3°; at ±15° it turns back the other way.
 A literal cumulative 3° would put the course upside down after 60 events. The view eases to the new
 angle at 40°/s; with reduced motion it snaps.

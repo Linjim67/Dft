@@ -42,7 +42,7 @@
 
   var THEMES = {
     orange: { band: '#FDBA74' },
-    yellow: { band: '#FDE047' },
+    butter: { band: '#F2D88E' },
     sky: { band: '#7DD3FC' },
     lavender: { band: '#C4B5FD' },
     pink: { band: '#F9A8D4' },
