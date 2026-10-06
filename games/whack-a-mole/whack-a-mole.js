@@ -78,7 +78,7 @@
       holes: [],
       scrub: null,       /* 病毒入侵時按住螢幕的手指：{ id, x, y, i }（i：手指下的洞） */
       keyHold: null,     /* 按住數字鍵消毒：{ key, i } */
-      warned: false,     /* 這回合已經提示過「剩下 5 秒」 */
+      warned: false,     /* 這回合已經跟讀螢幕的人說過「剩下 5 秒」 */
       invasionAt: null,  /* 這回合幾毫秒時病毒入侵（null：沒有或已經入侵過） */
       invasion: null,    /* 入侵中：{ until } */
       invasionTaught: false, /* 這一局已經看過入侵教學 */
@@ -366,7 +366,7 @@
     var calloutEl = $('callout');
     var calloutTimer = null;
 
-    /* 大字從棋盤中間跳出來：連擊里程碑、大魔王、病毒入侵、剩下 5 秒 */
+    /* 大字從棋盤中間跳出來：連擊里程碑、大魔王、病毒入侵 */
     function callout(text) {
       calloutEl.textContent = text;
       retrigger(calloutEl, 'is-on');
@@ -579,6 +579,7 @@
 
     var timeEl = $('hudTime');
     var timeWrap = $('hudTimeWrap');
+    var countdownEl = $('countdown');
 
     function renderTime(tLeft) {
       var s = Math.ceil(tLeft);
@@ -588,10 +589,15 @@
       timeWrap.classList.toggle('is-low', s <= 5);
       notify();
       if (s <= 5 && S.clock > 0) {
-        retrigger(timeEl, 'is-tick'); /* 最後 5 秒：每一秒數字跳一下 */
+        retrigger(timeEl, 'is-tick'); /* 最後 5 秒：右上角的數字每一秒跳一下 */
+        /* 棋盤中間跳出 5 4 3 2 1（只有數字，不寫「剩下 5 秒」） */
+        if (s >= 1) {
+          countdownEl.textContent = s;
+          retrigger(countdownEl, 'is-on');
+        }
         if (!S.warned) {
           S.warned = true;
-          callout('剩下 5 秒！');
+          Anxin.announce(live, '剩下 5 秒');
         }
       }
     }
@@ -695,6 +701,7 @@
       S.invasionAt = S.mode === 'manual' ? null : E.invasionAt(S.round, Math.random);
       S.keyHold = null;
       S.warned = false;
+      countdownEl.classList.remove('is-on');
       S.streak = 0;
       S.roundBestStreak = 0;
       S.appeared = 0;
@@ -848,7 +855,7 @@
 
     /* 結算動畫裡的新貼紙：寫「怎麼拿到的」，而不是「已獲得」 */
     function newStickerHtml(st) {
-      return '<li class="sticker is-earned">' +
+      return '<li class="sticker is-earned pop">' +
         '<span class="sticker-art sticker-' + st.id + '" aria-hidden="true"><svg><use href="#' + st.art + '"></use></svg>' +
         (st.id === 'streak10' ? '<b>10</b>' : '') + '</span>' +
         '<span class="sticker-name">' + esc(st.name) + '</span>' +
@@ -1072,12 +1079,12 @@
         pages.push({ title: '拿到新貼紙！', html: '<ul class="stickers extra-stickers">' + got.map(newStickerHtml).join('') + '</ul>' });
       }
       if (S.unlocked.length) {
-        pages.push({ title: '解鎖新功能！', html: '<ul class="unlock-list">' + S.unlocked.map(function (u) {
-          return '<li><strong>' + esc(u.label) + '</strong><span>' + esc(unlockText(u)) + '</span></li>';
+        pages.push({ title: '解鎖新技能！', html: '<ul class="unlock-list">' + S.unlocked.map(function (u) {
+          return '<li class="pop"><strong>' + esc(u.label) + '</strong><span>' + esc(unlockText(u)) + '</span></li>';
         }).join('') + '</ul>' });
       }
       if (S.round === C.ROUNDS) {
-        pages.push({ title: '接下來是無限模式', html: '<p class="extra-text">回合會一直繼續，看看你能撐到第幾回合！</p>' });
+        pages.push({ title: '接下來是無限模式', html: '<p class="extra-text pop">回合會一直繼續，看看你能撐到第幾回合！</p>' });
       }
       return pages;
     }
@@ -1090,7 +1097,7 @@
         : (r === C.ROUNDS ? '進入無限模式' : '繼續下一回合');
       fillMedal();
       stopResult();
-      R = { pages: resultPages(), i: 0, timers: [], stops: [], busy: false, shownAt: 0,
+      R = { pages: resultPages(), i: 0, timers: [], stops: [], busy: false, shownAt: 0, finish: null,
         still: !!(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) };
       $('summaryHub').hidden = true;
       $('resultStage').hidden = false;
@@ -1108,6 +1115,7 @@
       $('runScore').textContent = fmt(before);
       Anxin.announce(live, $('summaryTitle').textContent + $('medalName').textContent + '，' +
         $('medalRate').textContent + '。這一回合 ' + S.roundScore + ' 分，總分 ' + S.runScore + ' 分');
+      R.finish = finishMain;
       if (R.still) { finishMain(); return; }
       R.busy = true;
       later(0, function () { popIn($('summaryTitle')); });
@@ -1125,31 +1133,50 @@
       later(3750, finishMain);
     }
 
-    function finishMain() {
-      stopResult();
-      POPS.forEach(function (id) { $(id).classList.add('is-done'); });
-      $('roundScore').textContent = fmt(S.roundScore);
-      $('runScore').textContent = fmt(S.runScore);
+    /* 這一頁播完（或被快轉）：出現「按一下繼續」，之後點一下才換頁 */
+    function pageDone() {
       R.busy = false;
       R.shownAt = Date.now();
       $('tapHint').classList.add('is-in');
     }
 
+    function finishMain() {
+      stopResult();
+      POPS.forEach(function (id) { $(id).classList.add('is-done'); });
+      $('roundScore').textContent = fmt(S.roundScore);
+      $('runScore').textContent = fmt(S.runScore);
+      pageDone();
+    }
+
+    /* 第二頁起：先出標題，內容再一個一個彈出來（貼紙由左而右、技能由上而下：就是它們排列的順序） */
     function showExtra(pg) {
       $('resultMain').hidden = true;
-      $('extraTitle').textContent = pg.title;
+      $('tapHint').classList.remove('is-in');
+      var title = $('extraTitle');
+      title.textContent = pg.title;
+      title.classList.remove('is-in', 'is-done');
       $('extraBody').innerHTML = pg.html;
-      var box = $('resultExtra');
-      box.hidden = false;
-      if (R.still) box.classList.add('is-done');
-      else popIn(box);
-      R.shownAt = Date.now();
-      $('extraTitle').focus();
+      $('resultExtra').hidden = false;
+      var items = Array.prototype.slice.call($('extraBody').querySelectorAll('.pop'));
+      R.finish = function () {
+        stopResult();
+        title.classList.add('is-done');
+        items.forEach(function (el) { el.classList.add('is-done'); });
+        pageDone();
+      };
+      title.focus();
+      if (R.still) { R.finish(); return; }
+      R.busy = true;
+      later(0, function () { popIn(title); });
+      items.forEach(function (el, k) {
+        later(500 + k * 320, function () { popIn(el); });
+      });
+      later(500 + items.length * 320 + 300, R.finish);
     }
 
     function advance() {
       if (!R) return;
-      if (R.busy) { finishMain(); return; }
+      if (R.busy) { R.finish(); return; }
       if (Date.now() - R.shownAt < 350) return; /* 連點兩下不會一口氣跳過一頁 */
       if (R.i < R.pages.length) { showExtra(R.pages[R.i++]); return; }
       showHub();
@@ -1161,6 +1188,7 @@
       R = null;
       $('resultStage').hidden = true;
       $('hubTotal').textContent = fmt(S.runScore);
+      $('hubCleared').textContent = '已通關第 ' + S.round + ' 關';
       renderCollection($('summaryCollection'));
       $('summaryHub').hidden = false;
       show('summary', $('hubTitle'));

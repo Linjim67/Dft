@@ -786,6 +786,42 @@ body.is-playing .topbar {
   100% { opacity: 0; transform: translate(-50%, -64%) scale(1); }
 }
 
+/* 最後 5 秒：5 4 3 2 1 從棋盤正中間跳出來、再淡掉（每秒一個；不擋點擊，也不會一直蓋住洞） */
+.countdown {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  z-index: 5;
+  margin: 0;
+  opacity: 0;
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+  font: 700 7rem/1 var(--font-num);
+  color: var(--primary-deep);
+  /* 白色外框用真正的描邊（陰影拼出來的外框在這麼大的字會有缺角）；描邊畫在字的後面 */
+  -webkit-text-stroke: 10px #fff;
+  paint-order: stroke fill;
+  text-shadow: 0 10px 24px rgba(124, 45, 18, .35);
+}
+
+.countdown.is-on {
+  animation: countdown 900ms cubic-bezier(.2, .9, .3, 1.2) forwards;
+}
+
+@keyframes countdown {
+  0% { opacity: 0; transform: translate(-50%, -50%) scale(.3); }
+  20% { opacity: .95; transform: translate(-50%, -50%) scale(1.15); }
+  35% { transform: translate(-50%, -50%) scale(1); }
+  65% { opacity: .95; }
+  100% { opacity: 0; transform: translate(-50%, -50%) scale(1.08); }
+}
+
+/* 減少動態：不放大縮小，只淡入淡出 */
+@keyframes countdown-still {
+  0%, 60% { opacity: .95; }
+  100% { opacity: 0; }
+}
+
 /* ═══ 鍍層：顏色 + 角標文字 + 血條，不單靠顏色 ═════════════ */
 
 .coat-badge {
@@ -1478,14 +1514,10 @@ body.is-playing .topbar {
   pointer-events: none;
 }
 
-/* 第二頁起：一頁一件事，淡橘底＋橘框（主色調） */
+/* 第二頁起：一頁一件事，不加外框。標題（主色）先出來，內容再一個一個彈出來 */
 .result-extra {
   display: grid;
-  gap: var(--sp-4);
-  padding: var(--sp-5) var(--sp-4);
-  border-radius: var(--r-xl);
-  background: var(--primary-wash);
-  box-shadow: inset 0 0 0 2px var(--primary-deep);
+  gap: var(--sp-5);
   text-align: center;
 }
 
@@ -1546,7 +1578,7 @@ body.is-playing .topbar {
 
 .unlock-list li + li {
   padding-top: var(--sp-3);
-  border-top: 1px solid rgba(194, 65, 12, .25);
+  border-top: 1px solid rgba(194, 65, 12, .3);
 }
 
 .unlock-list strong {
@@ -1574,24 +1606,48 @@ body.is-playing .topbar {
   opacity: 1;
 }
 
-/* 最後：總分＋我的收藏＋開始下一回合 */
+/* 最後：總分＋我的收藏＋開始下一回合。「總分 900」同一行，右邊小框寫已通關第幾關 */
 .summary-hub {
   padding-top: var(--sp-4);
 }
 
 .hub-total {
-  display: grid;
-  justify-items: center;
-  gap: 2px;
-  padding: var(--sp-4);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--sp-3);
+  padding: var(--sp-3) var(--sp-4) var(--sp-3) var(--sp-5);
   border-radius: var(--r-xl);
   background: var(--card);
   box-shadow: var(--sh-md);
+}
+
+.hub-score {
+  display: flex;
+  align-items: baseline;
+  gap: var(--sp-2);
   font-weight: 400;
 }
 
+.hub-score .score-label {
+  font-size: 1rem;
+  font-weight: 700;
+}
+
 .hub-total strong {
-  font-size: 2.6rem;
+  font-size: 2.2rem;
+}
+
+.hub-cleared {
+  flex: none;
+  padding: var(--sp-1) var(--sp-3);
+  border-radius: var(--r-sm);
+  background: var(--primary-wash);
+  box-shadow: inset 0 0 0 1.5px var(--primary-deep);
+  color: var(--primary-deep);
+  font-size: .85rem;
+  font-weight: 700;
+  white-space: nowrap;
 }
 
 .quiz-actions .btn {
@@ -1896,6 +1952,10 @@ body.is-playing .topbar {
   .callout.is-on,
   .coll-item.is-ready {
     animation: none;
+  }
+
+  .countdown.is-on {
+    animation: countdown-still 900ms linear forwards;
   }
 
   /* 打倒大魔王：不轉不晃，只閃一下再淡出 */

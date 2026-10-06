@@ -276,11 +276,14 @@ on it (or Enter / Space, or the 「按一下繼續」 button itself) moves on:
    the grey 「按一下繼續」 fades in (3.75s). **A tap during the animation fast-forwards** to the
    end of page 1 instead of skipping it; taps within 350ms of a new page are ignored, so a double
    tap can't skip one unseen.
-2. **Page 2 on — one thing per page**, each a light-orange card (#FFEDD5, 2px #C2410C, title in
-   #C2410C): 「拿到新貼紙！」 (big stickers with how each was earned) · 「解鎖新功能！」 (停留更久 /
-   更多洞 / 更強的槌子 with what changed) · 「接下來是無限模式」 after round 6. Pages that have nothing
-   to show are skipped.
-3. **The hub** (`#summaryHub`): only the 總分 card (the page's `<h1>`), 我的收藏, and the sticky
+2. **Page 2 on — one thing per page, no box around it** (2026-10-06): the #C2410C title pops in
+   first, then the contents pop in one by one, 0.32s apart starting at 0.5s — **「拿到新貼紙！」:
+   the new stickers left to right** (big, with how each was earned); **「解鎖新技能！」: each skill
+   top to bottom** (停留更久 / 更多洞 / 更強的槌子 with what changed, thin orange dividers between
+   them); 「接下來是無限模式」 after round 6. 「按一下繼續」 appears once the last item is in; a tap
+   before that shows everything at once. Pages that have nothing to show are skipped.
+3. **The hub** (`#summaryHub`): the 總分 card — **「總分 900」 on one line** (the `<h1>`) with a
+   small light-orange box **「已通關第 n 關」** on the right — then 我的收藏 and the sticky
    「開始第 N 回合」 button. A 小知識 opened from here returns here — the animation doesn't replay.
 
 Dropped from the old summary: the streak line, 「再得 N 分，就能解鎖…」, the challenge hint and
@@ -333,12 +336,15 @@ that needs a demo — holding to disinfect — is taught in context at the first
 「開始遊戲」 goes straight into round 1. New saves no longer carry `tutorialSeen`; old saves that
 still have it load unchanged (the key is simply ignored).
 
-## 剩下 5 秒
+## 最後 5 秒 — 5 4 3 2 1
 
-When the round clock crosses 5s left, a centre callout 「剩下 5 秒！」 pops up **once per round**,
-and from then on the timer number jumps (scale 1.35 → 1) every second, on top of the existing
-orange + underline low-time style (not colour alone). Never at round start; a pause just before
-5s doesn't lose it. Reduced motion: the callout still shows, the number doesn't jump.
+From 5s left, a **big digit pops in the middle of the board every second: 5 4 3 2 1** (no
+「剩下 5 秒」 text — replaced 2026-10-06). `#countdown`: 7rem, #C2410C with a 10px white stroke
+(`-webkit-text-stroke` + `paint-order: stroke fill`; stacked text-shadows left notches at this
+size), pops from 0.3× to 1.15× and fades out within 0.9s, so it never sits over the holes for long;
+taps pass through. The HUD timer keeps its own per-second jump and the orange + underline low-time
+style. Screen readers hear 「剩下 5 秒」 once. Never at round start; a pause just before 5s doesn't
+lose it. Reduced motion: each digit just fades in and out, no scaling.
 
 ## 小知識 bank
 

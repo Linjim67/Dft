@@ -236,6 +236,8 @@
         <div class="board-wrap">
           <div class="board" id="board"></div>
           <p class="callout" id="callout" aria-hidden="true"></p>
+          <!-- 最後 5 秒：5 4 3 2 1 從棋盤中間跳出來（只有數字，不擋點擊） -->
+          <p class="countdown" id="countdown" aria-hidden="true"></p>
           <!-- 病毒入侵時的提示（不擋點擊）：手指就是酒精棉片；右邊是入侵還剩幾秒 -->
           <p class="invasion-hint" id="invasionHint" hidden>
             <svg aria-hidden="true"><use href="#tool-swab" /></svg>按住病毒，就會一直消毒<span class="invasion-left" id="invasionLeft">7 秒</span>
@@ -290,9 +292,9 @@
           <p class="total-pts pop" id="totalPts"><span class="score-label">總分</span><strong id="runScore">0</strong></p>
         </div>
 
-        <!-- 第二頁起：一頁一件事 -->
-        <div class="result-page result-extra pop" id="resultExtra" hidden>
-          <h2 class="extra-title" id="extraTitle" tabindex="-1"></h2>
+        <!-- 第二頁起：一頁一件事。先出標題，內容再一個一個彈出來（不加外框） -->
+        <div class="result-page result-extra" id="resultExtra" hidden>
+          <h2 class="extra-title pop" id="extraTitle" tabindex="-1"></h2>
           <div class="extra-body" id="extraBody"></div>
         </div>
 
@@ -300,7 +302,11 @@
       </div>
 
       <div class="summary-hub" id="summaryHub" hidden>
-        <h1 class="hub-total" id="hubTitle" tabindex="-1"><span class="score-label">總分</span><strong id="hubTotal">0</strong></h1>
+        <!-- 總分和數字同一行；右邊小框：已通關第幾關 -->
+        <div class="hub-total">
+          <h1 class="hub-score" id="hubTitle" tabindex="-1"><span class="score-label">總分</span><strong id="hubTotal">0</strong></h1>
+          <p class="hub-cleared" id="hubCleared">已通關第 1 關</p>
+        </div>
 
         <h2 class="section-title">我的收藏</h2>
         <ul class="collection" id="summaryCollection"></ul>
