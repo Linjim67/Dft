@@ -71,13 +71,21 @@ nothing narrates what the UI already shows (no ledes, no step guide, 「XXXX 查
 | After 送出 | done card + 「下一位」 | same | one-line 「XXXX 已送出」 banner; cursor back in the code box |
 | 最近完成 | below results (hidden when empty) | left column | right sidebar, always shown (「—」 when empty) |
 
-PC keyboard handling, so staff only reach for the mouse to pick a face:
-- Digits typed anywhere go into the code and focus moves to the code box. Typing in the note
-  textarea or on a radio is excluded.
-- Esc clears the code. Ctrl/⌘+Enter sends from anywhere in the form.
-- The kbd hints (「0–9 輸入 Esc 清除」, 「送出 Ctrl+Enter」) appear only in this layout.
-- When a case opens, focus stays in the code box, so a typo can be retyped at once. The live region
-  announces the case. Touch layouts move focus to ① instead.
+Keyboard handling on any mouse device (`(hover: hover) and (pointer: fine)`), so staff only reach
+for the mouse to pick a face:
+- **No clicking the code area first, and no text box takes focus.** Taiwanese PCs usually run the 注音
+  IME, and inside a focused text box it turns the number row into bopomofo (1 → ㄅ, 5 → ㄓ). So the
+  whole document listens for keys instead, and with no text field focused the IME stays out of the
+  way. When the IME still intercepts (`key === 'Process'`), the physical `code` (Digit5 / Numpad5) is used.
+- The overlay `<input>` gets `pointer-events: none` and `tabindex=-1` here. Clicking the slots draws no
+  focus frame (by request); the active slot's thick border and blinking caret are the "type here" cue.
+- Digits go to the code from anywhere except text fields (note textarea, password): radios, buttons
+  and the page body all count. ⌫ deletes, Esc clears, Enter re-queries, Ctrl+V pastes (non-digits dropped).
+- `focusEntry()` releases focus rather than taking it. After login, after sending and after Esc,
+  nothing is left focused on a hidden field that would swallow keys.
+- Ctrl/⌘+Enter sends from anywhere in the form. The kbd hints appear only in the PC layout.
+- When a case opens, focus stays put, so a typo can be retyped at once. The live region announces the
+  case. Touch layouts move focus to ① instead.
 
 Shared by all three:
 - **Staff mode bar**: a sticky dark bar with 醫護端, 「登入至 HH:MM」 and 登出 (48px).

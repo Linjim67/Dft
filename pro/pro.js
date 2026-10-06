@@ -4,8 +4,8 @@
    2. 查詢：家長的 4 位數暫時代碼 → 孩子的資料（不含暱稱）
    3. 回饋：家長估的害怕程度 vs 醫檢師實際觀察；送出 = 代碼失效
    工作台分三個階段（#deskView 的 data-phase）：entry → case → done
-   版面由 CSS 依螢幕決定；電腦（寬螢幕 + 滑鼠）另外有鍵盤操作：
-   任何地方打數字都進代碼、Esc 清除、Ctrl+Enter 送出，送出後游標直接回到代碼框。
+   版面由 CSS 依螢幕決定；有滑鼠的裝置另外有鍵盤操作：
+   不用點代碼框，任何地方打數字（或貼上）都進代碼、⌫ 刪除、Esc 清除、Ctrl+Enter 送出。
    ═══════════════════════════════════════════════════════════════ */
 (function () {
   'use strict';
@@ -221,8 +221,32 @@
     setCode((v.length >= 4 ? '' : v) + d);
   }
 
+  /* ── 有滑鼠的裝置（電腦）：焦點不放進代碼框 ──
+     台灣的電腦多半開著注音輸入法：焦點一進文字框，數字鍵會被輸入法吃掉變成注音
+     （1 → ㄅ、5 → ㄓ）。所以電腦上代碼不靠輸入框收，而是整頁監聽按鍵——焦點不在
+     任何文字框時，輸入法不會介入；代碼框本身也點不到（pro.css）、不顯示焦點框。
+     觸控裝置照舊：數字鍵＋疊在格子上的輸入框。 */
+  var keyboardMode = finePointer;
+
+  function isTextField(el) {
+    if (!el || !el.tagName) return false;
+    if (el.isContentEditable || el.tagName === 'TEXTAREA') return true;
+    if (el.tagName !== 'INPUT') return false;
+    return ['radio', 'checkbox', 'button', 'submit', 'reset', 'range'].indexOf(el.type) === -1;
+  }
+
+  function applyKeyboardMode() {
+    codeInput.tabIndex = keyboardMode.matches ? -1 : 0;
+    if (keyboardMode.matches && document.activeElement === codeInput) codeInput.blur();
+  }
+  applyKeyboardMode();
+  if (keyboardMode.addEventListener) keyboardMode.addEventListener('change', applyKeyboardMode);
+
+  /* 準備打下一組代碼。電腦：把焦點放掉（停在剛隱藏的欄位或按鈕上，數字會被吃掉）；
+     觸控：不動焦點，免得叫出系統鍵盤 */
   function focusEntry() {
-    if (finePointer.matches) codeInput.focus();
+    var el = document.activeElement;
+    if (keyboardMode.matches && el && el !== document.body && el.blur) el.blur();
   }
 
   function codeChanged() {
@@ -254,10 +278,15 @@
     codeChanged();
   });
 
+  /* 觸控裝置點進代碼框直接打字時：滿 4 位再打＝下一組；Enter 重查；Esc 清除 */
   codeInput.addEventListener('keydown', function (ev) {
     var full = codeInput.value.length >= 4 && codeInput.selectionStart === codeInput.selectionEnd;
     if (/^\d$/.test(ev.key) && full) codeInput.value = '';
     if (ev.key === 'Enter' && codeInput.value.length === 4) requestLookup(codeInput.value, true);
+    if (ev.key === 'Escape' && codeInput.value) {
+      setCode('');
+      ev.preventDefault();
+    }
   });
 
   /* 游標永遠在最後面（格子看不到游標，中間插字會讓人搞不清楚） */
@@ -268,41 +297,45 @@
   codeInput.addEventListener('focus', caretToEnd);
   codeInput.addEventListener('click', caretToEnd);
 
-  /* 焦點在數字鍵上時，實體鍵盤打的數字也收進來 */
-  $('entry').addEventListener('keydown', function (ev) {
-    if (ev.target === codeInput || ev.ctrlKey || ev.metaKey || ev.altKey) return;
-    if (/^\d$/.test(ev.key)) {
-      pushDigit(ev.key);
+  /* 數字：一般看 key；輸入法攔截時 key 是 Process，改看實體按鍵（Digit5、Numpad5） */
+  function digitOf(ev) {
+    if (/^\d$/.test(ev.key)) return ev.key;
+    if (ev.shiftKey || (ev.key !== 'Process' && ev.key !== 'Unidentified')) return null;
+    var m = /^(?:Digit|Numpad)(\d)$/.exec(ev.code || '');
+    return m ? m[1] : null;
+  }
+
+  /* 整頁收代碼：不用先點代碼框。備註欄、密碼欄等文字框裡打的字不算；
+     手機看資料時鍵盤收起來了，也不收 */
+  function entryOpen() {
+    return !desk.hidden && !document.querySelector('dialog[open]') &&
+      getComputedStyle($('entry')).display !== 'none';
+  }
+
+  document.addEventListener('keydown', function (ev) {
+    if (ev.ctrlKey || ev.metaKey || ev.altKey || isTextField(ev.target) || !entryOpen()) return;
+    var d = digitOf(ev);
+    if (d) {
+      pushDigit(d);
       ev.preventDefault();
     } else if (ev.key === 'Backspace') {
       setCode(codeInput.value.slice(0, -1));
       ev.preventDefault();
-    }
-  });
-
-  /* 電腦：在頁面任何地方打數字都進代碼（正在打字的欄位、單選鈕除外）；Esc 清除 */
-  document.addEventListener('keydown', function (ev) {
-    if (desk.hidden || ev.ctrlKey || ev.metaKey || ev.altKey || document.querySelector('dialog[open]')) return;
-    if ($('entry').contains(ev.target)) return; /* 上面已處理 */
-    var t = ev.target;
-    var typing = t && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA' || t.isContentEditable);
-    if (typing) return;
-    if (getComputedStyle($('entry')).display === 'none') return; /* 手機看資料時鍵盤收起來了 */
-    if (/^\d$/.test(ev.key)) {
-      pushDigit(ev.key);
-      focusEntry(); /* 接下來的 ⌫、Enter 都落在代碼框 */
-      ev.preventDefault();
     } else if (ev.key === 'Escape' && panelState !== 'case') {
       setCode('');
-      focusEntry();
+    } else if (ev.key === 'Enter' && codeInput.value.length === 4 && !ev.target.closest('button, a, form')) {
+      requestLookup(codeInput.value, true);
     }
   });
 
-  codeInput.addEventListener('keydown', function (ev) {
-    if (ev.key === 'Escape' && codeInput.value) {
-      setCode('');
-      ev.preventDefault();
-    }
+  /* Ctrl+V 貼上代碼也一樣：頁面任何地方都可以 */
+  document.addEventListener('paste', function (ev) {
+    if (isTextField(ev.target) || !entryOpen()) return;
+    var data = ev.clipboardData || window.clipboardData;
+    var digits = (data ? data.getData('text') : '').replace(/\D/g, '').slice(0, 4);
+    if (!digits) return;
+    ev.preventDefault();
+    setCode(digits);
   });
 
   /* ─────────────────────────────────────────────────────────────
@@ -525,7 +558,7 @@
     panelShow('case');
     setPhase('case');
     window.scrollTo(0, 0);
-    /* 電腦：焦點留在代碼框（打錯可以直接重打）；觸控：移到「打針前」 */
+    /* 電腦：焦點不動（打錯可以直接重打）；觸控：移到「打針前」 */
     if (!pcLayout.matches) $('beforeTitle').focus();
     Anxin.announce(live, current.code + '：' + Anxin.ageLabel(p.age) + gender +
       (p.specialNeeds ? '，特別注意：' + p.specialNeeds : '') + '。家長說' + fear);
@@ -604,8 +637,8 @@
       panelShow('done');
       setPhase('done');
       window.scrollTo(0, 0);
-      /* 電腦：直接回到代碼框，打下一組就會蓋掉「已送出」；觸控：焦點給「已送出」 */
-      if (pcLayout.matches) codeInput.focus();
+      /* 電腦：直接打下一組就會蓋掉「已送出」；觸控：焦點給「已送出」 */
+      if (pcLayout.matches) focusEntry();
       else $('doneTitle').focus();
       Anxin.announce(live, c.code + ' 已送出，代碼已失效');
     }, function (err) {

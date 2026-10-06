@@ -313,9 +313,17 @@
   cursor: text;
 }
 
-.slots:focus-within {
-  outline: 3px solid var(--primary-deep);
-  outline-offset: 4px;
+/* 不畫焦點框：下一格的粗框 + 閃爍游標就是「打字會進這裡」的提示 */
+.slots-input:focus,
+.slots-input:focus-visible {
+  outline: none;
+}
+
+/* 有滑鼠的裝置：代碼框點不到（焦點進文字框會讓注音輸入法吃掉數字），改由整頁收按鍵 */
+@media (hover: hover) and (pointer: fine) {
+  .slots-input {
+    pointer-events: none;
+  }
 }
 
 .slot {
