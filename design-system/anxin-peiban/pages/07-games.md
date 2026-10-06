@@ -172,7 +172,7 @@ scroll. **No swab tray** any more (see 病毒入侵): the board takes the whole 
   bronze ≥ 40% +100; no medal under 3 appearances. The bonus counts toward rewards.
 - **Sticker book** (8, kept per child): 第一次敲到 · 病毒清潔員 · 大魔王剋星 · 10 連擊 · 鐵甲剋星 ·
   小博士 · 金牌選手 · 六回合完成. Earned = solid ring + 「已獲得」; unearned = greyed, dashed, with
-  how-to-earn text. New ones are listed on the round summary. On the start screen the book is
+  how-to-earn text. New ones get their own page in the round-end result. On the start screen the book is
   **folded** (`<details>`, closed by default): the 48px-tall title row 「我的貼紙 2 / 8」 with a
   chevron opens it.
 
@@ -256,11 +256,37 @@ It fits without scrolling on 375×548 (SE Safari, tightened spacing under 600px 
 Reduced motion shows a still: the finger pressed on the first virus with the ring on.
 The start screen's rules card only teases it: 「還會突然病毒入侵 7 秒，到時候會教你怎麼消毒」.
 
-Keyboard: `1`–`6` hit holes; during the invasion **holding a number key = holding a finger** on
+Keyboard: `1`–`6` hit holes (the numbers are no longer drawn by the holes — removed 2026-10-06
+for a cleaner board; each hole's label still says 「第 N 個洞」); during the invasion **holding a number key = holding a finger** on
 that hole (keydown starts it, keyup stops it, auto-repeat is ignored). Enter / Space on a focused
 hole can't be held, so each press wipes 0.25s (`WIPE_TAP_MS`): 1 press for a normal virus,
 2 silver, 3 iron. `Esc` pauses; Ctrl/Cmd combos are
 left alone.
+
+## Round end — a tap-through result, then the hub (2026-10-06)
+
+`#summaryView` is two stages. **The result** (`#resultStage`) fills the screen, and a tap anywhere
+on it (or Enter / Space, or the 「按一下繼續」 button itself) moves on:
+
+1. **Page 1 pops in, in order** (`.pop` → `.is-in`, `pop-in` 520ms): 「第 x 回合完成！」 (0s) → the
+   medal card with 「抓到 x / y 個」 and its bonus (0.45s; no medal → grey medal 「下次拿獎牌！」) →
+   「這一回合」 counting up from 0 (0.95s, 700ms ease-out) → the 「總分」 card at the old total
+   (1.85s) → a 「+900」 chip rises from under the round score and drops into the total (2.35s,
+   700ms, Web Animations) → the card bumps and the total counts up to the new one (2.95s) →
+   the grey 「按一下繼續」 fades in (3.75s). **A tap during the animation fast-forwards** to the
+   end of page 1 instead of skipping it; taps within 350ms of a new page are ignored, so a double
+   tap can't skip one unseen.
+2. **Page 2 on — one thing per page**, each a light-orange card (#FFEDD5, 2px #C2410C, title in
+   #C2410C): 「拿到新貼紙！」 (big stickers with how each was earned) · 「解鎖新功能！」 (停留更久 /
+   更多洞 / 更強的槌子 with what changed) · 「接下來是無限模式」 after round 6. Pages that have nothing
+   to show are skipped.
+3. **The hub** (`#summaryHub`): only the 總分 card (the page's `<h1>`), 我的收藏, and the sticky
+   「開始第 N 回合」 button. A 小知識 opened from here returns here — the animation doesn't replay.
+
+Dropped from the old summary: the streak line, 「再得 N 分，就能解鎖…」, the challenge hint and
+「先玩到這裡」 (the top bar's back link still leaves). Screen readers hear the whole of page 1 at once
+(title, medal, scores) via the live region, and focus moves to each page's title. Reduced motion:
+every page appears complete, no pops, counts or flying chip — still one tap per page.
 
 ## No 連擊 bar
 

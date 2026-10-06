@@ -267,46 +267,47 @@
       </div>
     </section>
 
-    <!-- ══════════ 回合結算 ══════════ -->
+    <!-- ══════════ 回合結算 ══════════
+         1. 結算動畫：一頁一頁點下去（第一頁依序彈出：回合完成 → 獎牌 → 這一回合的分數 → 加進總分）
+         2. 之後每一頁一件事：新貼紙、解鎖的獎勵、無限模式（淡橘色）
+         3. 最後：總分、我的收藏、開始下一回合 -->
     <section id="summaryView" class="summary" hidden aria-labelledby="summaryTitle">
-      <h1 class="summary-heading" id="summaryTitle" tabindex="-1">第 1 回合完成！</h1>
+      <div class="result" id="resultStage">
+        <div class="result-page result-main" id="resultMain">
+          <h1 class="summary-heading pop" id="summaryTitle" tabindex="-1">第 1 回合完成！</h1>
 
-      <!-- 回合獎牌：依「抓到 ÷ 出現」頒發，文字＋圖，不只靠金銀銅的顏色 -->
-      <div class="medal" id="medalCard" hidden>
-        <svg class="medal-art" id="medalArt" aria-hidden="true"><use href="#icon-medal" /></svg>
-        <div class="medal-text">
-          <p class="medal-name" id="medalName">金牌</p>
-          <p class="medal-rate" id="medalRate"></p>
+          <!-- 回合獎牌：依「抓到 ÷ 出現」頒發，文字＋圖，不只靠金銀銅的顏色 -->
+          <div class="medal pop" id="medalCard">
+            <svg class="medal-art" id="medalArt" aria-hidden="true"><use href="#icon-medal" /></svg>
+            <div class="medal-text">
+              <p class="medal-name" id="medalName">金牌</p>
+              <p class="medal-rate" id="medalRate"></p>
+            </div>
+            <p class="medal-bonus" id="medalBonus"></p>
+          </div>
+
+          <p class="round-pts pop" id="roundPts"><span class="score-label">這一回合</span><strong id="roundScore">0</strong></p>
+          <p class="total-pts pop" id="totalPts"><span class="score-label">總分</span><strong id="runScore">0</strong></p>
         </div>
-        <p class="medal-bonus" id="medalBonus"></p>
+
+        <!-- 第二頁起：一頁一件事 -->
+        <div class="result-page result-extra pop" id="resultExtra" hidden>
+          <h2 class="extra-title" id="extraTitle" tabindex="-1"></h2>
+          <div class="extra-body" id="extraBody"></div>
+        </div>
+
+        <button class="tap-hint" type="button" id="tapHint">按一下繼續</button>
       </div>
 
-      <div class="score-card">
-        <p><span class="score-label">這一回合</span><strong id="roundScore">0</strong></p>
-        <p><span class="score-label">目前總分</span><strong id="runScore">0</strong></p>
-      </div>
+      <div class="summary-hub" id="summaryHub" hidden>
+        <h1 class="hub-total" id="hubTitle" tabindex="-1"><span class="score-label">總分</span><strong id="hubTotal">0</strong></h1>
 
-      <p class="infinity-note" id="infinityNote" hidden>
-        六個回合都挑戰完了！接下來是<strong>無限模式</strong>：回合會一直繼續，看看你能撐到第幾回合。
-      </p>
+        <h2 class="section-title">我的收藏</h2>
+        <ul class="collection" id="summaryCollection"></ul>
 
-      <p class="streak-line" id="streakLine" hidden></p>
-
-      <div class="new-stickers" id="newStickers" hidden>
-        <p class="new-stickers-title">拿到新貼紙！</p>
-        <ul class="stickers" id="newStickerList"></ul>
-      </div>
-
-      <ul class="unlock-list" id="unlockList" hidden></ul>
-
-      <h2 class="section-title">我的收藏</h2>
-      <p class="challenge-hint" id="summaryChallenge" hidden></p>
-      <ul class="collection" id="summaryCollection"></ul>
-      <p class="next-goal" id="nextGoal"></p>
-
-      <div class="cta-bar">
-        <button class="btn btn-primary" type="button" id="nextRoundBtn">下一回合</button>
-        <button class="quiet-link" type="button" id="endBtn">先玩到這裡</button>
+        <div class="cta-bar">
+          <button class="btn btn-primary" type="button" id="nextRoundBtn">下一回合</button>
+        </div>
       </div>
     </section>
   </main>

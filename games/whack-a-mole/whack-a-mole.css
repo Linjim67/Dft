@@ -750,20 +750,6 @@ body.is-playing .topbar {
   height: 100%;
 }
 
-.hole-key {
-  display: none;
-  position: absolute;
-  bottom: 3%;
-  inset-inline-end: 6%;
-  z-index: 3;
-  padding: 0 5px;
-  border-radius: var(--r-pill);
-  /* 土堆前緣是漸層，最深處 #A5653A 上只有 3.71:1 → 墊一個淺色底 */
-  background: rgba(255, 247, 237, .9);
-  font: 700 .72rem/1.5 var(--font-num);
-  color: #2E1406;
-}
-
 /* 還沒開放的洞：只有木板封住洞口（不寫「維修中」、不放三角錐，遊戲畫面乾淨一點） */
 .hole.is-locked {
   cursor: default;
@@ -1371,84 +1357,241 @@ body.is-playing .topbar {
   margin-top: var(--sp-5);
 }
 
-/* ═══ 回合結算 ═══════════════════════════════════════════════ */
+/* ═══ 回合結算 ═══════════════════════════════════════════════
+   結算動畫：一頁一頁點下去。整頁都可以點，內容在畫面中間，「按一下繼續」在下面（灰字） */
 
-.summary {
+.result {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  min-height: calc(100dvh - 9rem);
   padding-top: var(--sp-4);
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.result-main {
+  position: relative;
+  display: grid;
+  gap: var(--sp-4);
 }
 
 .summary-heading {
-  font-size: 1.6rem;
+  font-size: 1.7rem;
   line-height: 1.35;
   font-weight: 700;
   text-align: center;
   text-wrap: balance;
 }
 
-.score-card {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: var(--sp-3);
-  margin-top: var(--sp-4);
+/* 依序彈出：先藏著，is-in 時彈出來；is-done（快轉、減少動態）直接停在結果 */
+.pop {
+  opacity: 0;
 }
 
-.score-card p {
+.pop.is-in {
+  opacity: 1;
+  animation: pop-in 520ms var(--ease) both;
+}
+
+.pop.is-done {
+  opacity: 1;
+  animation: none;
+}
+
+@keyframes pop-in {
+  0% {
+    opacity: 0;
+    transform: translateY(10px) scale(.6);
+  }
+
+  60% {
+    opacity: 1;
+    transform: scale(1.06);
+  }
+
+  100% {
+    transform: none;
+  }
+}
+
+/* 這一回合的分數：大數字，跑上去 */
+.round-pts {
   display: grid;
   justify-items: center;
-  padding: var(--sp-4) var(--sp-2);
-  background: var(--card);
+}
+
+.round-pts strong,
+.total-pts strong,
+.hub-total strong {
+  font-family: var(--font-num);
+  font-weight: 700;
+  color: var(--primary-deep);
+  font-variant-numeric: tabular-nums;
+  line-height: 1.15;
+}
+
+.round-pts strong {
+  font-size: 3rem;
+}
+
+/* 總分：卡片；分數飛進來時跳一下 */
+.total-pts {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--sp-3);
+  padding: var(--sp-3) var(--sp-5);
   border-radius: var(--r-lg);
+  background: var(--card);
   box-shadow: var(--sh-md);
 }
 
+.total-pts strong {
+  font-size: 2rem;
+}
+
+.total-pts.is-bump {
+  animation: total-bump 420ms var(--ease);
+}
+
+@keyframes total-bump {
+  40% {
+    transform: scale(1.06);
+    box-shadow: var(--sh-lg), inset 0 0 0 2px var(--primary-deep);
+  }
+}
+
 .score-label {
-  font-size: .85rem;
+  font-size: .9rem;
   color: var(--fg-muted);
 }
 
-.score-card strong {
-  font-family: var(--font-num);
-  font-size: 1.7rem;
+/* 「+1,500」飛進總分（位置由 JS 算） */
+.fly-pts {
+  position: absolute;
+  z-index: 3;
+  transform: translate(-50%, -50%);
+  font: 700 1.8rem/1 var(--font-num);
   color: var(--primary-deep);
-  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+  pointer-events: none;
 }
 
-.infinity-note {
-  margin-top: var(--sp-4);
-  padding: var(--sp-4);
-  border-radius: var(--r-lg);
+/* 第二頁起：一頁一件事，淡橘底＋橘框（主色調） */
+.result-extra {
+  display: grid;
+  gap: var(--sp-4);
+  padding: var(--sp-5) var(--sp-4);
+  border-radius: var(--r-xl);
   background: var(--primary-wash);
+  box-shadow: inset 0 0 0 2px var(--primary-deep);
+  text-align: center;
+}
+
+.extra-title {
+  font-size: 1.5rem;
+  font-weight: 700;
+  line-height: 1.35;
+  color: var(--primary-deep);
+}
+
+.extra-text {
   line-height: 1.6;
 }
 
-.infinity-note strong {
-  color: var(--primary-deep);
+/* .stickers（貼紙簿的四欄格子）寫在後面：這裡要更明確才蓋得過 */
+.stickers.extra-stickers {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: var(--sp-3);
+}
+
+/* 欄寬固定，說明文字在格子裡換行（不然會撐開、和旁邊的疊在一起） */
+.extra-stickers .sticker {
+  width: 120px;
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.extra-stickers .sticker-art {
+  width: 72px;
+  height: 72px;
+}
+
+.extra-stickers .sticker-art svg {
+  width: 46px;
+  height: 46px;
+}
+
+.extra-stickers .sticker-name {
+  font-size: .95rem;
+}
+
+.extra-stickers .sticker.is-earned .sticker-hint {
+  font-size: .8rem;
+  font-weight: 400;
+  color: var(--fg-muted);
 }
 
 .unlock-list {
   display: grid;
-  gap: var(--sp-2);
-  margin-top: var(--sp-4);
+  gap: var(--sp-3);
 }
 
 .unlock-list li {
   display: grid;
   gap: 2px;
-  padding: var(--sp-3) var(--sp-4);
-  border-radius: var(--r-md);
-  background: var(--success-wash);
-  box-shadow: inset 0 0 0 2px var(--success);
+}
+
+.unlock-list li + li {
+  padding-top: var(--sp-3);
+  border-top: 1px solid rgba(194, 65, 12, .25);
 }
 
 .unlock-list strong {
-  color: var(--success);
+  font-size: 1.15rem;
+  color: var(--primary-deep);
 }
 
-.next-goal {
-  margin-top: var(--sp-3);
-  text-align: center;
-  font-size: .9rem;
+/* 按一下繼續：灰字，動畫播完才出現；本身也是按鈕（鍵盤可以按） */
+.tap-hint {
+  align-self: center;
+  min-height: 48px;
+  margin-top: var(--sp-6);
+  padding: var(--sp-2) var(--sp-5);
+  border: 0;
+  background: none;
+  font: inherit;
+  font-size: .95rem;
   color: var(--fg-muted);
+  opacity: 0;
+  transition: opacity var(--t-base) var(--ease);
+  cursor: pointer;
+}
+
+.tap-hint.is-in {
+  opacity: 1;
+}
+
+/* 最後：總分＋我的收藏＋開始下一回合 */
+.summary-hub {
+  padding-top: var(--sp-4);
+}
+
+.hub-total {
+  display: grid;
+  justify-items: center;
+  gap: 2px;
+  padding: var(--sp-4);
+  border-radius: var(--r-xl);
+  background: var(--card);
+  box-shadow: var(--sh-md);
+  font-weight: 400;
+}
+
+.hub-total strong {
+  font-size: 2.6rem;
 }
 
 .quiz-actions .btn {
@@ -1462,7 +1605,6 @@ body.is-playing .topbar {
   grid-template-columns: auto 1fr auto;
   align-items: center;
   gap: var(--sp-3);
-  margin-top: var(--sp-4);
   padding: var(--sp-3) var(--sp-4);
   border-radius: var(--r-lg);
   background: var(--card);
@@ -1479,6 +1621,8 @@ body.is-playing .topbar {
 .medal-bronze .medal-art { color: #C2763A; }
 
 .medal-gold { box-shadow: var(--sh-md), inset 0 0 0 2px #F59E0B; }
+.medal-none .medal-art { color: #D6D3D1; }
+.medal-none .medal-name { color: var(--fg-muted); }
 
 .medal-name {
   font-size: 1.25rem;
@@ -1495,14 +1639,6 @@ body.is-playing .topbar {
   font: 700 1.1rem var(--font-num);
   color: var(--success);
   white-space: nowrap;
-}
-
-.streak-line {
-  margin-top: var(--sp-3);
-  text-align: center;
-  font-family: var(--font-num);
-  font-weight: 700;
-  color: var(--primary-deep);
 }
 
 /* ═══ 貼紙簿 ═════════════════════════════════════════════════ */
@@ -1628,37 +1764,9 @@ body.is-playing .topbar {
   font-weight: 700;
 }
 
-.new-stickers {
-  margin-top: var(--sp-4);
-  padding: var(--sp-3);
-  border-radius: var(--r-lg);
-  background: var(--success-wash);
-}
-
-.new-stickers .stickers {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: center;
-}
-
-.new-stickers .sticker {
-  width: 88px;
-}
-
-.new-stickers-title {
-  margin-bottom: var(--sp-2);
-  text-align: center;
-  font-weight: 700;
-  color: var(--success);
-}
-
-/* ═══ 游標裝置：顯示鍵盤數字、hover ══════════════════════════ */
+/* ═══ 游標裝置：hover ═══════════════════════════════════════ */
 
 @media (hover: hover) and (pointer: fine) {
-  .hole-key {
-    display: block;
-  }
-
   .coll-item.is-ready:hover {
     box-shadow: var(--sh-md), inset 0 0 0 2px var(--primary-deep);
   }
@@ -1776,6 +1884,8 @@ body.is-playing .topbar {
   .hole.is-boss::before,
   .quiz-opt.is-right,
   .quiz-result.is-levelup,
+  .pop.is-in,
+  .total-pts.is-bump,
   .boss-burst b,
   .boss-burst i,
   .hole.is-wiping .mole-art,

@@ -38,7 +38,7 @@
           if (!b || !b.questions) return;
           bank = b;
           if (S.view === 'intro') { renderCollection($('collection')); renderChallengeHint($('introChallenge')); }
-          if (S.view === 'summary') { renderCollection($('summaryCollection')); renderChallengeHint($('summaryChallenge')); }
+          if (S.view === 'summary') renderCollection($('summaryCollection'));
         })
         .catch(function () { /* 離線：略過 */ });
     }
@@ -150,7 +150,7 @@
           el.className = 'hole';
           el.dataset.i = i;
           el.setAttribute('aria-label', '第 ' + (i + 1) + ' 個洞');
-          el.innerHTML = HOLE_HTML + '<span class="hole-key" aria-hidden="true">' + (i + 1) + '</span>';
+          el.innerHTML = HOLE_HTML;
         } else {
           el.className = 'hole is-locked';
           el.innerHTML = LOCKED_HTML;
@@ -846,12 +846,13 @@
       $('stickerBook').innerHTML = E.STICKERS.map(function (st) { return stickerHtml(st, !!got[st.id]); }).join('');
     }
 
-    function renderNewStickers() {
-      var list = S.newStickers.map(function (id) {
-        return E.STICKERS.filter(function (st) { return st.id === id; })[0];
-      }).filter(Boolean);
-      $('newStickerList').innerHTML = list.map(function (st) { return stickerHtml(st, true); }).join('');
-      $('newStickers').hidden = !list.length;
+    /* 結算動畫裡的新貼紙：寫「怎麼拿到的」，而不是「已獲得」 */
+    function newStickerHtml(st) {
+      return '<li class="sticker is-earned">' +
+        '<span class="sticker-art sticker-' + st.id + '" aria-hidden="true"><svg><use href="#' + st.art + '"></use></svg>' +
+        (st.id === 'streak10' ? '<b>10</b>' : '') + '</span>' +
+        '<span class="sticker-name">' + esc(st.name) + '</span>' +
+        '<span class="sticker-hint">' + esc(st.hint) + '</span></li>';
     }
 
     /* ─────────────────────────────────────────────────────────────
@@ -885,7 +886,7 @@
       var from = S.quiz ? S.quiz.from : 'summary';
       S.quiz = null;
       if (from === 'intro') goIntro();
-      else showSummary();
+      else showHub();
     }
 
     /* 兩個收藏清單共用：點可以挑戰的卡片 */
@@ -986,53 +987,196 @@
       return '槌子變強了：鐵甲和大魔王一次扣 ' + u.value + ' 格';
     }
 
+    /* 結算動畫：一頁一頁點下去，最後停在「總分＋收藏＋下一回合」
+       第一頁依序彈出：第 x 回合完成 → 獎牌與抓到幾個 → 這一回合的分數（跑數字）→ 分數飛進總分。
+       動畫中點一下＝快轉到這一頁的結尾；之後點一下（或 Enter／空白鍵）＝下一頁。
+       減少動態：直接顯示結果，一樣一頁一頁點。 */
+    var R = null; /* { pages, i, timers, stops, busy, shownAt, still } */
+    var POPS = ['summaryTitle', 'medalCard', 'roundPts', 'totalPts'];
+
+    function stopResult() {
+      if (!R) return;
+      R.timers.forEach(function (t) { window.clearTimeout(t); });
+      R.stops.forEach(function (f) { f(); });
+      R.timers = [];
+      R.stops = [];
+    }
+
+    function later(ms, fn) { R.timers.push(window.setTimeout(fn, ms)); }
+
+    function popIn(el) {
+      el.classList.remove('is-in');
+      void el.offsetWidth; /* 重新播放同一個動畫 */
+      el.classList.add('is-in');
+    }
+
+    /* 數字從 from 跑到 to（先快後慢）；快轉時直接停下，由 finishMain 寫上終點 */
+    function countUp(el, from, to, ms) {
+      var id = null;
+      var t0 = null;
+      function step(ts) {
+        if (t0 === null) t0 = ts;
+        var k = Math.min(1, (ts - t0) / ms);
+        el.textContent = fmt(Math.round(from + (to - from) * (1 - Math.pow(1 - k, 3))));
+        if (k < 1) id = window.requestAnimationFrame(step);
+      }
+      id = window.requestAnimationFrame(step);
+      R.stops.push(function () { window.cancelAnimationFrame(id); });
+    }
+
+    /* 「+1,500」從這一回合的分數飛進總分 */
+    function flyToTotal() {
+      var host = $('resultMain');
+      var chip = document.createElement('span');
+      if (!S.roundScore || typeof chip.animate !== 'function') return;
+      var a = $('roundScore').getBoundingClientRect();
+      var b = $('runScore').getBoundingClientRect();
+      var h = host.getBoundingClientRect();
+      chip.className = 'fly-pts';
+      chip.setAttribute('aria-hidden', 'true');
+      chip.textContent = '+' + fmt(S.roundScore);
+      chip.style.left = (a.left + a.width / 2 - h.left) + 'px';
+      chip.style.top = (a.top + a.height / 2 - h.top) + 'px';
+      host.appendChild(chip);
+      var dx = (b.left + b.width / 2) - (a.left + a.width / 2);
+      var dy = (b.top + b.height / 2) - (a.top + a.height / 2);
+      /* 從數字下方冒出來（不和原本的數字疊在一起），再落進總分 */
+      var from = 'translate(-50%, calc(-50% + ' + Math.round(a.height * 0.75) + 'px))';
+      var to = 'translate(calc(-50% + ' + dx + 'px), calc(-50% + ' + dy + 'px))';
+      chip.animate([
+        { transform: from + ' scale(.6)', opacity: 0 },
+        { transform: from + ' scale(1)', opacity: 1, offset: 0.25 },
+        { transform: to + ' scale(.7)', opacity: 1, offset: 0.85 },
+        { transform: to + ' scale(.45)', opacity: 0 }
+      ], { duration: 700, easing: 'cubic-bezier(.45, 0, .7, 1)', fill: 'forwards' });
+      function drop() { if (chip.parentNode) chip.parentNode.removeChild(chip); }
+      window.setTimeout(drop, 750);
+      R.stops.push(drop);
+    }
+
+    function fillMedal() {
+      var mc = $('medalCard');
+      mc.className = 'medal pop ' + (S.medal ? 'medal-' + S.medal.id : 'medal-none');
+      $('medalName').textContent = S.medal ? S.medal.name : '下次拿獎牌！';
+      $('medalRate').textContent = '抓到 ' + S.caught + ' / ' + S.appeared + ' 個';
+      $('medalBonus').textContent = S.medal ? '+' + fmt(S.medalBonus) + ' 分' : '';
+    }
+
+    /* 第二頁起：新貼紙、解鎖的獎勵、無限模式（沒有就不出現） */
+    function resultPages() {
+      var pages = [];
+      var got = S.newStickers.map(function (id) {
+        return E.STICKERS.filter(function (st) { return st.id === id; })[0];
+      }).filter(Boolean);
+      if (got.length) {
+        pages.push({ title: '拿到新貼紙！', html: '<ul class="stickers extra-stickers">' + got.map(newStickerHtml).join('') + '</ul>' });
+      }
+      if (S.unlocked.length) {
+        pages.push({ title: '解鎖新功能！', html: '<ul class="unlock-list">' + S.unlocked.map(function (u) {
+          return '<li><strong>' + esc(u.label) + '</strong><span>' + esc(unlockText(u)) + '</span></li>';
+        }).join('') + '</ul>' });
+      }
+      if (S.round === C.ROUNDS) {
+        pages.push({ title: '接下來是無限模式', html: '<p class="extra-text">回合會一直繼續，看看你能撐到第幾回合！</p>' });
+      }
+      return pages;
+    }
+
     function showSummary() {
       var r = S.round;
       $('summaryTitle').textContent = r < C.ROUNDS ? '第 ' + r + ' 回合完成！'
         : (r === C.ROUNDS ? '六個回合都完成了！' : '無限模式・第 ' + r + ' 回合完成！');
-      $('roundScore').textContent = fmt(S.roundScore);
-      $('runScore').textContent = fmt(S.runScore);
-
-      var mc = $('medalCard');
-      if (S.medal) {
-        mc.className = 'medal medal-' + S.medal.id;
-        $('medalName').textContent = S.medal.name;
-        $('medalRate').textContent = '抓到 ' + S.caught + ' / ' + S.appeared + ' 個';
-        $('medalBonus').textContent = '+' + fmt(S.medalBonus) + ' 分';
-        mc.hidden = false;
-      } else {
-        mc.hidden = true;
-      }
-      var sl = $('streakLine');
-      sl.textContent = '這回合最高連擊 ' + S.roundBestStreak + (S.roundBestStreak >= 5 ? '，好厲害！' : '');
-      sl.hidden = S.roundBestStreak < 2;
-      renderNewStickers();
-      $('infinityNote').hidden = r !== C.ROUNDS;
-
-      var ul = $('unlockList');
-      ul.innerHTML = S.unlocked.map(function (u) {
-        return '<li><strong>解鎖：' + esc(u.label) + '</strong><span>' + esc(unlockText(u)) + '</span></li>';
-      }).join('');
-      ul.hidden = !S.unlocked.length;
-
-      renderCollection($('summaryCollection'));
-      renderChallengeHint($('summaryChallenge'));
-      var goal = E.nextUnlock(progress.totalPoints);
-      $('nextGoal').textContent = goal
-        ? '再得 ' + fmt(goal.at - progress.totalPoints) + ' 分，就能解鎖「' + goal.label + '」'
-        : '所有獎勵都解鎖了，太厲害了！';
-
       $('nextRoundBtn').textContent = r < C.ROUNDS ? '開始第 ' + (r + 1) + ' 回合'
         : (r === C.ROUNDS ? '進入無限模式' : '繼續下一回合');
+      fillMedal();
+      stopResult();
+      R = { pages: resultPages(), i: 0, timers: [], stops: [], busy: false, shownAt: 0,
+        still: !!(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) };
+      $('summaryHub').hidden = true;
+      $('resultStage').hidden = false;
+      $('resultMain').hidden = false;
+      $('resultExtra').hidden = true;
       show('summary', $('summaryTitle'));
+      playMain();
     }
+
+    function playMain() {
+      var before = S.runScore - S.roundScore;
+      POPS.forEach(function (id) { $(id).classList.remove('is-in', 'is-done'); });
+      $('tapHint').classList.remove('is-in');
+      $('roundScore').textContent = '0';
+      $('runScore').textContent = fmt(before);
+      Anxin.announce(live, $('summaryTitle').textContent + $('medalName').textContent + '，' +
+        $('medalRate').textContent + '。這一回合 ' + S.roundScore + ' 分，總分 ' + S.runScore + ' 分');
+      if (R.still) { finishMain(); return; }
+      R.busy = true;
+      later(0, function () { popIn($('summaryTitle')); });
+      later(450, function () { popIn($('medalCard')); });
+      later(950, function () {
+        popIn($('roundPts'));
+        countUp($('roundScore'), 0, S.roundScore, 700);
+      });
+      later(1850, function () { popIn($('totalPts')); });
+      later(2350, flyToTotal);
+      later(2950, function () {
+        retrigger($('totalPts'), 'is-bump');
+        countUp($('runScore'), before, S.runScore, 700);
+      });
+      later(3750, finishMain);
+    }
+
+    function finishMain() {
+      stopResult();
+      POPS.forEach(function (id) { $(id).classList.add('is-done'); });
+      $('roundScore').textContent = fmt(S.roundScore);
+      $('runScore').textContent = fmt(S.runScore);
+      R.busy = false;
+      R.shownAt = Date.now();
+      $('tapHint').classList.add('is-in');
+    }
+
+    function showExtra(pg) {
+      $('resultMain').hidden = true;
+      $('extraTitle').textContent = pg.title;
+      $('extraBody').innerHTML = pg.html;
+      var box = $('resultExtra');
+      box.hidden = false;
+      if (R.still) box.classList.add('is-done');
+      else popIn(box);
+      R.shownAt = Date.now();
+      $('extraTitle').focus();
+    }
+
+    function advance() {
+      if (!R) return;
+      if (R.busy) { finishMain(); return; }
+      if (Date.now() - R.shownAt < 350) return; /* 連點兩下不會一口氣跳過一頁 */
+      if (R.i < R.pages.length) { showExtra(R.pages[R.i++]); return; }
+      showHub();
+    }
+
+    /* 最後一頁：只有總分、我的收藏、開始下一回合（從小知識回來也是這裡，不重播動畫） */
+    function showHub() {
+      stopResult();
+      R = null;
+      $('resultStage').hidden = true;
+      $('hubTotal').textContent = fmt(S.runScore);
+      renderCollection($('summaryCollection'));
+      $('summaryHub').hidden = false;
+      show('summary', $('hubTitle'));
+    }
+
+    /* 整個結算畫面都可以點；「按一下繼續」本身也是按鈕（鍵盤可以按） */
+    $('resultStage').addEventListener('click', advance);
+    $('resultStage').addEventListener('keydown', function (ev) {
+      if (ev.target.closest('button')) return; /* 按鈕自己會觸發 click */
+      if (ev.key === 'Enter' || ev.key === ' ') { ev.preventDefault(); advance(); }
+    });
 
     $('nextRoundBtn').addEventListener('click', function () {
       S.round++;
       startRound();
     });
-
-    $('endBtn').addEventListener('click', goIntro);
 
     /* ─────────────────────────────────────────────────────────────
        開始畫面
