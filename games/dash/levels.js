@@ -283,8 +283,9 @@
     w.theme = L.theme;
     L.sections.forEach(function (sec, i) {
       var change = i > 0 && sec.mode !== prev;
-      var x0 = change ? x + FUN.IN : x;           /* 這一段從傳送門開始 */
-      var from = change ? x0 + FUN.OUT + 1 : i > 0 ? x0 + 1 : x0;
+      var sp = E.funnelSpec(prev, sec.mode);      /* 雙胞胎的門比較長、開在中間 */
+      var x0 = change ? x + sp.IN : x;            /* 這一段從傳送門開始 */
+      var from = change ? x0 + sp.OUT + 1 : i > 0 ? x0 + 1 : x0;
       if (change) {
         E.addFunnel(w, x0, prev, sec.mode);
         if (prevSec) prevSec.x1 = x0;
@@ -328,7 +329,7 @@
 
   /* 換到下一種玩法：漏斗＋傳送門；回傳這一段的起點和放障礙物的起點 */
   function infPortal(w, st, mode, extra) {
-    var x0 = st.x + FUN.IN;
+    var x0 = st.x + E.funnelSpec(st.mode, mode).IN;
     E.addFunnel(w, x0, st.mode, mode);
     if (st.sec) st.sec.x1 = x0;
     E.addTrigger(w, Object.assign({ k: 'portal', x: x0, mode: mode }, extra || {}));
@@ -345,8 +346,9 @@
     order.forEach(function (mode) {
       var x0 = st.x, from = st.x;
       if (mode !== st.mode) {
+        var outLen = E.funnelSpec(st.mode, mode).OUT;
         x0 = infPortal(w, st, mode);
-        from = x0 + FUN.OUT + 1;
+        from = x0 + outLen + 1;
       }
       var s = E.addSection(w, { mode: mode, x0: x0, x1: x0, round: R });
       var plan = planSection(st.r, { mode: mode, len: INF.LEN, d: d }, from, false);

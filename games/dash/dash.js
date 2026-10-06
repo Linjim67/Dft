@@ -93,7 +93,6 @@
     return s;
   }
 
-  var CHECK = '<svg viewBox="0 0 24 24" width="12" height="12" aria-hidden="true" style="vertical-align:-1px"><path d="m5 12.5 4.5 4.5L19 7.5" fill="none" stroke="currentColor" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"/></svg>';
   var CARD_ART = { 1: ['ship'], 2: ['egg'], 3: ['ufo'], 4: ['egg', 'egg'], 5: ['egg'], 6: ['doctor'] };
 
   function artImgs(names) {
@@ -105,10 +104,11 @@
       var r = rec.levels[L.id] || null;
       var got = r ? r.stars.filter(Boolean).length : 0;
       var badge = '';
-      if (r && r.done) badge = '<span class="lv-badge is-done">' + CHECK + ' 完成</span>';
+      /* 過關的關卡不另外標「完成」：星星就是成績 */
+      if (r && r.done) badge = '';
       else if (r && r.best > 0) badge = '<span class="lv-badge">最遠 ' + Math.round(r.best * 100) + '%</span>';
       var label = '第 ' + L.id + ' 關 ' + L.name + '：' + L.sub + '。' +
-        (r && r.done ? '已完成，' : '') + '星星 ' + got + ' / 3。';
+        '星星 ' + got + ' / 3。';
       return '<li><button type="button" class="lv-card" data-level="' + L.id + '" aria-label="' + label + '">' +
         '<span class="lv-art" style="--lv-bg:' + THEME[L.theme].sky[1] + '"><span class="lv-num">' + L.id + '</span>' +
         artImgs(CARD_ART[L.id]) + '</span>' +
@@ -145,7 +145,7 @@
     seen: {}, parts: [], angle: 0, aimY: 0.9, lastLane: null,
     squashAt: 0, squashKind: '', recoilAt: 0, crashUntil: 0, holdUntil: 0, doneAt: 0,
     saved: false, started: false, raf: 0, last: 0, hintTimer: 0, round: 1, dlgAction: null, hud: {},
-    duck: 0, dodges: [], jumpBt: -9, coach: '', briefed: false, briefAt: 0, portraitOk: false
+    duck: 0, jumpBt: -9, coach: '', briefed: false, briefAt: 0, portraitOk: false
   };
 
   function title() {
@@ -177,6 +177,7 @@
     G.phase = 'ready';
     G.saved = false;
     G.started = false;
+    G.outro = null;
     G.seen = {};
     G.parts = [];
     G.angle = 0;
@@ -187,7 +188,6 @@
     G.roll = 0;
     G.rollX = 0;
     G.duck = 0;
-    G.dodges = [];
     G.jumpBt = -9;
     G.coach = '';
     G.briefed = false;
@@ -596,6 +596,8 @@
     } else if (G.phase === 'respawn' && t >= G.holdUntil) {
       G.phase = 'play';
       G.input.presses = 0;
+    } else if (G.phase === 'outro') {
+      stepOutro(dt);
     }
     /* 畫面轉到的角度就是引擎用來算上坡／下坡速度的角度（減少動態時直接轉到位） */
     var target = run.mode === 'rot' ? run.rot.angle : 0;
@@ -663,9 +665,6 @@
         case 'shot':
           G.recoilAt = t;
           G.lastLane = e.lane;
-          break;
-        case 'dodge':
-          G.dodges.push(t);
           break;
         case 'bossDone':
           G.doneAt = t;
@@ -751,15 +750,58 @@
     }
   }
 
+  /* 終點：一碰到就收走控制權，鏡頭停住，小膠囊照樣跑（或飛），一路加速衝出畫面右邊，
+     整個出去了才跳「過關了」。減少動態時不衝刺，稍等一下直接跳出結果 */
+  var OUTRO = { ACCEL: 26, MAX_S: 2.5 };
+
   function won(t) {
     var run = G.run;
-    G.phase = 'over';
     var got = [0, 1, 2].map(function (i) { return !!run.got[i]; });
     E.mergeLevel(rec, G.level, { done: true, stars: got, progress: 1, deaths: run.deaths });
     E.saveRecord(storage, rec);
     G.saved = true;
+    resetInput();
     confetti(run.x, run.p.y);
-    window.setTimeout(function () { openWin(got); }, reduce ? 250 : 900);
+    if (reduce) {
+      G.phase = 'over';
+      window.setTimeout(function () { openWin(got); }, 250);
+      return;
+    }
+    var k = run.baseScale * run.speedMul;
+    G.phase = 'outro';
+    G.outro = { t0: t, dx: 0, v: C.SPEED * k, k: k, y: run.p.y, vy: run.p.vy, got: got, opened: false };
+    /* 分頁被切走、畫面不更新時的保險 */
+    G.outro.timer = window.setTimeout(function () { finishOutro(); }, OUTRO.MAX_S * 1000);
+  }
+
+  function stepOutro(dt) {
+    var o = G.outro, run = G.run;
+    if (!o || o.opened) return;
+    o.v += OUTRO.ACCEL * dt;
+    o.dx += o.v * dt;
+    if (E.physMode(run.mode) === 'cube') {
+      /* 跳到一半碰到終點：落回地上再繼續跑 */
+      var fl = E.floorAt(run.world, run.x + o.dx) + C.HALF;
+      if (o.y > fl || o.vy > 0) {
+        o.vy = Math.max(o.vy - C.FALL_GRAVITY * o.k * o.k * dt, -C.MAX_FALL * o.k);
+        o.y = Math.max(fl, o.y + o.vy * dt);
+        if (o.y === fl) o.vy = 0;
+      }
+      G.roll = (G.roll + o.v * dt / ROLL_R) % (Math.PI * 2);
+    } else {
+      o.vy += (0 - o.vy) * Math.min(1, dt * 6);     /* 火箭、飛碟：拉平，平平地飛出去 */
+      o.y += o.vy * dt;
+    }
+    if ((PX + o.dx - 1) * V.T > V.w) finishOutro();
+  }
+
+  function finishOutro() {
+    var o = G.outro;
+    if (!o || o.opened) return;
+    o.opened = true;
+    window.clearTimeout(o.timer);
+    G.phase = 'over';
+    openWin(o.got);
   }
 
   function openWin(got) {
@@ -1015,16 +1057,17 @@
 
   /* 傳送門前的漏斗：地板往上斜、天花板往下斜，只有門口過得去 */
   function drawFunnels(camX, gY, c0, c1, th) {
-    var T = V.T, F = C.FUNNEL, top = F.FLOOR + F.GAP, sky = 14;
+    var T = V.T, F = C.FUNNEL, sky = 14;
     var X = function (wx) { return (wx - camX) * T; };
     var Y = function (wy) { return gY - wy * T; };
     G.run.world.funnels.forEach(function (f) {
       if (f.x1 < c0 - 1 || f.x0 > c1 + 1) return;
-      var a = f.px - F.NECK, b = f.px + F.NECK;
+      /* 每個漏斗自己的門口高度（雙胞胎的門在畫面正中間） */
+      var a = f.px - F.NECK, b = f.px + F.NECK, fl = f.floor, top = f.floor + f.gap;
       ctx.save();
       ctx.fillStyle = th.ground;
       ctx.beginPath();
-      ctx.moveTo(X(f.x0), Y(-0.02)); ctx.lineTo(X(a), Y(F.FLOOR)); ctx.lineTo(X(b), Y(F.FLOOR)); ctx.lineTo(X(f.x1), Y(-0.02));
+      ctx.moveTo(X(f.x0), Y(-0.02)); ctx.lineTo(X(a), Y(fl)); ctx.lineTo(X(b), Y(fl)); ctx.lineTo(X(f.x1), Y(-0.02));
       ctx.closePath(); ctx.fill();
       ctx.beginPath();
       ctx.moveTo(X(f.x0), Y(sky)); ctx.lineTo(X(f.x0), Y(f.cIn)); ctx.lineTo(X(a), Y(top));
@@ -1036,8 +1079,9 @@
       ctx.beginPath();
       for (var k = 1; k < 4; k++) {
         var d = k * 0.28;
+        if (fl - d <= 0) continue;
         ctx.moveTo(X(f.x0 + 0.6), Y(Math.max(0, d * 0.25 - 0.05)));
-        ctx.lineTo(X(a), Y(F.FLOOR - d)); ctx.lineTo(X(b), Y(F.FLOOR - d));
+        ctx.lineTo(X(a), Y(fl - d)); ctx.lineTo(X(b), Y(fl - d));
         ctx.lineTo(X(f.x1 - 0.6), Y(Math.max(0, d * 0.25 - 0.05)));
         ctx.moveTo(X(f.x0 + 0.3), Y(f.cIn + d)); ctx.lineTo(X(a), Y(top + d)); ctx.lineTo(X(b), Y(top + d)); ctx.lineTo(X(f.x1 - 0.3), Y(f.cOut + d));
       }
@@ -1046,7 +1090,7 @@
       ctx.lineWidth = 3;
       ctx.lineJoin = 'round';
       ctx.beginPath();
-      ctx.moveTo(X(f.x0), Y(0)); ctx.lineTo(X(a), Y(F.FLOOR)); ctx.lineTo(X(b), Y(F.FLOOR)); ctx.lineTo(X(f.x1), Y(0));
+      ctx.moveTo(X(f.x0), Y(0)); ctx.lineTo(X(a), Y(fl)); ctx.lineTo(X(b), Y(fl)); ctx.lineTo(X(f.x1), Y(0));
       ctx.moveTo(X(f.x0), Y(sky)); ctx.lineTo(X(f.x0), Y(f.cIn)); ctx.lineTo(X(a), Y(top));
       ctx.lineTo(X(b), Y(top)); ctx.lineTo(X(f.x1), Y(f.cOut)); ctx.lineTo(X(f.x1), Y(sky));
       ctx.stroke();
@@ -1058,7 +1102,8 @@
   function speedLines(camX, t) {
     if (reduce) return;
     var T = V.T, W = V.w, run = G.run, par = 1.8, span = 2.6;
-    var base = camX * par;
+    /* 衝出終點時鏡頭停住，速度線照樣往後飛 */
+    var base = (camX + (G.outro && G.phase === 'outro' ? G.outro.dx : 0)) * par;
     var k = clamp((run.baseScale * run.speedMul * E.tiltScale(run) - 0.55) / 0.75, 0.3, 1);
     var i0 = Math.floor(base / span) - 2, i1 = Math.ceil((base + W / T) / span) + 1;
     ctx.save();
@@ -1123,8 +1168,9 @@
   function drawTrigger(g, camX, gY, t) {
     var T = V.T, sx = (g.x - camX) * T, run = G.run;
     if (g.k === 'portal') {
-      /* 小小的門，剛好卡在漏斗最窄的地方 */
-      var F = C.FUNNEL, h = F.GAP + 0.2, yb = F.FLOOR - 0.1;
+      /* 小小的門，剛好卡在漏斗最窄的地方（雙胞胎的門在畫面正中間） */
+      var fn = E.funnelAt(run.world, g.x), F = C.FUNNEL;
+      var h = (fn ? fn.gap : F.GAP) + 0.2, yb = (fn ? fn.floor : F.FLOOR) - 0.1;
       blit('portal_' + g.mode, sx - 0.4 * T, gY - (yb + h) * T, 0.8, h);
       var icon = PORTAL_ICON[g.mode] || 'egg';
       var iw = icon === 'doctor' ? 0.42 : icon === 'egg' ? 0.5 : 0.62;
@@ -1254,7 +1300,7 @@
 
   /* 跑起來時，小膠囊後面拖三條短短的線 */
   function streaks(pm, t) {
-    if (reduce || G.phase !== 'play') return;
+    if (reduce || (G.phase !== 'play' && G.phase !== 'outro')) return;
     var T = V.T, back = pm === 'cube' ? 0.5 : 0.8;
     ctx.save();
     ctx.lineCap = 'round';
@@ -1275,11 +1321,12 @@
     if (!P) return;
     var run = G.run, T = V.T, pm = E.physMode(run.mode);
     var y = G.phase === 'play' ? P.py + (P.y - P.py) * a : P.y;
-    var dead = run.dead;
+    var dead = run.dead, dash = 0;
+    if (G.outro && (G.phase === 'outro' || G.phase === 'over')) { y = G.outro.y; dash = G.outro.dx; }
     ctx.save();
     /* 從旗子重來：先停著閃，打醫生的關卡再加 0.5 秒邊跑邊閃（無敵） */
     if ((G.phase === 'respawn' || run.invuln > 0) && Math.floor(t / 220) % 2) ctx.globalAlpha = 0.35;
-    ctx.translate(PX * T, gY - y * T);
+    ctx.translate((PX + dash) * T, gY - y * T);
     streaks(pm, t);
     if (pm === 'cube') {
       var tilt = P.grounded ? 0 : clamp(-P.vy / C.JUMP_V, -1, 1) * 14;
@@ -1360,7 +1407,6 @@
 
     var P = G.run.p;
     if (!G.run.dead && G.phase !== 'respawn') jumpRing(E.bossCue(b), P, gY, t);
-    dodgeMarks(P, gY, t);
   }
 
   /* 現在最先會碰到的是哪一排水：還在飛、沒過小膠囊的 → 正在蓄力的 */
@@ -1458,30 +1504,6 @@
     ctx.lineWidth = Math.max(2, 0.06 * V.T);
     ctx.stroke();
     ctx.restore();
-  }
-
-  /* 躲過一發：小膠囊頭上方冒一個綠色的勾，往上飄、慢慢淡掉（0.7 秒） */
-  function dodgeMarks(P, gY, t) {
-    var T = V.T, list = G.dodges;
-    for (var i = list.length - 1; i >= 0; i--) {
-      var k = (t - list[i]) / 700;
-      if (k >= 1 || k < 0) { list.splice(i, 1); continue; }
-      /* 放在兩排水的上面，不會和下一發水柱疊在一起 */
-      var x = PX * T, y = gY - (P.y + 2.05 + (reduce ? 0 : 0.45 * k)) * T, r = 0.27 * T;
-      ctx.save();
-      ctx.globalAlpha = k < 0.6 ? 1 : (1 - k) / 0.4;
-      ctx.fillStyle = '#15803D';
-      ctx.strokeStyle = '#fff';
-      ctx.lineWidth = Math.max(2, 0.06 * T);
-      ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
-      ctx.lineCap = 'round';
-      ctx.lineJoin = 'round';
-      ctx.lineWidth = Math.max(2, 0.07 * T);
-      ctx.beginPath();
-      ctx.moveTo(x - r * 0.45, y + r * 0.02); ctx.lineTo(x - r * 0.1, y + r * 0.36); ctx.lineTo(x + r * 0.48, y - r * 0.32);
-      ctx.stroke();
-      ctx.restore();
-    }
   }
 
   /* 雷射筆：細細一條亮線，兩旁的紅光越往外越淡；貼著地面、離地固定高度，終點是小膠囊身上的紅點。

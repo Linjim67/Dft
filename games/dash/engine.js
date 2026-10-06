@@ -46,7 +46,10 @@
     /* 傳送門前後的「漏斗」：地板往上斜、天花板往下斜，只留門口那一段（2 格高）可以過。
        IN：門前斜坡長度；OUT：門後回到原本高度的長度；FLOOR：門口地板高度；GAP：門口高度；
        CUBE_CEIL：跳跳段落本來沒有天花板，漏斗的天花板從這個高度開始往下斜 */
-    FUNNEL: { IN: 5, OUT: 4, NECK: 0.5, FLOOR: 1, GAP: 2, CUBE_CEIL: 5 },
+    FUNNEL: { IN: 5, OUT: 4, NECK: 0.5, FLOOR: 1, GAP: 2, CUBE_CEIL: 5,
+      /* 變成雙胞胎、變回一個：門放在畫面正中間（分割線上）——
+         地板往上斜到 2.5 格、天花板從畫面最上面（8 格）往下斜，門口一樣 2 格高 */
+      DUO: { IN: 6, OUT: 5, FLOOR: 2.5, GAP: 2, CEIL: 8 } },
     RESPAWN_Y: 3.5,           /* 火箭、飛碟從旗子重來時的高度 */
 
     /* 針：看起來的針尖在 0.8 格，真正會撞到的只到 0.5 格 */
@@ -167,11 +170,17 @@
     return g;
   }
 
-  /* 傳送門的漏斗：from / to 是前後兩段的玩法，決定斜坡從多高開始 */
-  function addFunnel(world, px, from, to) {
+  /* 傳送門的漏斗：from / to 是前後兩段的玩法，決定斜坡從多高開始、門開在哪個高度 */
+  function funnelSpec(from, to) {
     var F = CONFIG.FUNNEL;
-    var high = function (m) { return physMode(m) === 'cube' ? F.CUBE_CEIL : CONFIG.CEIL; };
-    var f = { px: px, x0: px - F.IN, x1: px + F.OUT, cIn: high(from), cOut: high(to) };
+    if (from === 'duo' || to === 'duo') return { IN: F.DUO.IN, OUT: F.DUO.OUT, FLOOR: F.DUO.FLOOR, GAP: F.DUO.GAP, CEIL: F.DUO.CEIL };
+    return { IN: F.IN, OUT: F.OUT, FLOOR: F.FLOOR, GAP: F.GAP, CEIL: null };
+  }
+
+  function addFunnel(world, px, from, to) {
+    var F = CONFIG.FUNNEL, sp = funnelSpec(from, to);
+    var high = function (m) { return sp.CEIL != null ? sp.CEIL : physMode(m) === 'cube' ? F.CUBE_CEIL : CONFIG.CEIL; };
+    var f = { px: px, x0: px - sp.IN, x1: px + sp.OUT, cIn: high(from), cOut: high(to), floor: sp.FLOOR, gap: sp.GAP };
     world.funnels.push(f);
     world.funnels.sort(function (a, b) { return a.px - b.px; });
     return f;
@@ -196,14 +205,14 @@
 
   function floorAt(world, x) {
     var f = funnelAt(world, x);
-    return f ? CONFIG.FUNNEL.FLOOR * clamp(funnelT(f, x), 0, 1) : 0;
+    return f ? f.floor * clamp(funnelT(f, x), 0, 1) : 0;
   }
 
   function ceilAt(world, x) {
-    var f = funnelAt(world, x), F = CONFIG.FUNNEL;
+    var f = funnelAt(world, x);
     if (!f) return Infinity;
     var far = x < f.px ? f.cIn : f.cOut;
-    return far + (F.FLOOR + F.GAP - far) * clamp(funnelT(f, x), 0, 1);
+    return far + (f.floor + f.gap - far) * clamp(funnelT(f, x), 0, 1);
   }
 
   /* 一個方框底下最高的地板、頭上最低的天花板（斜坡的轉角也要算） */
@@ -625,7 +634,7 @@
         crash(run, 'water', { lane: w.lane, grounded: P.grounded, vy: P.vy });
         return;
       }
-      /* 水柱整條過了小膠囊 = 躲過了（畫面給一個勾） */
+      /* 水柱整條過了小膠囊 = 躲過了（事件留給測試與之後用；畫面不再跳綠色的勾） */
       if (!w.passed && w.x + B.LEN / 2 < run.x - hz) {
         w.passed = true;
         emit(run, 'dodge', { lane: w.lane });
@@ -799,6 +808,7 @@
     addTrigger: addTrigger,
     sectionAt: sectionAt,
     addFunnel: addFunnel,
+    funnelSpec: funnelSpec,
     funnelAt: funnelAt,
     floorAt: floorAt,
     ceilAt: ceilAt,

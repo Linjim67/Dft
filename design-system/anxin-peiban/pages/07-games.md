@@ -707,6 +707,15 @@ ceiling is pushed down through the neck. Only a gap narrower than the capsule wo
 which the generator never makes. Nothing else is placed inside a funnel; the checkpoint flag sits on
 flat ground after it. Joins that keep the same mode (level 2's speed-ups) get no portal at all.
 
+**雙胞胎 portals are in the middle of the screen.** Where one capsule becomes two, and where two become
+one again, the funnel is longer (6 in, 5 out) and converges on the centre line: the floor ramps up to
+2.5 and the ceiling slopes down from the very top of the view (8), leaving the same 2-tile opening at
+2.5–4.5 (centred on 3.5, the middle of the 9-row view and the duo split line). Inside the split view
+the ceiling is out of sight, so what shows is both halves' floors rising toward the middle line, with
+the ring straddling it — the capsules visibly meet in the middle and merge. Every other portal keeps
+the low 1 → 3 neck. Each funnel carries its own `floor` / `gap`; `funnelSpec(from, to)` tells the level
+builder how long it is.
+
 **Levels are built from ASCII patterns.** Each pattern is a few tiles of hand-drawn obstacles, graded
 1–3 (`#` box, `^` needle, `v` hanging needle, `o` pad, `*` star slot). A level is a fixed seed plus a
 list of sections `{mode, length, difficulty from → to}`; the generator picks patterns of rising
@@ -830,6 +839,13 @@ and 「換一張新地圖」.
 
 ## Screen
 
+- **Crossing the finish line takes the controls away.** The camera stops on the arch and taps are
+  ignored. The capsule keeps doing what it was doing — rolling on the ground (a mid-air finish lands
+  first), or flying level as a rocket or UFO — and accelerates (+26 tiles/s²) off the right edge, with
+  its speed trails. 「過關了」 opens only once it has left the screen, about 1 s later, or after 2.5 s if
+  the tab stops drawing. With reduced motion there is no dash; the dialog opens after 0.25 s.
+- No 「完成」 badge on finished levels in the list — their stars are the record. The dodged-shot green
+  check in the doctor fight was removed too (product owner).
 - **The finish is a celebration, not a sign.** It has:
   - an arch of 13 balloons (orange, yellow, green, sky, pink) with two small bunches at the base;
   - a green ribbon banner 「終點」 between two gold stars, and a red finish tape that snaps in two
