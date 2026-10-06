@@ -859,12 +859,12 @@
        答錯不公布答案：規格是下一回合結束再挑戰「同一題」
        ───────────────────────────────────────────────────────────── */
 
-    /* 升級帶來的好處（小字）：新的鍍層分數更高；每升一級，這個角色也更常出現（+5%） */
-    function perkText(name, lv) {
-      var more = '，' + name + '也會更常出現';
-      if (lv === 1) return '銀色' + name + '登場：分數 ×1.5' + more;
-      if (lv === 2) return '金色' + name + '大魔王登場：打倒它分數 ×5' + more;
-      return '鐵甲' + name + '登場：多敲幾下，分數 ×2' + more;
+    /* 升級帶來的好處（小字，兩行）：新的鍍層分數更高；每升一級，這個角色也更常出現（+5%） */
+    function perkLines(name, lv) {
+      var more = name + '也會更常出現';
+      if (lv === 1) return ['銀色' + name + '登場：分數 ×1.5，', more];
+      if (lv === 2) return ['金色' + name + '大魔王登場：打倒它分數 ×5，', more];
+      return ['鐵甲' + name + '登場：多敲幾下，分數 ×2，', more];
     }
 
     function shuffle(a) {
@@ -945,7 +945,8 @@
         var lv = progress.level[charId];
         said = name + '升級至 Lv ' + lv;
         r.className = 'quiz-result is-levelup';
-        r.innerHTML = '<strong>' + esc(said) + '</strong><span class="quiz-perk">' + esc(perkText(name, lv)) + '</span>';
+        r.innerHTML = '<strong>' + esc(said) + '</strong><span class="quiz-perk">' +
+          perkLines(name, lv).map(esc).join('<br>') + '</span>';
       } else {
         r.className = 'quiz-result is-wrong';
         r.innerHTML = '<strong>差一點點！</strong>' +

@@ -78,10 +78,13 @@ The `MIN_RATE` floor exists because `I(30) = 0`; without it each round opens wit
 - **The quiz screen** (2026-10-06): kicker 「小知識時間」, the character, then **the question is the
   page's `<h1>`** (focused on open). The old title 「答對了，止血帶就會升級！」 and the line
   「不確定的話，先問問爸爸媽媽喔！」 are gone; the hint link reads 「想不到？看提示」.
-- **Right** → no 「答對了」, no explanation: the chosen option turns **solid green with white text
-  and a ✓** (5.0:1), and a yellow card says **「止血帶升級至 Lv 1」** with the perk in small type —
-  Lv1 「銀色止血帶登場：分數 ×1.5，止血帶也會更常出現」 · Lv2 金色…大魔王 ×5 · Lv3 鐵甲… ×2 (every
-  level also adds +5% to how often it appears). The hint link hides once answered.
+- **Right** → no 「答對了」, no explanation: the chosen option keeps its white fill and text, and
+  gets a **green 2px border and a green ✓** (#15803D, 5.0:1). Below it, a card in the primary
+  button's colours (**light orange #FFEDD5 fill, #C2410C border and title**, 4.5:1 on the bold
+  1.35rem title) says **「止血帶升級至 Lv 1」**, with the perk in small type on two lines broken at
+  the comma — Lv1 「銀色止血帶登場：分數 ×1.5，／止血帶也會更常出現」 · Lv2 金色…大魔王 ×5 ·
+  Lv3 鐵甲… ×2 (every level also adds +5% to how often it appears). The hint link hides once
+  answered.
 - **Wrong** → that character is locked until *the next round ends*, then the *identical* question
   returns. Tracked with lifetime `roundsPlayed`, so it survives closing the page. Other characters
   stay challengeable. **The answer is not revealed on a wrong try**, or the retry would be

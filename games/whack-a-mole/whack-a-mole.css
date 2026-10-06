@@ -1256,16 +1256,16 @@ body.is-playing .topbar {
   box-shadow: inset 0 0 0 2px currentColor;
 }
 
-/* 答對：整個選項變成綠底白字＋打勾，不再另外寫「答對了」（白字對 #15803D 5.0:1） */
+/* 答對：底色、字色不變，只有外框變綠＋綠色打勾，不再另外寫「答對了」（#15803D 對白底 5.0:1） */
 .quiz-opt.is-right {
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: var(--sp-2);
-  background: var(--success);
-  color: #fff;
+  background: var(--card);
+  color: var(--fg);
   border-color: var(--success);
-  box-shadow: var(--sh-md);
+  box-shadow: inset 0 0 0 2px var(--success);
   animation: right-pop 360ms var(--ease);
 }
 
@@ -1275,7 +1275,9 @@ body.is-playing .topbar {
 
 .quiz-opt.is-right::after {
   content: "✓";
-  font-size: 1.2em;
+  color: var(--success);
+  font-size: 1.3em;
+  font-weight: 700;
   line-height: 1;
 }
 
@@ -1324,19 +1326,19 @@ body.is-playing .topbar {
   font-size: 1.15rem;
 }
 
-/* 升級：大字「止血帶升級至 Lv 1」，下面小字寫升級的好處 */
+/* 升級：大字「止血帶升級至 Lv 1」，下面小字寫升級的好處。淡橘底＋橘框（和主要按鈕同一組顏色） */
 .quiz-result.is-levelup {
   justify-items: center;
   gap: var(--sp-1);
-  background: #FEF9C3;
-  box-shadow: inset 0 0 0 2px #B45309;
+  background: var(--primary-wash);
+  box-shadow: inset 0 0 0 2px var(--primary-deep);
   text-align: center;
   animation: levelup-in 420ms var(--ease);
 }
 
 .quiz-result.is-levelup strong {
   font-size: 1.35rem;
-  color: #92400E;
+  color: var(--primary-deep);
 }
 
 .quiz-perk {
