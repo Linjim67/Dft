@@ -512,7 +512,8 @@ Stars: ≥ 88 ★★★ 超級圓！ · ≥ 72 ★★ 好圓喔！ · ≥ 55 ★
 Tested invariant to position, size, direction, starting point and drawing speed.
 
 After each try the fitted circle is drawn **dashed** over the child's stroke — they can see where
-it bulged, rather than only receiving a number.
+it bulged, rather than only receiving a number. (No caption: the 「虛線是最完美的圓」 legend was
+removed at the product owner's request; the dashed green circle explains itself.)
 
 ## Play
 
@@ -524,6 +525,17 @@ it bulged, rather than only receiving a number.
   SMIL in an inline SVG, so the line and the finger share one clock. With reduced motion it is paused
   on the finished circle with the finger still on it. It is decorative (`aria-hidden`); the heading
   line 「用一根手指，一筆畫一個圓」 carries the instruction as text.
+- **Earlier tries stay on screen.** Under the turn title, each player has a row of three slots:
+  - a finished try shows its score;
+  - once there are two or more, the best one gets a star on pale yellow (#FEF9C3, #A16207 frame) —
+    a star, not colour alone;
+  - the try being drawn is framed in orange with 「這一次」;
+  - the rest show 「—」.
+
+  In 比賽 mode both rows are shown, named, so the child can see the parent's score while drawing.
+  Each slot's `aria-label` reads e.g. 「第 2 次 63 分，最高」.
+- No instruction line under the turn title (「用一根手指，一筆畫一個圓」 was removed; the pad's animation
+  teaches it). The line appears only in 比賽 mode, when the phone changes hands: 「把手機交給爸爸媽媽」.
 - **自己玩** or **和爸爸媽媽比賽** (one phone, turns alternate child → parent, with a
   「把手機交給…」 prompt). Three tries each; the best counts. The multi-phone (M) version waits
   on the QR pairing.

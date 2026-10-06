@@ -191,6 +191,7 @@
     }
     S.phase = 'scored';
     current().scores.push(r.score);
+    renderHistory();
     drawIdeal(r.circle);
 
     $('scoreNum').textContent = r.score;
@@ -255,13 +256,45 @@
     var n = who.scores.length + 1;
     var two = S.players.length > 1;
     $('turnTitle').textContent = (two ? who.name + '・' : '') + '第 ' + n + ' / ' + ATTEMPTS + ' 次';
-    /* 比賽時換人：提醒把手機交出去 */
+    /* 比賽時換人：提醒把手機交出去（平常不顯示說明文字） */
     var switched = two && S.turn > 0 && S.order[S.turn - 1] !== S.order[S.turn];
-    $('turnHint').textContent = switched ? '把手機交給' + who.name + '，一筆畫一個圓' : '用一根手指，一筆畫一個圓';
+    $('turnHint').textContent = switched ? '把手機交給' + who.name : '';
+    $('turnHint').hidden = !switched;
     $('resultBox').hidden = true;
     $('nextBtn').hidden = true;
     resetPad();
+    renderHistory();
     $('turnTitle').focus();
+  }
+
+  /* 前幾次的分數：每個人三格。畫完的寫分數；兩次以上時最高的那次加星星；現在要畫的那格框起來 */
+  var STAR_S = '<svg class="hist-star" aria-hidden="true"><use href="#icon-star"></use></svg>';
+
+  function renderHistory() {
+    var two = S.players.length > 1, cur = current();
+    $('history').innerHTML = S.players.map(function (pl) {
+      var b = pl.scores.length > 1 ? best(pl) : null, marked = false, slots = '';
+      for (var i = 0; i < ATTEMPTS; i++) {
+        var sc = pl.scores[i], cls = 'hist-slot', inner, label;
+        if (sc != null) {
+          var top = sc === b && !marked;
+          if (top) marked = true;
+          cls += ' is-done' + (top ? ' is-best' : '');
+          inner = (top ? STAR_S : '') + '<strong>' + sc + '</strong><span>分</span>';
+          label = '第 ' + (i + 1) + ' 次 ' + sc + ' 分' + (top ? '，最高' : '');
+        } else if (pl === cur && i === pl.scores.length && S.phase !== 'scored') {
+          cls += ' is-now';
+          inner = '這一次';
+          label = '第 ' + (i + 1) + ' 次，正在畫';
+        } else {
+          inner = '—';
+          label = '第 ' + (i + 1) + ' 次，還沒畫';
+        }
+        slots += '<li class="' + cls + '" aria-label="' + label + '">' + inner + '</li>';
+      }
+      return '<ol class="hist-row' + (two ? '' : ' is-solo') + '" aria-label="' + esc(pl.name) + '">' +
+        (two ? '<li class="hist-name" aria-hidden="true">' + esc(pl.name) + '</li>' : '') + slots + '</ol>';
+    }).join('');
   }
 
   function startGame() {

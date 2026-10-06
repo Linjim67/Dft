@@ -56,6 +56,82 @@
   color: var(--fg-muted);
 }
 
+/* ── 前幾次的分數（一直留在畫面上） ── */
+.dc-history {
+  display: grid;
+  gap: var(--sp-2);
+  width: 100%;
+  max-width: 420px;
+  margin: 0 auto var(--sp-3);
+}
+
+.hist-row {
+  display: grid;
+  grid-template-columns: minmax(3.5em, auto) repeat(3, minmax(0, 1fr));
+  align-items: center;
+  gap: var(--sp-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.hist-row.is-solo {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.hist-name {
+  overflow: hidden;
+  font-size: .85rem;
+  font-weight: 700;
+  color: var(--fg-muted);
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.hist-slot {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  min-height: 40px;
+  padding: 0 var(--sp-2);
+  border-radius: var(--r-pill);
+  background: var(--bg-sunk);
+  color: var(--fg-muted);
+  font-size: .85rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.hist-slot strong {
+  font-size: 1.1rem;
+  color: var(--fg);
+}
+
+.hist-slot.is-done {
+  background: var(--card);
+  box-shadow: var(--sh-sm);
+}
+
+/* 現在要畫的這一格：淡橘底＋深橘框（不只靠顏色：寫著「這一次」） */
+.hist-slot.is-now {
+  background: var(--primary-wash);
+  box-shadow: inset 0 0 0 2px var(--primary-deep);
+  color: var(--primary-deep);
+}
+
+/* 最高分：淡黃底＋星星（不只靠顏色） */
+.hist-slot.is-best {
+  background: #FEF9C3;
+  box-shadow: inset 0 0 0 2px #A16207;
+}
+
+.hist-star {
+  width: 14px;
+  height: 14px;
+  fill: #F59E0B;
+}
+
 .pad-wrap {
   position: relative;
   width: 100%;
@@ -180,19 +256,6 @@
 .dc-rating {
   font-size: 1.2rem;
   font-weight: 700;
-}
-
-.dc-legend {
-  display: flex;
-  align-items: center;
-  gap: var(--sp-2);
-  font-size: .85rem;
-  color: var(--fg-muted);
-}
-
-.legend-line {
-  width: 28px;
-  border-top: 3px dashed #15803D;
 }
 
 .dc-warn {

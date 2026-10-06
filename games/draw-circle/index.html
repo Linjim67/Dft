@@ -72,8 +72,12 @@
     <section id="drawView" hidden aria-labelledby="turnTitle">
       <div class="dc-turn">
         <h1 class="dc-turn-title" id="turnTitle" tabindex="-1">第 1 / 3 次</h1>
-        <p class="dc-turn-hint" id="turnHint">用一根手指，一筆畫一個圓</p>
+        <!-- 比賽換人時才出現：「把手機交給爸爸媽媽」 -->
+        <p class="dc-turn-hint" id="turnHint" hidden></p>
       </div>
+
+      <!-- 前幾次的分數一直留著：每個人三格，畫完的寫分數、最高的那次有星星、現在這次框起來 -->
+      <div class="dc-history" id="history" role="group" aria-label="每一次的分數"></div>
 
       <!-- 手繪是這個遊戲的本質（WCAG 2.5.7 的「必要」例外）；分數另外以文字播報 -->
       <div class="pad-wrap">
@@ -101,7 +105,6 @@
         <p class="dc-score"><strong id="scoreNum">0</strong><span>分</span></p>
         <p class="dc-stars" id="scoreStars"></p>
         <p class="dc-rating" id="scoreText"></p>
-        <p class="dc-legend"><span class="legend-line" aria-hidden="true"></span>虛線是最完美的圓</p>
       </div>
 
       <p class="dc-warn" id="warnBox" role="alert" hidden></p>
