@@ -139,7 +139,7 @@
             <rect x="4.5" y="3.5" width="15" height="17" rx="2.5" />
             <path d="M9 3.5h6v2.5H9zM8.5 11h7M8.5 14.5h4.5" />
           </svg>
-          <p class="panel-empty-title">輸入代碼</p>
+          <p class="panel-empty-title">輸入或點選代碼</p>
         </div>
 
         <p class="panel-loading" id="loadingView" role="status" hidden>
@@ -229,12 +229,25 @@
         </section>
       </section>
 
-      <!-- 這台裝置最近送出的代碼：確認剛剛真的送出了。
-           放在結果後面：手機上「查無」會緊接在鍵盤下方；平板、電腦靠 grid 排到旁邊 -->
-      <section class="recent" id="recent" aria-labelledby="recentTitle" hidden>
-        <h2 class="recent-title" id="recentTitle">最近完成</h2>
-        <ol class="recent-list" id="recentList"></ol>
-      </section>
+      <!-- ── 側欄：等待中 + 最近完成 ──
+           放在結果後面：手機上「查無」會緊接在鍵盤下方；平板排在鍵盤下、電腦排在右側 -->
+      <div class="side" id="side">
+        <!-- 家長一領到代碼就出現在這裡：只有號碼，沒有任何個人資料；點號碼＝輸入那組代碼 -->
+        <section class="waiting" id="waiting" aria-labelledby="waitingTitle">
+          <h2 class="side-title" id="waitingTitle">等待中 <span class="side-count" id="waitingCount">0</span></h2>
+          <ul class="waiting-list" id="waitingList"></ul>
+          <p class="side-empty" id="waitingEmpty">—</p>
+          <!-- 手機、平板：先顯示最新 9 組，其餘收起來（不做頁中頁的捲動區） -->
+          <button class="quiet-link waiting-more" type="button" id="waitingMore" aria-expanded="false"
+            aria-controls="waitingList" hidden></button>
+        </section>
+
+        <!-- 這台裝置最近送出的代碼：確認剛剛真的送出了 -->
+        <section class="recent" id="recent" aria-labelledby="recentTitle" hidden>
+          <h2 class="side-title" id="recentTitle">最近完成</h2>
+          <ol class="recent-list" id="recentList"></ol>
+        </section>
+      </div>
     </div>
   </main>
 

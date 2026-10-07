@@ -180,6 +180,7 @@
   /* 登入逾時（12 小時到了）或登出：回登入畫面並說明 */
   function backToLogin(msg) {
     current = null;
+    stopWaiting();
     show('login');
     if (msg) showPwdError(msg);
     $('loginTitle').focus();
@@ -391,6 +392,7 @@
     setCode('');
     panelShow('empty');
     setPhase('entry');
+    markWaiting();
     focusEntry();
   }
 
@@ -427,6 +429,7 @@
   function lookup(code) {
     var seq = ++lookupSeq;
     current = null;
+    markWaiting();
     if (codeInput.value !== code) { codeInput.value = code; renderSlots(); }
     panelShow('loading');
     setPhase('entry');
@@ -557,6 +560,7 @@
 
     panelShow('case');
     setPhase('case');
+    markWaiting();
     window.scrollTo(0, 0);
     /* 電腦：焦點不動（打錯可以直接重打）；觸控：移到「打針前」 */
     if (!pcLayout.matches) $('beforeTitle').focus();
@@ -630,6 +634,7 @@
     net(fb.codes.finish(c.code, c.lock, payload)).then(function () {
       addRecent({ code: c.code, staffFear: payload.staffFear, at: Date.now() });
       current = null;
+      markWaiting();
       setFinishing(false);
       codeInput.value = '';
       renderSlots();
@@ -670,6 +675,112 @@
     setPhase('entry');
     focusEntry();
   });
+
+  /* ─────────────────────────────────────────────────────────────
+     等待中：家長一領到代碼就出現在這裡——只有號碼，沒有任何個人資料
+     （孩子的資料要點了號碼才去讀，和輸入代碼一模一樣）。
+     點號碼＝輸入那組代碼：一樣查詢、一樣有「還沒送出」的保護。
+     送出（done）或過期就消失。最新的排最前面：家長填完沒打就離開的代碼
+     會留到 24 小時過期，舊的排前面會把新來的擠到看不見的地方。
+     電腦：右側欄固定，清單自己捲動；手機、平板：先顯示最新 9 組，其餘按「全部」展開。
+     ───────────────────────────────────────────────────────────── */
+
+  var waitingList = $('waitingList');
+  var waitingLocks = [];
+  var waitingSeen = null;   /* 看過的代碼（代碼 + 領取時間）；開頁時的第一批不算「新來的」 */
+  var waitingFresh = {};    /* 這一批新來的：畫出來時彈一下 */
+  var waitingStop = null;
+  var waitingTimer = null;
+  var WAITING_COMPACT = 9;
+  var waitingExpanded = false;
+
+  function waitingNow() {
+    var now = Date.now();
+    return waitingLocks.filter(function (l) {
+      return l && /^\d{4}$/.test(l.code) && Anxin.codes.state(l, now) === 'active';
+    }).sort(function (a, b) { return (b.createdAt || 0) - (a.createdAt || 0); });
+  }
+
+  function renderWaiting() {
+    var list = waitingNow();
+    var cur = current ? current.code : null;
+    var compact = !pcLayout.matches && list.length > WAITING_COMPACT;
+    var shown = compact && !waitingExpanded ? list.slice(0, WAITING_COMPACT) : list;
+    $('waitingCount').textContent = list.length;
+    $('waitingEmpty').hidden = list.length > 0;
+    var more = $('waitingMore');
+    more.hidden = !compact;
+    more.textContent = waitingExpanded ? '收起' : '全部 ' + list.length;
+    more.setAttribute('aria-expanded', waitingExpanded ? 'true' : 'false');
+    /* l.code 已驗證是 4 位數字，可以直接放進 HTML */
+    waitingList.innerHTML = shown.map(function (l) {
+      return '<li><button class="wait-code' + (waitingFresh[l.code] ? ' is-new' : '') +
+        '" type="button" data-code="' + l.code + '"' + (l.code === cur ? ' aria-current="true"' : '') +
+        '>' + l.code + '</button></li>';
+    }).join('');
+    waitingFresh = {};
+  }
+
+  /* 正在看的那一組：只換標記，不重畫（新號碼的動畫才不會被打斷） */
+  function markWaiting() {
+    var cur = current ? current.code : null;
+    Array.prototype.forEach.call(waitingList.querySelectorAll('.wait-code'), function (b) {
+      if (b.dataset.code === cur) b.setAttribute('aria-current', 'true');
+      else b.removeAttribute('aria-current');
+    });
+  }
+
+  waitingList.addEventListener('click', function (ev) {
+    var b = ev.target.closest('.wait-code');
+    if (b) setCode(b.dataset.code);
+  });
+
+  $('waitingMore').addEventListener('click', function () {
+    waitingExpanded = !waitingExpanded;
+    renderWaiting();
+  });
+  if (pcLayout.addEventListener) pcLayout.addEventListener('change', renderWaiting);
+
+  waitingList.addEventListener('animationend', function (ev) {
+    ev.target.classList.remove('is-new');
+  });
+
+  function startWaiting() {
+    stopWaiting();
+    waitingSeen = null;
+    $('waitingEmpty').textContent = '—';
+    var failed = function (err) {
+      window.console.warn('等待中清單中斷：', err);
+      waitingLocks = [];
+      renderWaiting();
+      $('waitingEmpty').textContent = '無法更新';
+      $('waitingEmpty').hidden = false;
+    };
+    firebase().then(function (f) {
+      waitingStop = f.codes.watchRecent(function (locks) {
+        waitingLocks = locks;
+        var active = waitingNow();
+        if (waitingSeen) {
+          active.forEach(function (l) {
+            if (!waitingSeen[l.code + '@' + l.createdAt]) waitingFresh[l.code] = true;
+          });
+        }
+        waitingSeen = waitingSeen || {};
+        active.forEach(function (l) { waitingSeen[l.code + '@' + l.createdAt] = true; });
+        renderWaiting();
+      }, failed);
+    }, failed);
+    /* 過期的代碼沒有新事件，定時重畫把它拿掉 */
+    waitingTimer = window.setInterval(renderWaiting, 60000);
+  }
+
+  function stopWaiting() {
+    if (waitingStop) waitingStop();
+    waitingStop = null;
+    if (waitingTimer) window.clearInterval(waitingTimer);
+    waitingTimer = null;
+    waitingLocks = [];
+  }
 
   /* ─────────────────────────────────────────────────────────────
      最近完成（這台裝置）
@@ -720,6 +831,7 @@
     panelShow('empty');
     setPhase('entry');
     renderRecent();
+    startWaiting();
     focusEntry();
   }
 

@@ -217,6 +217,17 @@ const codes = {
     return watch(start);
   },
 
+  /* 醫護端「等待中」：最近 24 小時領取的代碼（只有鎖，沒有個人資料），有變動就整批交出。
+     只用 expiresAt 一個欄位篩選（單欄索引，不用另建複合索引）；
+     active／done、是否已過期由頁面自己判斷。醫護人員才能列出（firestore.rules）。 */
+  watchRecent(cb, onError) {
+    const start = () => onSnapshot(
+      query(collection(db, 'codes'), where('expiresAt', '>', Timestamp.now())),
+      (snap) => cb(snap.docs.map(lockFrom)), onError);
+    start.onError = onError;
+    return watch(start);
+  },
+
   /* 醫檢師才讀得到，而且代碼要還有效 */
   async getProfile(code) {
     await ensureAuth();

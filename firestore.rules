@@ -33,12 +33,13 @@ service cloud.firestore {
 
     // ── 暫時代碼（#01 → 醫檢師） ─────────────────────────────────
     // codes/{代碼} 是代碼的「鎖」：誰拿著、狀態、期限，沒有個人資料，
-    // 登入的人都能用代碼讀單一張（家長的手機要先讀，才知道這組有沒有人在用）；不能列出全部。
+    // 登入的人都能用代碼讀單一張（家長的手機要先讀，才知道這組有沒有人在用）；
+    // 只有醫護人員能列出（醫護端的「等待中」清單只顯示號碼）。
     // 同一組代碼在 expiresAt（領取後 24 小時）之前絕不會再發給別人；
     // 醫檢師送出回饋只會把它標成 done（失效、查不到），不會提早釋出。
     match /codes/{code} {
       allow get: if request.auth != null && code.matches('^[0-9]{4}$');
-      allow list: if false;
+      allow list: if isStaff();
 
       // 領取：全新的代碼，或上一位的 24 小時已經過了
       allow create: if validClaim(code, request.resource.data);

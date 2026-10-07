@@ -87,6 +87,25 @@ for the mouse to pick a face:
 - When a case opens, focus stays put, so a typo can be retyped at once. The live region announces the
   case. Touch layouts move focus to ① instead.
 
+### 等待中 — live list of codes, numbers only
+
+As soon as a parent claims a code, it appears on every signed-in 醫護端 (`codes.watchRecent`, an
+`onSnapshot` on `codes` where `expiresAt > now`, a single-field index so no composite index is needed). Only
+the 4-digit number is shown: the list reads lock documents, which carry no personal data, and the
+child's profile is fetched only when a number is opened, exactly as for a typed code.
+
+- **Clicking a number = typing it**: `setCode(code)` → same lookup, same 還沒送出 guard. The open number
+  is highlighted (`aria-current`), whether it was clicked or typed.
+- Shown: status `active` and not expired, **newest first**. Codes from families who filled the form
+  but never got a shot stay `active` for 24 h. Oldest-first would push new arrivals out of sight.
+- A new arrival pops in with an orange ring (once; off under reduced motion). The first batch on page
+  open doesn't animate. A code that is sent (done) or expires drops out; a 60-second re-render handles expiry.
+- **PC**: the side column is sticky and height-capped, and the list scrolls inside it. With 200+ codes
+  (stress-tested) the page itself never grows, so clicking a low number can't scroll the open case away.
+  **Phone and tablet**: the newest 9, then 「全部 N」 ↔ 「收起」, with no scroll region inside the page.
+- Rules: `codes` gains `allow list: if isStaff()`. Parents and guests still can't list, and nobody can
+  list `private` profiles.
+
 Shared by all three:
 - **Staff mode bar**: a sticky dark bar with 醫護端, 「登入至 HH:MM」 and 登出 (48px).
 - **Patient card**: 「3 歲半 · 女孩」 → **特別注意** (wash + warning icon; collapses to one line,

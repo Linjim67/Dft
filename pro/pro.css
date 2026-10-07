@@ -232,7 +232,7 @@
 
 .code-bar,
 .panel-empty,
-.desk[data-phase="case"] .recent {
+.desk[data-phase="case"] .side {
   display: none;
 }
 
@@ -244,26 +244,22 @@
   .desk {
     display: grid;
     grid-template-columns: minmax(19rem, 22rem) minmax(0, 1fr);
-    grid-template-areas: "entry panel" "recent panel";
+    grid-template-areas: "entry panel" "side panel";
     grid-template-rows: auto 1fr;
     gap: 0 var(--sp-6);
     align-items: start;
     padding-top: var(--sp-6);
   }
 
-  /* 並排時鍵盤與最近完成一直都在左欄 */
+  /* 並排時鍵盤、等待中、最近完成一直都在左欄 */
   .desk[data-phase] .entry {
     display: block;
     grid-area: entry;
   }
 
-  .desk[data-phase] .recent {
-    display: block;
-    grid-area: recent;
-  }
-
-  .desk[data-phase] .recent[hidden] {
-    display: none;
+  .desk[data-phase] .side {
+    display: grid;
+    grid-area: side;
   }
 
   .panel {
@@ -407,18 +403,115 @@
   height: 26px;
 }
 
-/* ── 最近完成 ── */
+/* ═══ 側欄：等待中 + 最近完成 ═══════════════════════════════════ */
 
-.recent {
+.side {
+  display: grid;
+  gap: var(--sp-6);
   margin-top: var(--sp-6);
 }
 
-.recent-title {
+.side-title {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  margin-bottom: var(--sp-2);
   font-size: .9rem;
   font-weight: 700;
   color: var(--fg-muted);
-  margin-bottom: var(--sp-2);
 }
+
+.side-count {
+  min-width: 1.6em;
+  padding: 0 var(--sp-2);
+  border-radius: var(--r-pill);
+  background: var(--bg-sunk);
+  color: var(--fg);
+  font-size: .8rem;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+}
+
+.side-empty {
+  color: var(--fg-muted);
+}
+
+.waiting-more {
+  width: 100%;
+  margin-top: var(--sp-1);
+  border: 0;
+  border-radius: var(--r-md);
+  background: none;
+  font-size: .92rem;
+  font-variant-numeric: tabular-nums;
+}
+
+/* ── 等待中：只有號碼，點了＝輸入那組代碼 ── */
+
+.waiting-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(5.25rem, 1fr));
+  gap: var(--sp-2);
+  padding: 0;
+  list-style: none;
+}
+
+.wait-code {
+  display: grid;
+  place-items: center;
+  width: 100%;
+  min-height: 52px;
+  border: var(--line-w) solid var(--line);
+  border-radius: var(--r-md);
+  background: var(--card);
+  box-shadow: var(--sh-sm);
+  color: var(--fg);
+  font-size: 1.2rem;
+  font-weight: 700;
+  letter-spacing: .08em;
+  font-variant-numeric: tabular-nums;
+  transition: transform var(--t-fast) var(--ease),
+    background-color var(--t-fast) var(--ease),
+    border-color var(--t-fast) var(--ease);
+  -webkit-tap-highlight-color: transparent;
+}
+
+.wait-code:active {
+  transform: translateY(1px);
+  background: var(--primary-wash);
+}
+
+/* 正在看的那一組 */
+.wait-code[aria-current="true"] {
+  background: var(--primary-wash);
+  border-color: var(--primary-deep);
+  box-shadow: inset 0 0 0 var(--line-w) var(--primary-deep);
+  color: var(--primary-deep);
+}
+
+/* 剛進來的號碼：彈進來 + 一圈橘光，提醒有新的家長 */
+.wait-code.is-new {
+  animation: arrive 1.8s var(--ease);
+}
+
+@keyframes arrive {
+  0% {
+    opacity: 0;
+    transform: scale(.85);
+    box-shadow: 0 0 0 0 rgba(234, 88, 12, .5);
+  }
+
+  25% {
+    opacity: 1;
+    transform: scale(1);
+  }
+
+  100% {
+    box-shadow: 0 0 0 12px rgba(234, 88, 12, 0);
+  }
+}
+
+/* ── 最近完成 ── */
 
 .recent-list {
   padding: 0;
@@ -1051,7 +1144,7 @@ kbd {
 
   .desk {
     grid-template-columns: minmax(0, 1fr) 15rem;
-    grid-template-areas: "entry recent" "panel recent";
+    grid-template-areas: "entry side" "panel side";
     grid-template-rows: auto 1fr;
     gap: var(--sp-5) var(--sp-6);
     padding-top: var(--sp-5);
@@ -1104,11 +1197,38 @@ kbd {
     white-space: nowrap;
   }
 
-  /* 最近完成：右側欄 */
-  .desk[data-phase] .recent {
+  /* 等待中 + 最近完成：右側欄固定在畫面上，號碼再多也不會把整頁拉長
+     （拉長的話，點下面的號碼會把左邊打開的資料捲出畫面）；清單自己捲動 */
+  .desk[data-phase] .side {
     position: sticky;
     top: calc(60px + var(--sp-3));
+    display: flex;
+    flex-direction: column;
+    gap: var(--sp-6);
+    /* 醫護模式列 60 + 工作台上方 24 + 工作台下方 48 + 頁面下方 48：整頁剛好不用捲 */
+    max-height: calc(100vh - 60px - var(--sp-5) - 2 * var(--sp-7));
+    max-height: calc(100dvh - 60px - var(--sp-5) - 2 * var(--sp-7));
     margin-top: 0;
+  }
+
+  .waiting {
+    display: flex;
+    flex-direction: column;
+    flex: 0 1 auto;
+    min-height: 0;
+  }
+
+  .waiting-list {
+    grid-template-columns: repeat(3, 1fr);
+    min-height: 0;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    padding: 4px;            /* 陰影、選取框不被捲動區切掉 */
+    margin: -4px;
+  }
+
+  .recent {
+    flex: none;
   }
 
   .recent-list:empty::before {
@@ -1220,8 +1340,13 @@ kbd {
     background: var(--primary-wash);
   }
 
-  .key:hover {
+  .key:hover,
+  .wait-code:hover {
     border-color: var(--primary-deep);
+  }
+
+  .wait-code:hover {
+    background: var(--primary-wash);
   }
 
   /* 家長那一格滑過時保持淡色底，不然看起來像被醫檢師選了 */
