@@ -1,0 +1,820 @@
+/* ═══ 浮空小島高爾夫 ═══════════════════════════════════════════
+   沿用 /styles.css 的 token 與 /shared/page.css 的卡片、按鈕、對話框；
+   球場本身畫在 canvas 上，顏色寫在 golf.js 的 THEME。
+   ═══════════════════════════════════════════════════════════════ */
+
+.golf-page {
+  --font-num: ui-rounded, "SF Pro Rounded", "Arial Rounded MT Bold", "PingFang TC", "Noto Sans TC", system-ui, sans-serif;
+  --grass: #7CC456;
+  --grass-deep: #3F7A2A;
+  --grass-wash: #EEF8E6;
+}
+
+/* ═══ 球場介紹 ═══════════════════════════════════════════════════ */
+
+.golf-how {
+  display: grid;
+  gap: var(--sp-3);
+  margin: 0;
+  padding: var(--sp-4);
+  list-style: none;
+  border-radius: var(--r-lg);
+  background: var(--card);
+  box-shadow: var(--sh-sm);
+}
+
+.golf-how li {
+  display: grid;
+  grid-template-columns: 56px 1fr;
+  align-items: center;
+  gap: var(--sp-3);
+}
+
+.how-text b {
+  display: block;
+  font-size: 1.02rem;
+  line-height: 1.4;
+}
+
+.how-text span {
+  display: block;
+  color: var(--fg-muted);
+  font-size: .9rem;
+  line-height: 1.5;
+}
+
+/* 小圖：草地上一顆球，用動畫示範「往後拉」「放開」「掉下去」 */
+.how-art {
+  position: relative;
+  width: 56px;
+  height: 56px;
+  overflow: hidden;
+  border-radius: var(--r-md);
+  background: linear-gradient(#DCEFFD, #FFF2E0);
+}
+
+.how-art::before {
+  content: "";
+  position: absolute;
+  left: 6px;
+  right: 6px;
+  top: 14px;
+  bottom: 10px;
+  border-radius: 10px;
+  background: var(--grass);
+  box-shadow: 0 6px 0 #B9824F;
+}
+
+.how-drop::before {
+  right: 22px;
+}
+
+.how-ball {
+  position: absolute;
+  left: 23px;
+  top: 30px;
+  width: 11px;
+  height: 11px;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: 0 0 0 1px #A8A29E, 0 2px 2px rgba(0, 0, 0, .18);
+}
+
+.how-finger {
+  position: absolute;
+  left: 21px;
+  top: 30px;
+  width: 15px;
+  height: 15px;
+  border: 2px solid var(--primary-deep);
+  border-radius: 50%;
+  background: rgba(249, 115, 22, .25);
+  animation: how-pull 2s var(--ease) infinite;
+}
+
+.how-go .how-ball {
+  animation: how-go 2s var(--ease) infinite;
+}
+
+.how-drop .how-ball {
+  animation: how-drop 2.2s ease-in infinite;
+}
+
+@keyframes how-pull {
+  0%, 15% { transform: translateY(-4px); opacity: 0; }
+  25% { opacity: 1; }
+  70% { transform: translateY(12px); opacity: 1; }
+  100% { transform: translateY(12px); opacity: 0; }
+}
+
+@keyframes how-go {
+  0%, 20% { transform: translateY(6px); }
+  60%, 100% { transform: translateY(-14px); }
+}
+
+@keyframes how-drop {
+  0%, 15% { transform: translate(-8px, 0); opacity: 1; }
+  55% { transform: translate(14px, 0); opacity: 1; }
+  85% { transform: translate(20px, 26px); opacity: 0; }
+  100% { transform: translate(20px, 26px); opacity: 0; }
+}
+
+.golf-start {
+  margin-top: var(--sp-5);
+}
+
+.golf-list-title {
+  margin-top: var(--sp-6);
+}
+
+.hole-list,
+.round-list {
+  display: grid;
+  gap: var(--sp-3);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.hole-item {
+  display: grid;
+  grid-template-columns: 52px 1fr auto;
+  align-items: center;
+  gap: var(--sp-3);
+  padding: var(--sp-3) var(--sp-4) var(--sp-3) var(--sp-3);
+  border-radius: var(--r-lg);
+  background: var(--card);
+  box-shadow: var(--sh-sm);
+}
+
+.hole-num {
+  display: grid;
+  place-items: center;
+  width: 52px;
+  height: 52px;
+  border-radius: var(--r-md);
+  background: var(--hole-bg, var(--grass-wash));
+  color: var(--grass-deep);
+  font: 700 1.4rem/1 var(--font-num);
+}
+
+.hole-text {
+  min-width: 0;
+}
+
+.hole-name {
+  display: block;
+  font-size: 1.05rem;
+  font-weight: 700;
+  line-height: 1.4;
+}
+
+.hole-tip {
+  display: block;
+  word-break: keep-all;
+  color: var(--fg-muted);
+  font-size: .88rem;
+  line-height: 1.5;
+}
+
+.hole-side {
+  display: grid;
+  justify-items: end;
+  gap: 2px;
+  font-size: .82rem;
+  white-space: nowrap;
+}
+
+.hole-par {
+  color: var(--fg);
+  font-weight: 700;
+}
+
+.hole-best {
+  padding: 0 var(--sp-2);
+  border-radius: var(--r-pill);
+  background: var(--bg-sunk);
+  color: var(--fg-muted);
+  font-weight: 700;
+  line-height: 1.6;
+}
+
+.round-item {
+  display: grid;
+  grid-template-columns: 2rem 1fr auto;
+  align-items: center;
+  gap: var(--sp-3);
+  min-height: 52px;
+  padding: var(--sp-2) var(--sp-4);
+  border-radius: var(--r-md);
+  background: var(--card);
+  box-shadow: var(--sh-sm);
+  font-family: var(--font-num);
+}
+
+.round-rank {
+  color: var(--fg-muted);
+  font-weight: 700;
+}
+
+.round-total {
+  font-size: 1.1rem;
+  font-weight: 700;
+}
+
+.round-rel {
+  margin-left: var(--sp-2);
+  color: var(--fg-muted);
+  font-size: .9rem;
+}
+
+.round-time {
+  color: var(--fg-muted);
+  font-size: .9rem;
+}
+
+.round-empty {
+  padding: var(--sp-4);
+  border-radius: var(--r-md);
+  background: var(--bg-sunk);
+  color: var(--fg-muted);
+  text-align: center;
+}
+
+/* ═══ 打球中 ═══════════════════════════════════════════════════ */
+
+/* 頂列收起來（小朋友亂點不會跑出遊戲），整個畫面給球場、不能捲動 */
+body.is-playing {
+  padding-bottom: 0;
+  overflow: hidden;
+}
+
+body.is-playing .topbar {
+  display: none;
+}
+
+.golf-play {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-2);
+  height: 100vh;
+  height: 100dvh;
+  max-width: 72rem;
+  margin-inline: auto;
+  padding: calc(var(--sp-2) + env(safe-area-inset-top)) max(var(--sp-3), env(safe-area-inset-right))
+    calc(var(--sp-3) + env(safe-area-inset-bottom)) max(var(--sp-3), env(safe-area-inset-left));
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-touch-callout: none;
+}
+
+.golf-play[hidden] {
+  display: none;
+}
+
+.golf-hud {
+  display: grid;
+  grid-template-columns: 48px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: var(--sp-3);
+}
+
+.hud-btn {
+  display: grid;
+  place-items: center;
+  width: 48px;
+  height: 48px;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: var(--card);
+  color: var(--fg);
+  box-shadow: var(--sh-md);
+  cursor: pointer;
+}
+
+.hud-btn svg {
+  width: 22px;
+  height: 22px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 3;
+  stroke-linecap: round;
+}
+
+.hud-btn:active {
+  transform: translateY(2px);
+  box-shadow: var(--sh-sm);
+}
+
+.hud-mid {
+  min-width: 0;
+}
+
+.hud-title {
+  overflow: hidden;
+  font-size: 1rem;
+  font-weight: 700;
+  line-height: 1.4;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.hud-sub {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  color: var(--fg-muted);
+  font-size: .85rem;
+  line-height: 1.5;
+}
+
+/* 第幾洞：打完的實心、現在這洞有外框、還沒打的空心（形狀不同，不只靠顏色） */
+.hud-dots {
+  display: inline-flex;
+  gap: 4px;
+}
+
+.hud-dot {
+  width: 9px;
+  height: 9px;
+  border: 2px solid var(--line);
+  border-radius: 50%;
+}
+
+.hud-dot.is-done {
+  border-color: var(--grass-deep);
+  background: var(--grass-deep);
+}
+
+.hud-dot.is-cur {
+  width: 20px;
+  border-color: var(--primary-deep);
+  border-radius: var(--r-pill);
+  background: var(--primary-wash);
+}
+
+.hud-score {
+  display: grid;
+  justify-items: end;
+  font-family: var(--font-num);
+  line-height: 1.2;
+}
+
+.hud-strokes {
+  font-size: .95rem;
+  font-weight: 700;
+}
+
+.hud-strokes b {
+  font-size: 1.6rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.hud-total {
+  color: var(--fg-muted);
+  font-size: .8rem;
+}
+
+/* ── 舞台：整塊都可以拉 ── */
+.stage {
+  position: relative;
+  flex: 1 1 auto;
+  min-height: 0;
+  touch-action: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.stage-canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+  border-radius: var(--r-lg);
+  background: #DCEFFD;
+  box-shadow: var(--sh-md);
+  outline-offset: 3px;
+}
+
+/* ── 每洞開始的看板 ── */
+.hole-banner {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  z-index: 3;
+  width: min(19rem, calc(100% - 2 * var(--sp-5)));
+  padding: var(--sp-5) var(--sp-4) var(--sp-4);
+  transform: translate(-50%, -50%);
+  border-radius: var(--r-xl);
+  background: rgba(255, 255, 255, .95);
+  box-shadow: var(--sh-lg);
+  text-align: center;
+  pointer-events: none;
+  animation: banner-in var(--t-base) var(--ease);
+}
+
+.hole-banner[hidden] {
+  display: none;
+}
+
+@keyframes banner-in {
+  from {
+    opacity: 0;
+    transform: translate(-50%, -46%) scale(.96);
+  }
+}
+
+.banner-no {
+  color: var(--fg-muted);
+  font-size: .9rem;
+  font-weight: 700;
+}
+
+.banner-name {
+  font-size: 1.6rem;
+  font-weight: 700;
+  line-height: 1.3;
+}
+
+.banner-par {
+  display: inline-block;
+  margin-top: var(--sp-2);
+  padding: 0 var(--sp-3);
+  border-radius: var(--r-pill);
+  background: var(--grass-wash);
+  color: var(--grass-deep);
+  font-weight: 700;
+}
+
+.banner-tip {
+  margin-top: var(--sp-3);
+  word-break: keep-all;
+  color: var(--fg-muted);
+  line-height: 1.55;
+  text-wrap: balance;
+}
+
+.banner-go {
+  margin-top: var(--sp-3);
+  color: var(--primary-deep);
+  font-weight: 700;
+  animation: go-pulse 1.4s ease-in-out infinite;
+}
+
+@keyframes go-pulse {
+  50% { opacity: .45; }
+}
+
+/* ── 「小鳥！」：進洞時跳出來的大字 ── */
+.score-pop {
+  position: absolute;
+  left: 50%;
+  top: 38%;
+  z-index: 3;
+  width: max-content;
+  max-width: calc(100% - 2 * var(--sp-4));
+  padding: var(--sp-2) var(--sp-5);
+  transform: translate(-50%, -50%);
+  border-radius: var(--r-pill);
+  background: var(--card);
+  color: var(--primary-deep);
+  box-shadow: var(--sh-orange);
+  font: 700 1.9rem/1.3 var(--font-num);
+  text-align: center;
+  pointer-events: none;
+  animation: pop-in 420ms cubic-bezier(.3, 1.6, .5, 1);
+}
+
+.score-pop[hidden] {
+  display: none;
+}
+
+@keyframes pop-in {
+  from {
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(.5);
+  }
+}
+
+/* ── 掉下去、撿球：上方的小提示 ── */
+.golf-toast {
+  position: absolute;
+  left: 50%;
+  top: var(--sp-3);
+  z-index: 2;
+  width: max-content;
+  max-width: calc(100% - 2 * var(--sp-3));
+  padding: var(--sp-1) var(--sp-4);
+  transform: translateX(-50%);
+  border-radius: var(--r-pill);
+  background: rgba(41, 37, 36, .9);
+  color: #fff;
+  font-weight: 700;
+  line-height: 1.5;
+  text-align: center;
+  pointer-events: none;
+  animation: toast-in var(--t-base) var(--ease);
+}
+
+.golf-toast[hidden] {
+  display: none;
+}
+
+@keyframes toast-in {
+  from {
+    opacity: 0;
+    transform: translate(-50%, -6px);
+  }
+}
+
+/* ── 下方：提示／力氣條 ── */
+.golf-hint,
+.aim-meter {
+  position: absolute;
+  left: 50%;
+  bottom: var(--sp-3);
+  z-index: 2;
+  width: max-content;
+  max-width: calc(100% - 2 * var(--sp-3));
+  transform: translateX(-50%);
+  border-radius: var(--r-pill);
+  pointer-events: none;
+}
+
+.golf-hint {
+  padding: var(--sp-1) var(--sp-4);
+  background: rgba(255, 255, 255, .92);
+  color: var(--fg);
+  box-shadow: var(--sh-sm);
+  font-size: .95rem;
+  line-height: 1.5;
+  text-align: center;
+  text-wrap: balance;
+}
+
+.golf-hint[hidden],
+.aim-meter[hidden] {
+  display: none;
+}
+
+.golf-hint b {
+  color: var(--primary-deep);
+}
+
+.aim-meter {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  padding: var(--sp-1) var(--sp-3) var(--sp-1) var(--sp-4);
+  background: rgba(41, 37, 36, .9);
+  color: #fff;
+  font-weight: 700;
+  line-height: 1.6;
+}
+
+.meter {
+  position: relative;
+  width: 7.5rem;
+  height: 12px;
+  overflow: hidden;
+  border-radius: var(--r-pill);
+  background: rgba(255, 255, 255, .22);
+}
+
+.meter-fill {
+  position: absolute;
+  inset: 0;
+  transform-origin: left center;
+  transform: scaleX(0);
+  border-radius: inherit;
+  background: linear-gradient(90deg, #22C55E, #FACC15 45%, #F97316 75%, #EF4444);
+  background-size: 7.5rem 100%;
+}
+
+.meter-pct {
+  min-width: 3.2em;
+  font-family: var(--font-num);
+  font-variant-numeric: tabular-nums;
+  text-align: end;
+}
+
+/* 拉太短：放開就取消 */
+.aim-meter.is-cancel .meter,
+.aim-meter.is-cancel .meter-label {
+  display: none;
+}
+
+.aim-meter.is-cancel .meter-pct {
+  min-width: 0;
+}
+
+/* ═══ 對話框 ═══════════════════════════════════════════════════ */
+
+.dlg-links {
+  display: flex;
+  justify-content: center;
+  gap: var(--sp-4);
+  margin-top: var(--sp-3);
+}
+
+.dlg-links .quiet-link {
+  font-size: .92rem;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.card-kicker {
+  color: var(--fg-muted);
+  font-size: .9rem;
+  font-weight: 700;
+}
+
+.golf-card .dlg-title,
+.golf-done .dlg-title {
+  font-size: 1.7rem;
+}
+
+/* 記分卡：球洞／標準桿／桿數 */
+.scorecard {
+  margin-top: var(--sp-4);
+  overflow-x: auto;
+}
+
+.scorecard table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  font-family: var(--font-num);
+  font-variant-numeric: tabular-nums;
+  text-align: center;
+}
+
+.scorecard th,
+.scorecard td {
+  padding: 4px 2px;
+  border-bottom: 1px solid var(--hairline);
+  line-height: 1.5;
+}
+
+.scorecard th[scope="row"] {
+  padding-inline-end: var(--sp-2);
+  color: var(--fg-muted);
+  font-weight: 700;
+  text-align: start;
+  white-space: nowrap;
+}
+
+.scorecard thead th {
+  color: var(--fg-muted);
+  font-size: .85rem;
+}
+
+.scorecard tr:last-child th,
+.scorecard tr:last-child td {
+  border-bottom: 0;
+}
+
+.scorecard .is-cur {
+  background: var(--primary-wash);
+}
+
+.scorecard thead .is-cur {
+  border-radius: var(--r-sm) var(--r-sm) 0 0;
+}
+
+.scorecard tbody tr:last-child .is-cur {
+  border-radius: 0 0 var(--r-sm) var(--r-sm);
+}
+
+.scorecard .sc-total {
+  font-weight: 700;
+}
+
+.scorecard .sc-strokes td {
+  font-size: 1.15rem;
+  font-weight: 700;
+}
+
+/* 比標準桿少：綠色＋負號；多：灰色＋正號（不只靠顏色） */
+.sc-rel {
+  display: block;
+  font-size: .75rem;
+  font-weight: 700;
+  line-height: 1.2;
+}
+
+.sc-rel.is-under {
+  color: var(--success);
+}
+
+.sc-rel.is-over {
+  color: var(--fg-muted);
+}
+
+.done-best {
+  display: inline-block;
+  margin-top: var(--sp-2);
+  padding: 0 var(--sp-3);
+  border-radius: var(--r-pill);
+  background: var(--success);
+  color: #fff;
+  font-weight: 700;
+}
+
+.done-best[hidden] {
+  display: none;
+}
+
+.done-stats {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--sp-3);
+  margin: var(--sp-4) 0 0;
+}
+
+.done-stats div {
+  padding: var(--sp-2) var(--sp-3);
+  border-radius: var(--r-md);
+  background: var(--bg-sunk);
+  text-align: center;
+}
+
+.done-stats dt {
+  color: var(--fg-muted);
+  font-size: .85rem;
+  font-weight: 700;
+}
+
+.done-stats dd {
+  margin: 0;
+  font: 700 1.35rem/1.3 var(--font-num);
+  font-variant-numeric: tabular-nums;
+}
+
+/* 橫式、矮螢幕：HUD 擠一點，球場盡量大 */
+@media (max-height: 520px) {
+  .golf-play {
+    gap: var(--sp-1);
+    padding-top: calc(var(--sp-1) + env(safe-area-inset-top));
+    padding-bottom: calc(var(--sp-1) + env(safe-area-inset-bottom));
+  }
+
+  .hud-btn {
+    width: 44px;
+    height: 44px;
+  }
+
+  .golf-hud {
+    grid-template-columns: 44px minmax(0, 1fr) auto;
+  }
+
+  .hud-strokes b {
+    font-size: 1.3rem;
+  }
+
+  .hole-banner {
+    padding: var(--sp-3) var(--sp-4);
+  }
+
+  .banner-name {
+    font-size: 1.35rem;
+  }
+
+  .banner-tip {
+    margin-top: var(--sp-2);
+  }
+
+  .banner-go {
+    margin-top: var(--sp-2);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+
+  .hud-btn:active {
+    transform: none;
+  }
+
+  .how-finger,
+  .how-go .how-ball,
+  .how-drop .how-ball,
+  .banner-go,
+  .hole-banner,
+  .score-pop,
+  .golf-toast {
+    animation: none;
+  }
+
+  .how-finger {
+    transform: translateY(12px);
+  }
+}
+
+/* 只給螢幕報讀器念的字 */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}

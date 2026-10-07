@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="zh-Hant-TW">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="color-scheme" content="light">
+  <meta name="theme-color" content="#FFF7ED">
+  <title>安心陪伴 · 浮空小島高爾夫</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet"
+    href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&display=swap">
+  <link rel="stylesheet" href="/styles.css">
+  <link rel="stylesheet" href="/shared/page.css">
+  <link rel="stylesheet" href="/games/golf/golf.css">
+  <script src="/shared/app.js"></script>
+  <script>Anxin.requireProfile();</script>
+</head>
+
+<body class="golf-page">
+  <a class="skip-link" href="#main">跳到主要內容</a>
+
+  <header class="wrap topbar">
+    <a class="back-link" href="/games/solo/">
+      <svg viewBox="0 0 24 24" class="icon" aria-hidden="true"><path d="M15 5 8 12l7 7" /></svg>
+      <span>小遊戲</span>
+    </a>
+    <a class="pill-cta" href="/shot/">
+      <span>開始打針</span>
+      <svg viewBox="0 0 24 24" class="icon" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6" /></svg>
+    </a>
+  </header>
+
+  <main id="main">
+
+    <!-- ══════════ 球場介紹 ══════════ -->
+    <section class="wrap" id="introView" aria-labelledby="introTitle">
+      <div class="page-head">
+        <h1 id="introTitle" tabindex="-1">浮空小島高爾夫</h1>
+        <p class="page-lede">三座飄在天上的小島球場，一顆小白球。用最少的桿數把球打進洞！</p>
+      </div>
+
+      <!-- 怎麼打：三個小步驟，圖示由 CSS 畫 -->
+      <ol class="golf-how" aria-label="怎麼打">
+        <li>
+          <span class="how-art how-pull" aria-hidden="true"><span class="how-ball"></span><span class="how-finger"></span></span>
+          <span class="how-text"><b>往後拉</b><span>手指放在畫面任何地方，往後拉。拉越遠越用力</span></span>
+        </li>
+        <li>
+          <span class="how-art how-go" aria-hidden="true"><span class="how-ball"></span></span>
+          <span class="how-text"><b>放開</b><span>球就飛出去了，白色小點是球會走的路</span></span>
+        </li>
+        <li>
+          <span class="how-art how-drop" aria-hidden="true"><span class="how-ball"></span></span>
+          <span class="how-text"><b>別掉下去</b><span>掉下小島會多算 1 桿，球會回到剛剛的地方</span></span>
+        </li>
+      </ol>
+
+      <button class="btn btn-primary golf-start" type="button" id="startBtn">開始打球</button>
+
+      <h2 class="section-title golf-list-title">三個球洞</h2>
+      <ol class="hole-list" id="holeList"></ol>
+
+      <h2 class="section-title golf-list-title">最佳紀錄</h2>
+      <ol class="round-list" id="roundList"></ol>
+    </section>
+
+    <!-- ══════════ 打球中 ══════════ -->
+    <section class="golf-play" id="playView" hidden aria-labelledby="hudTitle">
+      <div class="golf-hud">
+        <button class="hud-btn" type="button" id="pauseBtn" aria-label="暫停">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6v12M15 6v12" /></svg>
+        </button>
+        <div class="hud-mid">
+          <h1 class="hud-title" id="hudTitle">第 1 洞・轉轉風車</h1>
+          <p class="hud-sub"><span id="hudPar">標準桿 3</span><span class="hud-dots" id="hudDots" aria-hidden="true"></span></p>
+        </div>
+        <p class="hud-score" aria-live="off">
+          <span class="hud-strokes"><b id="hudStrokes">0</b> 桿</span>
+          <span class="hud-total" id="hudTotal">總共 0 桿</span>
+        </p>
+      </div>
+
+      <!-- 整塊都可以拉：手指放在哪裡都行，不用剛好按在球上 -->
+      <div class="stage" id="stage">
+        <canvas class="stage-canvas" id="stageCanvas" tabindex="0" role="img"
+          aria-label="球場畫面。往後拉再放開就能打球；鍵盤：左右鍵瞄準、上下鍵調力氣、空白鍵打球，Esc 暫停"></canvas>
+
+        <!-- 每一洞開始：洞名、標準桿、小提示（點一下就收起來） -->
+        <div class="hole-banner" id="banner" hidden>
+          <p class="banner-no" id="bannerNo">第 1 洞</p>
+          <p class="banner-name" id="bannerName">轉轉風車</p>
+          <p class="banner-par" id="bannerPar">標準桿 3</p>
+          <p class="banner-tip" id="bannerTip"></p>
+          <p class="banner-go">點一下開始</p>
+        </div>
+
+        <p class="score-pop" id="pop" hidden></p>
+        <p class="golf-toast" id="toast" hidden></p>
+
+        <div class="aim-meter" id="aimMeter" hidden>
+          <span class="meter-label">力氣</span>
+          <span class="meter" aria-hidden="true"><span class="meter-fill" id="meterFill"></span></span>
+          <b class="meter-pct" id="meterPct">0%</b>
+        </div>
+        <p class="golf-hint" id="hint">從畫面任何地方<b>往後拉</b>，<b>放開</b>就打出去</p>
+      </div>
+    </section>
+  </main>
+
+  <!-- ══════════ 對話框 ══════════ -->
+  <dialog class="dlg" id="pauseDlg" aria-labelledby="pauseTitle">
+    <h2 class="dlg-title" id="pauseTitle">暫停中</h2>
+    <p class="dlg-body">休息一下，準備好再繼續。</p>
+    <div class="dlg-actions">
+      <button class="btn btn-primary" type="button" data-close autofocus>繼續打</button>
+      <button class="btn btn-quiet" type="button" id="retryHoleBtn">這一洞重新開始</button>
+      <button class="btn btn-quiet" type="button" id="restartBtn">從第 1 洞重新開始</button>
+      <button class="btn btn-quiet" type="button" id="toIntroBtn">回到球場介紹</button>
+    </div>
+    <!-- 打球中頂列收起來（小朋友亂點不會跑出遊戲），離開的路放在暫停裡 -->
+    <p class="dlg-links">
+      <a class="quiet-link" href="/games/solo/">小遊戲選單</a>
+      <a class="quiet-link" href="/shot/">開始打針</a>
+    </p>
+  </dialog>
+
+  <dialog class="dlg golf-card" id="cardDlg" aria-labelledby="cardTitle" aria-describedby="cardLine">
+    <p class="card-kicker" id="cardKicker">第 1 洞・轉轉風車</p>
+    <h2 class="dlg-title" id="cardTitle">小鳥！</h2>
+    <p class="dlg-body" id="cardLine"></p>
+    <div class="scorecard" id="cardTable"></div>
+    <div class="dlg-actions">
+      <button class="btn btn-primary" type="button" id="nextBtn">下一洞</button>
+      <button class="btn btn-quiet" type="button" id="replayBtn">這一洞再打一次</button>
+    </div>
+  </dialog>
+
+  <dialog class="dlg golf-done" id="doneDlg" aria-labelledby="doneTitle" aria-describedby="doneLine">
+    <p class="card-kicker">打完三洞了！</p>
+    <h2 class="dlg-title" id="doneTitle">總共 0 桿</h2>
+    <p class="done-best" id="doneBest" hidden>新紀錄！</p>
+    <dl class="done-stats">
+      <div><dt>比標準桿</dt><dd id="doneVsPar">0</dd></div>
+      <div><dt>用時</dt><dd id="doneTime">0:00</dd></div>
+    </dl>
+    <div class="scorecard" id="doneTable"></div>
+    <p class="dlg-body" id="doneLine"></p>
+    <div class="dlg-actions">
+      <button class="btn btn-primary" type="button" id="againBtn">再打一輪</button>
+      <button class="btn btn-quiet" type="button" id="doneIntroBtn">回到球場介紹</button>
+    </div>
+    <p class="dlg-links">
+      <a class="quiet-link" href="/games/solo/">小遊戲選單</a>
+      <a class="quiet-link" href="/shot/">開始打針</a>
+    </p>
+  </dialog>
+
+  <div class="live-region" id="liveRegion" role="status" aria-live="polite"></div>
+
+  <script src="/games/golf/physics.js"></script>
+  <script src="/games/golf/holes.js"></script>
+  <script src="/games/golf/golf.js"></script>
+</body>
+
+</html>
