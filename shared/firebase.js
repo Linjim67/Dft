@@ -190,20 +190,30 @@ function lockFrom(snap) {
 const codes = {
   /* 一筆交易：讀鎖 → isFree 說可以才連同個人資料一起寫入，回傳 true；有人在用回傳 false。
      兩支手機同時搶同一組時，Firestore 會讓晚到的那筆重跑，重跑時就會讀到已被佔用。
-     profile 由 Anxin.codes.buildProfile 產生（expiresAt 是毫秒）。 */
+     profile 由 Anxin.codes.buildProfile 產生（expiresAt 是毫秒）。
+     手機時鐘快太多（超過 Anxin.codes.REUSE_MARGIN_MS）時，會以為上一位的 24 小時已經過了，
+     伺服器還不認而拒絕：這也算「有人在用」，換下一組，不要當成網站設定問題。
+     全新的號碼被拒絕才是真的設定問題，照樣往外丟。 */
   async tryClaim(code, profile, isFree) {
     const u = await ensureAuth();
-    return runTransaction(db, async (tx) => {
-      const lock = lockFrom(await tx.get(lockRef(code)));
-      if (!isFree(lock, Date.now())) return false;
-      const expiresAt = Timestamp.fromMillis(profile.expiresAt);
-      tx.set(lockRef(code), {
-        v: 1, code, holderUid: u.uid, status: 'active',
-        expiresAt, doneAt: null, createdAt: serverTimestamp()
+    let reusing = false;
+    try {
+      return await runTransaction(db, async (tx) => {
+        const lock = lockFrom(await tx.get(lockRef(code)));
+        if (!isFree(lock, Date.now())) return false;
+        reusing = !!lock;
+        const expiresAt = Timestamp.fromMillis(profile.expiresAt);
+        tx.set(lockRef(code), {
+          v: 1, code, holderUid: u.uid, status: 'active',
+          expiresAt, doneAt: null, createdAt: serverTimestamp()
+        });
+        tx.set(codeProfileRef(code), { ...profile, expiresAt });
+        return true;
       });
-      tx.set(codeProfileRef(code), { ...profile, expiresAt });
-      return true;
-    });
+    } catch (err) {
+      if (reusing && err && err.code === 'permission-denied') return false;
+      throw err;
+    }
   },
 
   async getLock(code) {

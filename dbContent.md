@@ -69,9 +69,26 @@ The lock for one 4-digit temporary code: who holds it, its status and when it ex
 4. **Parent's phone** listens to its own lock. When `status` becomes `done`, the phone goes to `/shot/?done=1`.
 5. A `done` code is not reissued before its `expiresAt`, because `rooms/{code}` uses the same number.
 
+**When a number is reused**
+
+Two families never hold the same code at the same time. After a code expires, a new family can get the same number. This is what happens to the old family's data:
+
+| Path | Old family's data |
+|---|---|
+| `codes/{code}` | Overwritten by the new claim. Nothing records that the earlier claim happened, except its `staffFeedback` doc if staff finished it. |
+| `codes/{code}/private/profile` | Already deleted if staff finished the code. Otherwise the TTL policy removes it (see the next section); without that policy it stays until the new claim overwrites it. |
+| `staffFeedback/{code}-{claimMs}` | Kept, and no collision is possible: every claim has a different `claimMs`. |
+| `rooms/{code}` | Overwritten when the new parent opens 雙機. `childUid` goes back to `null`, so the old child's phone stops. |
+| `rooms/{code}/cmds`, `state/child` | Kept, because overwriting a doc doesn't delete its subcollections. The child only runs commands from the last 2 minutes. The parent's remote ignores any `state/child` older than the room's `createdAt`. |
+| `feedback`, `circleDays` | Not affected: they aren't keyed by code. |
+
+A phone whose clock is more than 10 minutes fast can think an expired code is free before the server agrees. The server rejects that claim, and `tryClaim` treats the rejection as "taken" and moves on to the next random code. A rejection on a code that has never been used is a real setup problem, so that error still reaches the page.
+
 ## `codes/{code}/private/profile`
 
-The child profile shown to the 醫檢師. The doc id is always `profile`. It is written only in the claim transaction and deleted in the finish batch, so it exists only while the code is active. It is built by `Anxin.codes.buildProfile`.
+The child profile shown to the 醫檢師. The doc id is always `profile`. It is written only in the claim transaction and deleted in the finish batch. It is built by `Anxin.codes.buildProfile`.
+
+If staff never finishes the code, the profile is deleted by a Firestore **TTL policy** on collection group `private`, field `expiresAt`, usually within about a day after it expires. That policy is set in the Firebase Console (Firestore → Time-to-live), not in this repo. Without it, the profile stays (unreadable) until the number is claimed again.
 
 | Field | Type | Value |
 |---|---|---|
@@ -163,7 +180,7 @@ Both shapes also have `by` (the parent's uid) and `at` (server time). The child 
 
 ### `rooms/{code}/state/child`
 
-A single doc holding the child's game screen, which the child overwrites at most every 600 ms (`STATE_THROTTLE_MS`). It is built by `snapshot()` in [games/whack-a-mole/whack-a-mole.js](games/whack-a-mole/whack-a-mole.js).
+A single doc holding the child's game screen, which the child overwrites at most every 600 ms (`STATE_THROTTLE_MS`). It is built by `snapshot()` in [games/whack-a-mole/whack-a-mole.js](games/whack-a-mole/whack-a-mole.js). The parent's remote ignores a snapshot whose `at` is older than the room's `createdAt`, which means it was left over from a previous family.
 
 | Field | Type | Value |
 |---|---|---|

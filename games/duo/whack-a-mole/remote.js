@@ -391,6 +391,9 @@
   });
 
   function onState(s) {
+    /* 這組代碼以前有別的家庭用過：房間重建了，上一個孩子最後的畫面還留在 state/child。
+       比這個房間還舊的畫面當作還沒收到，不會把昨天的棋盤和分數秀出來 */
+    if (s && s.at && room && room.createdAt && s.at < room.createdAt) s = null;
     state = s;
     stateSeenAt = Date.now();
     var ack = s && s.ack;
