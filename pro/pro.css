@@ -769,7 +769,7 @@
   align-items: baseline;
   justify-content: space-between;
   gap: var(--sp-1) var(--sp-4);
-  padding: var(--sp-5) var(--sp-5) var(--sp-4);
+  padding: var(--sp-5) var(--sp-5) 0;   /* 下方間距交給害怕／擔心本身的上內距 */
 }
 
 .patient-who {
@@ -790,7 +790,7 @@
   display: grid;
   grid-template-columns: auto 1fr;
   gap: var(--sp-3);
-  margin: 0 var(--sp-4);
+  margin: 0 var(--sp-4) var(--sp-4);   /* 卡片最後一塊：底下留和左右一樣的 16px */
   padding: var(--sp-4);
   border-radius: var(--r-md);
   background: var(--primary-wash);
