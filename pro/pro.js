@@ -512,15 +512,15 @@
       '<header class="patient-head">' +
       '<p class="patient-who">' + esc(Anxin.ageLabel(p.age)) + '<span class="sep" aria-hidden="true">·</span>' + gender + '</p>' +
       '</header>' +
-      (p.specialNeeds
-        ? '<div class="needs">' + ICON_ALERT + '<div><p class="needs-label">特別注意</p>' +
-          '<p class="needs-text">' + esc(p.specialNeeds) + '</p></div></div>'
-        : '<div class="needs is-empty">' + ICON_INFO + '<div><p class="needs-label">特別注意</p>' +
-          '<p class="needs-text">無</p></div></div>') +
       '<dl class="meters">' +
       meter('害怕（家長估）', fear, p.fearLevel) +
       meter('家長擔心', WORRY[p.worryLevel - 1], p.worryLevel) +
-      '</dl>';
+      '</dl>' + 
+      (p.specialNeeds
+        ? '<div class="needs">' + ICON_ALERT + '<div><p class="needs-label">特別注意</p>' +
+        '<p class="needs-text">' + esc(p.specialNeeds) + '</p></div></div>'
+        : '<div class="needs is-empty">' + ICON_INFO + '<div><p class="needs-label">特別注意</p>' +
+        '<p class="needs-text">無</p></div></div>');
 
     /* 題目：先說家長的評估，再問醫檢師的觀察 */
     $('fearQuestion').textContent = '家長說「' + fear + '」，實際呢？';
@@ -537,7 +537,7 @@
         compare.innerHTML = (d === 0 ? ICON_SAME + '同家長'
           : d < 0 ? ICON_DOWN + '比家長低 ' + (-d) + ' 級'
             : ICON_UP + '比家長高 ' + d + ' 級');
-        compare.hidden = false;
+        compare.hidden = true; // 先暫時關閉此功能
       }
     });
     Array.prototype.forEach.call(host.querySelectorAll('.face-option'), function (opt, i) {
