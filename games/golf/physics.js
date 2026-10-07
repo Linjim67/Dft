@@ -50,8 +50,6 @@
     PORTAL_R: 15,
     PORTAL_MIN: 140,          /* 從魔法門出來至少這麼快，不會卡在門口 */
 
-    BLADE_HALF: 0.36,         /* 風車葉片擋住門口的角度（弧度，左右各一半） */
-
     FALL_S: 0.85,             /* 掉下小島的動畫時間 */
     PICKUP_OVER_PAR: 4,       /* 超過標準桿 4 桿還沒進：撿起來，下一洞 */
     PENALTY: 1                /* 掉下小島多算 1 桿 */
@@ -83,7 +81,7 @@
   }
 
   /* ─────────────────────────────────────────────────────────────
-     會動的東西：漂漂木橋、風車
+     會動的東西：漂漂木橋
      ───────────────────────────────────────────────────────────── */
 
   function bridgeOff(B, t) {
@@ -91,39 +89,12 @@
     return { x: (B.ax || 0) * s, y: (B.ay || 0) * s };
   }
 
-  /* 葉片角度：0 = 正下方（擋住門口），順時針 */
-  function bladeAngle(M, t) {
-    return Math.PI * 2 * t / M.period + (M.phase || 0);
-  }
-
-  function bladeBlocks(M, t) {
-    var a = bladeAngle(M, t);
-    for (var k = 0; k < 4; k++) {
-      if (Math.abs(wrapPi(a + k * Math.PI / 2)) < CONFIG.BLADE_HALF) return true;
-    }
-    return false;
-  }
-
-  /* 下一次門口打開（或關上）還要多久：給機器人和「再等一下」提示用 */
-  function nextBladeChange(M, t, wantOpen) {
-    for (var dt = 0; dt < M.period; dt += 1 / 120) {
-      if (bladeBlocks(M, t + dt) !== wantOpen) return dt;
-    }
-    return 0;
-  }
-
   /* ─────────────────────────────────────────────────────────────
      把球洞資料整理成碰撞用的世界
      ───────────────────────────────────────────────────────────── */
 
-  function seg(ax, ay, bx, by, half, tall) {
-    return { ax: ax, ay: ay, bx: bx, by: by, half: half, tall: !!tall };
-  }
-
-  function rectSegs(r, half, tall, out) {
-    var x0 = r.x, y0 = r.y, x1 = r.x + r.w, y1 = r.y + r.h;
-    out.push(seg(x0, y0, x1, y0, half, tall), seg(x1, y0, x1, y1, half, tall),
-      seg(x1, y1, x0, y1, half, tall), seg(x0, y1, x0, y0, half, tall));
+  function seg(ax, ay, bx, by, half) {
+    return { ax: ax, ay: ay, bx: bx, by: by, half: half };
   }
 
   function build(H) {
@@ -132,7 +103,6 @@
       islands: H.islands,
       segs: [],
       bumpers: H.bumpers || [],
-      slopes: H.slopes || [],
       ramps: (H.ramps || []).map(function (r) {
         var vertical = r.dir[0] === 0;
         return {
@@ -147,27 +117,16 @@
       pads: H.pads || [],
       portals: H.portals || [],
       bridges: H.bridges || [],
-      windmill: H.windmill || null,
-      gate: null,
       cup: H.cup,
       tee: H.tee
     };
 
     (H.rails || []).forEach(function (line) {
       for (var i = 0; i + 1 < line.length; i++) {
-        W.segs.push(seg(line[i][0], line[i][1], line[i + 1][0], line[i + 1][1], CONFIG.RAIL_HALF, false));
+        W.segs.push(seg(line[i][0], line[i][1], line[i + 1][0], line[i + 1][1], CONFIG.RAIL_HALF));
       }
     });
 
-    var M = W.windmill;
-    if (M) {
-      /* 風車屋：門口左右兩塊是高牆（飛起來也過不去），中間是隧道 */
-      var x0 = M.x - M.w / 2, y0 = M.y - M.h / 2;
-      rectSegs({ x: x0, y: y0, w: M.w / 2 - M.door / 2, h: M.h }, 0, true, W.segs);
-      rectSegs({ x: M.x + M.door / 2, y: y0, w: M.w / 2 - M.door / 2, h: M.h }, 0, true, W.segs);
-      var gy = M.y + M.h / 2 + 3;
-      W.gate = seg(M.x - M.door / 2, gy, M.x + M.door / 2, gy, 3, true);
-    }
     return W;
   }
 
@@ -261,21 +220,16 @@
     }
   }
 
-  function collide(W, b, t, ev, ghost) {
-    var low = b.z < CONFIG.RAIL_H;
-    for (var i = 0; i < W.segs.length; i++) {
-      var s = W.segs[i];
-      if (s.tall || low) hitSeg(b, s, CONFIG.BOUNCE, ev);
-    }
-    if (W.gate && !ghost && bladeBlocks(W.windmill, t)) hitSeg(b, W.gate, 0.6, ev);
-    if (low) {
-      for (var k = 0; k < W.bumpers.length; k++) hitCircle(b, W.bumpers[k], ev);
-    }
+  /* 欄杆和蘑菇都很矮：球飛得比欄杆高就直接飛過去 */
+  function collide(W, b, ev) {
+    if (b.z >= CONFIG.RAIL_H) return;
+    for (var i = 0; i < W.segs.length; i++) hitSeg(b, W.segs[i], CONFIG.BOUNCE, ev);
+    for (var k = 0; k < W.bumpers.length; k++) hitCircle(b, W.bumpers[k], ev);
   }
 
   /* ─────────────────────────────────────────────────────────────
      走一步（DT 秒）
-     ghost = 預覽：時間不動（木橋停在現在的位置）、不管風車葉片，
+     ghost = 預覽：時間不動（木橋停在現在的位置），
              碰到彈跳板、跳跳坡頂、魔法門就停在那裡（b.state = 'mark'）。
      ───────────────────────────────────────────────────────────── */
 
@@ -325,7 +279,7 @@
       b.vy *= 1 - 0.12 * dt;
       b.vz -= C.G * dt;
       b.z += b.vz * dt;
-      collide(W, b, t, ev, ghost);
+      collide(W, b, ev);
       if (b.z <= 0) {
         b.z = 0;
         if (groundAt(W, b.x, b.y, t) < 0) {
@@ -345,10 +299,6 @@
 
     /* ── 在地上滾 ── */
     var ax = 0, ay = 0, tilted = false, i;
-    for (i = 0; i < W.slopes.length; i++) {
-      var S = W.slopes[i];
-      if (inRect(S, b.x, b.y)) { ax += S.g[0]; ay += S.g[1]; tilted = true; }
-    }
     var onRamp = null;
     for (i = 0; i < W.ramps.length; i++) {
       var R = W.ramps[i];
@@ -375,7 +325,7 @@
     var px = b.x, py = b.y;
     b.x += b.vx * dt;
     b.y += b.vy * dt;
-    collide(W, b, t, ev, ghost);
+    collide(W, b, ev);
 
     /* 衝出跳跳坡頂：飛起來 */
     if (onRamp) {
@@ -503,9 +453,6 @@
     groundAt: groundAt,
     rampAlong: rampAlong,
     bridgeOff: bridgeOff,
-    bladeAngle: bladeAngle,
-    bladeBlocks: bladeBlocks,
-    nextBladeChange: nextBladeChange,
     inPoly: inPoly,
     inRect: inRect
   };

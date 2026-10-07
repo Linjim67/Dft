@@ -15,16 +15,18 @@
   var live = $('liveRegion');
 
   var DEAD = 16;            /* 手指拉不到這麼遠（px）：放開就取消 */
-  var CLIFF = 34;           /* 小島下面土塊的厚度（世界單位） */
-  var LIP = 6;              /* 草地的厚度 */
-  var FLAG_H = 46;
+  var CLIFF = 40;           /* 小島下面土塊的厚度（世界單位） */
+  var LIP = 7;              /* 草地的厚度 */
+  var FLAG_H = 50;
+  var FONT = '"PingFang TC","Noto Sans TC","Microsoft JhengHei",system-ui,sans-serif';
   /* 預覽線的長度：年紀小的看得比較遠 */
   var PREVIEW_LEN = profile.age <= 6 ? 420 : 300;
 
+  /* 每一洞的天空和草地（haze = 遠方小島的剪影） */
   var THEME = {
-    1: { sky: ['#D8EDFD', '#FFF1DE'], grass: '#97D36C', stripe: '#8ACB5F', rim: '#C8EDA6', side: '#6FAE4B', earth: ['#C99360', '#8E5F3D'] },
-    2: { sky: ['#CFE9FF', '#F1F9FF'], grass: '#93D46F', stripe: '#86CB63', rim: '#C5ECA6', side: '#6AAB4C', earth: ['#C79465', '#8A5E3F'] },
-    3: { sky: ['#E6DFFB', '#FFEDE2'], grass: '#8FD07A', stripe: '#82C76D', rim: '#C3EAAF', side: '#67A754', earth: ['#BE8E6B', '#7F5A45'] }
+    1: { sky: ['#CBE7FB', '#FFF2E0'], haze: 'rgba(120, 155, 200, .16)', grass: '#9AD771', stripe: '#8FCF66', side: '#6CAD48', earth: ['#DDA56E', '#9A6641'] },
+    2: { sky: ['#C3E4FF', '#EDF8FF'], haze: 'rgba(110, 150, 205, .16)', grass: '#96D66F', stripe: '#8ACD65', side: '#69AA49', earth: ['#D9A570', '#956441'] },
+    3: { sky: ['#DFD6FA', '#FFEDE0'], haze: 'rgba(140, 120, 200, .16)', grass: '#92D27C', stripe: '#86C971', side: '#66A853', earth: ['#CF9E7A', '#86604A'] }
   };
   var AIM_COLORS = ['#22C55E', '#FACC15', '#F97316', '#EF4444'];
 
@@ -133,7 +135,8 @@
     $('holeList').innerHTML = HOLES.map(function (H) {
       var best = rec.best[H.id];
       return '<li class="hole-item">' +
-        '<span class="hole-num" style="--hole-bg:' + THEME[H.id].sky[0] + '" aria-hidden="true">' + H.id + '</span>' +
+        '<span class="hole-map" aria-hidden="true"><canvas class="hole-thumb" data-hole="' + H.id + '"></canvas>' +
+        '<span class="hole-num">' + H.id + '</span></span>' +
         '<span class="hole-text"><span class="hole-name"><span class="sr-only">第 ' + H.id + ' 洞 </span>' + H.name + '</span>' +
         '<span class="hole-tip">' + H.tip + '</span></span>' +
         '<span class="hole-side"><span class="hole-par">標準桿 ' + H.par + '</span>' +
@@ -141,12 +144,91 @@
         '</li>';
     }).join('');
 
+    Array.prototype.forEach.call(document.querySelectorAll('.hole-thumb'), function (c) {
+      drawThumb(c, HOLES[+c.getAttribute('data-hole') - 1]);
+    });
+
     var rounds = rec.rounds;
     $('roundList').innerHTML = rounds.length ? rounds.map(function (r, i) {
       return '<li class="round-item"><span class="round-rank">' + (i + 1) + '</span>' +
         '<span><span class="round-total">' + r.total + ' 桿</span><span class="round-rel">' + fmtRel(r.total - PAR_TOTAL) + '</span></span>' +
         '<span class="round-time">' + fmtTime(r.time) + '</span></li>';
     }).join('') : '<li class="round-empty">打完一輪，成績就會出現在這裡</li>';
+  }
+
+  /* 球洞小地圖：天空、小島（下面一點土色）、欄杆、球洞和發球台 */
+  function drawThumb(c, H) {
+    var cw = 64, ch = 92, d = Math.min(window.devicePixelRatio || 1, 2), T = THEME[H.id];
+    c.width = cw * d;
+    c.height = ch * d;
+    var g = c.getContext('2d');
+    if (!g) return;
+    g.setTransform(d, 0, 0, d, 0, 0);
+    var gr = g.createLinearGradient(0, 0, 0, ch);
+    gr.addColorStop(0, T.sky[0]);
+    gr.addColorStop(1, T.sky[1]);
+    g.fillStyle = gr;
+    g.fillRect(0, 0, cw, ch);
+    var x0 = 1e9, y0 = 1e9, x1 = -1e9, y1 = -1e9;
+    H.lands.forEach(function (L) {
+      x0 = Math.min(x0, L.box[0]); y0 = Math.min(y0, L.box[1]);
+      x1 = Math.max(x1, L.box[0] + L.box[2]); y1 = Math.max(y1, L.box[1] + L.box[3]);
+    });
+    var pad = 6, s = Math.min((cw - pad * 2) / (x1 - x0), (ch - pad * 2 - 4) / (y1 - y0));
+    var ox = cw / 2 - s * (x0 + x1) / 2, oy = (ch - 4) / 2 - s * (y0 + y1) / 2;
+    g.setTransform(d * s, 0, 0, d * s, d * ox, d * oy);
+    function path(pts, dy) {
+      g.beginPath();
+      g.moveTo(pts[0][0], pts[0][1] + (dy || 0));
+      for (var i = 1; i < pts.length; i++) g.lineTo(pts[i][0], pts[i][1] + (dy || 0));
+      g.closePath();
+    }
+    H.lands.forEach(function (L) {
+      g.fillStyle = T.earth[1];
+      path(L.inner, 26);
+      g.fill();
+      g.fillStyle = T.side;
+      path(L.poly, 10);
+      g.fill();
+    });
+    H.lands.forEach(function (L) {
+      g.fillStyle = T.grass;
+      path(L.poly);
+      g.fill();
+    });
+    g.strokeStyle = '#FFF2E0';
+    g.lineWidth = 7;
+    g.lineCap = 'round';
+    g.lineJoin = 'round';
+    (H.rails || []).forEach(function (line) {
+      g.beginPath();
+      g.moveTo(line[0][0], line[0][1]);
+      for (var i = 1; i < line.length; i++) g.lineTo(line[i][0], line[i][1]);
+      g.stroke();
+    });
+    g.fillStyle = '#2B1D14';
+    g.beginPath();
+    g.arc(H.cup[0], H.cup[1], 14, 0, Math.PI * 2);
+    g.fill();
+    g.fillStyle = '#F97316';
+    g.beginPath();
+    g.moveTo(H.cup[0], H.cup[1] - 60);
+    g.lineTo(H.cup[0] + 34, H.cup[1] - 48);
+    g.lineTo(H.cup[0], H.cup[1] - 36);
+    g.fill();
+    g.strokeStyle = '#FFFFFF';
+    g.lineWidth = 5;
+    g.beginPath();
+    g.moveTo(H.cup[0], H.cup[1]);
+    g.lineTo(H.cup[0], H.cup[1] - 60);
+    g.stroke();
+    g.fillStyle = '#FFFFFF';
+    g.strokeStyle = '#8F8A84';
+    g.lineWidth = 3;
+    g.beginPath();
+    g.arc(H.tee[0], H.tee[1], 11, 0, Math.PI * 2);
+    g.fill();
+    g.stroke();
   }
 
   /* ─────────────────────────────────────────────────────────────
@@ -207,7 +289,8 @@
 
   function updateHud() {
     var H = HOLES[G.hole];
-    $('hudTitle').textContent = '第 ' + H.id + ' 洞・' + H.name;
+    $('hudNo').textContent = H.id;
+    $('hudTitle').innerHTML = '<span class="sr-only">第 ' + H.id + ' 洞・</span>' + H.name;
     $('hudPar').textContent = '標準桿 ' + H.par;
     $('hudStrokes').textContent = G.strokes;
     $('hudTotal').textContent = '總共 ' + (total() + (G.phase === 'done' ? 0 : G.strokes)) + ' 桿';
@@ -271,7 +354,8 @@
     fit();
     updateHud();
 
-    $('bannerNo').textContent = '第 ' + H.id + ' 洞';
+    $('bannerNo').textContent = H.id;
+    $('bannerKicker').textContent = '第 ' + H.id + ' 洞';
     $('bannerName').textContent = H.name;
     $('bannerPar').textContent = '標準桿 ' + H.par;
     $('bannerTip').textContent = H.tip;
@@ -505,10 +589,11 @@
      直式：螢幕 = 世界 × s + 位移。
      橫式：轉 90 度（世界往上 = 螢幕往右），世界 +x = 螢幕往下。
      V.dn = 螢幕「往下」在世界裡的方向（畫土塊、把球抬高都用它）。
+     球場鋪滿整個畫面；上面留給 HUD、下面留給提示，小島不會被蓋住。
      ───────────────────────────────────────────────────────────── */
 
   var V = { w: 0, h: 0, dpr: 1, s: 1, rot: false, ox: 0, oy: 0, dn: [0, 1], key: '' };
-  var layers = { cliff: document.createElement('canvas'), top: document.createElement('canvas'), ok: false };
+  var layers = { under: document.createElement('canvas'), top: document.createElement('canvas'), ok: false };
 
   function fit() {
     if (views.play.hidden || !G.W) return;
@@ -516,7 +601,10 @@
     if (!w || !h) return;
     var dpr = Math.min(window.devicePixelRatio || 1, 2);
     var rot = w > h * 1.1;
-    var key = [w, h, dpr, rot, G.hole].join('|');
+    var hud = $('hud').getBoundingClientRect(), st = stage.getBoundingClientRect();
+    var top = Math.max(0, hud.bottom - st.top) + 6;
+    var bottom = rot ? 10 : 58;
+    var key = [w, h, dpr, rot, top, G.hole].join('|');
     if (key === V.key) return;
     V.key = key;
     V.w = w; V.h = h; V.dpr = dpr; V.rot = rot;
@@ -531,19 +619,20 @@
       x0 = Math.min(x0, b[0]); y0 = Math.min(y0, b[1]);
       x1 = Math.max(x1, b[0] + b[2]); y1 = Math.max(y1, b[1] + b[3]);
     });
-    var side = 12, up = 30, down = CLIFF + 14;
+    var side = 12, up = 34, down = CLIFF + 12;
+    var aw = w, ah = h - top - bottom, cy0 = top;
     if (!rot) {
       var cw = x1 - x0 + side * 2, ch = y1 - y0 + up + down;
-      V.s = Math.min(w / cw, h / ch);
-      V.ox = w / 2 - V.s * (x0 + x1) / 2;
-      V.oy = h / 2 - V.s * ((y0 - up) + (y1 + down)) / 2;
+      V.s = Math.min(aw / cw, ah / ch);
+      V.ox = aw / 2 - V.s * (x0 + x1) / 2;
+      V.oy = cy0 + ah / 2 - V.s * ((y0 - up) + (y1 + down)) / 2;
     } else {
       var lw = y1 - y0 + side * 2, lh = x1 - x0 + up + down;
-      V.s = Math.min(w / lw, h / lh);
-      V.ox = w / 2 + V.s * (y0 + y1) / 2;
-      V.oy = h / 2 - V.s * ((x0 - up) + (x1 + down)) / 2;
+      V.s = Math.min(aw / lw, ah / lh);
+      V.ox = aw / 2 + V.s * (y0 + y1) / 2;
+      V.oy = cy0 + ah / 2 - V.s * ((x0 - up) + (x1 + down)) / 2;
     }
-    initClouds();
+    initSky();
     buildLayers();
     G.pvKey = '';
   }
@@ -574,6 +663,7 @@
 
   /* 世界裡的一點抬高 z（往螢幕上方） */
   function lift(x, y, z) { return [x - V.dn[0] * z, y - V.dn[1] * z]; }
+  function drop(p, k) { return [p[0] + V.dn[0] * k, p[1] + V.dn[1] * k]; }
 
   function polyPath(g, pts, dx, dy) {
     dx = dx || 0; dy = dy || 0;
@@ -582,49 +672,63 @@
     g.closePath();
   }
 
-  /* 圓角長方形（和 holes.js 一樣的取點方式，點數相同，土塊才接得起來） */
-  function rrPts(x, y, w, h, r) {
-    var pts = [];
-    r = Math.max(2, Math.min(r, w / 2, h / 2));
-    [[x + w - r, y + r, -Math.PI / 2], [x + w - r, y + h - r, 0], [x + r, y + h - r, Math.PI / 2], [x + r, y + r, Math.PI]]
-      .forEach(function (c) {
-        for (var k = 0; k <= 6; k++) {
-          var a = c[2] + k / 6 * Math.PI / 2;
-          pts.push([c[0] + Math.cos(a) * r, c[1] + Math.sin(a) * r]);
-        }
-      });
-    return pts;
+  function linePath(g, pts, dx, dy) {
+    dx = dx || 0; dy = dy || 0;
+    g.moveTo(pts[0][0] + dx, pts[0][1] + dy);
+    for (var i = 1; i < pts.length; i++) g.lineTo(pts[i][0] + dx, pts[i][1] + dy);
   }
 
-  /* ─────────────────────────────────────────────────────────────
-     不會動的部分：先畫在兩張底圖上（土塊一張、草地＋欄杆一張），
-     中間夾木橋：木橋蓋在土塊上面、兩端塞在草地下面。
-     ───────────────────────────────────────────────────────────── */
+  function mix(a, b, k) {
+    return a.map(function (p, i) { return [p[0] + (b[i][0] - p[0]) * k, p[1] + (b[i][1] - p[1]) * k]; });
+  }
 
   function seeded(n) {
     var x = Math.sin(n * 127.1 + G.hole * 311.7) * 43758.5453;
     return x - Math.floor(x);
   }
 
+  /* ─────────────────────────────────────────────────────────────
+     不會動的部分：先畫在兩張底圖上（影子＋土塊一張、草地＋欄杆一張），
+     中間夾木橋：木橋蓋在土塊上面、兩端塞在草地下面。
+     黏土風：厚厚的圓角、亮邊、軟軟的影子。
+     ───────────────────────────────────────────────────────────── */
+
   function buildLayers() {
     var H = G.W.hole, T = THEME[H.id];
-    [layers.cliff, layers.top].forEach(function (c) {
+    [layers.under, layers.top].forEach(function (c) {
       c.width = cv.width;
       c.height = cv.height;
     });
 
-    /* ── 土塊：從草地邊緣往下收窄的一塊 ── */
-    var g = layers.cliff.getContext('2d');
+    /* ── 影子和土塊 ── */
+    var g = layers.under.getContext('2d');
     g.setTransform(1, 0, 0, 1, 0, 0);
     g.clearRect(0, 0, cv.width, cv.height);
     worldTf(g);
     H.lands.forEach(function (L) {
-      var b = L.box, top = L.poly, ins = 16;
-      var bot = rrPts(b[0] + ins, b[1] + ins, b[2] - ins * 2, b[3] - ins * 2, b[4] - ins)
-        .map(function (p) { return [p[0] + V.dn[0] * CLIFF, p[1] + V.dn[1] * CLIFF]; });
-      var cx = b[0] + b[2] / 2, cy = b[1] + b[3] / 2;
-      var far = V.rot ? b[0] + b[2] : b[1] + b[3];
-      var gr = V.rot ? g.createLinearGradient(far - 20, cy, far + CLIFF, cy) : g.createLinearGradient(cx, far - 20, cx, far + CLIFF);
+      /* 飄在空中：下面遠遠的地方有一團淡淡的影子 */
+      var b = L.box, cx = b[0] + b[2] / 2, cy = b[1] + b[3] / 2;
+      var sc = drop([cx, cy], (V.rot ? b[2] : b[3]) / 2 + CLIFF + 34);
+      var lat = (V.rot ? b[3] : b[2]) * 0.45;
+      /* 邊緣淡出的橢圓：先畫一個半徑 1 的圓，再壓扁 */
+      g.save();
+      g.translate(sc[0], sc[1]);
+      if (V.rot) g.scale(10, lat); else g.scale(lat, 10);
+      var sg = g.createRadialGradient(0, 0, 0, 0, 0, 1);
+      sg.addColorStop(0, 'rgba(70, 90, 140, .16)');
+      sg.addColorStop(1, 'rgba(70, 90, 140, 0)');
+      g.fillStyle = sg;
+      g.beginPath();
+      g.arc(0, 0, 1, 0, Math.PI * 2);
+      g.fill();
+      g.restore();
+    });
+    H.lands.forEach(function (L) {
+      var top = L.poly, bot = L.inner.map(function (p) { return drop(p, CLIFF); });
+      var b = L.box, far = V.rot ? b[0] + b[2] : b[1] + b[3];
+      var gr = V.rot
+        ? g.createLinearGradient(far - 30, 0, far + CLIFF, 0)
+        : g.createLinearGradient(0, far - 30, 0, far + CLIFF);
       gr.addColorStop(0, T.earth[0]);
       gr.addColorStop(1, T.earth[1]);
       g.fillStyle = gr;
@@ -638,17 +742,27 @@
       g.beginPath();
       polyPath(g, bot);
       g.fill();
-      /* 土裡的石頭紋（只放在土塊收窄後的範圍裡） */
-      g.fillStyle = 'rgba(80, 50, 30, .18)';
-      for (var k = 0; k < 6; k++) {
-        var u = seeded(k + b[0]), v = seeded(k * 3 + b[1]);
-        var px, py;
-        if (V.rot) { px = far + 5 + v * 9; py = b[1] + 34 + u * (b[3] - 68); }
-        else { px = b[0] + 34 + u * (b[2] - 68); py = far + 5 + v * 9; }
+      /* 土裡的兩條地層線、幾顆石頭 */
+      g.lineJoin = 'round';
+      [0.4, 0.72].forEach(function (k, n) {
+        var mid = mix(top, L.inner, k).map(function (p) { return drop(p, CLIFF * k); });
+        g.strokeStyle = n ? 'rgba(90, 55, 30, .22)' : 'rgba(255, 235, 205, .35)';
+        g.lineWidth = n ? 2 : 2.5;
         g.beginPath();
-        g.ellipse(px, py, 5 + u * 4, 2.5 + v * 2, 0, 0, Math.PI * 2);
-        g.fill();
-      }
+        polyPath(g, mid);
+        g.stroke();
+        if (n) return;
+        g.fillStyle = 'rgba(255, 240, 220, .45)';
+        for (var s = 0; s < mid.length; s += 5) {
+          var p = mid[s], q = mid[(s + 1) % mid.length];
+          var nx = q[1] - p[1], ny = -(q[0] - p[0]);
+          if (nx * V.dn[0] + ny * V.dn[1] <= 0 || seeded(s + b[0]) < 0.45) continue;
+          var c = drop(p, 7 + seeded(s * 3) * 6);
+          g.beginPath();
+          g.ellipse(c[0], c[1], 3 + seeded(s) * 2.5, 2 + seeded(s + 9) * 1.5, 0, 0, Math.PI * 2);
+          g.fill();
+        }
+      });
       /* 草地的側面（一點點厚度） */
       g.fillStyle = T.side;
       g.beginPath();
@@ -670,67 +784,71 @@
       g.fill();
       g.clip();
       g.fillStyle = T.stripe;
-      for (var y = b[1]; y < b[1] + b[3]; y += 40) g.fillRect(b[0] - 2, y, b[2] + 4, 20);
-      g.strokeStyle = T.rim;
-      g.lineWidth = 6;
+      for (var y = Math.floor(b[1] / 44) * 44; y < b[1] + b[3]; y += 44) g.fillRect(b[0] - 2, y, b[2] + 4, 22);
+      /* 黏土的亮邊：內側一圈淡白 */
+      g.strokeStyle = 'rgba(255, 255, 255, .42)';
+      g.lineWidth = 10;
+      g.lineJoin = 'round';
       g.beginPath();
       polyPath(g, L.poly);
       g.stroke();
-      /* 小花 */
-      for (var k = 0; k < 6; k++) {
-        var fx = b[0] + 18 + seeded(k * 7 + b[0]) * (b[2] - 36);
-        var fy = b[1] + 18 + seeded(k * 13 + b[1]) * (b[3] - 36);
+      for (var k = 0; k < 7; k++) {
+        var fx = b[0] + 20 + seeded(k * 7 + b[0]) * (b[2] - 40);
+        var fy = b[1] + 20 + seeded(k * 13 + b[1]) * (b[3] - 40);
+        if (!P.inPoly(L.inner, fx, fy)) continue;
         if (Math.hypot(fx - H.cup[0], fy - H.cup[1]) < 40 || Math.hypot(fx - H.tee[0], fy - H.tee[1]) < 30) continue;
-        flower(g, fx, fy, k % 2 ? '#FDE68A' : '#FBCFE8');
+        flower(g, fx, fy, k % 3 === 0 ? '#FDE68A' : k % 3 === 1 ? '#FBCFE8' : '#FFFFFF');
       }
       g.restore();
     });
 
-    (H.slopes || []).forEach(function (S) {
-      /* 隧道裡的斜坡：箭頭往出口 */
-      g.fillStyle = 'rgba(60, 40, 20, .12)';
-      g.fillRect(S.x, S.y, S.w, S.h);
-    });
-
     G.W.ramps.forEach(function (R) { drawRamp(g, R); });
 
-    /* 發球台 */
-    g.fillStyle = 'rgba(46, 90, 30, .22)';
+    /* 發球台：一塊比較深的草皮，兩邊各一顆白色記號 */
+    var tw = 17, tv = V.rot ? [0, 1] : [1, 0];
+    g.fillStyle = 'rgba(46, 100, 30, .2)';
     g.beginPath();
-    g.ellipse(H.tee[0], H.tee[1], 17, 17, 0, 0, Math.PI * 2);
+    g.ellipse(H.tee[0], H.tee[1], 19, 19, 0, 0, Math.PI * 2);
     g.fill();
-    g.fillStyle = '#FFFFFF';
-    [-11, 11].forEach(function (d) {
+    [-1, 1].forEach(function (d) {
+      var mx = H.tee[0] + tv[0] * tw * d, my = H.tee[1] + tv[1] * tw * d;
+      g.fillStyle = '#FFFFFF';
+      g.strokeStyle = 'rgba(60, 90, 40, .45)';
+      g.lineWidth = 1;
       g.beginPath();
-      if (V.rot) g.arc(H.tee[0] + d * 0, H.tee[1] + d, 2.4, 0, Math.PI * 2);
-      else g.arc(H.tee[0] + d, H.tee[1], 2.4, 0, Math.PI * 2);
+      g.arc(mx, my, 3, 0, Math.PI * 2);
       g.fill();
+      g.stroke();
     });
 
-    /* 球洞：洞口一圈淺色，裡面深色 */
-    g.fillStyle = '#B5E08E';
+    /* 球洞：一圈淺色的果嶺，中間深色的洞 */
+    g.fillStyle = 'rgba(255, 255, 255, .28)';
     g.beginPath();
-    g.arc(H.cup[0], H.cup[1], C.CUP_R + 4, 0, Math.PI * 2);
+    g.arc(H.cup[0], H.cup[1], C.CUP_R + 9, 0, Math.PI * 2);
     g.fill();
     g.fillStyle = '#2B1D14';
     g.beginPath();
     g.arc(H.cup[0], H.cup[1], C.CUP_R, 0, Math.PI * 2);
     g.fill();
-    g.fillStyle = 'rgba(0,0,0,.35)';
+    g.fillStyle = 'rgba(0, 0, 0, .35)';
     g.beginPath();
-    g.arc(H.cup[0] + V.dn[0] * 3, H.cup[1] + V.dn[1] * 3, C.CUP_R - 2, 0, Math.PI * 2);
+    g.arc(H.cup[0] + V.dn[0] * 3, H.cup[1] + V.dn[1] * 3, C.CUP_R - 2.5, 0, Math.PI * 2);
     g.fill();
 
-    /* 欄杆：影子、深色外框、淺色木頭 */
+    /* 欄杆：軟軟的黏土條（影子、深色邊、奶油色、上面一道亮光） */
+    g.lineCap = 'round';
+    g.lineJoin = 'round';
     (H.rails || []).forEach(function (line) {
-      g.lineCap = 'round';
-      g.lineJoin = 'round';
-      [[ 'rgba(60, 40, 20, .18)', 8, 2.5 ], [ '#B47A45', 7.5, 0 ], [ '#FFE2B8', 4, 0 ]].forEach(function (st) {
+      [
+        ['rgba(70, 45, 20, .2)', 10, 3.5],
+        ['#D89A5E', 8.5, 0],
+        ['#FFF2E0', 5.5, 0],
+        ['rgba(255, 255, 255, .95)', 1.8, -1.4]
+      ].forEach(function (st) {
         g.strokeStyle = st[0];
         g.lineWidth = st[1];
         g.beginPath();
-        g.moveTo(line[0][0] + V.dn[0] * st[2], line[0][1] + V.dn[1] * st[2]);
-        for (var i = 1; i < line.length; i++) g.lineTo(line[i][0] + V.dn[0] * st[2], line[i][1] + V.dn[1] * st[2]);
+        linePath(g, line, V.dn[0] * st[2], V.dn[1] * st[2]);
         g.stroke();
       });
     });
@@ -760,6 +878,7 @@
     var b0 = [base[0] + px * R.side, base[1] + py * R.side], b1 = [base[0] - px * R.side, base[1] - py * R.side];
     var t0 = [tip[0] + px * R.side, tip[1] + py * R.side], t1 = [tip[0] - px * R.side, tip[1] - py * R.side];
     var T0 = lift(t0[0], t0[1], C.RAMP_TOP), T1 = lift(t1[0], t1[1], C.RAMP_TOP);
+    g.lineJoin = 'round';
     /* 側面 */
     g.fillStyle = '#E07B32';
     [[b0, t0, T0], [b1, t1, T1]].forEach(function (tri) {
@@ -773,7 +892,7 @@
     /* 坡面 */
     var gr = g.createLinearGradient(base[0], base[1], (T0[0] + T1[0]) / 2, (T0[1] + T1[1]) / 2);
     gr.addColorStop(0, '#FDBA74');
-    gr.addColorStop(1, '#FFE7C7');
+    gr.addColorStop(1, '#FFEBD2');
     g.fillStyle = gr;
     g.beginPath();
     polyPath(g, [b0, b1, T1, T0]);
@@ -781,11 +900,17 @@
     g.strokeStyle = '#C2410C';
     g.lineWidth = 1.5;
     g.stroke();
+    /* 坡頂一道亮邊 */
+    g.strokeStyle = 'rgba(255, 255, 255, .9)';
+    g.lineWidth = 2;
+    g.beginPath();
+    g.moveTo(T0[0], T0[1]);
+    g.lineTo(T1[0], T1[1]);
+    g.stroke();
     /* 箭頭 */
     g.strokeStyle = '#FFFFFF';
     g.lineWidth = 4;
     g.lineCap = 'round';
-    g.lineJoin = 'round';
     for (var k = 0; k < 2; k++) {
       var f = 0.3 + k * 0.32, w = R.side * 0.55;
       var c = [base[0] + (tip[0] - base[0]) * f, base[1] + (tip[1] - base[1]) * f];
@@ -799,15 +924,39 @@
   }
 
   /* ─────────────────────────────────────────────────────────────
-     天空和雲
+     天空：漸層、太陽的暖光、遠方的小島剪影、兩層雲
      ───────────────────────────────────────────────────────────── */
 
-  var clouds = [];
-  function initClouds() {
-    clouds = [];
-    for (var i = 0; i < 6; i++) {
-      clouds.push({ x: seeded(i * 5 + 1) * V.w, y: (0.12 + seeded(i * 9 + 2) * 0.8) * V.h, r: 16 + seeded(i * 4 + 3) * 22, v: 4 + seeded(i + 7) * 6 });
+  var sky = { clouds: [], isles: [] };
+  function initSky() {
+    sky.clouds = [];
+    for (var i = 0; i < 7; i++) {
+      var far = i < 3;
+      sky.clouds.push({
+        x: seeded(i * 5 + 1) * V.w, y: (0.1 + seeded(i * 9 + 2) * 0.82) * V.h,
+        r: (far ? 10 : 16) + seeded(i * 4 + 3) * (far ? 10 : 20), v: far ? 3 : 6 + seeded(i + 7) * 5, far: far
+      });
     }
+    sky.isles = [];
+    for (var k = 0; k < 3; k++) {
+      sky.isles.push({ x: (0.12 + k * 0.36 + seeded(k + 20) * 0.1) * V.w, y: (0.22 + seeded(k + 30) * 0.6) * V.h, r: 12 + seeded(k + 40) * 10 });
+    }
+  }
+
+  function cloud(g, c) {
+    var r = c.r;
+    g.fillStyle = c.far ? 'rgba(255, 255, 255, .45)' : 'rgba(255, 255, 255, .8)';
+    g.beginPath();
+    g.ellipse(c.x, c.y, r * 1.7, r * 0.62, 0, 0, Math.PI * 2);
+    g.ellipse(c.x - r * 0.75, c.y - r * 0.25, r * 0.72, r * 0.58, 0, 0, Math.PI * 2);
+    g.ellipse(c.x + r * 0.45, c.y - r * 0.45, r * 0.85, r * 0.7, 0, 0, Math.PI * 2);
+    g.fill();
+    if (c.far) return;
+    /* 雲的下緣：淡淡的藍影，看起來比較軟 */
+    g.fillStyle = 'rgba(160, 185, 225, .22)';
+    g.beginPath();
+    g.ellipse(c.x, c.y + r * 0.22, r * 1.5, r * 0.36, 0, 0, Math.PI * 2);
+    g.fill();
   }
 
   function drawSky(g, dt) {
@@ -818,15 +967,27 @@
     gr.addColorStop(1, T.sky[1]);
     g.fillStyle = gr;
     g.fillRect(0, 0, V.w, V.h);
-    g.fillStyle = 'rgba(255, 255, 255, .7)';
-    clouds.forEach(function (c) {
+    var sr = Math.max(V.w, V.h) * 0.45;
+    var sun = g.createRadialGradient(V.w * 0.85, V.h * 0.08, 0, V.w * 0.85, V.h * 0.08, sr);
+    sun.addColorStop(0, 'rgba(255, 244, 214, .9)');
+    sun.addColorStop(1, 'rgba(255, 244, 214, 0)');
+    g.fillStyle = sun;
+    g.fillRect(0, 0, V.w, V.h);
+    /* 遠方的小島 */
+    g.fillStyle = T.haze;
+    sky.isles.forEach(function (s) {
+      g.beginPath();
+      g.ellipse(s.x, s.y, s.r * 1.6, s.r * 0.42, 0, 0, Math.PI * 2);
+      g.fill();
+      g.beginPath();
+      g.moveTo(s.x - s.r * 1.4, s.y);
+      g.quadraticCurveTo(s.x, s.y + s.r * 1.6, s.x + s.r * 1.4, s.y);
+      g.fill();
+    });
+    sky.clouds.forEach(function (c) {
       if (!reduce) c.x += c.v * dt;
       if (c.x - c.r * 3 > V.w) c.x = -c.r * 3;
-      g.beginPath();
-      g.ellipse(c.x, c.y, c.r * 1.6, c.r * 0.6, 0, 0, Math.PI * 2);
-      g.ellipse(c.x - c.r * 0.7, c.y - c.r * 0.25, c.r * 0.7, c.r * 0.55, 0, 0, Math.PI * 2);
-      g.ellipse(c.x + c.r * 0.5, c.y - c.r * 0.4, c.r * 0.8, c.r * 0.65, 0, 0, Math.PI * 2);
-      g.fill();
+      cloud(g, c);
     });
   }
 
@@ -835,64 +996,82 @@
      ───────────────────────────────────────────────────────────── */
 
   function drawBridges(g) {
-    var bridges = G.W.hole.bridges || [];
-    bridges.forEach(function (B) {
+    (G.W.hole.bridges || []).forEach(function (B) {
       var o = P.bridgeOff(B, G.t), x = B.x + o.x, y = B.y + o.y;
+      var rect = [[x, y], [x + B.w, y], [x + B.w, y + B.h], [x, y + B.h]];
+      g.lineJoin = 'round';
       /* 木橋的厚度 */
       g.fillStyle = '#9A6436';
-      g.fillRect(x + V.dn[0] * 6, y + V.dn[1] * 6, B.w, B.h);
-      g.fillStyle = '#E7B47A';
-      g.fillRect(x, y, B.w, B.h);
+      g.beginPath();
+      polyPath(g, rect, V.dn[0] * 7, V.dn[1] * 7);
+      g.fill();
+      g.fillStyle = '#EBBB82';
+      g.beginPath();
+      polyPath(g, rect);
+      g.fill();
       /* 一片一片的木板 */
-      g.strokeStyle = '#B9824F';
+      g.strokeStyle = '#C08A55';
       g.lineWidth = 1.5;
       g.beginPath();
       var along = B.h >= B.w;
-      for (var k = 12; k < (along ? B.h : B.w); k += 12) {
-        if (along) { g.moveTo(x, y + k); g.lineTo(x + B.w, y + k); }
-        else { g.moveTo(x + k, y); g.lineTo(x + k, y + B.h); }
+      for (var k = 13; k < (along ? B.h : B.w); k += 13) {
+        if (along) { g.moveTo(x + 3, y + k); g.lineTo(x + B.w - 3, y + k); }
+        else { g.moveTo(x + k, y + 3); g.lineTo(x + k, y + B.h - 3); }
       }
       g.stroke();
-      /* 兩邊的繩子 */
-      g.strokeStyle = '#8A5A33';
-      g.lineWidth = 2.5;
-      g.strokeRect(x + 1.5, y, B.w - 3, B.h);
+      /* 兩邊的扶手（黏土條） */
+      g.lineCap = 'round';
+      [[0, 4], [B.w, -4]].forEach(function (s) {
+        var a = along ? [[x + s[0] + s[1], y + 2], [x + s[0] + s[1], y + B.h - 2]] : [[x + 2, y + s[0] + s[1]], [x + B.w - 2, y + s[0] + s[1]]];
+        [['#8A5A33', 6], ['#D9A36A', 3.5]].forEach(function (st) {
+          g.strokeStyle = st[0];
+          g.lineWidth = st[1];
+          g.beginPath();
+          linePath(g, a);
+          g.stroke();
+        });
+      });
     });
   }
 
   function drawPads(g) {
     (G.W.hole.pads || []).forEach(function (Pd, i) {
       var since = G.t - G.padHit[i];
-      var squash = since < 0.35 ? 1 + Math.sin(since / 0.35 * Math.PI) * 0.8 : 0;
-      var h = 6 - squash * 3;
+      var squash = since < 0.35 ? Math.sin(since / 0.35 * Math.PI) : 0;
+      var h = 7 - squash * 4;
       var x = Pd.x, y = Pd.y, w = Pd.w, hh = Pd.h;
+      var base = [[x, y], [x + w, y], [x + w, y + hh], [x, y + hh]];
+      g.lineJoin = 'round';
       /* 彈簧座 */
       g.fillStyle = '#2B6CB0';
       g.beginPath();
-      polyPath(g, [[x, y], [x + w, y], [x + w, y + hh], [x, y + hh]], V.dn[0] * 2, V.dn[1] * 2);
+      polyPath(g, base, V.dn[0] * 2, V.dn[1] * 2);
       g.fill();
       /* 彈簧面（抬高 h） */
-      var c = [[x, y], [x + w, y], [x + w, y + hh], [x, y + hh]].map(function (p) { return lift(p[0], p[1], h); });
-      g.fillStyle = '#7CC7F5';
+      var c = base.map(function (p) { return lift(p[0], p[1], h); });
+      g.fillStyle = '#86CDF7';
       g.beginPath();
       polyPath(g, c);
       g.fill();
       g.strokeStyle = '#1E5A96';
-      g.lineWidth = 1.5;
+      g.lineWidth = 1.8;
+      g.stroke();
+      g.strokeStyle = 'rgba(255, 255, 255, .7)';
+      g.lineWidth = 3;
+      g.beginPath();
+      polyPath(g, mix(c, [lift(x + w / 2, y + hh / 2, h), lift(x + w / 2, y + hh / 2, h), lift(x + w / 2, y + hh / 2, h), lift(x + w / 2, y + hh / 2, h)], 0.18));
       g.stroke();
       /* 往上的箭頭 */
-      var cx = x + w / 2, cy = y + hh / 2, d = Pd.dir, px = -d[1], py = d[0];
-      var m = lift(cx, cy, h);
+      var d = Pd.dir, px = -d[1], py = d[0], m = lift(x + w / 2, y + hh / 2, h);
       g.strokeStyle = '#FFFFFF';
       g.lineWidth = 3.5;
       g.lineCap = 'round';
-      g.lineJoin = 'round';
       for (var k = 0; k < 2; k++) {
-        var o = (k - 0.5) * 9;
+        var off = (k - 0.5) * 9;
         g.beginPath();
-        g.moveTo(m[0] + d[0] * (o - 4) + px * 9, m[1] + d[1] * (o - 4) + py * 9);
-        g.lineTo(m[0] + d[0] * (o + 4), m[1] + d[1] * (o + 4));
-        g.lineTo(m[0] + d[0] * (o - 4) - px * 9, m[1] + d[1] * (o - 4) - py * 9);
+        g.moveTo(m[0] + d[0] * (off - 4) + px * 9, m[1] + d[1] * (off - 4) + py * 9);
+        g.lineTo(m[0] + d[0] * (off + 4), m[1] + d[1] * (off + 4));
+        g.lineTo(m[0] + d[0] * (off - 4) - px * 9, m[1] + d[1] * (off - 4) - py * 9);
         g.stroke();
       }
     });
@@ -904,6 +1083,10 @@
       var flash = clamp(1 - (G.t - G.warpT) / 0.5, 0, 1);
       [Q.a, Q.b].forEach(function (p, idx) {
         var R = C.PORTAL_R;
+        g.fillStyle = 'rgba(76, 29, 149, .25)';
+        g.beginPath();
+        g.arc(p[0] + V.dn[0] * 3, p[1] + V.dn[1] * 3, R + 4, 0, Math.PI * 2);
+        g.fill();
         g.fillStyle = idx === 0 ? '#4C1D95' : '#6D28D9';
         g.beginPath();
         g.arc(p[0], p[1], R + 3, 0, Math.PI * 2);
@@ -917,8 +1100,8 @@
           g.arc(p[0], p[1], R - 3 - k * 3, a, a + 2.2);
           g.stroke();
         }
-        g.strokeStyle = 'rgba(221, 214, 254, ' + (0.6 + flash * 0.4) + ')';
-        g.lineWidth = 2 + flash * 4;
+        g.strokeStyle = 'rgba(237, 233, 254, ' + (0.75 + flash * 0.25) + ')';
+        g.lineWidth = 2.5 + flash * 4;
         g.beginPath();
         g.arc(p[0], p[1], R + 3 + flash * 8, 0, Math.PI * 2);
         g.stroke();
@@ -926,7 +1109,7 @@
           /* 出口：往外的小箭頭 */
           var d = Q.out, px = -d[1], py = d[0], tx = p[0] + d[0] * (R + 12), ty = p[1] + d[1] * (R + 12);
           g.strokeStyle = '#7C3AED';
-          g.lineWidth = 3;
+          g.lineWidth = 3.5;
           g.beginPath();
           g.moveTo(tx - d[0] * 6 + px * 6, ty - d[1] * 6 + py * 6);
           g.lineTo(tx, ty);
@@ -937,21 +1120,27 @@
     });
   }
 
-  /* 蘑菇彈簧：被撞到會鼓一下 */
+  /* 蘑菇彈簧：黏土做的，被撞到會鼓一下 */
   function drawBumpers(g) {
     (G.W.hole.bumpers || []).forEach(function (Bp, i) {
       var since = G.t - G.bump[i];
       var k = since < 0.3 ? 1 + Math.sin(since / 0.3 * Math.PI) * 0.18 : 1;
-      var r = Bp.r * k, top = lift(Bp.x, Bp.y, 7);
-      g.fillStyle = 'rgba(40, 60, 20, .25)';
+      var r = Bp.r * k, top = lift(Bp.x, Bp.y, 8);
+      g.fillStyle = 'rgba(40, 70, 20, .25)';
       g.beginPath();
-      g.arc(Bp.x + V.dn[0] * 2, Bp.y + V.dn[1] * 2, Bp.r, 0, Math.PI * 2);
+      g.ellipse(Bp.x + V.dn[0] * 3, Bp.y + V.dn[1] * 3, Bp.r * 0.95, Bp.r * 0.95, 0, 0, Math.PI * 2);
       g.fill();
-      g.fillStyle = '#FFF7ED';
+      g.fillStyle = '#FFF4E4';
+      g.strokeStyle = '#D9A46C';
+      g.lineWidth = 1.2;
       g.beginPath();
       g.arc(Bp.x, Bp.y, Bp.r * 0.5, 0, Math.PI * 2);
       g.fill();
-      g.fillStyle = '#F87171';
+      g.stroke();
+      var gr = g.createRadialGradient(top[0] - r * 0.35, top[1] - r * 0.4, r * 0.1, top[0], top[1], r);
+      gr.addColorStop(0, '#FCA5A5');
+      gr.addColorStop(1, '#EF4444');
+      g.fillStyle = gr;
       g.beginPath();
       g.arc(top[0], top[1], r, 0, Math.PI * 2);
       g.fill();
@@ -959,7 +1148,7 @@
       g.lineWidth = 1.5;
       g.stroke();
       g.fillStyle = '#FFFFFF';
-      [[-0.4, -0.3, 0.22], [0.35, -0.15, 0.18], [0, 0.4, 0.2]].forEach(function (s) {
+      [[-0.42, -0.25, 0.22], [0.38, -0.12, 0.18], [0.02, 0.42, 0.2]].forEach(function (s) {
         g.beginPath();
         g.arc(top[0] + s[0] * r, top[1] + s[1] * r, s[2] * r, 0, Math.PI * 2);
         g.fill();
@@ -967,137 +1156,46 @@
     });
   }
 
-  /* 風車屋：牆、屋頂（世界座標），葉片是立著的（螢幕座標） */
-  function windmillBox(M) {
-    return { x0: M.x - M.w / 2, y0: M.y - M.h / 2, x1: M.x + M.w / 2, y1: M.y + M.h / 2 };
-  }
-
-  function drawWindmillHouse(g, M) {
-    var b = windmillBox(M), HB = 30, RIDGE = 20;
-    var corners = [[b.x0, b.y0], [b.x1, b.y0], [b.x1, b.y1], [b.x0, b.y1]];
-    /* 看得到的牆：朝向螢幕下方的那面 */
-    for (var i = 0; i < 4; i++) {
-      var p = corners[i], q = corners[(i + 1) % 4];
-      var nx = q[1] - p[1], ny = -(q[0] - p[0]);
-      if (nx * V.dn[0] + ny * V.dn[1] <= 0) continue;
-      g.fillStyle = '#FFF1DC';
-      g.beginPath();
-      polyPath(g, [p, q, lift(q[0], q[1], HB), lift(p[0], p[1], HB)]);
-      g.fill();
-      g.strokeStyle = '#B98353';
-      g.lineWidth = 1.5;
-      g.stroke();
-    }
-    /* 門口（直式時看得到） */
-    if (!V.rot) {
-      var dl = M.x - M.door / 2, dr = M.x + M.door / 2, fy = b.y1;
-      g.fillStyle = '#4A2E1E';
-      g.beginPath();
-      g.moveTo(dl, fy);
-      g.lineTo(dl, fy - 14);
-      g.quadraticCurveTo(M.x, fy - 28, dr, fy - 14);
-      g.lineTo(dr, fy);
-      g.closePath();
-      g.fill();
-    }
-    /* 屋頂：中間一條屋脊（沿著 x），兩片斜面 */
-    var a = lift(b.x0, b.y0, HB), bq = lift(b.x1, b.y0, HB), c = lift(b.x1, b.y1, HB), d = lift(b.x0, b.y1, HB);
-    var ry = (b.y0 + b.y1) / 2, r0 = lift(b.x0, ry, HB + RIDGE), r1 = lift(b.x1, ry, HB + RIDGE);
-    g.lineJoin = 'round';
-    g.fillStyle = '#E8763A';
-    g.beginPath();
-    polyPath(g, [a, bq, r1, r0]);
-    g.fill();
-    g.fillStyle = '#F59258';
-    g.beginPath();
-    polyPath(g, [d, c, r1, r0]);
-    g.fill();
-    g.strokeStyle = '#9A3412';
-    g.lineWidth = 1.5;
-    g.beginPath();
-    polyPath(g, [a, bq, r1, c, d, r0]);
-    g.stroke();
-    g.beginPath();
-    g.moveTo(r0[0], r0[1]);
-    g.lineTo(r1[0], r1[1]);
-    g.stroke();
-  }
-
-  function drawSails(g, M) {
-    screenTf(g);
-    var hub = toScreen(M.x, M.y + M.h / 2, M.hubZ), s = V.s, L = M.len * s;
-    var ang = P.bladeAngle(M, G.t);
-    var blocked = P.bladeBlocks(M, G.t);
-    for (var k = 0; k < 4; k++) {
-      var a = ang + k * Math.PI / 2;
-      var ux = -Math.sin(a), uy = Math.cos(a), vx = -uy, vy = ux;
-      var p0 = [hub[0] + ux * L * 0.22, hub[1] + uy * L * 0.22], p1 = [hub[0] + ux * L, hub[1] + uy * L];
-      var w = L * 0.3;
-      g.fillStyle = 'rgba(255, 255, 255, .95)';
-      g.beginPath();
-      g.moveTo(p0[0], p0[1]);
-      g.lineTo(p1[0], p1[1]);
-      g.lineTo(p1[0] + vx * w, p1[1] + vy * w);
-      g.lineTo(p0[0] + vx * w * 0.8, p0[1] + vy * w * 0.8);
-      g.closePath();
-      g.fill();
-      g.strokeStyle = '#8B5E3C';
-      g.lineWidth = Math.max(1, s * 1.2);
-      g.stroke();
-      /* 橘色條紋 */
-      g.strokeStyle = '#F97316';
-      g.lineWidth = Math.max(1.5, s * 2.2);
-      g.beginPath();
-      var m0 = [p0[0] + (p1[0] - p0[0]) * 0.55, p0[1] + (p1[1] - p0[1]) * 0.55];
-      g.moveTo(m0[0], m0[1]);
-      g.lineTo(m0[0] + vx * w * 0.9, m0[1] + vy * w * 0.9);
-      g.stroke();
-      /* 主桿 */
-      g.strokeStyle = '#6B4226';
-      g.lineWidth = Math.max(2, s * 2.6);
-      g.lineCap = 'round';
-      g.beginPath();
-      g.moveTo(hub[0], hub[1]);
-      g.lineTo(p1[0], p1[1]);
-      g.stroke();
-    }
-    g.fillStyle = blocked ? '#C2410C' : '#6B4226';
-    g.beginPath();
-    g.arc(hub[0], hub[1], Math.max(4, s * 5), 0, Math.PI * 2);
-    g.fill();
-    g.fillStyle = '#FDE68A';
-    g.beginPath();
-    g.arc(hub[0], hub[1], Math.max(2, s * 2.2), 0, Math.PI * 2);
-    g.fill();
-  }
-
+  /* 旗子：白色旗桿、頂上一顆小金球，橘色旗面上寫著第幾洞 */
   function drawFlag(g) {
     var H = G.W.hole;
     screenTf(g);
     var base = toScreen(H.cup[0], H.cup[1], 0), s = V.s;
     var top = [base[0], base[1] - FLAG_H * s];
-    /* 球進洞後旗子收起來一點 */
-    g.strokeStyle = '#F8FAFC';
-    g.lineWidth = Math.max(2, 2.4 * s);
     g.lineCap = 'round';
+    g.strokeStyle = 'rgba(60, 40, 20, .35)';
+    g.lineWidth = Math.max(3.5, 3.6 * s);
     g.beginPath();
     g.moveTo(base[0], base[1]);
     g.lineTo(top[0], top[1]);
     g.stroke();
-    g.strokeStyle = 'rgba(0,0,0,.25)';
-    g.lineWidth = 1;
+    g.strokeStyle = '#FFFFFF';
+    g.lineWidth = Math.max(2, 2.2 * s);
     g.stroke();
-    var wave = reduce ? 0 : Math.sin(G.t * 4) * 2.5 * s;
-    var fw = 22 * s, fh = 14 * s;
+    var wave = reduce ? 0 : Math.sin(G.t * 4) * 2 * s;
+    var fw = 26 * s, fh = 18 * s;
     g.fillStyle = '#F97316';
+    g.strokeStyle = '#C2410C';
+    g.lineWidth = Math.max(1.2, 1.4 * s);
+    g.lineJoin = 'round';
     g.beginPath();
     g.moveTo(top[0], top[1]);
     g.quadraticCurveTo(top[0] + fw * 0.5, top[1] + wave, top[0] + fw, top[1] + fh * 0.5 + wave * 0.5);
     g.quadraticCurveTo(top[0] + fw * 0.5, top[1] + fh + wave, top[0], top[1] + fh);
     g.closePath();
     g.fill();
-    g.strokeStyle = '#C2410C';
-    g.lineWidth = Math.max(1, s);
+    g.stroke();
+    g.fillStyle = '#FFFFFF';
+    g.font = '700 ' + Math.round(11 * s) + 'px ' + FONT;
+    g.textAlign = 'center';
+    g.textBaseline = 'middle';
+    g.fillText(String(H.id), top[0] + fw * 0.4, top[1] + fh * 0.52 + wave * 0.4);
+    g.fillStyle = '#FACC15';
+    g.strokeStyle = '#A16207';
+    g.lineWidth = 1;
+    g.beginPath();
+    g.arc(top[0], top[1] - 1.5 * s, Math.max(2.5, 2.8 * s), 0, Math.PI * 2);
+    g.fill();
     g.stroke();
   }
 
@@ -1132,54 +1230,48 @@
     G.trail.forEach(function (p, i) {
       var k = (i + 1) / G.trail.length;
       var q = lift(p[0], p[1], p[2]);
-      g.fillStyle = 'rgba(255, 255, 255, ' + (0.35 * k) + ')';
+      g.fillStyle = 'rgba(255, 255, 255, ' + (0.4 * k) + ')';
       g.beginPath();
-      g.arc(q[0], q[1], r * (0.4 + 0.4 * k), 0, Math.PI * 2);
+      g.arc(q[0], q[1], r * (0.4 + 0.45 * k), 0, Math.PI * 2);
       g.fill();
     });
 
     /* 影子：越高越小越淡 */
     if (b.state !== 'fall') {
       var sh = clamp(1 - z / 120, 0.3, 1);
-      g.fillStyle = 'rgba(30, 50, 20, ' + (0.28 * sh) + ')';
+      g.fillStyle = 'rgba(30, 60, 20, ' + (0.3 * sh) + ')';
       g.beginPath();
-      g.ellipse(b.x + V.dn[0] * 2, b.y + V.dn[1] * 2, r * sh, r * sh * 0.8, 0, 0, Math.PI * 2);
+      g.ellipse(b.x + V.dn[0] * 2.5, b.y + V.dn[1] * 2.5, r * sh, r * sh * 0.85, 0, 0, Math.PI * 2);
       g.fill();
     }
 
-    var c = lift(b.x, b.y, z);
-    var gr = g.createRadialGradient(c[0] - r * 0.35, c[1] - r * 0.45, r * 0.1, c[0], c[1], r * scale);
+    var c = lift(b.x, b.y, z), R = r * scale;
+    var gr = g.createRadialGradient(c[0] - R * 0.35, c[1] - R * 0.45, R * 0.1, c[0], c[1], R);
     gr.addColorStop(0, '#FFFFFF');
-    gr.addColorStop(1, '#E2DED9');
+    gr.addColorStop(0.6, '#F7F4F0');
+    gr.addColorStop(1, '#D9D3CC');
     g.fillStyle = gr;
     g.beginPath();
-    g.arc(c[0], c[1], r * scale, 0, Math.PI * 2);
+    g.arc(c[0], c[1], R, 0, Math.PI * 2);
     g.fill();
     g.strokeStyle = '#8F8A84';
     g.lineWidth = 1.2;
     g.stroke();
+    g.fillStyle = 'rgba(255, 255, 255, .95)';
+    g.beginPath();
+    g.arc(c[0] - R * 0.35, c[1] - R * 0.38, R * 0.25, 0, Math.PI * 2);
+    g.fill();
     g.globalAlpha = 1;
 
     /* 等你打的時候：球旁邊有一圈在呼吸，比較好找 */
     if (canAim() && !G.aim) {
       var pulse = reduce ? 0.5 : (Math.sin(G.idle * 4) + 1) / 2;
-      g.strokeStyle = 'rgba(255, 255, 255, ' + (0.55 + pulse * 0.4) + ')';
-      g.lineWidth = 2.5;
+      g.strokeStyle = 'rgba(255, 255, 255, ' + (0.6 + pulse * 0.35) + ')';
+      g.lineWidth = 3;
       g.beginPath();
-      g.arc(c[0], c[1], r + 5 + pulse * 3, 0, Math.PI * 2);
+      g.arc(c[0], c[1], r + 6 + pulse * 3, 0, Math.PI * 2);
       g.stroke();
     }
-  }
-
-  /* 球在風車屋下面或後面：先畫球，屋子蓋上去 */
-  function ballBehindHouse() {
-    var M = G.W.windmill, b = G.ball;
-    if (!M) return false;
-    var bx = windmillBox(M);
-    var front = Math.max(bx.x0 * V.dn[0] + bx.y0 * V.dn[1], bx.x1 * V.dn[0] + bx.y1 * V.dn[1]);
-    var depth = b.x * V.dn[0] + b.y * V.dn[1];
-    var lat = V.rot ? b.y : b.x, lo = V.rot ? bx.y0 : bx.x0, hi = V.rot ? bx.y1 : bx.x1;
-    return depth < front + 2 && lat > lo - C.BALL_R && lat < hi + C.BALL_R && depth > front - 140;
   }
 
   /* ─────────────────────────────────────────────────────────────
@@ -1211,61 +1303,66 @@
     worldTf(g);
     var pts = G.pv.pts, n = pts.length;
     /* 小白點：越遠越淡 */
-    for (var i = 2; i < n; i += 3) {
+    for (var i = 3; i < n; i += 3) {
       var k = 1 - i / n;
-      g.fillStyle = 'rgba(255, 255, 255, ' + (0.25 + 0.7 * k) + ')';
+      g.fillStyle = 'rgba(40, 60, 30, ' + (0.12 + 0.18 * k) + ')';
       g.beginPath();
-      g.arc(pts[i][0], pts[i][1], 2.6, 0, Math.PI * 2);
+      g.arc(pts[i][0] + V.dn[0] * 1.2, pts[i][1] + V.dn[1] * 1.2, 3.1, 0, Math.PI * 2);
       g.fill();
-      g.strokeStyle = 'rgba(60, 40, 20, ' + (0.15 + 0.3 * k) + ')';
-      g.lineWidth = 0.8;
-      g.stroke();
+      g.fillStyle = 'rgba(255, 255, 255, ' + (0.35 + 0.65 * k) + ')';
+      g.beginPath();
+      g.arc(pts[i][0], pts[i][1], 3, 0, Math.PI * 2);
+      g.fill();
     }
     var end = pts[n - 1];
+    g.lineCap = 'round';
     if (G.pv.end === 'fall') {
       /* 會掉下去：紅色叉叉 */
-      g.strokeStyle = '#DC2626';
-      g.lineWidth = 3;
-      g.lineCap = 'round';
-      g.beginPath();
-      g.moveTo(end[0] - 5, end[1] - 5); g.lineTo(end[0] + 5, end[1] + 5);
-      g.moveTo(end[0] + 5, end[1] - 5); g.lineTo(end[0] - 5, end[1] + 5);
-      g.stroke();
+      [['#FFFFFF', 5.5], ['#DC2626', 3]].forEach(function (st) {
+        g.strokeStyle = st[0];
+        g.lineWidth = st[1];
+        g.beginPath();
+        g.moveTo(end[0] - 5, end[1] - 5); g.lineTo(end[0] + 5, end[1] + 5);
+        g.moveTo(end[0] + 5, end[1] - 5); g.lineTo(end[0] - 5, end[1] + 5);
+        g.stroke();
+      });
     } else if (G.pv.end === 'mark' || G.pv.end === 'cup') {
       g.strokeStyle = '#FFFFFF';
-      g.lineWidth = 2.5;
+      g.lineWidth = 3;
       g.beginPath();
-      g.arc(end[0], end[1], 7, 0, Math.PI * 2);
+      g.arc(end[0], end[1], 7.5, 0, Math.PI * 2);
       g.stroke();
     }
 
-    /* 方向箭頭 */
-    var col = powerColor(a.power), L = 20 + a.power * 56, r = C.BALL_R + 3;
+    /* 方向箭頭：粗粗圓圓的黏土條 */
+    var col = powerColor(a.power), L = 20 + a.power * 56, r = C.BALL_R + 4;
     var sx = b.x + a.dx * r, sy = b.y + a.dy * r, ex = b.x + a.dx * (r + L), ey = b.y + a.dy * (r + L);
-    g.lineCap = 'round';
-    g.strokeStyle = 'rgba(41, 37, 36, .55)';
-    g.lineWidth = 8;
-    g.beginPath(); g.moveTo(sx, sy); g.lineTo(ex, ey); g.stroke();
-    g.strokeStyle = col;
-    g.lineWidth = 5;
-    g.beginPath(); g.moveTo(sx, sy); g.lineTo(ex, ey); g.stroke();
     var px = -a.dy, py = a.dx;
-    g.fillStyle = col;
+    var head = [[ex + a.dx * 12, ey + a.dy * 12], [ex + px * 9, ey + py * 9], [ex - px * 9, ey - py * 9]];
+    g.lineJoin = 'round';
     g.strokeStyle = 'rgba(41, 37, 36, .55)';
-    g.lineWidth = 1.5;
+    g.lineWidth = 10;
+    g.beginPath(); g.moveTo(sx, sy); g.lineTo(ex, ey); g.stroke();
+    g.lineWidth = 4;
+    g.fillStyle = 'rgba(41, 37, 36, .55)';
+    g.beginPath(); polyPath(g, head); g.fill(); g.stroke();
+    g.strokeStyle = col;
+    g.lineWidth = 6.5;
+    g.beginPath(); g.moveTo(sx, sy); g.lineTo(ex, ey); g.stroke();
+    g.fillStyle = col;
+    g.beginPath(); polyPath(g, head); g.fill();
+    g.strokeStyle = 'rgba(255, 255, 255, .55)';
+    g.lineWidth = 2;
     g.beginPath();
-    g.moveTo(ex + a.dx * 11, ey + a.dy * 11);
-    g.lineTo(ex + px * 8, ey + py * 8);
-    g.lineTo(ex - px * 8, ey - py * 8);
-    g.closePath();
-    g.fill();
+    g.moveTo(sx + px * 1.3, sy + py * 1.3);
+    g.lineTo(ex + px * 1.3, ey + py * 1.3);
     g.stroke();
 
     /* 後面的「橡皮筋」：拉越遠越長 */
     var back = 6 + a.power * 34;
     g.setLineDash([3, 4]);
-    g.strokeStyle = 'rgba(255, 255, 255, .85)';
-    g.lineWidth = 2;
+    g.strokeStyle = 'rgba(255, 255, 255, .9)';
+    g.lineWidth = 2.5;
     g.beginPath();
     g.moveTo(b.x - a.dx * r, b.y - a.dy * r);
     g.lineTo(b.x - a.dx * (r + back), b.y - a.dy * (r + back));
@@ -1276,9 +1373,11 @@
   /* 第 1 洞的第一桿：一根手指示範「往後拉」 */
   function drawDemo(g) {
     if (G.hole !== 0 || G.strokes !== 0 || !canAim() || G.aim || G.kb || G.idle < 0.8) return;
-    var H = G.W.hole, b = G.ball;
-    var bs = toScreen(b.x, b.y, 0), cs = toScreen(H.cup[0], H.cup[1], 0);
-    var dx = bs[0] - cs[0], dy = bs[1] - cs[1], L = Math.hypot(dx, dy) || 1;
+    var b = G.ball;
+    /* 往球前面那段路的反方向拉（第 1 洞：路先往上走） */
+    var ahead = G.W.hole.tee[1] > G.W.hole.cup[1] ? [0, -1] : [0, 1];
+    var bs = toScreen(b.x, b.y, 0), fs = toScreen(b.x + ahead[0] * 50, b.y + ahead[1] * 50, 0);
+    var dx = bs[0] - fs[0], dy = bs[1] - fs[1], L = Math.hypot(dx, dy) || 1;
     dx /= L; dy /= L;
     var cyc = ((G.idle - 0.8) % 2.4) / 2.4;
     var k = reduce ? 0.7 : clamp((cyc - 0.1) / 0.55, 0, 1);
@@ -1288,18 +1387,18 @@
     screenTf(g);
     g.globalAlpha = alpha;
     g.setLineDash([4, 5]);
-    g.strokeStyle = 'rgba(255,255,255,.9)';
-    g.lineWidth = 2.5;
+    g.strokeStyle = 'rgba(255,255,255,.95)';
+    g.lineWidth = 3;
     g.beginPath();
     g.moveTo(start[0], start[1]);
     g.lineTo(f[0], f[1]);
     g.stroke();
     g.setLineDash([]);
-    g.fillStyle = 'rgba(249, 115, 22, .3)';
+    g.fillStyle = 'rgba(255, 237, 213, .85)';
     g.strokeStyle = '#C2410C';
     g.lineWidth = 3;
     g.beginPath();
-    g.arc(f[0], f[1], 15, 0, Math.PI * 2);
+    g.arc(f[0], f[1], 16, 0, Math.PI * 2);
     g.fill();
     g.stroke();
     g.globalAlpha = 1;
@@ -1350,12 +1449,12 @@
     if (!layers.ok) return;
     drawSky(g, dt);
 
+    /* 從小島後面掉下去的球：要被小島擋住，先畫 */
     var fallBehind = G.ball.state === 'fall' && G.behind;
     if (fallBehind) drawBall(g);
 
-    screenTf(g);
     g.setTransform(1, 0, 0, 1, 0, 0);
-    g.drawImage(layers.cliff, 0, 0);
+    g.drawImage(layers.under, 0, 0);
     worldTf(g);
     drawBridges(g);
     g.setTransform(1, 0, 0, 1, 0, 0);
@@ -1365,18 +1464,7 @@
     drawPortals(g);
     drawPads(g);
     drawBumpers(g);
-
-    var M = G.W.windmill;
-    if (M) {
-      var hide = ballBehindHouse();
-      if (hide && !fallBehind) drawBall(g);
-      worldTf(g);
-      drawWindmillHouse(g, M);
-      if (!hide && !fallBehind) drawBall(g);
-      drawSails(g, M);
-    } else if (!fallBehind) {
-      drawBall(g);
-    }
+    if (!fallBehind) drawBall(g);
     drawFlag(g);
     drawAim(g);
     drawDemo(g);

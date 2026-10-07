@@ -8,6 +8,12 @@
   --grass: #7CC456;
   --grass-deep: #3F7A2A;
   --grass-wash: #EEF8E6;
+  /* 黏土風：上亮下暗的內陰影＋軟軟的外陰影 */
+  --clay-bg: #FFFCF7;
+  --clay-shadow: inset 0 -4px 0 rgba(124, 45, 18, .07), inset 0 2px 0 rgba(255, 255, 255, .9),
+    0 4px 0 rgba(124, 45, 18, .08), 0 10px 22px -8px rgba(60, 50, 90, .35);
+  --clay-shadow-pressed: inset 0 -2px 0 rgba(124, 45, 18, .07), 0 1px 0 rgba(124, 45, 18, .08),
+    0 4px 10px -6px rgba(60, 50, 90, .35);
 }
 
 /* ═══ 球場介紹 ═══════════════════════════════════════════════════ */
@@ -138,24 +144,45 @@
 
 .hole-item {
   display: grid;
-  grid-template-columns: 52px 1fr auto;
+  grid-template-columns: 64px 1fr auto;
   align-items: center;
   gap: var(--sp-3);
-  padding: var(--sp-3) var(--sp-4) var(--sp-3) var(--sp-3);
+  padding: var(--sp-2) var(--sp-4) var(--sp-2) var(--sp-2);
   border-radius: var(--r-lg);
   background: var(--card);
   box-shadow: var(--sh-sm);
 }
 
+/* 球洞小地圖，左上角疊一顆洞號 */
+.hole-map {
+  position: relative;
+  display: block;
+  width: 64px;
+  height: 92px;
+}
+
+.hole-thumb {
+  display: block;
+  width: 64px;
+  height: 92px;
+  border-radius: var(--r-md);
+  box-shadow: inset 0 0 0 1px rgba(124, 45, 18, .08);
+}
+
 .hole-num {
+  position: absolute;
+  left: -4px;
+  top: -4px;
   display: grid;
   place-items: center;
-  width: 52px;
-  height: 52px;
-  border-radius: var(--r-md);
-  background: var(--hole-bg, var(--grass-wash));
-  color: var(--grass-deep);
-  font: 700 1.4rem/1 var(--font-num);
+  width: 26px;
+  height: 26px;
+  border: 2px solid #FFFFFF;
+  border-radius: 50%;
+  background: radial-gradient(circle at 35% 30%, #8EDB66, #3F8A2A);
+  color: #FFFFFF;
+  font: 700 .85rem/1 var(--font-num);
+  box-shadow: 0 2px 4px rgba(40, 90, 20, .3);
 }
 
 .hole-text {
@@ -253,16 +280,12 @@ body.is-playing .topbar {
   display: none;
 }
 
+/* 球場鋪滿整個畫面；HUD、提示都浮在上面 */
 .golf-play {
-  display: flex;
-  flex-direction: column;
-  gap: var(--sp-2);
-  height: 100vh;
-  height: 100dvh;
-  max-width: 72rem;
-  margin-inline: auto;
-  padding: calc(var(--sp-2) + env(safe-area-inset-top)) max(var(--sp-3), env(safe-area-inset-right))
-    calc(var(--sp-3) + env(safe-area-inset-bottom)) max(var(--sp-3), env(safe-area-inset-left));
+  position: fixed;
+  inset: 0;
+  z-index: 1;
+  background: #CBE7FB;
   -webkit-user-select: none;
   user-select: none;
   -webkit-touch-callout: none;
@@ -272,25 +295,61 @@ body.is-playing .topbar {
   display: none;
 }
 
+.stage {
+  position: absolute;
+  inset: 0;
+  touch-action: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.stage-canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+  outline: none;
+}
+
+/* 用鍵盤操作時才看得到外框（畫在畫面內側，不會被切掉） */
+.stage-canvas:focus-visible {
+  box-shadow: inset 0 0 0 3px var(--primary-deep);
+}
+
+/* ── 黏土小卡：厚白邊、上亮下暗的內陰影、軟軟的外陰影 ── */
+.clay {
+  border: 3px solid #FFFFFF;
+  border-radius: var(--r-lg);
+  background: var(--clay-bg);
+  box-shadow: var(--clay-shadow);
+}
+
+/* ── HUD：暫停｜第幾洞｜桿數 ── */
 .golf-hud {
+  position: absolute;
+  top: calc(var(--sp-2) + env(safe-area-inset-top));
+  left: max(var(--sp-3), env(safe-area-inset-left));
+  right: max(var(--sp-3), env(safe-area-inset-right));
+  z-index: 2;
   display: grid;
-  grid-template-columns: 48px minmax(0, 1fr) auto;
-  align-items: center;
-  gap: var(--sp-3);
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: stretch;
+  gap: var(--sp-2);
+  pointer-events: none;
+}
+
+.golf-hud > * {
+  pointer-events: auto;
 }
 
 .hud-btn {
   display: grid;
   place-items: center;
-  width: 48px;
-  height: 48px;
+  width: 52px;
+  min-height: 52px;
   padding: 0;
-  border: 0;
-  border-radius: 50%;
-  background: var(--card);
-  color: var(--fg);
-  box-shadow: var(--sh-md);
+  border-radius: var(--r-md);
+  color: var(--primary-deep);
   cursor: pointer;
+  transition: transform var(--t-fast) var(--ease), box-shadow var(--t-fast) var(--ease);
 }
 
 .hud-btn svg {
@@ -298,13 +357,36 @@ body.is-playing .topbar {
   height: 22px;
   fill: none;
   stroke: currentColor;
-  stroke-width: 3;
+  stroke-width: 3.2;
   stroke-linecap: round;
 }
 
 .hud-btn:active {
-  transform: translateY(2px);
-  box-shadow: var(--sh-sm);
+  transform: translateY(2px) scale(.97);
+  box-shadow: var(--clay-shadow-pressed);
+}
+
+.hud-hole {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  min-width: 0;
+  padding: 6px var(--sp-3) 6px 6px;
+}
+
+/* 洞號：綠色的黏土圓片 */
+.hud-no {
+  display: grid;
+  flex: 0 0 auto;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 35% 30%, #8EDB66, #3F8A2A);
+  box-shadow: inset 0 -3px 0 rgba(0, 0, 0, .15), inset 0 2px 0 rgba(255, 255, 255, .35);
+  color: #FFFFFF;
+  font: 700 1.15rem/1 var(--font-num);
+  text-shadow: 0 1px 0 rgba(0, 0, 0, .25);
 }
 
 .hud-mid {
@@ -315,7 +397,7 @@ body.is-playing .topbar {
   overflow: hidden;
   font-size: 1rem;
   font-weight: 700;
-  line-height: 1.4;
+  line-height: 1.35;
   white-space: nowrap;
   text-overflow: ellipsis;
 }
@@ -325,19 +407,20 @@ body.is-playing .topbar {
   align-items: center;
   gap: var(--sp-2);
   color: var(--fg-muted);
-  font-size: .85rem;
-  line-height: 1.5;
+  font-size: .82rem;
+  line-height: 1.4;
+  white-space: nowrap;
 }
 
-/* 第幾洞：打完的實心、現在這洞有外框、還沒打的空心（形狀不同，不只靠顏色） */
+/* 第幾洞：打完的實心、現在這洞是長條、還沒打的空心（形狀不同，不只靠顏色） */
 .hud-dots {
   display: inline-flex;
-  gap: 4px;
+  gap: 3px;
 }
 
 .hud-dot {
-  width: 9px;
-  height: 9px;
+  width: 8px;
+  height: 8px;
   border: 2px solid var(--line);
   border-radius: 50%;
 }
@@ -348,7 +431,7 @@ body.is-playing .topbar {
 }
 
 .hud-dot.is-cur {
-  width: 20px;
+  width: 18px;
   border-color: var(--primary-deep);
   border-radius: var(--r-pill);
   background: var(--primary-wash);
@@ -356,43 +439,28 @@ body.is-playing .topbar {
 
 .hud-score {
   display: grid;
-  justify-items: end;
+  align-content: center;
+  justify-items: center;
+  min-width: 64px;
+  padding: 2px var(--sp-3);
   font-family: var(--font-num);
-  line-height: 1.2;
+  line-height: 1.15;
 }
 
 .hud-strokes {
-  font-size: .95rem;
+  font-size: .85rem;
   font-weight: 700;
 }
 
 .hud-strokes b {
-  font-size: 1.6rem;
+  font-size: 1.55rem;
   font-variant-numeric: tabular-nums;
 }
 
 .hud-total {
   color: var(--fg-muted);
-  font-size: .8rem;
-}
-
-/* ── 舞台：整塊都可以拉 ── */
-.stage {
-  position: relative;
-  flex: 1 1 auto;
-  min-height: 0;
-  touch-action: none;
-  -webkit-tap-highlight-color: transparent;
-}
-
-.stage-canvas {
-  display: block;
-  width: 100%;
-  height: 100%;
-  border-radius: var(--r-lg);
-  background: #DCEFFD;
-  box-shadow: var(--sh-md);
-  outline-offset: 3px;
+  font-size: .72rem;
+  white-space: nowrap;
 }
 
 /* ── 每洞開始的看板 ── */
@@ -402,14 +470,12 @@ body.is-playing .topbar {
   top: 50%;
   z-index: 3;
   width: min(19rem, calc(100% - 2 * var(--sp-5)));
-  padding: var(--sp-5) var(--sp-4) var(--sp-4);
+  padding: 34px var(--sp-4) var(--sp-4);
   transform: translate(-50%, -50%);
   border-radius: var(--r-xl);
-  background: rgba(255, 255, 255, .95);
-  box-shadow: var(--sh-lg);
   text-align: center;
   pointer-events: none;
-  animation: banner-in var(--t-base) var(--ease);
+  animation: banner-in 320ms var(--ease);
 }
 
 .hole-banner[hidden] {
@@ -419,13 +485,32 @@ body.is-playing .topbar {
 @keyframes banner-in {
   from {
     opacity: 0;
-    transform: translate(-50%, -46%) scale(.96);
+    transform: translate(-50%, -44%) scale(.94);
   }
 }
 
+/* 大大的洞號，一半凸出卡片上緣 */
 .banner-no {
+  position: absolute;
+  left: 50%;
+  top: -30px;
+  display: grid;
+  place-items: center;
+  width: 60px;
+  height: 60px;
+  transform: translateX(-50%);
+  border: 4px solid #FFFFFF;
+  border-radius: 50%;
+  background: radial-gradient(circle at 35% 30%, #8EDB66, #3F8A2A);
+  box-shadow: 0 6px 14px -4px rgba(40, 90, 20, .45), inset 0 -4px 0 rgba(0, 0, 0, .15);
+  color: #FFFFFF;
+  font: 700 1.9rem/1 var(--font-num);
+  text-shadow: 0 2px 0 rgba(0, 0, 0, .2);
+}
+
+.banner-kicker {
   color: var(--fg-muted);
-  font-size: .9rem;
+  font-size: .85rem;
   font-weight: 700;
 }
 
@@ -447,38 +532,38 @@ body.is-playing .topbar {
 
 .banner-tip {
   margin-top: var(--sp-3);
-  word-break: keep-all;
   color: var(--fg-muted);
   line-height: 1.55;
+  word-break: keep-all;
   text-wrap: balance;
 }
 
+/* 看起來像一顆按鈕：其實點畫面任何地方都可以 */
 .banner-go {
-  margin-top: var(--sp-3);
+  display: inline-block;
+  margin-top: var(--sp-4);
+  padding: var(--sp-1) var(--sp-5);
+  border: 2px solid var(--primary-deep);
+  border-radius: var(--r-pill);
+  background: var(--primary-wash);
+  box-shadow: 0 4px 0 rgba(194, 65, 12, .25);
   color: var(--primary-deep);
   font-weight: 700;
-  animation: go-pulse 1.4s ease-in-out infinite;
-}
-
-@keyframes go-pulse {
-  50% { opacity: .45; }
 }
 
 /* ── 「小鳥！」：進洞時跳出來的大字 ── */
 .score-pop {
   position: absolute;
   left: 50%;
-  top: 38%;
+  top: 40%;
   z-index: 3;
   width: max-content;
   max-width: calc(100% - 2 * var(--sp-4));
-  padding: var(--sp-2) var(--sp-5);
+  padding: var(--sp-2) var(--sp-6);
   transform: translate(-50%, -50%);
   border-radius: var(--r-pill);
-  background: var(--card);
   color: var(--primary-deep);
-  box-shadow: var(--sh-orange);
-  font: 700 1.9rem/1.3 var(--font-num);
+  font: 700 2rem/1.3 var(--font-num);
   text-align: center;
   pointer-events: none;
   animation: pop-in 420ms cubic-bezier(.22, 1, .36, 1);
@@ -495,18 +580,20 @@ body.is-playing .topbar {
   }
 }
 
-/* ── 掉下去、撿球：上方的小提示 ── */
+/* ── 掉下去、撿球：HUD 下面的小提示 ── */
 .golf-toast {
   position: absolute;
   left: 50%;
-  top: var(--sp-3);
+  top: calc(84px + env(safe-area-inset-top));
   z-index: 2;
   width: max-content;
   max-width: calc(100% - 2 * var(--sp-3));
   padding: var(--sp-1) var(--sp-4);
   transform: translateX(-50%);
+  border: 3px solid rgba(255, 255, 255, .9);
   border-radius: var(--r-pill);
-  background: rgba(41, 37, 36, .9);
+  background: #3B2F2A;
+  box-shadow: 0 8px 18px -8px rgba(41, 37, 36, .6);
   color: #fff;
   font-weight: 700;
   line-height: 1.5;
@@ -531,7 +618,7 @@ body.is-playing .topbar {
 .aim-meter {
   position: absolute;
   left: 50%;
-  bottom: var(--sp-3);
+  bottom: calc(var(--sp-3) + env(safe-area-inset-bottom));
   z-index: 2;
   width: max-content;
   max-width: calc(100% - 2 * var(--sp-3));
@@ -541,14 +628,28 @@ body.is-playing .topbar {
 }
 
 .golf-hint {
-  padding: var(--sp-1) var(--sp-4);
-  background: rgba(255, 255, 255, .92);
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  padding: var(--sp-1) var(--sp-4) var(--sp-1) var(--sp-3);
   color: var(--fg);
-  box-shadow: var(--sh-sm);
   font-size: .95rem;
   line-height: 1.5;
-  text-align: center;
-  text-wrap: balance;
+}
+
+.golf-hint b {
+  color: var(--primary-deep);
+}
+
+.hint-icon {
+  flex: 0 0 auto;
+  width: 22px;
+  height: 22px;
+  fill: none;
+  stroke: var(--primary-deep);
+  stroke-width: 2.4;
+  stroke-linecap: round;
+  stroke-linejoin: round;
 }
 
 .golf-hint[hidden],
@@ -556,28 +657,25 @@ body.is-playing .topbar {
   display: none;
 }
 
-.golf-hint b {
-  color: var(--primary-deep);
-}
-
 .aim-meter {
   display: flex;
   align-items: center;
   gap: var(--sp-2);
-  padding: var(--sp-1) var(--sp-3) var(--sp-1) var(--sp-4);
-  background: rgba(41, 37, 36, .9);
-  color: #fff;
+  padding: var(--sp-1) var(--sp-2) var(--sp-1) var(--sp-4);
+  color: var(--fg);
   font-weight: 700;
   line-height: 1.6;
 }
 
+/* 力氣條：凹下去的軌道，裡面是綠→黃→橘→紅 */
 .meter {
   position: relative;
   width: 7.5rem;
-  height: 12px;
+  height: 14px;
   overflow: hidden;
   border-radius: var(--r-pill);
-  background: rgba(255, 255, 255, .22);
+  background: var(--bg-sunk);
+  box-shadow: inset 0 2px 3px rgba(124, 45, 18, .18);
 }
 
 .meter-fill {
@@ -587,14 +685,18 @@ body.is-playing .topbar {
   transform: scaleX(0);
   border-radius: inherit;
   background: linear-gradient(90deg, #22C55E, #FACC15 45%, #F97316 75%, #EF4444);
-  background-size: 7.5rem 100%;
+  box-shadow: inset 0 2px 0 rgba(255, 255, 255, .45);
 }
 
 .meter-pct {
-  min-width: 3.2em;
+  min-width: 3.4em;
+  padding: 0 var(--sp-2);
+  border-radius: var(--r-pill);
+  background: var(--primary-wash);
+  color: var(--primary-deep);
   font-family: var(--font-num);
   font-variant-numeric: tabular-nums;
-  text-align: end;
+  text-align: center;
 }
 
 /* 拉太短：放開就取消 */
@@ -603,8 +705,15 @@ body.is-playing .topbar {
   display: none;
 }
 
+.aim-meter.is-cancel {
+  padding-left: var(--sp-2);
+}
+
 .aim-meter.is-cancel .meter-pct {
   min-width: 0;
+  padding: 0 var(--sp-3);
+  background: var(--bg-sunk);
+  color: var(--fg);
 }
 
 /* ═══ 對話框 ═══════════════════════════════════════════════════ */
@@ -750,29 +859,48 @@ body.is-playing .topbar {
   font-variant-numeric: tabular-nums;
 }
 
+/* 橫式：中間的洞名卡只要內容那麼寬，不要橫跨整個畫面 */
+@media (orientation: landscape) {
+  .hud-hole {
+    justify-self: start;
+    max-width: 100%;
+  }
+}
+
 /* 橫式、矮螢幕：HUD 擠一點，球場盡量大 */
 @media (max-height: 520px) {
-  .golf-play {
-    gap: var(--sp-1);
-    padding-top: calc(var(--sp-1) + env(safe-area-inset-top));
-    padding-bottom: calc(var(--sp-1) + env(safe-area-inset-bottom));
+  .golf-hud {
+    top: calc(var(--sp-1) + env(safe-area-inset-top));
   }
 
   .hud-btn {
-    width: 44px;
-    height: 44px;
+    width: 46px;
+    min-height: 46px;
   }
 
-  .golf-hud {
-    grid-template-columns: 44px minmax(0, 1fr) auto;
+  .hud-no {
+    width: 30px;
+    height: 30px;
+    font-size: 1rem;
   }
 
   .hud-strokes b {
     font-size: 1.3rem;
   }
 
+  .golf-toast {
+    top: calc(66px + env(safe-area-inset-top));
+  }
+
   .hole-banner {
-    padding: var(--sp-3) var(--sp-4);
+    padding: 26px var(--sp-4) var(--sp-3);
+  }
+
+  .banner-no {
+    top: -24px;
+    width: 48px;
+    height: 48px;
+    font-size: 1.5rem;
   }
 
   .banner-name {
@@ -780,11 +908,16 @@ body.is-playing .topbar {
   }
 
   .banner-tip {
-    margin-top: var(--sp-2);
+    margin-top: var(--sp-1);
   }
 
   .banner-go {
     margin-top: var(--sp-2);
+  }
+
+  .golf-hint,
+  .aim-meter {
+    bottom: calc(var(--sp-2) + env(safe-area-inset-bottom));
   }
 }
 
@@ -797,7 +930,6 @@ body.is-playing .topbar {
   .how-finger,
   .how-go .how-ball,
   .how-drop .how-ball,
-  .banner-go,
   .hole-banner,
   .score-pop,
   .golf-toast {

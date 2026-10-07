@@ -67,45 +67,52 @@
       <ol class="round-list" id="roundList"></ol>
     </section>
 
-    <!-- ══════════ 打球中 ══════════ -->
+    <!-- ══════════ 打球中：球場鋪滿整個畫面，HUD 是浮在天空上的黏土小卡 ══════════ -->
     <section class="golf-play" id="playView" hidden aria-labelledby="hudTitle">
-      <div class="golf-hud">
-        <button class="hud-btn" type="button" id="pauseBtn" aria-label="暫停">
-          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6v12M15 6v12" /></svg>
-        </button>
-        <div class="hud-mid">
-          <h1 class="hud-title" id="hudTitle">第 1 洞・轉轉風車</h1>
-          <p class="hud-sub"><span id="hudPar">標準桿 3</span><span class="hud-dots" id="hudDots" aria-hidden="true"></span></p>
-        </div>
-        <p class="hud-score" aria-live="off">
-          <span class="hud-strokes"><b id="hudStrokes">0</b> 桿</span>
-          <span class="hud-total" id="hudTotal">總共 0 桿</span>
-        </p>
-      </div>
-
       <!-- 整塊都可以拉：手指放在哪裡都行，不用剛好按在球上 -->
       <div class="stage" id="stage">
         <canvas class="stage-canvas" id="stageCanvas" tabindex="0" role="img"
           aria-label="球場畫面。往後拉再放開就能打球；鍵盤：左右鍵瞄準、上下鍵調力氣、空白鍵打球，Esc 暫停"></canvas>
 
+        <div class="golf-hud" id="hud">
+          <button class="hud-btn clay" type="button" id="pauseBtn" aria-label="暫停">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6v12M15 6v12" /></svg>
+          </button>
+          <div class="hud-hole clay">
+            <span class="hud-no" id="hudNo" aria-hidden="true">1</span>
+            <div class="hud-mid">
+              <h1 class="hud-title" id="hudTitle">彎彎小路</h1>
+              <p class="hud-sub"><span id="hudPar">標準桿 3</span><span class="hud-dots" id="hudDots" aria-hidden="true"></span></p>
+            </div>
+          </div>
+          <p class="hud-score clay">
+            <span class="hud-strokes"><b id="hudStrokes">0</b> 桿</span>
+            <span class="hud-total" id="hudTotal">總共 0 桿</span>
+          </p>
+        </div>
+
         <!-- 每一洞開始：洞名、標準桿、小提示（點一下就收起來） -->
-        <div class="hole-banner" id="banner" hidden>
-          <p class="banner-no" id="bannerNo">第 1 洞</p>
-          <p class="banner-name" id="bannerName">轉轉風車</p>
+        <div class="hole-banner clay" id="banner" hidden>
+          <p class="banner-no" id="bannerNo" aria-hidden="true">1</p>
+          <p class="banner-kicker" id="bannerKicker">第 1 洞</p>
+          <p class="banner-name" id="bannerName">彎彎小路</p>
           <p class="banner-par" id="bannerPar">標準桿 3</p>
           <p class="banner-tip" id="bannerTip"></p>
           <p class="banner-go">點一下開始</p>
         </div>
 
-        <p class="score-pop" id="pop" hidden></p>
+        <p class="score-pop clay" id="pop" hidden></p>
         <p class="golf-toast" id="toast" hidden></p>
 
-        <div class="aim-meter" id="aimMeter" hidden>
+        <div class="aim-meter clay" id="aimMeter" hidden>
           <span class="meter-label">力氣</span>
           <span class="meter" aria-hidden="true"><span class="meter-fill" id="meterFill"></span></span>
           <b class="meter-pct" id="meterPct">0%</b>
         </div>
-        <p class="golf-hint" id="hint">從畫面任何地方<b>往後拉</b>，<b>放開</b>就打出去</p>
+        <p class="golf-hint clay" id="hint">
+          <svg class="hint-icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="6" r="3.2" /><path d="M12 11v9m-4-4 4 4 4-4" /></svg>
+          <span>手指<b>往後拉</b>，<b>放開</b>就打出去</span>
+        </p>
       </div>
     </section>
   </main>

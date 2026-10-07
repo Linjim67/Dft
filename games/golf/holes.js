@@ -2,12 +2,15 @@
    安心陪伴 — 浮空小島高爾夫：三個球洞
    座標和 physics.js 一樣：360 × 640，x 往右、y 往下，球從下面往上打。
    小島是多邊形；欄杆是折線（沒有欄杆的邊，球滾出去就會掉下去）。
+   每座小島還有一個 inner（往內縮、點數相同）：畫面用它畫下面收窄的土塊。
    測試裡的機器人會把每一洞實際打進去，證明標準桿打得到。
    ═══════════════════════════════════════════════════════════════ */
 (function (root) {
   'use strict';
 
-  /* 圓角長方形的小島：直線邊每 step 單位取一點（欄杆要從中間切開時才需要） */
+  var UNDER = 16;           /* 土塊底部往內縮多少 */
+
+  /* 圓角長方形：直線邊每 step 單位取一點（欄杆要從中間切開時才需要） */
   function rr(x, y, w, h, r, step) {
     var pts = [];
     var corners = [
@@ -46,9 +49,8 @@
     return out;
   }
 
-  /* 沿著小島內側一圈的欄杆；gaps 裡的長方形範圍不放欄杆（開口） */
-  function railRing(x, y, w, h, r, gaps) {
-    var ring = rr(x + 4, y + 4, w - 8, h - 8, r - 4, 2);
+  /* 一圈欄杆；gaps 裡的長方形範圍不放欄杆（開口） */
+  function ringRails(ring, gaps) {
     gaps = gaps || [];
     if (!gaps.length) return [simplify(ring.concat([ring[0]]))];
     /* 從一個開口後面開始繞，折線才不會在起點被切成兩段 */
@@ -68,36 +70,108 @@
     return lines;
   }
 
+  /* 圓角長方形的小島 */
   function island(x, y, w, h, r) {
-    return { poly: rr(x, y, w, h, r), box: [x, y, w, h, r] };
+    return {
+      poly: rr(x, y, w, h, r),
+      inner: rr(x + UNDER, y + UNDER, w - UNDER * 2, h - UNDER * 2, Math.max(4, r - UNDER)),
+      box: [x, y, w, h]
+    };
+  }
+
+  function railRing(x, y, w, h, r, gaps) {
+    return ringRails(rr(x + 4, y + 4, w - 8, h - 8, r - 4, 2), gaps);
+  }
+
+  /* ── 彎彎的步道小島：沿著中心線往左右各長 hw，轉角用半徑 R 的圓弧接起來 ── */
+
+  function centerline(pts, R) {
+    var out = [pts[0]];
+    function straight(a, b) {
+      var L = Math.hypot(b[0] - a[0], b[1] - a[1]), n = Math.max(1, Math.round(L / 10));
+      for (var k = 1; k <= n; k++) out.push([a[0] + (b[0] - a[0]) * k / n, a[1] + (b[1] - a[1]) * k / n]);
+    }
+    var from = pts[0];
+    for (var i = 1; i < pts.length - 1; i++) {
+      var p0 = pts[i - 1], p1 = pts[i], p2 = pts[i + 1];
+      var l0 = Math.hypot(p1[0] - p0[0], p1[1] - p0[1]), l1 = Math.hypot(p2[0] - p1[0], p2[1] - p1[1]);
+      var d0 = [(p1[0] - p0[0]) / l0, (p1[1] - p0[1]) / l0], d1 = [(p2[0] - p1[0]) / l1, (p2[1] - p1[1]) / l1];
+      var turn = Math.acos(Math.max(-1, Math.min(1, d0[0] * d1[0] + d0[1] * d1[1])));
+      var s = d0[0] * d1[1] - d0[1] * d1[0] > 0 ? 1 : -1;
+      var t = R * Math.tan(turn / 2);
+      var A = [p1[0] - d0[0] * t, p1[1] - d0[1] * t];
+      var Cc = [A[0] - d0[1] * R * s, A[1] + d0[0] * R * s];
+      straight(from, A);
+      var a0 = Math.atan2(A[1] - Cc[1], A[0] - Cc[0]);
+      for (var k = 1; k <= 8; k++) {
+        var a = a0 + s * turn * k / 8;
+        out.push([Cc[0] + Math.cos(a) * R, Cc[1] + Math.sin(a) * R]);
+      }
+      from = out[out.length - 1];
+    }
+    straight(from, pts[pts.length - 1]);
+    return out;
+  }
+
+  /* 沿著中心線長出寬度 hw 的一圈（兩頭是半圓） */
+  function outline(line, hw) {
+    var left = [], right = [], n = line.length;
+    for (var i = 0; i < n; i++) {
+      var a = line[Math.max(0, i - 1)], b = line[Math.min(n - 1, i + 1)];
+      var L = Math.hypot(b[0] - a[0], b[1] - a[1]) || 1;
+      var nx = -(b[1] - a[1]) / L, ny = (b[0] - a[0]) / L;
+      left.push([line[i][0] + nx * hw, line[i][1] + ny * hw]);
+      right.push([line[i][0] - nx * hw, line[i][1] - ny * hw]);
+    }
+    function cap(p, q, from) {
+      var c = [], a0 = Math.atan2(from[1] - p[1], from[0] - p[0]);
+      var fwd = Math.atan2(p[1] - q[1], p[0] - q[0]);
+      var dir = Math.sin(fwd - a0) > 0 ? 1 : -1;
+      for (var k = 1; k < 8; k++) {
+        var a = a0 + dir * Math.PI * k / 8;
+        c.push([p[0] + Math.cos(a) * hw, p[1] + Math.sin(a) * hw]);
+      }
+      return c;
+    }
+    return left
+      .concat(cap(line[n - 1], line[n - 2], left[n - 1]))
+      .concat(right.reverse())
+      .concat(cap(line[0], line[1], right[right.length - 1]));
+  }
+
+  function path(points, hw, R) {
+    var line = centerline(points, R);
+    var poly = outline(line, hw);
+    var xs = poly.map(function (p) { return p[0]; }), ys = poly.map(function (p) { return p[1]; });
+    var x0 = Math.min.apply(null, xs), y0 = Math.min.apply(null, ys);
+    return {
+      poly: poly,
+      inner: outline(line, hw - UNDER),
+      box: [x0, y0, Math.max.apply(null, xs) - x0, Math.max.apply(null, ys) - y0],
+      rails: ringRails(outline(line, hw - 4))
+    };
   }
 
   /* ─────────────────────────────────────────────────────────────
-     第 1 洞　轉轉風車
-     一整座有欄杆圍起來的小島（第一洞不會掉下去），中間是風車屋。
-     葉片轉到門口就擋住：看準空檔打進去，從後面出來。
+     第 1 洞　彎彎小路
+     一條會轉兩次彎的小路，四周都有欄杆（第一洞不會掉下去）。
+     彎道的外牆會把球帶著轉；路邊有蘑菇，打歪了會彈開。
      ───────────────────────────────────────────────────────────── */
-  var h1Land = island(70, 40, 220, 570, 34);
+  var h1Path = path([[105, 575], [105, 220], [255, 220], [255, 72]], 52, 70);
   var HOLE1 = {
     id: 1,
-    name: '轉轉風車',
-    tip: '風車葉子轉開的時候，從門口打進去。',
+    name: '彎彎小路',
+    tip: '路會轉彎！撞到牆或蘑菇會彈開，用它們幫你轉彎。',
     par: 3,
-    tee: [180, 560],
-    cup: [214, 112],
-    lands: [h1Land],
-    islands: [h1Land.poly],
-    rails: railRing(70, 40, 220, 570, 34).concat([
-      [[74, 300], [120, 300]],
-      [[240, 300], [286, 300]]
-    ]),
+    tee: [105, 556],
+    cup: [255, 96],
+    lands: [h1Path],
+    islands: [h1Path.poly],
+    rails: h1Path.rails,
     bumpers: [
-      { x: 132, y: 176, r: 13 },
-      { x: 236, y: 440, r: 11 }
-    ],
-    windmill: { x: 180, y: 300, w: 120, h: 56, door: 36, period: 6.4, phase: 0.9, hubZ: 50, len: 52 },
-    /* 隧道裡微微往後斜：球不會停在屋頂下面看不見 */
-    slopes: [{ x: 162, y: 272, w: 36, h: 56, g: [0, -320] }]
+      { x: 76, y: 392, r: 12 },
+      { x: 186, y: 252, r: 12 }
+    ]
   };
 
   /* ─────────────────────────────────────────────────────────────
