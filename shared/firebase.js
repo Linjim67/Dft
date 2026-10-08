@@ -322,7 +322,30 @@ const circle = {
   }
 };
 
+/* ─────────────────────────────────────────────────────────────
+   遊戲時間（#07）：playtime/{隨機 id}，每一關一筆（開始、結束時間）。
+   什麼時候寫、送不出去怎麼補，在 shared/playtime.js；這裡只做資料進出。
+   同一筆會覆寫好幾次（每 30 秒、結束時），結束（ended）之後規則就不讓改了。
+   ───────────────────────────────────────────────────────────── */
+
+const playtime = {
+  async save(r) {
+    const u = await ensureAuth();
+    return setDoc(doc(db, 'playtime', r.id), {
+      v: 1,
+      uid: u.uid,
+      game: r.game,
+      level: r.level,
+      age: typeof r.age === 'number' ? r.age : null,
+      startAt: Timestamp.fromMillis(r.startAt),
+      endAt: Timestamp.fromMillis(r.endAt),
+      ended: !!r.ended,
+      updatedAt: serverTimestamp()
+    });
+  }
+};
+
 /* 給一般 <script> 用的橋：頁面邏輯維持非 module（可測試），
    gstatic 被擋或太慢時，表單照樣顯示，只是送出時會得到明確的錯誤。 */
-window.AnxinFirebase = { submitFeedback, ensureAuth, duo, codes, staff, circle };
+window.AnxinFirebase = { submitFeedback, ensureAuth, duo, codes, staff, circle, playtime };
 window.dispatchEvent(new Event('anxin:firebase'));

@@ -127,6 +127,11 @@
     window.scrollTo(0, 0);
   }
 
+  /* 遊戲時間（shared/playtime.js）：球場介紹 = home，每一洞 = 洞號 */
+  function track(level) {
+    if (window.AnxinPlay) window.AnxinPlay.at('golf', level);
+  }
+
   /* ─────────────────────────────────────────────────────────────
      球場介紹
      ───────────────────────────────────────────────────────────── */
@@ -328,6 +333,7 @@
     closeDialogs();
     var H = HOLES[i];
     G.hole = i;
+    track(H.id);
     G.W = P.build(H);
     G.ball = P.newBall(H.tee[0], H.tee[1]);
     G.strokes = 0;
@@ -552,6 +558,7 @@
     G.phase = 'idle';
     renderIntro();
     show('intro');
+    track('home');
     $('introTitle').focus();
   }
 
@@ -1664,4 +1671,5 @@
 
   renderIntro();
   show('intro');
+  track('home');
 })();

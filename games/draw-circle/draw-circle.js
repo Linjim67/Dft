@@ -67,6 +67,11 @@
     if (focusEl) focusEl.focus();
   }
 
+  /* 遊戲時間（shared/playtime.js）：開始畫面 = home，畫圓（含結果）= play */
+  function track(level) {
+    if (window.AnxinPlay) window.AnxinPlay.at('draw-circle', level);
+  }
+
   /* ─────────────────────────────────────────────────────────────
      畫布：以 CSS px 作畫，實際像素依裝置倍率放大，線條才清楚
      ───────────────────────────────────────────────────────────── */
@@ -308,6 +313,7 @@
     }
     S.turn = 0;
     show('draw');
+    track('play');
     fitPad();
     startTurn();
   }
@@ -442,6 +448,7 @@
 
   renderBoards();
   loadBoard();
+  track('home');
 
   window.__dc = { state: S, record: function () { return record; }, board: function () { return LB; }, loadBoard: loadBoard };
 })();

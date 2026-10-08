@@ -108,6 +108,14 @@
 
     var views = { intro: $('introView'), play: $('playView'), quiz: $('quizView'), summary: $('summaryView') };
 
+    /* 遊戲時間（shared/playtime.js）：開始畫面 = home，每一回合 = 回合數（7 起是無限模式）；
+       回合後的結算、小知識算在那一回合裡。孩子的手機（雙機）另外記成 whack-a-mole-duo */
+    var PLAY_GAME = duo ? 'whack-a-mole-duo' : 'whack-a-mole';
+    if (window.AnxinPlay) window.AnxinPlay.setAge(p.age);
+    function track(level) {
+      if (window.AnxinPlay) window.AnxinPlay.at(PLAY_GAME, level);
+    }
+
     function show(name, focusEl) {
       Object.keys(views).forEach(function (k) { views[k].hidden = k !== name; });
       S.view = name;
@@ -716,6 +724,7 @@
       $('hudScore').textContent = fmt(S.runScore);
       renderTime(C.ROUND_MS / 1000);
       show('play', $('pauseBtn'));
+      track(S.round);
       Anxin.announce(live, roundLabel(S.round) + '開始');
       resume();
     }
@@ -1226,6 +1235,7 @@
         best.hidden = false;
       }
       show('intro', S.view === 'intro' ? null : $('introTitle'));
+      track('home');
     }
 
     $('startBtn').addEventListener('click', startRun);

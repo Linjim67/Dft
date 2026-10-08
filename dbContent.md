@@ -19,6 +19,7 @@ rooms/{code}                          two-phone game room
   └─ state/child                      child → parent game snapshot
 circleDays/{YYYYMMDD}                 (no fields: the doc is never written)
   └─ scores/{uid}                     draw-a-circle daily best score
+playtime/{randomId}                   time spent on one game screen (a level, or the game's home)
 threads/{autoId}                      discussion post (#04, not built yet)
   └─ replies/{autoId}                 reply
 ```
@@ -34,11 +35,12 @@ threads/{autoId}                      discussion post (#04, not built yet)
 | `rooms/*/cmds` | parent | room members | 07 雙機打地鼠 |
 | `rooms/*/state` | child | room members | 07 雙機打地鼠 |
 | `circleDays/*/scores` | each phone, its own doc only | anyone signed in | 07 畫圓圈 |
+| `playtime` | each phone, its own docs only | **nobody** (Console / Admin SDK only) | 07 every game |
 | `threads`, `replies` | nothing yet | public | 04 討論區 |
 
 ## Shared conventions
 
-- **Timestamps** are Firestore `Timestamp`s. `createdAt`, `at` and `doneAt` always come from `serverTimestamp()`; the rules check `== request.time`. `expiresAt` comes from the phone's clock. `shared/firebase.js` converts every timestamp to milliseconds before passing it to a page.
+- **Timestamps** are Firestore `Timestamp`s. `createdAt`, `at`, `doneAt` and `updatedAt` always come from `serverTimestamp()`; the rules check `== request.time`. `expiresAt` and playtime's `startAt` / `endAt` come from the phone's clock. `shared/firebase.js` converts every timestamp to milliseconds before passing it to a page.
 - **Level**: an integer from 1 to 5.
 - **age**: a number from 0 to 18, in 0.5 steps up to 6 and whole years after that.
 - **gender**: `'男'` or `'女'`.
@@ -80,7 +82,7 @@ Two families never hold the same code at the same time. After a code expires, a 
 | `staffFeedback/{code}-{claimMs}` | Kept, and no collision is possible: every claim has a different `claimMs`. |
 | `rooms/{code}` | Overwritten when the new parent opens 雙機. `childUid` goes back to `null`, so the old child's phone stops. |
 | `rooms/{code}/cmds`, `state/child` | Kept, because overwriting a doc doesn't delete its subcollections. The child only runs commands from the last 2 minutes. The parent's remote ignores any `state/child` older than the room's `createdAt`. |
-| `feedback`, `circleDays` | Not affected: they aren't keyed by code. |
+| `feedback`, `circleDays`, `playtime` | Not affected: they aren't keyed by code. |
 
 A phone whose clock is more than 10 minutes fast can think an expired code is free before the server agrees. The server rejects that claim, and `tryClaim` treats the rejection as "taken" and moves on to the next random code. A rejection on a code that has never been used is a real setup problem, so that error still reaches the page.
 
@@ -212,6 +214,34 @@ The draw-a-circle daily leaderboard. Each phone has one doc per day holding only
 - A phone can write only its own doc, only for today, and only with a higher score than before. Nobody can delete scores.
 - The page reads the top 3 (`orderBy('score', 'desc')`, `limit(3)`) plus its own doc.
 
+## `playtime/{randomId}`
+
+How long children play. Each doc is one continuous stay on one game screen: a level, or the game's home screen (level list, cover), which counts as level `home`. The phone decides when a row starts and ends in [shared/playtime.js](shared/playtime.js); [shared/firebase.js](shared/firebase.js) `playtime.save` writes it. The doc id is 20 random letters and digits, made on the phone.
+
+| Field | Type | Value |
+|---|---|---|
+| `v` | number | `1` |
+| `uid` | string | the phone's anonymous uid (who may update the row) |
+| `game` | string | `'dash'` 膠囊衝衝衝 · `'golf'` 浮空小島高爾夫 · `'draw-circle'` 畫圓圈 · `'whack-a-mole'` 打地鼠 · `'whack-a-mole-duo'` 雙機打地鼠, the child's phone · `'whack-a-mole-remote'` 雙機打地鼠, the parent's remote |
+| `level` | string | `'home'`, or the level: dash `'1'`–`'6'` / `'inf'` · golf hole `'1'`–`'3'` · whack-a-mole round `'1'`… (7 and up is 無限模式) · draw-circle `'play'`. The parent's remote follows the child's screen. |
+| `age` | number \| null | from the profile; on the child's phone in 雙機, from the room. No nickname, no code. |
+| `startAt` | Timestamp | phone clock: when the screen opened |
+| `endAt` | Timestamp | phone clock: when it closed, or the last time the phone saw it still open |
+| `ended` | bool | `true`: the end was seen (another level, back to home, screen locked, app switched, page left). `false`: the row is still open, or the page was killed and `endAt` is its last heartbeat. |
+| `updatedAt` | Timestamp | server time of the last write (compare it with `endAt` to spot a wrong phone clock) |
+
+When a row starts and ends:
+- A new row starts when the child enters a level or comes back to the home screen. The previous row ends at the same instant, so one visit's rows tile with no gaps.
+- Retrying the same level, respawning, pausing, or a level's result dialog stays in the same row.
+- Locking the screen or switching apps ends the row. Coming back starts a new row for the same screen, so idle time away is not counted. Add up the rows of one screen to get its total.
+- A row is written as soon as it starts, rewritten with a new `endAt` every 30 s, and written a last time with `ended: true`. Rows are also kept on the phone (`localStorage['anxin.playtime.v1']`) until the server has the final version. If the page is left before the last write arrives, the next game page sends it, with the exact end. A killed page (no lock or switch event) is closed by the next game page with its last 5-second tick, and stays `ended: false`.
+
+Rules:
+- Create: only with your own `uid`. Every field is whitelisted, and `updatedAt == request.time`.
+- `startAt` must be within 3 days before and 1 day after the server time. `endAt` must be ≥ `startAt` and at most 12 h after it.
+- Update: only your own rows, only while `ended == false`. Only `endAt` (never backwards), `ended` and `updatedAt` may change.
+- Nobody can read or delete rows, so analysis is done in the Console or with the Admin SDK.
+
 ## `threads/{autoId}` (#04 討論區, not built yet)
 
 The rules exist but no current code reads or writes this collection: [discussion/](discussion/) is a placeholder page.
@@ -254,4 +284,5 @@ Every query filters or sorts on a single field, so no composite indexes are need
 
 - `localStorage['anxin.profile.v2']`: the full profile, **including the nickname** and the code. It is dropped after 24 h. This is the only place the nickname is stored.
 - `localStorage['anxin.shotDone.v1']`: the code whose 「打針完畢」 page has already been shown.
+- `localStorage['anxin.playtime.v1']`: playtime rows the server hasn't confirmed yet (no nickname). It is cleared as rows are confirmed, and rows older than 2 days are dropped.
 - The other `anxin.*` keys are per-phone game progress, drafts and UI state.

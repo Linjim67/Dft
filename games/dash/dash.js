@@ -80,6 +80,11 @@
     window.scrollTo(0, 0);
   }
 
+  /* 遊戲時間（shared/playtime.js）：選關畫面 = home，每一關 = 1–6／inf */
+  function track(level) {
+    if (window.AnxinPlay) window.AnxinPlay.at('dash', level);
+  }
+
   /* ─────────────────────────────────────────────────────────────
      選關卡
      ───────────────────────────────────────────────────────────── */
@@ -203,6 +208,7 @@
     $('hudProgress').hidden = false;
     $('hudProgress').classList.toggle('is-endless', level === 'inf');
     show('play');
+    track(level);
     fit(true);
     updateHud();
     if (!rotateCheck()) $('goBtn').focus({ preventScroll: true });
@@ -511,6 +517,7 @@
     var lv = G.level;
     renderLevels();
     show('intro');
+    track('home');
     var card = document.querySelector('.lv-card[data-level="' + lv + '"]');
     try { (card || $('introTitle')).focus({ preventScroll: true }); } catch (e) { /* 忽略 */ }
   }
@@ -1698,6 +1705,7 @@
   }
 
   renderLevels();
+  track('home');
 
   /* 測試用 */
   window.__dash = {

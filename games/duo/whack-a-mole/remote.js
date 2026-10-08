@@ -390,12 +390,19 @@
     });
   });
 
+  /* 遊戲時間（shared/playtime.js）：跟著孩子的畫面記 —— 孩子在開始畫面 = home，在玩 = 回合數 */
+  function track(s) {
+    if (!window.AnxinPlay) return;
+    window.AnxinPlay.at('whack-a-mole-remote', s && s.view !== 'intro' && s.round ? s.round : 'home');
+  }
+
   function onState(s) {
     /* 這組代碼以前有別的家庭用過：房間重建了，上一個孩子最後的畫面還留在 state/child。
        比這個房間還舊的畫面當作還沒收到，不會把昨天的棋盤和分數秀出來 */
     if (s && s.at && room && room.createdAt && s.at < room.createdAt) s = null;
     state = s;
     stateSeenAt = Date.now();
+    track(s);
     var ack = s && s.ack;
     if (ack && ack.id && ack.id !== lastAckId) {
       lastAckId = ack.id;
@@ -426,6 +433,7 @@
   }
 
   render();
+  track(null);
   window.setInterval(render, 500); /* 冷卻倒數、斷線偵測 */
 
   Anxin.whenFirebase(15000)
