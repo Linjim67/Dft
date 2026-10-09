@@ -929,8 +929,10 @@ html[data-discuss="clinic"] .reply-identity {
   padding-top: var(--sp-1);
 }
 
-.role-chips {
-  margin-top: var(--sp-3);
+/* 「您的身分」和下面的選項之間留 12px（和「您的方法或經驗」到輸入框一樣）。
+   legend 是浮動的，下一個元素的 margin-top 會被 clear 吃掉，所以間距放在 legend 上 */
+.role-field>legend {
+  margin-bottom: var(--sp-3);
 }
 
 /* 一篇只有一個孩子：年紀、性別直接放在題目底下（和 #01 一樣），不另外包卡片 */
