@@ -515,9 +515,8 @@
   };
   var dwell = null;
 
-  /* 第一版原型的舊文章沒有計數欄位，不能按 */
   function canVote() {
-    return thread.data && thread.data.v === 1;
+    return !!thread.data;
   }
 
   function showThread(id, first) {
@@ -619,19 +618,13 @@
     var t = thread.data;
     if (!bar || !t) return;
     if (!bar.firstChild) {
-      bar.innerHTML = (canVote()
-        ? '<button class="helpful-btn" type="button" id="voteBtn" aria-pressed="false">' + ICON.heart +
-        '<span>有幫助</span><span class="helpful-count" id="voteCount"></span></button>'
-        : '<p class="stat stat-lg">' + ICON.heart + '<span id="voteCount"></span></p>') +
+      bar.innerHTML = '<button class="helpful-btn" type="button" id="voteBtn" aria-pressed="false">' + ICON.heart +
+        '<span>有幫助</span><span class="helpful-count" id="voteCount"></span></button>' +
         '<p class="stat stat-lg">' + ICON.chat + '<span id="replyStat"></span></p>';
     }
-    if (canVote()) {
-      $('voteCount').textContent = t.helpful;
-      $('voteBtn').setAttribute('aria-pressed', String(isLiked(t.id)));
-    } else {
-      $('voteCount').textContent = t.helpful + ' 人覺得有幫助';
-    }
-    $('replyStat').textContent = t.replyCount + ' 則回覆';
+    $('voteCount').textContent = t.helpful;
+    $('voteBtn').setAttribute('aria-pressed', String(isLiked(t.id)));
+    $('replyStat').textContent = t.replyCount;
   }
 
   /* ─────────────────────────────────────────────────────────────
@@ -649,8 +642,8 @@
     else removeId(KEYS.liked, id);
   }
 
+  /* 每一篇都能按（早期原型的舊文章沒有 helpful 欄位，規則當 0 算） */
   function likeButtonHtml(t) {
-    if (t.v !== 1) return '<span class="stat">' + ICON.heart + t.helpful + '</span>';
     return '<button class="like-btn" type="button" data-like="' + esc(t.id) + '" aria-pressed="' +
       isLiked(t.id) + '" aria-label="有幫助（' + t.helpful + '）">' + ICON.heart +
       '<span class="like-count">' + t.helpful + '</span></button>';
@@ -747,7 +740,7 @@
   });
 
   function countOpen(t) {
-    if (t.v !== 1 || thread.mine || thread.counted === t.id) return;
+    if (thread.mine || thread.counted === t.id) return;
     thread.counted = t.id;
     if (hasId(KEYS.opened, t.id)) return;
     Anxin.whenFirebase(10000).then(function (fb) {
@@ -758,7 +751,7 @@
   }
 
   function startDwell(t) {
-    if (dwell || t.v !== 1 || thread.mine) return;
+    if (dwell || thread.mine) return;
     dwell = { id: t.id, ms: 0, since: document.hidden ? 0 : Date.now() };
   }
 

@@ -22,7 +22,7 @@ service cloud.firestore {
         allow read: if true;
         allow create: if request.auth != null && validReply(request.resource.data) && stampedNow()
           && getAfter(threadPath(threadId)).data.lastReplyId == replyId
-          && getAfter(threadPath(threadId)).data.replyCount == get(threadPath(threadId)).data.replyCount + 1;
+          && getAfter(threadPath(threadId)).data.replyCount == get(threadPath(threadId)).data.get('replyCount', 0) + 1;
         allow update, delete: if false;
       }
 
@@ -32,9 +32,9 @@ service cloud.firestore {
         allow list, update: if false;
         allow create: if request.auth != null && request.auth.uid == uid
           && validStamp(request.resource.data)
-          && getAfter(threadPath(threadId)).data.helpful == get(threadPath(threadId)).data.helpful + 1;
+          && getAfter(threadPath(threadId)).data.helpful == get(threadPath(threadId)).data.get('helpful', 0) + 1;
         allow delete: if request.auth != null && request.auth.uid == uid
-          && getAfter(threadPath(threadId)).data.helpful == get(threadPath(threadId)).data.helpful - 1;
+          && getAfter(threadPath(threadId)).data.helpful == get(threadPath(threadId)).data.get('helpful', 0) - 1;
       }
     }
 
@@ -60,30 +60,35 @@ service cloud.firestore {
       return request.resource.data.diff(resource.data).affectedKeys().hasOnly(keys);
     }
 
+    // 早期原型的文章沒有某些計數欄位（例如 helpful）：沒有就當 0，舊文章一樣能按讚、回覆
+    function counter(name) {
+      return resource.data.get(name, 0);
+    }
+
     // 點開：一次 +1（每支手機每篇只送一次是手機端的事）
     function threadOpened() {
-      return threadChanged(['clicks']) && request.resource.data.clicks == resource.data.clicks + 1;
+      return threadChanged(['clicks']) && request.resource.data.clicks == counter('clicks') + 1;
     }
 
     // 停留時間：一次最多加 5 分鐘
     function threadDwelled() {
       let n = request.resource.data.dwellMs;
       return threadChanged(['dwellMs']) && n is int
-        && n > resource.data.dwellMs && n <= resource.data.dwellMs + 300000;
+        && n > counter('dwellMs') && n <= counter('dwellMs') + 300000;
     }
 
     function threadVoted(threadId) {
       let vote = /databases/$(database)/documents/threads/$(threadId)/votes/$(request.auth.uid);
       let n = request.resource.data.helpful;
       return threadChanged(['helpful'])
-        && ((n == resource.data.helpful + 1 && !exists(vote) && existsAfter(vote))
-          || (n == resource.data.helpful - 1 && exists(vote) && !existsAfter(vote)));
+        && ((n == counter('helpful') + 1 && !exists(vote) && existsAfter(vote))
+          || (n == counter('helpful') - 1 && exists(vote) && !existsAfter(vote)));
     }
 
     function threadReplied(threadId) {
       let d = request.resource.data;
       return threadChanged(['replyCount', 'lastReplyId', 'lastActivityAt'])
-        && d.replyCount == resource.data.replyCount + 1
+        && d.replyCount == counter('replyCount') + 1
         && d.lastReplyId is string
         && d.lastActivityAt == request.time
         && !exists(/databases/$(database)/documents/threads/$(threadId)/replies/$(d.lastReplyId))

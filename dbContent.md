@@ -289,7 +289,12 @@ Threads cannot be deleted by any client (moderation: delete in the Console).
 
 **Search and ranking happen on the phone.** Firestore has no full-text search, so the page loads the newest 300 threads (`orderBy createdAt desc`) and filters and sorts them locally (`AnxinDiscuss.matches` / `sortThreads`). If the forum outgrows 300 posts, older ones stop appearing in search; that is the point to add a search service. 「推薦」 score: `(1 + log2(1 + 5·helpful + 3·replies + clicks + 2·fullReads)) × freshness × ageMatch`, where `fullReads` is `dwellMs` converted to complete reads by content length (≈ 400 chars/min, capped at `clicks`), freshness is ×3 for a new post halving toward ×1 every 7 days, and ageMatch (parent page only) is ×1.5 when a member is within 1 year of the parent's child and ×1.2 within 3 years.
 
-**Old docs.** The first prototype (Aug 2026, `script.js`) wrote a different shape: `role`, `childAge` (0–12), `childGender` (`'男'` \| `'女'` \| `'不指定'`), `hashtags`, `author`, `content`, `createdAt`. The page still shows them (`childAge` becomes one member), but their counters can't be updated because the fields don't exist, so they get no votes, clicks or replies.
+**Old docs.** Two earlier prototypes wrote other shapes, and the live database still holds two posts from the second one (2026-09-09):
+
+- Aug 2026: `role`, `childAge` (0–12), `childGender` (`'男'` \| `'女'` \| `'不指定'`), `hashtags`, `author`, `content`, `createdAt`; no counters.
+- Sept 2026: `members` items are `{ gender: '男孩' | '女孩' | '不指定', kind: 'single', age }` or `{ gender, kind: 'range', ageMin, ageMax }`, plus doc-level `ageMin` / `ageMax`, `clicks`, `dwellMs`, `replyCount`, `lastActivityAt`; no `v`, `source` or `helpful`.
+
+`AnxinDiscuss.normalizeThread` reads both (a Sept `{kind:'single', age:3, gender:'男孩'}` becomes 3 歲男孩, `不指定` becomes 不限). The update rules read every counter through `counter(name)` = `resource.data.get(name, 0)`, so a missing counter counts as 0: old posts can be liked, opened and replied to, and the first like simply creates `helpful: 1`. Their content still can't be edited.
 
 ### `threads/{id}/replies/{autoId}`
 

@@ -134,9 +134,24 @@
   }
 
   /* ─────────────────────────────────────────────────────────────
-     讀進來的討論串：補齊欄位。第一版原型（2026 年 8 月）的舊文件只有
-     childAge／childGender、沒有計數，照樣顯示，但 v = 0（不更新計數）。
+     讀進來的討論串：補齊欄位。早期原型的舊文件照樣顯示，v = 0：
+       2026 年 8 月：childAge／childGender（'男' | '女' | '不指定'），沒有計數
+       2026 年 9 月：members 是 { gender: '男孩' | '女孩' | '不指定', kind: 'single', age }
+                     或 { gender, kind: 'range', ageMin, ageMax }，沒有 helpful
+     缺的計數當 0；規則也一樣（counter()），所以舊文章一樣能按讚、回覆。
      ───────────────────────────────────────────────────────────── */
+
+  var OLD_GENDER = { '男': '男', '男孩': '男', '女': '女', '女孩': '女' };
+
+  /* 9 月原型的一位孩子 → 現在的格式；看不懂就略過 */
+  function oldMember(m) {
+    if (!m || typeof m !== 'object') return null;
+    var single = m.kind === 'single';
+    var lo = single ? m.age : m.ageMin;
+    var hi = single ? m.age : m.ageMax;
+    if (typeof lo !== 'number' || typeof hi !== 'number' || lo > hi) return null;
+    return { ageMin: lo, ageMax: hi, gender: OLD_GENDER[m.gender] || '不限' };
+  }
 
   function num(v) { return typeof v === 'number' && isFinite(v) ? v : 0; }
 
@@ -146,7 +161,9 @@
   }
 
   function normalizeThread(d) {
-    var members = Array.isArray(d.members) ? d.members.filter(okMember) : [];
+    var members = Array.isArray(d.members)
+      ? d.members.map(function (m) { return okMember(m) ? m : oldMember(m); }).filter(Boolean)
+      : [];
     if (!members.length && typeof d.childAge === 'number') {
       members = [{
         ageMin: d.childAge,
