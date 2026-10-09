@@ -96,14 +96,15 @@
               <span id="ageFilterLabel">孩子年紀</span>
               <output id="ageFilterOut" class="filter-out">不限</output>
             </p>
-            <label class="range-row">
-              <span>從</span>
-              <input type="range" id="ageFrom" min="0" max="36" step="1" value="0" aria-label="孩子年紀：從">
-            </label>
-            <label class="range-row">
-              <span>到</span>
-              <input type="range" id="ageTo" min="0" max="36" step="1" value="36" aria-label="孩子年紀：到">
-            </label>
+            <!-- 一條軌道、兩端都能拖（discussion.js 的「年紀範圍」） -->
+            <div class="dual-range" data-dual id="ageDual">
+              <div class="dual-track" aria-hidden="true"><div class="dual-fill"></div></div>
+              <input type="range" class="dual-lo" id="ageFrom" min="0" max="36" step="1" value="0"
+                aria-label="孩子年紀：最小">
+              <input type="range" class="dual-hi" id="ageTo" min="0" max="36" step="1" value="36"
+                aria-label="孩子年紀：最大">
+            </div>
+            <p class="dual-scale" aria-hidden="true"><span>0 歲</span><span>18 歲</span></p>
           </div>
 
           <fieldset class="filter-group">

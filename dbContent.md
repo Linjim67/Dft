@@ -306,7 +306,7 @@ Built by `AnxinDiscuss.buildReply`, written by `discuss.reply` in one batch with
 
 ### `threads/{id}/votes/{uid}`
 
-「有幫助」. One doc per phone (anonymous uid) per thread, holding only `at` (server time). Created or deleted together with `helpful` ± 1. A phone can read only its own vote (the page reads it to show the button state). Never listed.
+「有幫助」 (the heart). One doc per phone (anonymous uid) per thread, holding only `at` (server time). Created or deleted together with `helpful` ± 1; a phone can like its own post. A phone can read only its own vote; the page reads it when a post is opened, and otherwise shows its local list of liked posts. Never listed.
 
 ## `cooldowns/{uid}`
 
@@ -333,5 +333,5 @@ Every query filters or sorts on a single field, so no composite indexes are need
 - `localStorage['anxin.profile.v2']`: the full profile, **including the nickname** and the code. It is dropped after 24 h. This is the only place the nickname is stored.
 - `localStorage['anxin.shotDone.v1']`: the code whose 「打針完畢」 page has already been shown.
 - `localStorage['anxin.playtime.v1']`: playtime rows the server hasn't confirmed yet (no nickname). It is cleared as rows are confirmed, and rows older than 2 days are dropped.
-- `anxin.discuss.*`: the discussion page's remembered name (and role on the public page), kept separately per URL and as typed, so it can include the nickname; the unsent draft; opened and own thread ids; and the last post time.
+- `anxin.discuss.*`: the discussion page's remembered name (and role on the public page), kept separately per URL and as typed, so it can include the nickname; the unsent draft; opened, own and liked thread ids; and the last post time.
 - The other `anxin.*` keys are per-phone game progress, drafts and UI state.

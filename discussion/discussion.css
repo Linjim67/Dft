@@ -14,6 +14,8 @@ html:not([data-discuss="clinic"]) .only-clinic {
 .sort label,
 .filter-toggle,
 .helpful-btn,
+.like-btn,
+.dual-range,
 .add-member,
 .member-remove,
 .thread-link,
@@ -105,7 +107,8 @@ html:not([data-discuss="clinic"]) .only-clinic {
 .search-box input:focus-visible,
 .chip:focus-visible,
 .filter-toggle:focus-visible,
-.helpful-btn:focus-visible {
+.helpful-btn:focus-visible,
+.like-btn:focus-visible {
   border-radius: var(--r-pill);
 }
 
@@ -271,9 +274,9 @@ html:not([data-discuss="clinic"]) .only-clinic {
   outline-offset: 3px;
 }
 
-/* 單篇裡的標籤：點了就搜尋 */
+/* 單篇裡的標籤：點了就搜尋。顏色和卡片上的標籤一樣（#7C2D12） */
 .chip-tag {
-  color: var(--primary-deep);
+  color: var(--fg);
   box-shadow: none;
 }
 
@@ -292,16 +295,87 @@ html:not([data-discuss="clinic"]) .only-clinic {
   box-shadow: none;
 }
 
-/* ═══ 年紀範圍（篩選、醫護人員的年齡層） ════════════════════════ */
+/* ═══ 年紀範圍：一條軌道、兩端都能拖（篩選、醫護人員的年齡層） ═══
+   兩個 range 疊在一起，軌道和中間的橘色區段由外框畫；手指事件由 discussion.js 處理。
+   --lo / --hi 是兩端的位置（0–1）。把手寬 32px，所以中心從 16px 走到「寬度 − 16px」。 */
 
-.range-row {
-  display: grid;
-  grid-template-columns: 2em 1fr;
-  align-items: center;
-  gap: var(--sp-2);
+.dual-range {
+  --lo: 0;
+  --hi: 1;
+  position: relative;
   flex: 1 0 100%;
-  font-size: .9rem;
-  font-weight: 700;
+  height: var(--tap);
+  touch-action: pan-y;
+  cursor: pointer;
+}
+
+.dual-track {
+  position: absolute;
+  inset-inline: 0;
+  top: 50%;
+  height: 12px;
+  transform: translateY(-50%);
+  background: var(--bg-sunk);
+  border: 1px solid var(--line);
+  border-radius: var(--r-pill);
+  box-shadow: var(--sh-inset);
+}
+
+.dual-fill {
+  position: absolute;
+  top: -1px;
+  bottom: -1px;
+  left: calc(16px + (100% - 32px) * var(--lo));
+  right: calc(100% - 16px - (100% - 32px) * var(--hi));
+  background: var(--primary-fill);
+  border-radius: var(--r-pill);
+}
+
+.dual-range input[type="range"] {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  background: none;
+  pointer-events: none;
+}
+
+/* 軌道交給 .dual-track 畫：這裡只留透明的佔位（線寬不變，把手才會置中） */
+.dual-range input[type="range"]::-webkit-slider-runnable-track {
+  background: transparent;
+  border-color: transparent;
+  box-shadow: none;
+}
+
+.dual-range input[type="range"]::-moz-range-track {
+  background: transparent;
+  border-color: transparent;
+  box-shadow: none;
+}
+
+.dual-range.is-dragging {
+  cursor: grabbing;
+}
+
+/* 鍵盤焦點畫在「那一端」的把手上，不是整條（兩個 input 疊在同一個框裡，看不出是哪一端） */
+.dual-range input[type="range"]:focus-visible {
+  outline: none;
+}
+
+.dual-range input[type="range"]:focus-visible::-webkit-slider-thumb {
+  box-shadow: 0 0 0 3px var(--card), 0 0 0 6px var(--primary-deep);
+}
+
+.dual-range input[type="range"]:focus-visible::-moz-range-thumb {
+  box-shadow: 0 0 0 3px var(--card), 0 0 0 6px var(--primary-deep);
+}
+
+.dual-scale {
+  display: flex;
+  flex: 1 0 100%;
+  justify-content: space-between;
+  margin-top: -4px;
+  font-size: .8rem;
   color: var(--fg-muted);
 }
 
@@ -418,6 +492,7 @@ html:not([data-discuss="clinic"]) .only-clinic {
 }
 
 .thread-excerpt {
+  color: var(--primary-ink);
   display: -webkit-box;
   -webkit-box-orient: vertical;
   -webkit-line-clamp: 4;
@@ -437,22 +512,18 @@ html:not([data-discuss="clinic"]) .only-clinic {
   color: var(--fg-muted);
 }
 
+/* 身分：白底、黑字、黑框，每種身分都一樣 */
 .role-pill {
   display: inline-flex;
   align-items: center;
   min-height: 24px;
   padding: 0 10px;
   border-radius: var(--r-pill);
-  background: var(--bg-sunk);
-  color: var(--fg);
+  background: var(--card);
+  color: var(--primary-ink);
+  border: 1px solid var(--primary-ink);
   font-size: .8rem;
   font-weight: 700;
-}
-
-/* 醫護人員：淡橘底（文字本身已經說明身分，顏色只是加強） */
-.role-pill.is-pro {
-  background: var(--primary-wash);
-  color: var(--primary-deep);
 }
 
 .post-author {
@@ -481,17 +552,19 @@ html:not([data-discuss="clinic"]) .only-clinic {
   margin-top: 2px;
 }
 
+/* 標籤 #7C2D12（= --fg） */
 .card-tags {
   display: flex;
   flex-wrap: wrap;
   gap: 2px var(--sp-3);
   font-size: .88rem;
   font-weight: 700;
-  color: var(--primary-deep);
+  color: var(--fg);
 }
 
 .card-stats {
   display: flex;
+  align-items: center;
   gap: var(--sp-4);
   font-size: .85rem;
   color: var(--fg-muted);
@@ -508,6 +581,54 @@ html:not([data-discuss="clinic"]) .only-clinic {
   width: 17px;
   height: 17px;
   color: var(--idle);
+}
+
+/* 卡片上的愛心：按一下就按讚（疊在撐滿卡片的連結上面，不會跟著點進文章）。
+   外觀小，點擊範圍仍有 48px（上下用負邊距吃掉，不撐高卡片） */
+.like-btn {
+  position: relative;
+  z-index: 1;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  min-width: var(--tap);
+  min-height: var(--tap);
+  margin: -14px 0 -14px -10px;
+  padding: 0 10px;
+  background: none;
+  border: 0;
+  border-radius: var(--r-pill);
+  color: var(--fg-muted);
+  font-size: .85rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.like-btn .icon {
+  width: 20px;
+  height: 20px;
+  color: var(--idle);
+}
+
+/* 按過：愛心填滿（形狀改變，不只是變色） */
+.like-btn[aria-pressed="true"] {
+  color: var(--primary-deep);
+  font-weight: 700;
+}
+
+.like-btn[aria-pressed="true"] .icon {
+  color: var(--primary-deep);
+  fill: currentColor;
+}
+
+.like-btn.pop[aria-pressed="true"] .icon,
+.helpful-btn.pop[aria-pressed="true"] .icon {
+  animation: heart-pop 280ms var(--ease);
+}
+
+@keyframes heart-pop {
+  45% {
+    transform: scale(1.3);
+  }
 }
 
 .more-btn {
@@ -558,6 +679,7 @@ html:not([data-discuss="clinic"]) .only-clinic {
 }
 
 .post-body {
+  color: var(--primary-ink);
   font-size: 1.04rem;
   line-height: 1.85;
   white-space: pre-wrap;
@@ -659,6 +781,7 @@ html:not([data-discuss="clinic"]) .only-clinic {
 }
 
 .reply-body {
+  color: var(--primary-ink);
   white-space: pre-wrap;
   line-height: 1.75;
 }
@@ -868,12 +991,8 @@ html[data-discuss="clinic"] .reply-identity {
   gap: var(--sp-2) var(--sp-3);
 }
 
-.member-row input[type="range"] {
+.member-row>input[type="range"] {
   flex: 1 0 100%;
-}
-
-.member-row .range-row input[type="range"] {
-  flex: none;
 }
 
 .member-label {
@@ -984,6 +1103,10 @@ html[data-discuss="clinic"] .reply-identity {
 
 @media (hover: hover) and (pointer: fine) {
 
+  .like-btn:hover {
+    background: var(--primary-wash);
+  }
+
   .chip:not([aria-pressed="true"]):hover,
   .chip-radio input:not(:checked)+.chip:hover,
   .filter-toggle:hover,
@@ -1013,5 +1136,10 @@ html[data-discuss="clinic"] .reply-identity {
   .helpful-btn:active,
   .thread-card:has(.thread-link:active) {
     transform: none;
+  }
+
+  .like-btn.pop[aria-pressed="true"] .icon,
+  .helpful-btn.pop[aria-pressed="true"] .icon {
+    animation: none;
   }
 }

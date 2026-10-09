@@ -39,7 +39,8 @@
     me: CLINIC ? 'anxin.discuss.me.clinic.v1' : 'anxin.discuss.me.v1',
     draft: 'anxin.discuss.draft.' + SOURCE + '.v1',  /* 還沒發布的內文、標籤 */
     opened: 'anxin.discuss.opened.v1',               /* 點開過的（點閱每支手機只算一次） */
-    mine: 'anxin.discuss.mine.v1',                   /* 自己發的（不算自己的點閱、停留、有幫助） */
+    mine: 'anxin.discuss.mine.v1',                   /* 自己發的（不算自己的點閱、停留） */
+    liked: 'anxin.discuss.liked.v1',                 /* 按過「有幫助」的（列表上的愛心要知道） */
     last: 'anxin.discuss.lastPost.v1'                /* 上次發言的時間（冷卻倒數） */
   };
 
@@ -67,6 +68,10 @@
     var a = idList(key).filter(function (x) { return x !== id; });
     a.push(id);
     writeJson(key, a.slice(-cap));
+  }
+
+  function removeId(key, id) {
+    writeJson(key, idList(key).filter(function (x) { return x !== id; }));
   }
 
   var me = readJson(KEYS.me, null);
@@ -97,7 +102,7 @@
   };
 
   function rolePill(role) {
-    return '<span class="role-pill' + (D.isPro(role) ? ' is-pro' : '') + '">' + esc(role) + '</span>';
+    return '<span class="role-pill">' + esc(role) + '</span>';
   }
 
   function metaHtml(item, now) {
@@ -307,8 +312,8 @@
         return '<span>#' + esc(h) + '</span>';
       }).join('') + '</p>' : '') +
       '<p class="card-stats">' +
-      '<span class="stat">' + ICON.heart + t.helpful + '<span class="vh"> 人覺得有幫助</span></span>' +
-      '<span class="stat">' + ICON.chat + t.replyCount + '<span class="vh"> 則回覆</span></span>' +
+      likeButtonHtml(t) +
+      '<span class="stat">' + ICON.chat + t.replyCount + '<span class="vh"> </span></span>' +
       '</p></article></li>';
   }
 
@@ -349,6 +354,7 @@
     });
     ageFrom.value = f.from;
     ageTo.value = f.to;
+    paintDual($('ageDual'), f.from, f.to);
     var lo = D.indexToAge(f.from);
     var hi = D.indexToAge(f.to);
     $('ageFilterOut').textContent = ageFiltered() ? D.ageRangeLabel(lo, hi) : '不限';
@@ -425,13 +431,9 @@
     var f = state.filters;
     var isFrom = ev.target === ageFrom;
     var v = D.snapIndex(Number(ev.target.value), isFrom ? f.from : f.to);
-    if (isFrom) {
-      f.from = v;
-      if (f.to < v) f.to = v;
-    } else {
-      f.to = v;
-      if (f.from > v) f.from = v;
-    }
+    /* 兩端不能交錯：起點最多拖到終點 */
+    if (isFrom) f.from = Math.min(v, f.to);
+    else f.to = Math.max(v, f.from);
     /* 拖曳中只更新畫面，放開才唸出結果 */
     filtersChanged(ev.type === 'input');
   }
@@ -509,13 +511,13 @@
      ───────────────────────────────────────────────────────────── */
 
   var thread = {
-    id: null, data: null, missing: false, failed: false, mine: false,
-    voted: false, voting: false, counted: null, stops: []
+    id: null, data: null, missing: false, failed: false, mine: false, counted: null, stops: []
   };
   var dwell = null;
 
+  /* 第一版原型的舊文章沒有計數欄位，不能按 */
   function canVote() {
-    return thread.data && thread.data.v === 1 && !thread.mine;
+    return thread.data && thread.data.v === 1;
   }
 
   function showThread(id, first) {
@@ -527,8 +529,6 @@
     thread.missing = false;
     thread.failed = false;
     thread.mine = hasId(KEYS.mine, id);
-    thread.voted = false;
-    thread.voting = false;
     $('post').removeAttribute('data-id');
     if (reply.threadId !== id) resetReply(id);
 
@@ -565,13 +565,12 @@
       }, function (err) {
         window.console.error('讀取回覆失敗：', err);
       }));
-      if (!thread.mine) {
-        fb.discuss.myVote(id).then(function (v) {
-          if (thread.id !== id || thread.voting) return;
-          thread.voted = v;
-          renderActions();
-        }, function () { /* 匿名登入不可用：當作沒投過 */ });
-      }
+      /* 手機記的「按過哪幾篇」跟伺服器對一次 */
+      fb.discuss.myVote(id).then(function (v) {
+        if (liking[id]) return;
+        setLiked(id, v);
+        refreshLike(id);
+      }, function () { /* 匿名登入不可用：維持手機記的 */ });
     }, function () {
       if (thread.id !== id || thread.data) return;
       thread.failed = true;
@@ -628,38 +627,103 @@
     }
     if (canVote()) {
       $('voteCount').textContent = t.helpful;
-      $('voteBtn').setAttribute('aria-pressed', String(thread.voted));
-      $('voteBtn').disabled = thread.voting;
+      $('voteBtn').setAttribute('aria-pressed', String(isLiked(t.id)));
     } else {
       $('voteCount').textContent = t.helpful + ' 人覺得有幫助';
     }
     $('replyStat').textContent = t.replyCount + ' 則回覆';
   }
 
-  /* 計數交給 Firestore 的即時快照（本機寫入會立刻反映），這裡只管按鈕狀態 */
-  function toggleVote() {
-    if (thread.voting || !canVote()) return;
-    var id = thread.id;
-    var on = !thread.voted;
-    thread.voting = true;
-    thread.voted = on;
-    renderActions();
+  /* ─────────────────────────────────────────────────────────────
+     有幫助（按讚）：列表卡片上的愛心、單篇裡的按鈕都走這裡，按一下就按讚、再按收回。
+     一支手機一票（votes/{uid}），自己的文章也能按。
+     按過哪幾篇記在手機上（anxin.discuss.liked.v1），點開單篇時再跟伺服器對一次。
+     ───────────────────────────────────────────────────────────── */
+
+  var liking = {}; /* 送出中的 id：連按不會送兩次 */
+
+  function isLiked(id) { return hasId(KEYS.liked, id); }
+
+  function setLiked(id, on) {
+    if (on) addId(KEYS.liked, id, 1000);
+    else removeId(KEYS.liked, id);
+  }
+
+  function likeButtonHtml(t) {
+    if (t.v !== 1) return '<span class="stat">' + ICON.heart + t.helpful + '</span>';
+    return '<button class="like-btn" type="button" data-like="' + esc(t.id) + '" aria-pressed="' +
+      isLiked(t.id) + '" aria-label="有幫助（' + t.helpful + '）">' + ICON.heart +
+      '<span class="like-count">' + t.helpful + '</span></button>';
+  }
+
+  /* 同一篇的愛心（列表）和按鈕（單篇）一起更新 */
+  function refreshLike(id) {
+    var i = findIndex(id);
+    var n = i === -1 ? 0 : state.threads[i].helpful;
+    var b = threadList.querySelector('[data-like="' + id + '"]');
+    if (b) {
+      b.setAttribute('aria-pressed', String(isLiked(id)));
+      b.setAttribute('aria-label', '有幫助（' + n + '）');
+      b.querySelector('.like-count').textContent = n;
+    }
+    if (thread.id === id) renderActions();
+  }
+
+  function bump(id, delta) {
+    var i = findIndex(id);
+    if (i !== -1) state.threads[i].helpful = Math.max(0, state.threads[i].helpful + delta);
+  }
+
+  function popHeart(id) {
+    [threadList.querySelector('[data-like="' + id + '"]'), thread.id === id ? $('voteBtn') : null]
+      .forEach(function (b) {
+        if (!b) return;
+        b.classList.remove('pop');
+        void b.offsetWidth; /* 重新觸發動畫 */
+        b.classList.add('pop');
+      });
+  }
+
+  /* 正在看的那一篇有即時快照：計數交給 Firestore（本機寫入立刻反映、失敗自動退回）。
+     列表上的其他篇沒有快照：自己先加減，失敗再退回。 */
+  function toggleLike(id) {
+    if (liking[id]) return;
+    var on = !isLiked(id);
+    var watched = thread.id === id && thread.stops.length > 0;
+    liking[id] = true;
+    setLiked(id, on);
+    if (!watched) bump(id, on ? 1 : -1);
+    refreshLike(id);
+    if (on) popHeart(id);
     Anxin.whenFirebase(10000).then(function (fb) {
       return fb.discuss.vote(id, on);
     }).then(function () {
-      if (thread.id !== id) return;
-      thread.voting = false;
-      renderActions();
-      Anxin.announce(live, on ? '已標記為有幫助' : '已收回');
+      delete liking[id];
+      Anxin.announce(live, on ? '已按讚：有幫助' : '已收回');
     }, function (err) {
       window.console.error('有幫助送出失敗：', err);
-      if (thread.id !== id) return;
-      thread.voting = false;
-      thread.voted = !on;
-      renderActions();
+      delete liking[id];
+      setLiked(id, !on);
+      if (!watched) bump(id, on ? -1 : 1);
+      refreshLike(id);
       Anxin.announce(live, '沒有送出，請確認網路後再試一次。');
+      /* 伺服器的票和手機記的不一樣（例如清過瀏覽器資料）：以伺服器為準 */
+      if (err && err.code === 'permission-denied') {
+        Anxin.whenFirebase(10000).then(function (fb) { return fb.discuss.myVote(id); }).then(function (v) {
+          if (liking[id]) return;
+          setLiked(id, v);
+          refreshLike(id);
+        }, function () { /* 讀不到：維持原樣 */ });
+      }
     });
   }
+
+  threadList.addEventListener('click', function (ev) {
+    var b = ev.target.closest('[data-like]');
+    if (!b) return;
+    ev.preventDefault();
+    toggleLike(b.getAttribute('data-like'));
+  });
 
   $('post').addEventListener('click', function (ev) {
     var tag = ev.target.closest('[data-tag]');
@@ -667,7 +731,7 @@
       searchTag(tag.getAttribute('data-tag'));
       return;
     }
-    if (ev.target.closest('#voteBtn')) toggleVote();
+    if (ev.target.closest('#voteBtn') && canVote()) toggleLike(thread.id);
   });
 
   $('threadStatus').addEventListener('click', function (ev) {
@@ -857,6 +921,101 @@
   }
 
   /* ─────────────────────────────────────────────────────────────
+     年紀範圍：一條軌道、兩端都能拖（篩選、醫護人員的年齡層）
+     兩個 <input type=range> 疊在同一條軌道上：鍵盤、螢幕閱讀器照常操作各自那一端。
+     手指／滑鼠由外框處理：拖哪一端動哪一端；兩端疊在一起時看往哪邊拖；
+     點一下軌道（不用拖），最近的那一端就跳過去。
+     ───────────────────────────────────────────────────────────── */
+
+  var THUMB = 32; /* /styles.css 的滑桿把手寬度 */
+  var drag = null;
+
+  function dualHtml(p, lo, hi, title) {
+    var input = function (cls, k, v, end) {
+      return '<input type="range" class="' + cls + '" id="' + p + '-' + k + '" min="0" max="' + D.AGE_MAX_IDX +
+        '" step="1" value="' + v + '" data-k="' + k + '" aria-label="' + title + '：' + end + '">';
+    };
+    return '<div class="dual-range" data-dual id="' + p + '-dual">' +
+      '<div class="dual-track" aria-hidden="true"><div class="dual-fill"></div></div>' +
+      input('dual-lo', 'from', lo, '最小年紀') + input('dual-hi', 'to', hi, '最大年紀') +
+      '</div><p class="dual-scale" aria-hidden="true"><span>0 歲</span><span>18 歲</span></p>';
+  }
+
+  function paintDual(wrap, lo, hi) {
+    if (!wrap) return;
+    wrap.style.setProperty('--lo', String(lo / D.AGE_MAX_IDX));
+    wrap.style.setProperty('--hi', String(hi / D.AGE_MAX_IDX));
+  }
+
+  function dualValue(wrap, x) {
+    var r = wrap.getBoundingClientRect();
+    var ratio = (x - r.left - THUMB / 2) / Math.max(1, r.width - THUMB);
+    return Math.round(Math.min(1, Math.max(0, ratio)) * D.AGE_MAX_IDX);
+  }
+
+  function dualPick(d, v, dx) {
+    var a = Number(d.lo.value);
+    var b = Number(d.hi.value);
+    if (a === b) {
+      if (dx) return dx < 0 ? d.lo : d.hi;
+      return v <= a ? d.lo : d.hi;
+    }
+    if (v <= a) return d.lo;
+    if (v >= b) return d.hi;
+    return v - a <= b - v ? d.lo : d.hi;
+  }
+
+  /* 交給原本的 input / change 處理（吸附、不交錯、更新畫面） */
+  function dualSet(input, v) {
+    if (Number(input.value) === v) return;
+    input.value = v;
+    input.dispatchEvent(new Event('input', { bubbles: true }));
+  }
+
+  document.addEventListener('pointerdown', function (ev) {
+    var wrap = ev.target.closest && ev.target.closest('[data-dual]');
+    if (!wrap || ev.button > 0) return;
+    drag = {
+      wrap: wrap, lo: wrap.querySelector('.dual-lo'), hi: wrap.querySelector('.dual-hi'),
+      id: ev.pointerId, x: ev.clientX, which: null, moved: false
+    };
+    try { wrap.setPointerCapture(ev.pointerId); } catch (e) { /* 忽略 */ }
+    if (ev.pointerType === 'mouse') ev.preventDefault();
+  });
+
+  /* 先等手指動了 4px 才決定：往上下滑是捲動頁面（瀏覽器會送 pointercancel），不會動到把手 */
+  document.addEventListener('pointermove', function (ev) {
+    if (!drag || ev.pointerId !== drag.id) return;
+    var dx = ev.clientX - drag.x;
+    if (!drag.moved) {
+      if (Math.abs(dx) < 4) return;
+      drag.moved = true;
+      drag.which = dualPick(drag, dualValue(drag.wrap, drag.x), dx);
+      drag.which.focus({ preventScroll: true });
+      drag.wrap.classList.add('is-dragging');
+    }
+    dualSet(drag.which, dualValue(drag.wrap, ev.clientX));
+  });
+
+  function endDrag(ev, cancelled) {
+    if (!drag || ev.pointerId !== drag.id) return;
+    var d = drag;
+    drag = null;
+    d.wrap.classList.remove('is-dragging');
+    if (!d.moved) {
+      if (cancelled) return;
+      var v = dualValue(d.wrap, ev.clientX);
+      d.which = dualPick(d, v, 0);
+      d.which.focus({ preventScroll: true });
+      dualSet(d.which, v);
+    }
+    d.which.dispatchEvent(new Event('change', { bubbles: true }));
+  }
+
+  document.addEventListener('pointerup', function (ev) { endDrag(ev, false); });
+  document.addEventListener('pointercancel', function (ev) { endDrag(ev, true); });
+
+  /* ─────────────────────────────────────────────────────────────
      發文
      公開版：稱呼、身分、孩子（家長可以好幾位；醫護人員填年齡範圍）、內容、標籤
      家長版：只有內容和標籤，身分與孩子沿用 #01 的資料
@@ -947,10 +1106,7 @@
       '<div class="member-row">' +
       '<p class="member-label">年紀範圍</p>' +
       '<output class="member-out" id="' + p + '-range-out"></output>' +
-      '<label class="range-row"><span>從</span><input type="range" id="' + p + '-from" min="0" max="' +
-      D.AGE_MAX_IDX + '" step="1" value="' + m.from + '" data-k="from" aria-label="' + title + '：從"></label>' +
-      '<label class="range-row"><span>到</span><input type="range" id="' + p + '-to" min="0" max="' +
-      D.AGE_MAX_IDX + '" step="1" value="' + m.to + '" data-k="to" aria-label="' + title + '：到"></label>' +
+      dualHtml(p, m.from, m.to, title) +
       '</div>' +
       '<div class="member-row" role="radiogroup" aria-labelledby="' + p + '-title ' + p + '-g">' +
       '<span class="member-label" id="' + p + '-g">性別</span>' +
@@ -966,6 +1122,7 @@
       $(p + '-range-out').textContent = all ? '各年齡' : D.ageRangeLabel(D.indexToAge(m.from), D.indexToAge(m.to));
       $(p + '-from').setAttribute('aria-valuetext', Anxin.ageLabel(D.indexToAge(m.from)));
       $(p + '-to').setAttribute('aria-valuetext', Anxin.ageLabel(D.indexToAge(m.to)));
+      paintDual($(p + '-dual'), m.from, m.to);
       return;
     }
     var out = $(p + '-age-out');
@@ -1006,16 +1163,11 @@
     var k = el.getAttribute('data-k');
     var prev = k === 'idx' ? (m.idx == null ? 12 : m.idx) : m[k];
     var v = D.snapIndex(Number(el.value), prev);
+    /* 年齡層的兩端不能交錯 */
+    if (k === 'from') v = Math.min(v, m.to);
+    if (k === 'to') v = Math.max(v, m.from);
     if (Number(el.value) !== v) el.value = v;
-    if (k === 'idx') {
-      m.idx = v;
-    } else if (k === 'from') {
-      m.from = v;
-      if (m.to < v) li.querySelector('[data-k="to"]').value = m.to = v;
-    } else {
-      m.to = v;
-      if (m.from > v) li.querySelector('[data-k="from"]').value = m.from = v;
-    }
+    m[k] = v;
     paintMember(m, i);
     errors.clearError('members');
   });
