@@ -37,8 +37,9 @@ After 發布, `#new` is replaced with `#t=<id>`, so back goes to the list instea
 - **Chips**: pills with a 1px taupe border. Selected chips get primary-wash plus a 2px deep-orange border. **No check glyph**
   (owner's choice, an exception to MASTER's check badge); the doubled border width is the non-colour cue, the same one the
   #01 face scale uses. 48px tall.
-- **Role label**: plain black bold text, no box, the same for every role (owner's choice). On posts it follows the
-  magnifier icon on line 2 (line 1 is the child); replies show it without an icon.
+- **Role label**: plain bold text in the same grey as the time, no box, the same for every role (owner's choice), and
+  separated from the name by 「·」 like name and time: 「家長 · 阿哲爸爸 · 剛剛」. On posts it follows the magnifier icon
+  on line 2 (line 1 is the child); replies show it without an icon.
 - **有幫助 (like)**: a toggle (`aria-pressed`), drawn the same everywhere: just the heart SVG and the count, no box and no
   「有幫助」 text (owner's choice). The hit area is 48px around the heart, so tapping near it counts. Pressed fills the heart,
   so the shape changes, not only the colour, with a short pop (off under reduced motion). Works on your own posts and on

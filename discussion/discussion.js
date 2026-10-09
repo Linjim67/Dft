@@ -111,6 +111,7 @@
   function metaHtml(item, now, withIcon) {
     var when = item.createdAt || now;
     return '<p class="post-meta">' + (withIcon ? ICON.search : '') + rolePill(item.role) +
+      '<span aria-hidden="true">·</span>' +
       '<span class="post-author">' + esc(item.author || '匿名') + '</span>' +
       '<span aria-hidden="true">·</span>' +
       '<time datetime="' + new Date(when).toISOString() + '">' + D.timeAgo(item.createdAt, now) + '</time>' +

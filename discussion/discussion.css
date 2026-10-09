@@ -499,9 +499,8 @@ html:not([data-discuss="clinic"]) .only-clinic {
   margin-inline-end: -2px;
 }
 
-/* 身分：純文字、黑色粗體，不加框（使用者決定），每種身分都一樣 */
+/* 身分：純文字、不加框，顏色和時間一樣（沿用 .post-meta 的灰色）；和稱呼之間用「·」隔開，同稱呼和時間（使用者決定） */
 .post-role {
-  color: var(--primary-ink);
   font-weight: 700;
 }
 
