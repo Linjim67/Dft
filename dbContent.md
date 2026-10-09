@@ -252,7 +252,7 @@ One discussion post. The page is [discussion/index.html](discussion/index.html),
 
 | URL | Who | What they fill in |
 |---|---|---|
-| `/discussion/` | anyone (`source: 'public'`) | name (optional), role, each child's age and gender (professionals: an age range), content, hashtags |
+| `/discussion/` | anyone (`source: 'public'`) | name (optional), role, one child's age and gender (professionals: an age range), content, hashtags |
 | `/discussion/parent/` | parents coming from 回饋 (`source: 'clinic'`) | name (optional), content, hashtags. Role is fixed to 家長 and the child is the one from #01. Without a profile on the phone, this URL falls back to `/discussion/`. |
 
 The payload is built by `AnxinDiscuss.buildThread` ([discussion/discuss-core.js](discussion/discuss-core.js)) and written by `discuss.post` in [shared/firebase.js](shared/firebase.js). Every field is whitelisted.
@@ -263,7 +263,7 @@ The payload is built by `AnxinDiscuss.buildThread` ([discussion/discuss-core.js]
 | `role` | string | `'家長'` \| `'醫師'` \| `'護士'` \| `'醫檢師'` \| `'其他'`. Always `'家長'` when `source` is `'clinic'`. |
 | `author` | string | ≤ 20 chars; `''` = 匿名. The child's nickname is replaced with `孩子` (「小恩媽媽」 → 「孩子媽媽」). |
 | `content` | string | 1–2000 chars. The nickname (if this phone has a profile) is replaced with `孩子`. |
-| `members` | list (1–8) | `{ ageMin, ageMax, gender }`. A child is `ageMin == ageMax`; a professional's age group is a range. Ages 0–18 (0.5 steps below 5 on the slider, whole years from 5; a `clinic` post copies the #01 age, which can be 5.5). `gender`: `'男'` \| `'女'` \| `'不限'` (都有, ranges only). Exactly 1 when `source` is `'clinic'`. |
+| `members` | list (exactly 1) | `{ ageMin, ageMax, gender }`: one child per post. A child is `ageMin == ageMax`; a professional's age group is a range. Ages 0–18 (0.5 steps below 5 on the slider, whole years from 5; a `clinic` post copies the #01 age, which can be 5.5). `gender`: `'男'` \| `'女'` \| `'不限'` (都有, ranges only). Still a list so the shape didn't change; posts made before Oct 2026 may hold up to 8 and are shown as they are. |
 | `hashtags` | list (≤ 5) | strings of 1–20 chars, without `#`, letters/digits/`_` only, Latin lower-cased. Nickname replaced too. |
 | `source` | string | `'public'` / `'clinic'` (which URL it was posted from) |
 | `clicks` | int | phones that opened it. Starts at 0. |

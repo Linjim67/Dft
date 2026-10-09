@@ -16,8 +16,6 @@ html:not([data-discuss="clinic"]) .only-clinic {
 .helpful-btn,
 .like-btn,
 .dual-range,
-.add-member,
-.member-remove,
 .thread-link,
 .segmented-option {
   -webkit-tap-highlight-color: transparent;
@@ -935,52 +933,14 @@ html[data-discuss="clinic"] .reply-identity {
   margin-top: var(--sp-3);
 }
 
+/* 一篇只有一個孩子：年紀、性別直接放在題目底下（和 #01 一樣），不另外包卡片 */
 .members {
-  display: grid;
-  gap: var(--sp-3);
-  margin: var(--sp-1) 0 0;
-  padding: 0;
-  list-style: none;
+  margin-top: var(--sp-2);
 }
 
-/* 一位孩子（或一個年齡層）一張卡片，好幾位時一眼分得出來 */
 .member {
   display: grid;
-  gap: var(--sp-3);
-  padding: var(--sp-3) var(--sp-4) var(--sp-4);
-  background: var(--card);
-  border-radius: var(--r-lg);
-  box-shadow: var(--sh-sm);
-}
-
-.member-head {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  min-height: var(--tap);
-}
-
-.member-title {
-  font-weight: 700;
-}
-
-.member-remove {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  min-height: var(--tap);
-  margin-inline-end: calc(var(--sp-2) * -1);
-  padding: 0 var(--sp-2);
-  background: none;
-  border: 0;
-  color: var(--fg-muted);
-  font-size: .9rem;
-  font-weight: 700;
-}
-
-.member-remove .icon {
-  width: 18px;
-  height: 18px;
+  gap: var(--sp-4);
 }
 
 .member-row {
@@ -1016,28 +976,6 @@ html[data-discuss="clinic"] .reply-identity {
 
 .segmented.is-3 {
   grid-template-columns: repeat(3, 64px);
-}
-
-.add-member {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 6px;
-  width: 100%;
-  min-height: 52px;
-  margin-top: var(--sp-3);
-  background: transparent;
-  color: var(--fg);
-  font-weight: 700;
-  border: 2px dashed var(--line);
-  border-radius: var(--r-lg);
-  transition: background-color var(--t-fast) var(--ease),
-    border-color var(--t-fast) var(--ease);
-}
-
-.add-member .icon {
-  width: 20px;
-  height: 20px;
 }
 
 .tag-chips {
@@ -1110,18 +1048,13 @@ html[data-discuss="clinic"] .reply-identity {
   .chip:not([aria-pressed="true"]):hover,
   .chip-radio input:not(:checked)+.chip:hover,
   .filter-toggle:hover,
-  .helpful-btn:not([aria-pressed="true"]):hover,
-  .add-member:hover {
+  .helpful-btn:not([aria-pressed="true"]):hover {
     background: var(--primary-wash);
     border-color: var(--primary-deep);
   }
 
   .thread-card:has(.thread-link:hover) {
     box-shadow: var(--sh-lg);
-  }
-
-  .member-remove:hover {
-    color: var(--danger);
   }
 
   .clear-filters:hover {

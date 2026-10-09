@@ -12,7 +12,7 @@ mode doesn't use. One page means search, replies and ranking can't drift apart b
 |---|---|---|
 | Reached from | shared link | 回饋 → 已收到 dialog / page |
 | Top bar | 「安心陪伴」 label (no profile, so no home) | ‹ 回主頁 |
-| Composer | 稱呼 (optional), 身分 chips, children cards, content, tags | identity card (「以家長身分分享」, 孩子：3 歲半女孩), 稱呼 (optional), content, tags |
+| Composer | 稱呼 (optional), 身分 chips, one child (age + gender), content, tags | identity card (「以家長身分分享」, 孩子：3 歲半女孩), 稱呼 (optional), content, tags |
 | Reply | content + 身分 `<select>` + 稱呼, remembered | content + 稱呼 (optional), remembered; 「以家長身分回覆」 |
 | Extras | — | 「和{暱稱}差不多大」 chip (age ± 2); 推薦 boosts posts near the child's age |
 
@@ -41,9 +41,10 @@ After 發布, `#new` is replaced with `#t=<id>`, so back goes to the list instea
   changes, not only the colour, with a short pop (off under reduced motion). Works on your own posts too. The phone keeps
   the list of liked posts (`anxin.discuss.liked.v1`) so cards show filled hearts without one read per post, and re-checks
   with the server when a post is opened.
-- **Children cards**: one white card per child or age group, removable when there's more than one. Parents get one slider
+- **One child per post** (owner's decision): no 新增另一個孩子 button. The child's age and gender sit directly under the
+  question, flat like #01, with the hint 「一篇寫一個孩子；其他孩子的經驗，可以再發一篇」. Parents get one slider
   (untouched = 「尚未選擇」, required, same as #01) and 男孩／女孩. Professionals get one age-range bar (below)
-  defaulting to 各年齡 and 男孩／女孩／都有. Switching role converts what was already entered.
+  defaulting to 各年齡 and 男孩／女孩／都有. Switching role converts what was already entered. The rules accept exactly one.
 - **Age range bar** (filter + professionals): one track, two handles, orange between them, 0 歲 / 18 歲 under the ends.
   Two native range inputs are stacked for keyboard and screen readers (「最小年紀」「最大年紀」); the outer box handles
   pointers: drag the nearer handle; when both sit on the same age, the drag direction decides; a plain tap moves the

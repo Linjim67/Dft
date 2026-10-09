@@ -413,6 +413,7 @@ service cloud.firestore {
   }
 
   // 家長版（source 'clinic'，從回饋頁過來）：身分固定家長、孩子就是 #01 填的那一位（稱呼和公開版一樣選填）
+  // 兩版都是一篇一個孩子（validMembers）
   function validThread(d) {
     return d.keys().hasOnly(threadKeys()) && d.keys().hasAll(threadKeys())
       && d.v == 1
@@ -421,25 +422,16 @@ service cloud.firestore {
       && d.content is string && d.content.size() > 0 && d.content.size() <= 2000
       && validMembers(d.members)
       && validTags(d.hashtags)
-      && (d.source == 'public'
-        || (d.source == 'clinic' && d.role == '家長' && d.members.size() == 1))
+      && (d.source == 'public' || (d.source == 'clinic' && d.role == '家長'))
       && d.clicks == 0 && d.dwellMs == 0 && d.helpful == 0 && d.replyCount == 0
       && d.lastReplyId == null
       && d.createdAt == request.time
       && d.lastActivityAt == request.time;
   }
 
-  // 規則沒有迴圈：最多 8 位，逐一檢查
+  // 一篇只寫一個孩子（醫護人員：一個年齡層）
   function validMembers(m) {
-    return m is list && m.size() >= 1 && m.size() <= 8
-      && validMember(m[0])
-      && (m.size() < 2 || validMember(m[1]))
-      && (m.size() < 3 || validMember(m[2]))
-      && (m.size() < 4 || validMember(m[3]))
-      && (m.size() < 5 || validMember(m[4]))
-      && (m.size() < 6 || validMember(m[5]))
-      && (m.size() < 7 || validMember(m[6]))
-      && (m.size() < 8 || validMember(m[7]));
+    return m is list && m.size() == 1 && validMember(m[0]);
   }
 
   // 一位孩子（ageMin == ageMax）或醫護人員的一個年齡層；「不限」= 男孩女孩都有

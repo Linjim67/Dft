@@ -14,7 +14,7 @@
   var GENDERS = ['男', '女', '不限'];
   var KID = { '男': '男孩', '女': '女孩', '不限': '孩子' };
 
-  var MAX = { author: 20, content: 2000, reply: 1000, tag: 20, tags: 5, members: 8 };
+  var MAX = { author: 20, content: 2000, reply: 1000, tag: 20, tags: 5 };
   /* 兩次發言（發文或回覆）至少隔 15 秒；伺服器規則也擋（cooldowns/{uid}） */
   var COOLDOWN_MS = 15000;
   /* 停留時間：一次最多算 5 分鐘，手機開著放旁邊不會灌水（規則也是 5 分鐘） */
@@ -105,13 +105,14 @@
   }
 
   /* f: { role, author, content, members: [{ ageMin, ageMax, gender }], hashtags }
-     opts: { source: 'public' | 'clinic', nickname } */
+     opts: { source: 'public' | 'clinic', nickname }
+     一篇只寫一個孩子：members 只留第一位（舊文章可能有好幾位，讀的時候照樣顯示） */
   function buildThread(f, opts) {
     var source = sourceOf(opts);
     var nickname = opts && opts.nickname;
     var content = text(f.content, nickname, MAX.content);
     if (!content) throw new Error('empty content');
-    var members = (f.members || []).slice(0, source === 'clinic' ? 1 : MAX.members).map(cleanMember);
+    var members = (f.members || []).slice(0, 1).map(cleanMember);
     if (!members.length) throw new Error('no members');
     return {
       v: 1,

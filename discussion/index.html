@@ -250,17 +250,13 @@
           <p class="field-error" id="role-error" hidden></p>
         </fieldset>
 
-        <!-- ── 公開版 3. 孩子（可以好幾位；醫護人員填年齡範圍） ── -->
+        <!-- ── 公開版 3. 孩子（一篇一位；醫護人員填年齡範圍） ── -->
         <fieldset class="field only-public" id="membersField">
           <legend class="field-label">
             <span id="membersLegend">孩子的年紀與性別</span> <span class="req">必填</span>
           </legend>
-          <p class="field-hint" id="membersHint">有好幾個孩子的話，可以一起分享。</p>
-          <ol class="members" id="members"></ol>
-          <button class="add-member" type="button" id="addMember">
-            <svg viewBox="0 0 24 24" class="icon" aria-hidden="true"><path d="M12 5.5v13M5.5 12h13" /></svg>
-            <span id="addMemberLabel">新增另一個孩子</span>
-          </button>
+          <p class="field-hint" id="membersHint">一篇寫一個孩子；其他孩子的經驗，可以再發一篇。</p>
+          <div class="members" id="members"></div>
           <p class="field-error" id="members-error" hidden></p>
         </fieldset>
 

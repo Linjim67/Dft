@@ -1040,6 +1040,7 @@
   });
 
   var role = CLINIC ? '家長' : '';
+  /* 一篇只寫一個孩子（醫護人員：一個年齡層）。陣列裡永遠只有一位 */
   var members = [];
   var tags = [];
 
@@ -1075,44 +1076,34 @@
       '<span class="segmented-face">' + text + '</span></label>';
   }
 
-  function memberHead(p, n, title) {
-    return '<div class="member-head"><p class="member-title" id="' + p + '-title">' + title + '</p>' +
-      (members.length > 1
-        ? '<button class="member-remove" type="button" data-remove="' + (n - 1) + '" aria-label="移除' + title + '">' +
-        ICON.x + '<span>移除</span></button>'
-        : '') +
-      '</div>';
-  }
-
   function singleMemberHtml(m, i) {
     var p = 'm' + i;
-    return '<li class="member" data-i="' + i + '">' + memberHead(p, i + 1, '第 ' + (i + 1) + ' 個孩子') +
+    return '<div class="member" data-i="' + i + '">' +
       '<div class="member-row">' +
-      '<label class="member-label" id="' + p + '-age-label" for="' + p + '-age">年紀</label>' +
+      '<label class="member-label" for="' + p + '-age">年紀</label>' +
       '<output class="member-out" id="' + p + '-age-out" for="' + p + '-age"></output>' +
       '<input type="range" id="' + p + '-age" min="0" max="' + D.AGE_MAX_IDX + '" step="1" value="' +
-      (m.idx == null ? 12 : m.idx) + '" data-k="idx" aria-labelledby="' + p + '-title ' + p + '-age-label">' +
+      (m.idx == null ? 12 : m.idx) + '" data-k="idx">' +
       '</div>' +
-      '<div class="member-row" role="radiogroup" aria-labelledby="' + p + '-title ' + p + '-g">' +
+      '<div class="member-row" role="radiogroup" aria-labelledby="' + p + '-g">' +
       '<span class="member-label" id="' + p + '-g">性別</span>' +
       '<div class="segmented">' + genderOpt(p, 0, '男', '男孩', m) + genderOpt(p, 1, '女', '女孩', m) + '</div>' +
-      '</div></li>';
+      '</div></div>';
   }
 
   function rangeMemberHtml(m, i) {
     var p = 'm' + i;
-    var title = '年齡層 ' + (i + 1);
-    return '<li class="member" data-i="' + i + '">' + memberHead(p, i + 1, title) +
+    return '<div class="member" data-i="' + i + '">' +
       '<div class="member-row">' +
       '<p class="member-label">年紀範圍</p>' +
       '<output class="member-out" id="' + p + '-range-out"></output>' +
-      dualHtml(p, m.from, m.to, title) +
+      dualHtml(p, m.from, m.to, '年紀範圍') +
       '</div>' +
-      '<div class="member-row" role="radiogroup" aria-labelledby="' + p + '-title ' + p + '-g">' +
+      '<div class="member-row" role="radiogroup" aria-labelledby="' + p + '-g">' +
       '<span class="member-label" id="' + p + '-g">性別</span>' +
       '<div class="segmented is-3">' + genderOpt(p, 0, '男', '男孩', m) + genderOpt(p, 1, '女', '女孩', m) +
       genderOpt(p, 2, '不限', '都有', m) + '</div>' +
-      '</div></li>';
+      '</div></div>';
   }
 
   function paintMember(m, i) {
@@ -1145,11 +1136,9 @@
     var pro = proMode();
     $('membersLegend').textContent = pro ? '照顧過的孩子：年紀範圍與性別' : '孩子的年紀與性別';
     $('membersHint').textContent = pro
-      ? '填年齡範圍（例如 3–6 歲）；不同年齡層的經驗，可以分開新增。'
-      : '有好幾個孩子的話，可以一起分享。';
-    $('addMemberLabel').textContent = pro ? '新增另一個年齡層' : '新增另一個孩子';
+      ? '填年齡範圍（例如 3–6 歲）；不同年齡層的經驗，請分開發文。'
+      : '一篇寫一個孩子；其他孩子的經驗，可以再發一篇。';
     errorFields.members.label = pro ? '孩子的年紀範圍' : '孩子的年紀與性別';
-    $('addMember').hidden = members.length >= D.MAX.members;
     $('members').innerHTML = members.map(pro ? rangeMemberHtml : singleMemberHtml).join('');
     members.forEach(paintMember);
   }
@@ -1176,23 +1165,6 @@
     if (ev.target.getAttribute('data-k') !== 'gender') return;
     members[Number(ev.target.closest('[data-i]').getAttribute('data-i'))].gender = ev.target.value;
     errors.clearError('members');
-  });
-
-  $('members').addEventListener('click', function (ev) {
-    var b = ev.target.closest('[data-remove]');
-    if (!b) return;
-    members.splice(Number(b.getAttribute('data-remove')), 1);
-    renderMembers();
-    $('addMember').focus();
-    Anxin.announce(live, '已移除，還有 ' + members.length + (proMode() ? ' 個年齡層' : ' 個孩子'));
-  });
-
-  $('addMember').addEventListener('click', function () {
-    members.push(blankMember());
-    renderMembers();
-    var i = members.length - 1;
-    $(proMode() ? 'm' + i + '-from' : 'm' + i + '-age').focus();
-    Anxin.announce(live, proMode() ? '已新增年齡層 ' + (i + 1) : '已新增第 ' + (i + 1) + ' 個孩子');
   });
 
   form.addEventListener('change', function (ev) {
@@ -1307,17 +1279,12 @@
     if (!CLINIC) {
       if (!role) list.push({ key: 'role', msg: '請選擇您的身分。' });
       if (!proMode()) {
-        for (var i = 0; i < members.length; i++) {
-          if (members[i].idx == null) {
-            errorFields.members.focus = 'm' + i + '-age';
-            list.push({ key: 'members', msg: '第 ' + (i + 1) + ' 個孩子還沒選年紀，請拖曳滑桿。' });
-            break;
-          }
-          if (!members[i].gender) {
-            errorFields.members.focus = 'm' + i + '-g0';
-            list.push({ key: 'members', msg: '第 ' + (i + 1) + ' 個孩子還沒選性別。' });
-            break;
-          }
+        if (members[0].idx == null) {
+          errorFields.members.focus = 'm0-age';
+          list.push({ key: 'members', msg: '請拖曳滑桿，選孩子的年紀。' });
+        } else if (!members[0].gender) {
+          errorFields.members.focus = 'm0-g0';
+          list.push({ key: 'members', msg: '請選孩子的性別。' });
         }
       }
     }
