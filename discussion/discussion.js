@@ -105,9 +105,10 @@
     return '<span class="role-pill">' + esc(role) + '</span>';
   }
 
-  function metaHtml(item, now) {
+  /* 身分、稱呼、時間。文章（卡片、單篇）的這一行前面有放大鏡圖示；回覆沒有 */
+  function metaHtml(item, now, withIcon) {
     var when = item.createdAt || now;
-    return '<p class="post-meta">' + rolePill(item.role) +
+    return '<p class="post-meta">' + (withIcon ? ICON.search : '') + rolePill(item.role) +
       '<span class="post-author">' + esc(item.author || '匿名') + '</span>' +
       '<span aria-hidden="true">·</span>' +
       '<time datetime="' + new Date(when).toISOString() + '">' + D.timeAgo(item.createdAt, now) + '</time>' +
@@ -306,7 +307,7 @@
     /* 摘要保留換行，但連續空行併成一行，四行的摘要才裝得下內容 */
     var excerpt = t.content.replace(/\n\s*\n+/g, '\n');
     return '<li><article class="thread-card">' +
-      metaHtml(t, now) + membersHtml(t) +
+      membersHtml(t) + metaHtml(t, now, true) +
       '<a class="thread-link" href="#t=' + esc(t.id) + '"><span class="thread-excerpt">' + esc(excerpt) + '</span></a>' +
       (t.hashtags.length ? '<p class="card-tags">' + t.hashtags.map(function (h) {
         return '<span>#' + esc(h) + '</span>';
@@ -602,7 +603,7 @@
     /* 內容不會變，只畫一次；之後的快照只更新計數（按鈕的焦點才不會被洗掉） */
     if (post.getAttribute('data-id') !== t.id) {
       post.setAttribute('data-id', t.id);
-      post.innerHTML = metaHtml(t, Date.now()) + membersHtml(t) +
+      post.innerHTML = membersHtml(t) + metaHtml(t, Date.now(), true) +
         '<div class="post-body">' + esc(t.content) + '</div>' +
         /* 標籤和列表卡片一樣是純文字；點一下仍會搜尋這個標籤 */
         (t.hashtags.length ? '<ul class="card-tags post-tags" aria-label="標籤（點一下搜尋）">' +

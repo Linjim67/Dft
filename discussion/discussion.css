@@ -492,6 +492,13 @@ html:not([data-discuss="clinic"]) .only-clinic {
   color: var(--fg-muted);
 }
 
+/* 文章第二行開頭的放大鏡：和第一行的人形圖示同大小、同灰色，文字也對齊同一條線 */
+.post-meta>.icon {
+  width: 18px;
+  height: 18px;
+  margin-inline-end: -2px;
+}
+
 /* 身分：白底、黑字、黑框，每種身分都一樣 */
 .role-pill {
   display: inline-flex;
