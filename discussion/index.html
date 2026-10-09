@@ -6,6 +6,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="color-scheme" content="light">
   <meta name="theme-color" content="#FFF7ED">
+  <meta name="description" content="安心陪伴討論區：家長與醫護人員交流怎麼陪孩子面對打針。">
   <title>安心陪伴 · 討論區</title>
 
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -16,34 +17,292 @@
   <link rel="stylesheet" href="/shared/page.css">
   <link rel="stylesheet" href="/discussion/discussion.css">
   <script src="/shared/app.js"></script>
+  <script>
+    /* 兩個網址、同一張頁面（vercel.json 把 /discussion/parent/ 指到這裡）：
+       /discussion/         公開版：任何人，自己填稱呼、身分、孩子的年紀
+       /discussion/parent/  家長版：從回饋頁過來，身分固定「家長」，孩子沿用 #01 填的資料
+       家長版找不到資料（過期、換了手機）就改用公開版，而不是把人帶回 #01 重填。 */
+    (function () {
+      var parent = /^\/discussion\/parent\/?$/.test(location.pathname);
+      if (parent && !Anxin.profile.load()) {
+        location.replace('/discussion/' + location.hash);
+        return;
+      }
+      document.documentElement.setAttribute('data-discuss', parent ? 'clinic' : 'public');
+    })();
+  </script>
 </head>
 
 <body>
   <a class="skip-link" href="#main">跳到主要內容</a>
 
+  <!-- 返回：列表 → 回主頁（家長版）；單篇、發文 → 所有討論。由 discussion.js 切換 -->
   <header class="wrap topbar">
-    <a class="back-link" href="/home/">
+    <a class="back-link" id="backLink" href="/home/">
       <svg viewBox="0 0 24 24" class="icon" aria-hidden="true"><path d="M15 5 8 12l7 7" /></svg>
-      <span>回主頁</span>
+      <span id="backLabel">回主頁</span>
     </a>
+    <span class="brand" id="brand">安心陪伴</span>
   </header>
 
   <main id="main" class="wrap">
-    <div class="page-head">
-      <h1>討論區</h1>
-      <p class="page-lede">家長與醫護人員一起交流：怎麼陪孩子面對打針。</p>
-    </div>
 
-    <!-- #04 之後直接替換這一塊 -->
-    <div class="empty-state">
-      <svg viewBox="0 0 24 24" class="icon" aria-hidden="true">
-        <path d="M4.5 6.5h15v9h-8l-4 3v-3h-3Z" />
-      </svg>
-      <strong>討論區即將開放</strong>
-      <span>我們正在準備，敬請期待。</span>
-    </div>
+    <!-- ══════════ 討論列表 ══════════ -->
+    <section id="listView" aria-labelledby="listTitle">
+      <div class="page-head">
+        <h1 id="listTitle" tabindex="-1">討論區</h1>
+        <p class="page-lede only-public">家長與醫護人員一起交流：怎麼陪孩子面對打針。</p>
+        <p class="page-lede only-clinic">辛苦了！您剛剛陪孩子用過的方法，也許正是下一個家庭需要的。</p>
+      </div>
+
+      <a class="btn btn-primary compose-btn" href="#new">
+        <svg viewBox="0 0 24 24" class="icon" aria-hidden="true">
+          <path d="M4.5 19.5h4l10-10-4-4-10 10v4Z" />
+          <path d="m13 7 4 4" />
+        </svg>
+        <span>分享您的方法</span>
+      </a>
+
+      <div class="finder" role="search" aria-label="搜尋討論">
+        <div class="search-row">
+          <div class="search-box">
+            <label class="vh" for="q">搜尋討論</label>
+            <svg viewBox="0 0 24 24" class="icon" aria-hidden="true">
+              <circle cx="11" cy="11" r="6.5" />
+              <path d="m16 16 4 4" />
+            </svg>
+            <input type="search" id="q" placeholder="關鍵字或 #標籤" enterkeyhint="search" autocomplete="off">
+          </div>
+          <button class="filter-toggle" type="button" id="filterBtn" aria-expanded="false"
+            aria-controls="filterPanel">
+            <svg viewBox="0 0 24 24" class="icon" aria-hidden="true">
+              <path d="M4 7h9M17 7h3M4 17h3M11 17h9" />
+              <circle cx="15" cy="7" r="2" />
+              <circle cx="9" cy="17" r="2" />
+            </svg>
+            <span>篩選</span>
+            <span class="filter-count" id="filterCount" hidden></span>
+          </button>
+        </div>
+
+        <div class="filter-panel" id="filterPanel" hidden>
+          <fieldset class="filter-group">
+            <legend class="filter-label">身分</legend>
+            <div class="chip-row" id="roleFilter"></div>
+          </fieldset>
+
+          <div class="filter-group">
+            <p class="filter-label">
+              <span id="ageFilterLabel">孩子年紀</span>
+              <output id="ageFilterOut" class="filter-out">不限</output>
+            </p>
+            <label class="range-row">
+              <span>從</span>
+              <input type="range" id="ageFrom" min="0" max="36" step="1" value="0" aria-label="孩子年紀：從">
+            </label>
+            <label class="range-row">
+              <span>到</span>
+              <input type="range" id="ageTo" min="0" max="36" step="1" value="36" aria-label="孩子年紀：到">
+            </label>
+          </div>
+
+          <fieldset class="filter-group">
+            <legend class="filter-label">孩子性別</legend>
+            <div class="chip-row" id="genderFilter">
+              <label class="chip-radio"><input type="radio" name="genderFilter" value="" checked><span
+                  class="chip">不限</span></label>
+              <label class="chip-radio"><input type="radio" name="genderFilter" value="男"><span
+                  class="chip">男孩</span></label>
+              <label class="chip-radio"><input type="radio" name="genderFilter" value="女"><span
+                  class="chip">女孩</span></label>
+            </div>
+          </fieldset>
+
+          <button class="quiet-link clear-filters" type="button" id="clearFilters">清除篩選</button>
+        </div>
+
+        <!-- 家長版：一鍵找「和自己孩子差不多大」的經驗 -->
+        <div class="chip-row only-clinic">
+          <button class="chip" type="button" id="nearAgeBtn" aria-pressed="false">和孩子差不多大</button>
+        </div>
+      </div>
+
+      <div class="list-bar">
+        <div class="sort" role="radiogroup" aria-label="排序方式">
+          <label><input type="radio" name="sort" value="recommend" checked><span>推薦</span></label>
+          <label><input type="radio" name="sort" value="latest"><span>最新</span></label>
+        </div>
+        <p class="list-count" id="listCount"></p>
+      </div>
+
+      <div id="listStatus"></div>
+      <ol class="thread-list" id="threadList"></ol>
+      <button class="btn btn-quiet more-btn" type="button" id="moreBtn" hidden>顯示更多</button>
+    </section>
+
+    <!-- ══════════ 單篇討論 ══════════ -->
+    <section id="threadView" hidden aria-labelledby="threadTitle">
+      <h1 class="vh" id="threadTitle" tabindex="-1">討論內容</h1>
+      <div id="threadStatus"></div>
+      <article class="post" id="post" hidden></article>
+
+      <section class="replies" id="replies" hidden aria-labelledby="repliesTitle">
+        <h2 class="replies-title" id="repliesTitle">回覆</h2>
+        <ol class="reply-list" id="replyList"></ol>
+
+        <form class="reply-form" id="replyForm" novalidate>
+          <label class="field-label" for="replyText">寫下您的回覆</label>
+          <textarea id="replyText" maxlength="1000" rows="3" aria-describedby="reply-count"></textarea>
+          <p class="char-count" id="reply-count" aria-live="polite">還可以輸入 1000 字</p>
+
+          <!-- 公開版：身分、稱呼（記住上次填的） -->
+          <div class="reply-identity only-public">
+            <div>
+              <label class="mini-label" for="replyRole">身分</label>
+              <select class="select" id="replyRole" aria-describedby="reply-error">
+                <option value="">請選擇</option>
+                <option>家長</option>
+                <option>醫師</option>
+                <option>護士</option>
+                <option>醫檢師</option>
+                <option>其他</option>
+              </select>
+            </div>
+            <div>
+              <label class="mini-label" for="replyAuthor">稱呼 <span class="opt">選填</span></label>
+              <input type="text" id="replyAuthor" maxlength="20" autocomplete="off" placeholder="匿名">
+            </div>
+          </div>
+          <p class="reply-as only-clinic">以「家長」身分匿名回覆</p>
+
+          <button class="btn btn-primary" type="submit" id="replyBtn">
+            <span class="btn-label" id="replyLabel">送出回覆</span>
+          </button>
+          <p class="field-error" id="reply-error" role="alert" hidden></p>
+        </form>
+      </section>
+    </section>
+
+    <!-- ══════════ 發文 ══════════ -->
+    <section id="composeView" hidden aria-labelledby="composeTitle">
+      <div class="page-head">
+        <h1 id="composeTitle" tabindex="-1">分享您的方法</h1>
+        <p class="page-lede">怎麼跟孩子說明、當下怎麼轉移注意力、事後怎麼鼓勵，有用、沒用的都值得說。</p>
+      </div>
+
+      <div id="errorSummary" class="error-summary" role="alert" tabindex="-1"
+        aria-labelledby="errorSummaryTitle" hidden>
+        <p class="error-summary-head">
+          <svg viewBox="0 0 24 24" class="icon" aria-hidden="true">
+            <circle cx="12" cy="12" r="8.2" />
+            <path d="M12 8v4.6M12 15.8h.01" />
+          </svg>
+          <span id="errorSummaryTitle">還有幾個地方需要補上</span>
+        </p>
+        <ul id="errorList"></ul>
+      </div>
+
+      <form id="composeForm" novalidate>
+
+        <!-- 家長版：不用再填，沿用 #01 的資料（不含暱稱） -->
+        <div class="identity-card only-clinic">
+          <p class="identity-title">以「家長」身分匿名分享</p>
+          <p class="identity-kid">
+            <svg viewBox="0 0 24 24" class="icon" aria-hidden="true">
+              <circle cx="12" cy="7.5" r="3.2" />
+              <path d="M5.8 19.5c.5-3.4 3-5.6 6.2-5.6s5.7 2.2 6.2 5.6" />
+            </svg>
+            <span>孩子：<strong id="clinicKid"></strong></span>
+          </p>
+          <p class="identity-note">沿用您先前填的資料，不會顯示暱稱；文字裡提到的暱稱也會自動換成「孩子」。</p>
+        </div>
+
+        <!-- ── 公開版 1. 稱呼 ── -->
+        <div class="field field-inline only-public">
+          <label class="field-label" for="author">
+            您的稱呼 <span class="opt">選填</span>
+          </label>
+          <input type="text" id="author" maxlength="20" autocomplete="off" enterkeyhint="next"
+            placeholder="不填就顯示「匿名」">
+        </div>
+
+        <!-- ── 公開版 2. 身分 ── -->
+        <fieldset class="field only-public">
+          <legend class="field-label">
+            您的身分 <span class="req">必填</span>
+          </legend>
+          <div class="chip-row role-chips" id="roleChips">
+            <label class="chip-radio"><input type="radio" name="role" value="家長"
+                aria-describedby="role-error"><span class="chip">家長</span></label>
+            <label class="chip-radio"><input type="radio" name="role" value="醫師"
+                aria-describedby="role-error"><span class="chip">醫師</span></label>
+            <label class="chip-radio"><input type="radio" name="role" value="護士"
+                aria-describedby="role-error"><span class="chip">護士</span></label>
+            <label class="chip-radio"><input type="radio" name="role" value="醫檢師"
+                aria-describedby="role-error"><span class="chip">醫檢師</span></label>
+            <label class="chip-radio"><input type="radio" name="role" value="其他"
+                aria-describedby="role-error"><span class="chip">其他</span></label>
+          </div>
+          <p class="field-error" id="role-error" hidden></p>
+        </fieldset>
+
+        <!-- ── 公開版 3. 孩子（可以好幾位；醫護人員填年齡範圍） ── -->
+        <fieldset class="field only-public" id="membersField">
+          <legend class="field-label">
+            <span id="membersLegend">孩子的年紀與性別</span> <span class="req">必填</span>
+          </legend>
+          <p class="field-hint" id="membersHint">有好幾個孩子的話，可以一起分享。</p>
+          <ol class="members" id="members"></ol>
+          <button class="add-member" type="button" id="addMember">
+            <svg viewBox="0 0 24 24" class="icon" aria-hidden="true"><path d="M12 5.5v13M5.5 12h13" /></svg>
+            <span id="addMemberLabel">新增另一個孩子</span>
+          </button>
+          <p class="field-error" id="members-error" hidden></p>
+        </fieldset>
+
+        <!-- ── 內容 ── -->
+        <div class="field" id="contentField">
+          <label class="field-label" for="content">
+            您的方法或經驗 <span class="req">必填</span>
+          </label>
+          <textarea id="content" maxlength="2000" rows="6" aria-required="true"
+            aria-describedby="content-error content-count"
+            placeholder="例如：打針前先讓孩子抱著喜歡的玩偶，跟他一起數到三。"></textarea>
+          <p class="char-count" id="content-count" aria-live="polite">還可以輸入 2000 字</p>
+          <p class="field-error" id="content-error" hidden></p>
+        </div>
+
+        <!-- ── 標籤 ── -->
+        <div class="field">
+          <label class="field-label" for="tagInput">
+            標籤 <span class="opt">選填</span>
+          </label>
+          <p class="field-hint" id="tagHint">方便別人搜尋，最多 5 個。</p>
+          <ul class="tag-chips" id="tagChips" aria-label="已加入的標籤"></ul>
+          <div class="tag-entry" id="tagEntry">
+            <input type="text" id="tagInput" maxlength="40" autocomplete="off" enterkeyhint="done"
+              placeholder="輸入後按「加入」" aria-describedby="tagHint">
+            <button class="btn btn-quiet tag-add" type="button" id="tagAdd">加入</button>
+          </div>
+          <div class="tag-suggest" id="tagSuggestWrap">
+            <p class="mini-label" id="tagSuggestLabel">常用標籤</p>
+            <div class="chip-row" id="tagSuggest" role="group" aria-labelledby="tagSuggestLabel"></div>
+          </div>
+        </div>
+
+        <button class="btn btn-primary" type="submit" id="postBtn">
+          <span class="btn-label" id="postLabel">發布</span>
+        </button>
+        <p class="field-error" id="post-error" role="alert" hidden></p>
+        <p class="form-foot">發布後所有人都看得到，請不要寫上全名、電話或病歷號。</p>
+      </form>
+    </section>
   </main>
 
+  <div class="live-region" id="liveRegion" role="status" aria-live="polite"></div>
+  <!-- Firebase 是 module（deferred）；discussion.js 透過 Anxin.whenFirebase() 等它 -->
+  <script type="module" src="/shared/firebase.js"></script>
+  <script src="/discussion/discuss-core.js"></script>
   <script src="/discussion/discussion.js"></script>
 </body>
 

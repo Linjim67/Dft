@@ -1,3 +1,1004 @@
 /* ═══ 討論區（#04）═════════════════════════════════════════════
-   目前是預留頁，版面沿用 /shared/page.css。
+   兩個網址、同一張頁面：<html data-discuss="public | clinic"> 決定顯示哪些欄位。
+   表單元件沿用 #01（/styles.css），外框沿用 /shared/page.css；只用既有 token，不另開色票。
    ═══════════════════════════════════════════════════════════════ */
+
+html[data-discuss="clinic"] .only-public,
+html:not([data-discuss="clinic"]) .only-clinic {
+  display: none !important;
+}
+
+/* 圓角的按鈕不要瀏覽器預設的方形點擊底色（按下的回饋由各元件自己處理） */
+.chip,
+.chip-radio,
+.sort label,
+.filter-toggle,
+.helpful-btn,
+.add-member,
+.member-remove,
+.thread-link,
+.segmented-option {
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* 只給螢幕閱讀器 */
+.vh {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+/* 換畫面時焦點移到標題（螢幕閱讀器會唸出來）；標題不能操作，焦點框看起來像故障，和 /shot/ 一樣拿掉 */
+#listTitle:focus,
+#threadTitle:focus,
+#composeTitle:focus {
+  outline: none;
+}
+
+.brand {
+  display: inline-flex;
+  align-items: center;
+  min-height: var(--tap);
+  font-weight: 700;
+  color: var(--fg-muted);
+}
+
+.compose-btn {
+  margin-bottom: var(--sp-6);
+}
+
+/* ═══ 搜尋列 ══════════════════════════════════════════════════ */
+
+.finder {
+  display: grid;
+  gap: var(--sp-3);
+  margin-bottom: var(--sp-5);
+}
+
+.search-row {
+  display: flex;
+  gap: var(--sp-2);
+}
+
+.search-box {
+  position: relative;
+  flex: 1;
+  min-width: 0;
+}
+
+.search-box .icon {
+  position: absolute;
+  left: 15px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--idle);
+  pointer-events: none;
+}
+
+.search-box input {
+  display: block;
+  width: 100%;
+  min-height: 52px;
+  padding: 0 var(--sp-3) 0 46px;
+  background: var(--card);
+  border: var(--line-w) solid var(--line);
+  border-radius: var(--r-pill);
+  box-shadow: var(--sh-inset);
+  -webkit-appearance: none;
+  appearance: none;
+  transition: border-color var(--t-fast) var(--ease);
+}
+
+.search-box input::placeholder {
+  color: var(--fg-muted);
+  opacity: .7;
+}
+
+.search-box input:focus {
+  border-color: var(--primary-deep);
+}
+
+/* 全站的 :focus-visible 會把圓角改成 12px；藥丸形的元件要留著藥丸形 */
+.search-box input:focus-visible,
+.chip:focus-visible,
+.filter-toggle:focus-visible,
+.helpful-btn:focus-visible {
+  border-radius: var(--r-pill);
+}
+
+.search-box input:focus-visible {
+  outline-offset: 0;
+}
+
+.filter-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  flex: none;
+  min-height: 52px;
+  padding: 0 var(--sp-4) 0 var(--sp-3);
+  background: var(--card);
+  color: var(--fg);
+  font-weight: 700;
+  border: var(--line-w) solid var(--line);
+  border-radius: var(--r-pill);
+  box-shadow: var(--sh-sm);
+  transition: background-color var(--t-fast) var(--ease),
+    border-color var(--t-fast) var(--ease);
+}
+
+.filter-toggle[aria-expanded="true"] {
+  background: var(--primary-wash);
+  border-color: var(--primary-deep);
+  color: var(--primary-deep);
+}
+
+/* 白字在深橘上 5.18:1 */
+.filter-count {
+  display: inline-grid;
+  place-items: center;
+  min-width: 22px;
+  height: 22px;
+  padding: 0 6px;
+  border-radius: var(--r-pill);
+  background: var(--primary-deep);
+  color: #FFFFFF;
+  font-size: .78rem;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+}
+
+.filter-panel {
+  display: grid;
+  gap: var(--sp-5);
+  padding: var(--sp-4);
+  background: var(--card);
+  border-radius: var(--r-lg);
+  box-shadow: var(--sh-md);
+}
+
+.filter-group {
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.filter-label {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: var(--sp-2);
+  width: 100%;
+  padding: 0;
+  margin-bottom: var(--sp-2);
+  font-size: .95rem;
+  font-weight: 700;
+}
+
+.filter-out {
+  color: var(--primary-deep);
+  font-variant-numeric: tabular-nums;
+}
+
+.clear-filters {
+  justify-self: start;
+  padding-inline: 0;
+  background: none;
+  border: 0;
+}
+
+/* ═══ Chip（篩選、身分、標籤） ════════════════════════════════
+   未選：白底＋淡褐框；已選：淡橘底＋深橘框＋打勾（不單靠顏色） */
+
+.chip-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--sp-2);
+}
+
+.chip {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-height: var(--tap);
+  padding: 0 var(--sp-4);
+  background: var(--card);
+  color: var(--fg);
+  font-size: .95rem;
+  font-weight: 700;
+  line-height: 1.3;
+  border: var(--line-w) solid var(--line);
+  border-radius: var(--r-pill);
+  box-shadow: var(--sh-sm);
+  transition: transform var(--t-fast) var(--ease),
+    background-color var(--t-fast) var(--ease),
+    border-color var(--t-fast) var(--ease),
+    color var(--t-fast) var(--ease);
+}
+
+.chip .icon {
+  width: 16px;
+  height: 16px;
+}
+
+.chip[aria-pressed="true"],
+.chip-radio input:checked+.chip {
+  background: var(--primary-wash);
+  color: var(--primary-deep);
+  border-color: var(--primary-deep);
+  box-shadow: var(--sh-sm), inset 0 0 0 var(--line-w) var(--primary-deep);
+}
+
+.chip[aria-pressed="true"]::before,
+.chip-radio input:checked+.chip::before {
+  --check: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M5.5 12.5 10 17l8.5-9' fill='none' stroke='%23000' stroke-width='2.6' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  content: "";
+  width: 15px;
+  height: 15px;
+  margin-inline-start: -4px;
+  background: currentColor;
+  -webkit-mask: var(--check) center / contain no-repeat;
+  mask: var(--check) center / contain no-repeat;
+}
+
+.chip:active,
+.chip-radio input:active+.chip {
+  transform: translateY(1px);
+}
+
+.chip-radio {
+  position: relative;
+  display: inline-flex;
+}
+
+.chip-radio input {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  opacity: 0;
+  cursor: pointer;
+}
+
+.chip-radio input:focus-visible+.chip {
+  outline: 3px solid var(--primary-deep);
+  outline-offset: 3px;
+}
+
+/* 單篇裡的標籤：點了就搜尋 */
+.chip-tag {
+  color: var(--primary-deep);
+  box-shadow: none;
+}
+
+/* 已加入的標籤：點了移除 */
+.chip-picked {
+  padding-inline: var(--sp-4) var(--sp-3);
+  background: var(--primary-wash);
+  color: var(--primary-deep);
+  border-color: var(--primary-deep);
+  box-shadow: none;
+}
+
+.chip-suggest {
+  padding-inline: var(--sp-3) var(--sp-4);
+  color: var(--fg-muted);
+  box-shadow: none;
+}
+
+/* ═══ 年紀範圍（篩選、醫護人員的年齡層） ════════════════════════ */
+
+.range-row {
+  display: grid;
+  grid-template-columns: 2em 1fr;
+  align-items: center;
+  gap: var(--sp-2);
+  flex: 1 0 100%;
+  font-size: .9rem;
+  font-weight: 700;
+  color: var(--fg-muted);
+}
+
+/* ═══ 列表 ════════════════════════════════════════════════════ */
+
+.list-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--sp-3);
+  margin-bottom: var(--sp-3);
+}
+
+.sort {
+  display: inline-flex;
+  gap: 2px;
+  padding: 2px;
+  background: var(--bg-sunk);
+  border-radius: var(--r-pill);
+  box-shadow: var(--sh-inset);
+}
+
+.sort label {
+  position: relative;
+}
+
+.sort input {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  opacity: 0;
+  cursor: pointer;
+}
+
+.sort span {
+  display: grid;
+  place-items: center;
+  min-height: 44px;
+  padding: 0 var(--sp-4);
+  border-radius: var(--r-pill);
+  font-size: .95rem;
+  font-weight: 700;
+  color: var(--fg-muted);
+  transition: background-color var(--t-fast) var(--ease),
+    color var(--t-fast) var(--ease),
+    box-shadow var(--t-fast) var(--ease);
+}
+
+/* 選取：浮起的白底（形狀）＋深橘字（顏色），兩個線索 */
+.sort input:checked+span {
+  background: var(--card);
+  color: var(--primary-deep);
+  box-shadow: var(--sh-sm);
+}
+
+.sort input:focus-visible+span {
+  outline: 3px solid var(--primary-deep);
+  outline-offset: 2px;
+}
+
+.list-count {
+  font-size: .88rem;
+  color: var(--fg-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.thread-list {
+  display: grid;
+  gap: var(--sp-3);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+/* 整張卡片可點（摘要的連結撐滿卡片），不在卡片裡藏第二個按鈕 */
+.thread-card {
+  position: relative;
+  display: grid;
+  gap: var(--sp-2);
+  padding: var(--sp-4);
+  background: var(--card);
+  border-radius: var(--r-lg);
+  box-shadow: var(--sh-md);
+  transition: transform var(--t-fast) var(--ease),
+    box-shadow var(--t-fast) var(--ease);
+}
+
+.thread-card:has(.thread-link:active) {
+  transform: translateY(2px);
+  box-shadow: var(--sh-sm);
+}
+
+.thread-link {
+  color: inherit;
+  text-decoration: none;
+}
+
+.thread-link::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: var(--r-lg);
+}
+
+.thread-link:focus-visible {
+  outline: none;
+}
+
+.thread-link:focus-visible::after {
+  outline: 3px solid var(--primary-deep);
+  outline-offset: 3px;
+}
+
+.thread-excerpt {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 4;
+  line-clamp: 4;
+  overflow: hidden;
+  white-space: pre-line;
+  line-height: 1.7;
+}
+
+.post-meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 2px var(--sp-2);
+  font-size: .88rem;
+  line-height: 1.5;
+  color: var(--fg-muted);
+}
+
+.role-pill {
+  display: inline-flex;
+  align-items: center;
+  min-height: 24px;
+  padding: 0 10px;
+  border-radius: var(--r-pill);
+  background: var(--bg-sunk);
+  color: var(--fg);
+  font-size: .8rem;
+  font-weight: 700;
+}
+
+/* 醫護人員：淡橘底（文字本身已經說明身分，顏色只是加強） */
+.role-pill.is-pro {
+  background: var(--primary-wash);
+  color: var(--primary-deep);
+}
+
+.post-author {
+  font-weight: 700;
+  color: var(--fg);
+}
+
+.source-tag {
+  font-size: .8rem;
+  color: var(--success);
+  font-weight: 700;
+}
+
+.post-members {
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+  font-size: .9rem;
+  line-height: 1.55;
+  color: var(--fg-muted);
+}
+
+.post-members .icon {
+  width: 18px;
+  height: 18px;
+  margin-top: 2px;
+}
+
+.card-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2px var(--sp-3);
+  font-size: .88rem;
+  font-weight: 700;
+  color: var(--primary-deep);
+}
+
+.card-stats {
+  display: flex;
+  gap: var(--sp-4);
+  font-size: .85rem;
+  color: var(--fg-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.stat {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.stat .icon {
+  width: 17px;
+  height: 17px;
+  color: var(--idle);
+}
+
+.more-btn {
+  margin-top: var(--sp-5);
+}
+
+/* 載入中：兩張安靜的骨架卡片，不閃爍 */
+.loading {
+  display: grid;
+  gap: var(--sp-3);
+}
+
+.skeleton {
+  display: grid;
+  gap: 10px;
+  padding: var(--sp-4);
+  background: var(--card);
+  border-radius: var(--r-lg);
+  box-shadow: var(--sh-sm);
+}
+
+.skeleton i {
+  display: block;
+  height: 12px;
+  border-radius: var(--r-pill);
+  background: var(--bg-sunk);
+}
+
+.skeleton i:first-child {
+  width: 40%;
+}
+
+.skeleton i:last-child {
+  width: 75%;
+}
+
+/* ═══ 單篇 ════════════════════════════════════════════════════ */
+
+.post {
+  display: grid;
+  gap: var(--sp-3);
+  margin-top: var(--sp-2);
+  margin-bottom: var(--sp-6);
+  padding: var(--sp-5) var(--sp-4) var(--sp-4);
+  background: var(--card);
+  border-radius: var(--r-lg);
+  box-shadow: var(--sh-md);
+}
+
+.post-body {
+  font-size: 1.04rem;
+  line-height: 1.85;
+  white-space: pre-wrap;
+}
+
+.post-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--sp-2);
+}
+
+.post-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--sp-2) var(--sp-4);
+  padding-top: var(--sp-3);
+  border-top: 1px solid var(--hairline);
+}
+
+.stat-lg {
+  font-size: .92rem;
+}
+
+.stat-lg .icon {
+  width: 20px;
+  height: 20px;
+}
+
+.helpful-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: var(--tap);
+  padding: 0 var(--sp-4) 0 var(--sp-3);
+  background: var(--card);
+  color: var(--fg);
+  font-weight: 700;
+  border: var(--line-w) solid var(--line);
+  border-radius: var(--r-pill);
+  box-shadow: var(--sh-sm);
+  transition: transform var(--t-fast) var(--ease),
+    background-color var(--t-fast) var(--ease),
+    border-color var(--t-fast) var(--ease);
+}
+
+.helpful-btn .icon {
+  width: 20px;
+  height: 20px;
+  color: var(--idle);
+}
+
+/* 按下：愛心填滿（形狀改變，不只是變色） */
+.helpful-btn[aria-pressed="true"] {
+  background: var(--primary-wash);
+  color: var(--primary-deep);
+  border-color: var(--primary-deep);
+  box-shadow: var(--sh-sm), inset 0 0 0 var(--line-w) var(--primary-deep);
+}
+
+.helpful-btn[aria-pressed="true"] .icon {
+  color: var(--primary-deep);
+  fill: currentColor;
+}
+
+.helpful-btn:active {
+  transform: translateY(1px);
+}
+
+.helpful-btn:disabled {
+  cursor: progress;
+}
+
+.helpful-count {
+  font-variant-numeric: tabular-nums;
+}
+
+.replies-title {
+  margin-bottom: var(--sp-3);
+  font-size: 1.15rem;
+  font-weight: 700;
+}
+
+.reply-list {
+  display: grid;
+  gap: var(--sp-2);
+  margin: 0 0 var(--sp-5);
+  padding: 0;
+  list-style: none;
+}
+
+.reply {
+  display: grid;
+  gap: var(--sp-1);
+  padding: var(--sp-3) var(--sp-4);
+  background: var(--card);
+  border-radius: var(--r-md);
+  box-shadow: var(--sh-sm);
+}
+
+.reply-body {
+  white-space: pre-wrap;
+  line-height: 1.75;
+}
+
+.reply-empty {
+  color: var(--fg-muted);
+  font-size: .94rem;
+}
+
+.reply-form {
+  display: grid;
+  gap: var(--sp-2);
+  padding: var(--sp-4);
+  background: var(--card);
+  border-radius: var(--r-lg);
+  box-shadow: var(--sh-md);
+}
+
+.reply-form .field-label+textarea {
+  margin-top: var(--sp-1);
+}
+
+.reply-form .char-count {
+  margin-top: 0;
+}
+
+.reply-identity {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--sp-3);
+}
+
+.reply-as {
+  font-size: .9rem;
+  color: var(--fg-muted);
+}
+
+.reply-form .btn,
+.dlg .btn {
+  margin-top: var(--sp-2);
+}
+
+.mini-label {
+  display: block;
+  margin-bottom: var(--sp-1);
+  font-size: .88rem;
+  font-weight: 700;
+  color: var(--fg-muted);
+}
+
+/* 原生下拉選單（手機會用系統的選擇器），外觀對齊文字輸入框 */
+.select {
+  display: block;
+  width: 100%;
+  min-height: var(--tap);
+  padding: 0 40px 0 var(--sp-4);
+  background: var(--card) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='m6 9.5 6 6 6-6' fill='none' stroke='%2378716C' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") no-repeat right 14px center / 18px;
+  color: var(--fg);
+  font: inherit;
+  border: var(--line-w) solid var(--line);
+  border-radius: var(--r-md);
+  box-shadow: var(--sh-inset);
+  -webkit-appearance: none;
+  appearance: none;
+}
+
+.select:focus {
+  border-color: var(--primary-deep);
+}
+
+.select:focus-visible {
+  outline-offset: 0;
+  border-radius: var(--r-md);
+}
+
+/* ═══ 發文 ════════════════════════════════════════════════════ */
+
+/* 家長版：沿用的資料。只有陰影，沒有外框 */
+.identity-card {
+  display: grid;
+  gap: var(--sp-1);
+  margin-bottom: var(--sp-6);
+  padding: var(--sp-4);
+  background: var(--card);
+  border-radius: var(--r-lg);
+  box-shadow: var(--sh-md);
+}
+
+.identity-title {
+  font-weight: 700;
+}
+
+.identity-kid {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--fg-muted);
+}
+
+.identity-kid strong {
+  color: var(--fg);
+}
+
+.identity-kid .icon {
+  width: 20px;
+  height: 20px;
+}
+
+.identity-note {
+  font-size: .86rem;
+  line-height: 1.6;
+  color: var(--fg-muted);
+}
+
+/* 家長版的第一題前面沒有別的題目，不需要分隔線 */
+html[data-discuss="clinic"] #contentField {
+  border-top: 0;
+  padding-top: 0;
+}
+
+/* fieldset 的 legend 預設壓在上框線上（題目被分隔線穿過、下方空一大段）；
+   浮動後變成一般內容，和 div 的題目一樣「線在上、題目在下」 */
+#composeForm fieldset.field>legend {
+  float: left;
+  width: 100%;
+}
+
+#composeForm fieldset.field>legend+* {
+  clear: both;
+}
+
+#composeForm fieldset.field>.field-hint {
+  margin-top: 0;
+  padding-top: var(--sp-1);
+}
+
+.role-chips {
+  margin-top: var(--sp-3);
+}
+
+.members {
+  display: grid;
+  gap: var(--sp-3);
+  margin: var(--sp-1) 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+/* 一位孩子（或一個年齡層）一張卡片，好幾位時一眼分得出來 */
+.member {
+  display: grid;
+  gap: var(--sp-3);
+  padding: var(--sp-3) var(--sp-4) var(--sp-4);
+  background: var(--card);
+  border-radius: var(--r-lg);
+  box-shadow: var(--sh-sm);
+}
+
+.member-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  min-height: var(--tap);
+}
+
+.member-title {
+  font-weight: 700;
+}
+
+.member-remove {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  min-height: var(--tap);
+  margin-inline-end: calc(var(--sp-2) * -1);
+  padding: 0 var(--sp-2);
+  background: none;
+  border: 0;
+  color: var(--fg-muted);
+  font-size: .9rem;
+  font-weight: 700;
+}
+
+.member-remove .icon {
+  width: 18px;
+  height: 18px;
+}
+
+.member-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--sp-2) var(--sp-3);
+}
+
+.member-row input[type="range"] {
+  flex: 1 0 100%;
+}
+
+.member-row .range-row input[type="range"] {
+  flex: none;
+}
+
+.member-label {
+  font-size: .95rem;
+  font-weight: 700;
+  color: var(--fg-muted);
+}
+
+.member-out {
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: var(--primary-deep);
+  font-variant-numeric: tabular-nums;
+}
+
+.member-out[data-empty="true"] {
+  font-size: .95rem;
+  font-weight: 400;
+  color: var(--fg-muted);
+}
+
+.segmented.is-3 {
+  grid-template-columns: repeat(3, 64px);
+}
+
+.add-member {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  width: 100%;
+  min-height: 52px;
+  margin-top: var(--sp-3);
+  background: transparent;
+  color: var(--fg);
+  font-weight: 700;
+  border: 2px dashed var(--line);
+  border-radius: var(--r-lg);
+  transition: background-color var(--t-fast) var(--ease),
+    border-color var(--t-fast) var(--ease);
+}
+
+.add-member .icon {
+  width: 20px;
+  height: 20px;
+}
+
+.tag-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--sp-2);
+  margin: var(--sp-2) 0 var(--sp-3);
+  padding: 0;
+  list-style: none;
+}
+
+.tag-entry {
+  display: flex;
+  gap: var(--sp-2);
+}
+
+.tag-entry input {
+  flex: 1;
+  min-width: 0;
+}
+
+.tag-add {
+  flex: none;
+  width: auto;
+  min-width: 0;
+  min-height: var(--tap);
+  margin: 0;
+  padding-inline: var(--sp-5);
+  font-size: 1rem;
+}
+
+.tag-suggest {
+  margin-top: var(--sp-4);
+}
+
+#postBtn[aria-busy="true"],
+#replyBtn[aria-busy="true"] {
+  cursor: progress;
+}
+
+/* 冷卻中、送出中：看得到，但不能按 */
+#postBtn:disabled,
+#replyBtn:disabled,
+.tag-add:disabled {
+  opacity: .6;
+  box-shadow: none;
+}
+
+.tag-entry input:disabled {
+  background: var(--bg-sunk);
+}
+
+@media (min-width: 40rem) {
+  .tag-add {
+    min-width: 0;
+    margin: 0;
+  }
+
+  .reply-form .btn {
+    width: 100%;
+  }
+}
+
+@media (hover: hover) and (pointer: fine) {
+
+  .chip:not([aria-pressed="true"]):hover,
+  .chip-radio input:not(:checked)+.chip:hover,
+  .filter-toggle:hover,
+  .helpful-btn:not([aria-pressed="true"]):hover,
+  .add-member:hover {
+    background: var(--primary-wash);
+    border-color: var(--primary-deep);
+  }
+
+  .thread-card:has(.thread-link:hover) {
+    box-shadow: var(--sh-lg);
+  }
+
+  .member-remove:hover {
+    color: var(--danger);
+  }
+
+  .clear-filters:hover {
+    color: var(--primary-deep);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+
+  .chip:active,
+  .chip-radio input:active+.chip,
+  .helpful-btn:active,
+  .thread-card:has(.thread-link:active) {
+    transform: none;
+  }
+}

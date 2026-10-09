@@ -20,8 +20,10 @@ rooms/{code}                          two-phone game room
 circleDays/{YYYYMMDD}                 (no fields: the doc is never written)
   └─ scores/{uid}                     draw-a-circle daily best score
 playtime/{randomId}                   time spent on one game screen (a level, or the game's home)
-threads/{autoId}                      discussion post (#04, not built yet)
-  └─ replies/{autoId}                 reply
+threads/{autoId}                      discussion post (#04)
+  ├─ replies/{autoId}                 reply
+  └─ votes/{uid}                      「有幫助」, one per phone
+cooldowns/{uid}                       time of this phone's last post or reply (15 s rule)
 ```
 
 | Collection | Written by | Readable by | Page |
@@ -36,7 +38,9 @@ threads/{autoId}                      discussion post (#04, not built yet)
 | `rooms/*/state` | child | room members | 07 雙機打地鼠 |
 | `circleDays/*/scores` | each phone, its own doc only | anyone signed in | 07 畫圓圈 |
 | `playtime` | each phone, its own docs only | **nobody** (Console / Admin SDK only) | 07 every game |
-| `threads`, `replies` | nothing yet | public | 04 討論區 |
+| `threads`, `replies` | any signed-in phone (with a cooldown stamp) | **anyone**, even signed out | 04 討論區 |
+| `threads/*/votes` | each phone, its own doc only | that uid only | 04 討論區 |
+| `cooldowns` | each phone, its own doc only | that uid only | 04 討論區 |
 
 ## Shared conventions
 
@@ -242,33 +246,75 @@ Rules:
 - Update: only your own rows, only while `ended == false`. Only `endAt` (never backwards), `ended` and `updatedAt` may change.
 - Nobody can read or delete rows, so analysis is done in the Console or with the Admin SDK.
 
-## `threads/{autoId}` (#04 討論區, not built yet)
+## `threads/{autoId}` (#04 討論區)
 
-The rules exist but no current code reads or writes this collection: [discussion/](discussion/) is a placeholder page.
+One discussion post. The page is [discussion/index.html](discussion/index.html), served at two URLs (`vercel.json` rewrites the second one to the same file):
 
-**Current rules on create.** These are required fields only, not a whitelist, so extra fields such as `createdAt` are allowed.
+| URL | Who | What they fill in |
+|---|---|---|
+| `/discussion/` | anyone (`source: 'public'`) | name (optional), role, each child's age and gender (professionals: an age range), content, hashtags |
+| `/discussion/parent/` | parents coming from 回饋 (`source: 'clinic'`) | content and hashtags only. Role is fixed to 家長, no name, and the child is the one from #01. Without a profile on the phone, this URL falls back to `/discussion/`. |
 
-| Field | Rule |
+The payload is built by `AnxinDiscuss.buildThread` ([discussion/discuss-core.js](discussion/discuss-core.js)) and written by `discuss.post` in [shared/firebase.js](shared/firebase.js). Every field is whitelisted.
+
+| Field | Type | Value |
+|---|---|---|
+| `v` | number | `1` |
+| `role` | string | `'家長'` \| `'醫師'` \| `'護士'` \| `'醫檢師'` \| `'其他'`. Always `'家長'` when `source` is `'clinic'`. |
+| `author` | string | ≤ 20 chars; `''` = 匿名. Always `''` when `source` is `'clinic'`. |
+| `content` | string | 1–2000 chars. The nickname (if this phone has a profile) is replaced with `孩子`. |
+| `members` | list (1–8) | `{ ageMin, ageMax, gender }`. A child is `ageMin == ageMax`; a professional's age group is a range. Ages 0–18 (0.5 steps below 5 on the slider, whole years from 5; a `clinic` post copies the #01 age, which can be 5.5). `gender`: `'男'` \| `'女'` \| `'不限'` (都有, ranges only). Exactly 1 when `source` is `'clinic'`. |
+| `hashtags` | list (≤ 5) | strings of 1–20 chars, without `#`, letters/digits/`_` only, Latin lower-cased. Nickname replaced too. |
+| `source` | string | `'public'` / `'clinic'` (which URL it was posted from) |
+| `clicks` | int | phones that opened it. Starts at 0. |
+| `dwellMs` | int | total reading time in ms. Starts at 0. |
+| `helpful` | int | 「有幫助」 votes. Starts at 0. |
+| `replyCount` | int | starts at 0 |
+| `lastReplyId` | string \| null | id of the newest reply (the rules use it to tie each +1 to a real reply) |
+| `lastActivityAt` | Timestamp | server time of the post, then of the newest reply |
+| `createdAt` | Timestamp | server time |
+
+**Create.** One batch: the thread plus `cooldowns/{uid}` set to the server time. The cooldown rule only accepts that stamp 15 s or more after the previous one, so a phone cannot post or reply more often than every 15 s, whatever the page does. The doc id is made on the phone once per draft, so pressing 發布 again after a timeout cannot create a duplicate: the second write is rejected as an update, and the page treats an existing doc as success.
+
+**Update.** The content never changes. Each update changes exactly one kind of counter:
+
+| Change | Rule |
 |---|---|
-| `role` | `'家長'` \| `'醫師'` \| `'護士'` \| `'醫檢師'` \| `'其他'` |
-| `author` | string ≤ 50 (anonymous is allowed) |
-| `content` | string, 1–2000 chars |
-| `members` | list of 1–8 items, one per child; the item shape is not fixed yet (spec: age or age range + gender) |
-| `hashtags` | list of ≤ 5 items |
-| `clicks`, `replyCount`, `dwellMs` | must be `0` |
+| `clicks` + 1 | only `clicks`. The page sends it once per phone per thread (`anxin.discuss.opened.v1`) and never for the phone's own posts. |
+| `dwellMs` + 1 ms … 5 min | only `dwellMs`. The page measures time with the post on screen, sends it when the reader leaves (other view, app switch, page close), skips visits under 1 s and the phone's own posts. |
+| `helpful` ± 1 | in the same batch as creating / deleting `votes/{uid}` |
+| `replyCount` + 1, `lastReplyId`, `lastActivityAt` | in the same batch as creating `replies/{lastReplyId}` |
 
-After creation, only `clicks`, `dwellMs`, `replyCount` and `lastActivityAt` can be updated, for ranking by engagement. The rules don't check that these counters only increase. Threads cannot be deleted.
+Threads cannot be deleted by any client (moderation: delete in the Console).
 
-**Old docs.** The first prototype (Aug 2026, `script.js`) wrote a different shape: `role`, `childAge` (0–12), `childGender` (`'男'` \| `'女'` \| `'不指定'`), `hashtags`, `author`, `content`, `createdAt`. Docs from that version, if any are still in the database, have no `members` or counters.
+**Search and ranking happen on the phone.** Firestore has no full-text search, so the page loads the newest 300 threads (`orderBy createdAt desc`) and filters and sorts them locally (`AnxinDiscuss.matches` / `sortThreads`). If the forum outgrows 300 posts, older ones stop appearing in search; that is the point to add a search service. 「推薦」 score: `(1 + log2(1 + 5·helpful + 3·replies + clicks + 2·fullReads)) × freshness × ageMatch`, where `fullReads` is `dwellMs` converted to complete reads by content length (≈ 400 chars/min, capped at `clicks`), freshness is ×3 for a new post halving toward ×1 every 7 days, and ageMatch (parent page only) is ×1.5 when a member is within 1 year of the parent's child and ×1.2 within 3 years.
+
+**Old docs.** The first prototype (Aug 2026, `script.js`) wrote a different shape: `role`, `childAge` (0–12), `childGender` (`'男'` \| `'女'` \| `'不指定'`), `hashtags`, `author`, `content`, `createdAt`. The page still shows them (`childAge` becomes one member), but their counters can't be updated because the fields don't exist, so they get no votes, clicks or replies.
 
 ### `threads/{id}/replies/{autoId}`
 
-| Field | Rule |
-|---|---|
-| `content` | string, 1–1000 chars |
-| `author` | string ≤ 50 |
+Built by `AnxinDiscuss.buildReply`, written by `discuss.reply` in one batch with the thread's `replyCount` + 1 and the cooldown stamp. Public, create-only.
 
-No other fields are checked. Replies cannot be updated or deleted.
+| Field | Type | Value |
+|---|---|---|
+| `v` | number | `1` |
+| `role` | string | same list as threads; `'家長'` when `source` is `'clinic'` |
+| `author` | string | ≤ 20 chars, `''` = 匿名; `''` when `source` is `'clinic'` |
+| `content` | string | 1–1000 chars, nickname replaced |
+| `source` | string | `'public'` / `'clinic'` |
+| `createdAt` | Timestamp | server time |
+
+### `threads/{id}/votes/{uid}`
+
+「有幫助」. One doc per phone (anonymous uid) per thread, holding only `at` (server time). Created or deleted together with `helpful` ± 1. A phone can read only its own vote (the page reads it to show the button state). Never listed.
+
+## `cooldowns/{uid}`
+
+| Field | Type | Value |
+|---|---|---|
+| `at` | Timestamp | server time of this phone's last post or reply |
+
+Every post and reply sets it in the same batch, and an update is accepted only when `request.time >= at + 15 s`. Only the owner can read it; nobody can delete it. The page keeps its own copy (`anxin.discuss.lastPost.v1`) to show the countdown on the buttons.
 
 ---
 
@@ -279,10 +325,13 @@ Every query filters or sorts on a single field, so no composite indexes are need
 - `codes`: `expiresAt >`
 - `rooms/{code}/cmds`: `at >=`
 - `circleDays/{day}/scores`: `orderBy score desc, limit 3`
+- `threads`: `orderBy createdAt desc, limit 300`
+- `threads/{id}/replies`: `orderBy createdAt asc, limit 300`
 
 ## Kept on the phone, not in Firestore
 
 - `localStorage['anxin.profile.v2']`: the full profile, **including the nickname** and the code. It is dropped after 24 h. This is the only place the nickname is stored.
 - `localStorage['anxin.shotDone.v1']`: the code whose 「打針完畢」 page has already been shown.
 - `localStorage['anxin.playtime.v1']`: playtime rows the server hasn't confirmed yet (no nickname). It is cleared as rows are confirmed, and rows older than 2 days are dropped.
+- `anxin.discuss.*`: the discussion page's remembered name and role (public page), unsent draft, opened and own thread ids, and last post time.
 - The other `anxin.*` keys are per-phone game progress, drafts and UI state.

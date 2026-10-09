@@ -11,7 +11,8 @@ Inherits MASTER. Covers `/home/` and the shell shared by every subpage (`/shared
 | `/guide/` `/cheer/` `/games/solo/` `/games/duo/` | yes | scaffolds — 「內容準備中」 |
 | `/shot/` `/feedback/` | yes | #03 |
 | `/thanks/` | no | profile may have expired by then; personalises only if present |
-| `/discussion/` | no | #04 placeholder; the spec opens it to everyone |
+| `/discussion/` | no | #04, open to everyone (see `04-discussion.md`) |
+| `/discussion/parent/` | optional | #04 for parents coming from 回饋; without a profile it falls back to `/discussion/` |
 
 Protected pages guard in `<head>` with `Anxin.requireProfile()` → `location.replace('/portal/')`.
 

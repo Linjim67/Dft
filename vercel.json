@@ -6,6 +6,8 @@
     { "source": "/games/:code(\\d{4})", "destination": "/games/duo/join/index.html" },
     { "source": "/games/:code(\\d{4})/", "destination": "/games/duo/join/index.html" },
     { "source": "/games/:code(\\d{4})/whack-a-mole", "destination": "/games/whack-a-mole/index.html" },
-    { "source": "/games/:code(\\d{4})/whack-a-mole/", "destination": "/games/whack-a-mole/index.html" }
+    { "source": "/games/:code(\\d{4})/whack-a-mole/", "destination": "/games/whack-a-mole/index.html" },
+    { "source": "/discussion/parent", "destination": "/discussion/index.html" },
+    { "source": "/discussion/parent/", "destination": "/discussion/index.html" }
   ]
 }

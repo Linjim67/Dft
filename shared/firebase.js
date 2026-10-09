@@ -6,7 +6,7 @@ import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.2/fireba
 import {
   getFirestore, collection, addDoc, serverTimestamp,
   doc, getDoc, getDocs, setDoc, updateDoc, deleteDoc, onSnapshot, query, where, orderBy, limit, Timestamp,
-  runTransaction, writeBatch, connectFirestoreEmulator
+  runTransaction, writeBatch, increment, connectFirestoreEmulator
 } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
 import {
   getAuth, signInAnonymously, connectAuthEmulator
@@ -345,7 +345,123 @@ const playtime = {
   }
 };
 
+/* ─────────────────────────────────────────────────────────────
+   討論區（#04）：threads/{id}、replies/{id}、votes/{uid}、cooldowns/{uid}
+   內容怎麼組、怎麼搜尋排序在 AnxinDiscuss（/discussion/discuss-core.js）；這裡只做資料進出。
+   - 讀取公開，不用登入（匿名登入沒開也看得到）；寫入才登入
+   - 發文、回覆都和 cooldowns/{uid} 同一批寫入：規則要求兩次發言至少隔 15 秒
+   - 回覆和討論串的 replyCount +1、lastReplyId 同一批，規則互相核對
+   - 有幫助：votes/{uid} 和 helpful ±1 同一批，一支手機一票
+   - 文件 id 先在手機上產生：第一次送出逾時、其實已經寫進去時，再按一次也不會重複
+   ───────────────────────────────────────────────────────────── */
+
+const threadRef = (id) => doc(db, 'threads', id);
+const cooldownRef = (uid) => doc(db, 'cooldowns', uid);
+/* 自己剛寫的文件，伺服器時間還沒回來：先用手機時間估 */
+const ESTIMATE = { serverTimestamps: 'estimate' };
+
+function threadFrom(snap) {
+  if (!snap.exists()) return null;
+  const d = snap.data(ESTIMATE);
+  return { ...d, id: snap.id, createdAt: toMs(d.createdAt), lastActivityAt: toMs(d.lastActivityAt) };
+}
+
+function replyFrom(snap) {
+  const d = snap.data(ESTIMATE);
+  return { ...d, id: snap.id, createdAt: toMs(d.createdAt) };
+}
+
+/* 同一個 id 第二次寫入會被規則當成「修改」拒絕：文件已經在，就是第一次其實成功了 */
+async function commitOnce(batch, ref) {
+  try {
+    await batch.commit();
+  } catch (err) {
+    if (err && err.code === 'permission-denied') {
+      const s = await getDoc(ref).catch(() => null);
+      if (s && s.exists()) return;
+    }
+    throw err;
+  }
+}
+
+const discuss = {
+  /* 最新的 max 篇（搜尋、排序都在手機上做） */
+  async list(max) {
+    const snap = await getDocs(query(collection(db, 'threads'), orderBy('createdAt', 'desc'), limit(max)));
+    return snap.docs.map(threadFrom);
+  },
+
+  newThreadId() {
+    return doc(collection(db, 'threads')).id;
+  },
+
+  newReplyId(threadId) {
+    return doc(collection(db, 'threads', threadId, 'replies')).id;
+  },
+
+  /* data 由 AnxinDiscuss.buildThread 產生；計數從 0 開始，時間由伺服器決定 */
+  async post(id, data) {
+    const u = await ensureAuth();
+    const batch = writeBatch(db);
+    batch.set(threadRef(id), {
+      ...data,
+      clicks: 0, dwellMs: 0, helpful: 0, replyCount: 0, lastReplyId: null,
+      lastActivityAt: serverTimestamp(), createdAt: serverTimestamp()
+    });
+    batch.set(cooldownRef(u.uid), { at: serverTimestamp() });
+    return commitOnce(batch, threadRef(id));
+  },
+
+  /* data 由 AnxinDiscuss.buildReply 產生 */
+  async reply(threadId, replyId, data) {
+    const u = await ensureAuth();
+    const ref = doc(db, 'threads', threadId, 'replies', replyId);
+    const batch = writeBatch(db);
+    batch.set(ref, { ...data, createdAt: serverTimestamp() });
+    batch.update(threadRef(threadId), {
+      replyCount: increment(1), lastReplyId: replyId, lastActivityAt: serverTimestamp()
+    });
+    batch.set(cooldownRef(u.uid), { at: serverTimestamp() });
+    return commitOnce(batch, ref);
+  },
+
+  watchThread(id, cb, onError) {
+    return onSnapshot(threadRef(id), (s) => cb(threadFrom(s)), onError);
+  },
+
+  watchReplies(id, cb, onError) {
+    const q = query(collection(db, 'threads', id, 'replies'), orderBy('createdAt', 'asc'), limit(300));
+    return onSnapshot(q, (snap) => cb(snap.docs.map(replyFrom)), onError);
+  },
+
+  /* 互動統計：每次只能 +1（點開）或加一段停留時間（最多 5 分鐘） */
+  async open(id) {
+    await ensureAuth();
+    return updateDoc(threadRef(id), { clicks: increment(1) });
+  },
+
+  async dwell(id, ms) {
+    await ensureAuth();
+    return updateDoc(threadRef(id), { dwellMs: increment(Math.round(ms)) });
+  },
+
+  async myVote(id) {
+    const u = await ensureAuth();
+    return (await getDoc(doc(db, 'threads', id, 'votes', u.uid))).exists();
+  },
+
+  async vote(id, on) {
+    const u = await ensureAuth();
+    const ref = doc(db, 'threads', id, 'votes', u.uid);
+    const batch = writeBatch(db);
+    if (on) batch.set(ref, { at: serverTimestamp() });
+    else batch.delete(ref);
+    batch.update(threadRef(id), { helpful: increment(on ? 1 : -1) });
+    return batch.commit();
+  }
+};
+
 /* 給一般 <script> 用的橋：頁面邏輯維持非 module（可測試），
    gstatic 被擋或太慢時，表單照樣顯示，只是送出時會得到明確的錯誤。 */
-window.AnxinFirebase = { submitFeedback, ensureAuth, duo, codes, staff, circle, playtime };
+window.AnxinFirebase = { submitFeedback, ensureAuth, duo, codes, staff, circle, playtime, discuss };
 window.dispatchEvent(new Event('anxin:firebase'));

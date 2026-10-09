@@ -4,31 +4,90 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
+    // ── 討論區（#04） ──────────────────────────────────────────
+    // 公開讀取；寫入要登入（匿名）。欄位白名單，必須與 AnxinDiscuss.buildThread／buildReply
+    //（discussion/discuss-core.js）、shared/firebase.js 的 discuss 完全一致。
+    // 發文、回覆都要在同一批寫入裡蓋 cooldowns/{uid}，而那一張每 15 秒才能蓋一次：
+    // 冷卻時間由伺服器擋，不只是按鈕倒數。
     match /threads/{threadId} {
-
       allow read: if true;
-
-      // 建立討論串：驗證必要欄位、型別與長度
-      allow create: if request.auth != null
-        && validThread(request.resource.data);
-
-      // 更新：只允許互動統計欄位變動（點閱、停留、回覆數、最後活動時間），
-      //       其餘內容欄位不得被竄改。
+      allow create: if request.auth != null && validThread(request.resource.data) && stampedNow();
+      // 建立後內容不能改，只有互動統計能動，而且每一種都有固定的動法
       allow update: if request.auth != null
-        && onlyCounterFieldsChanged();
-
+        && (threadOpened() || threadDwelled() || threadVoted(threadId) || threadReplied(threadId));
       allow delete: if false;
 
+      // 回覆一定和討論串的 replyCount +1、lastReplyId = 這則回覆同一批
       match /replies/{replyId} {
         allow read: if true;
-        allow create: if request.auth != null
-          && request.resource.data.content is string
-          && request.resource.data.content.size() > 0
-          && request.resource.data.content.size() <= 1000
-          && request.resource.data.author is string
-          && request.resource.data.author.size() <= 50;
+        allow create: if request.auth != null && validReply(request.resource.data) && stampedNow()
+          && getAfter(threadPath(threadId)).data.lastReplyId == replyId
+          && getAfter(threadPath(threadId)).data.replyCount == get(threadPath(threadId)).data.replyCount + 1;
         allow update, delete: if false;
       }
+
+      // 有幫助：一支手機（匿名 uid）一票，可以收回；票和 helpful ±1 一定同一批
+      match /votes/{uid} {
+        allow get: if request.auth != null && request.auth.uid == uid;
+        allow list, update: if false;
+        allow create: if request.auth != null && request.auth.uid == uid
+          && validStamp(request.resource.data)
+          && getAfter(threadPath(threadId)).data.helpful == get(threadPath(threadId)).data.helpful + 1;
+        allow delete: if request.auth != null && request.auth.uid == uid
+          && getAfter(threadPath(threadId)).data.helpful == get(threadPath(threadId)).data.helpful - 1;
+      }
+    }
+
+    // 發言冷卻：每支手機一張，只有時間。發文／回覆同一批更新它，兩次至少隔 15 秒
+    match /cooldowns/{uid} {
+      allow get: if request.auth != null && request.auth.uid == uid;
+      allow list, delete: if false;
+      allow create: if request.auth != null && request.auth.uid == uid && validStamp(request.resource.data);
+      allow update: if request.auth != null && request.auth.uid == uid && validStamp(request.resource.data)
+        && request.time >= resource.data.at + duration.value(15, 's');
+    }
+
+    function threadPath(id) {
+      return /databases/$(database)/documents/threads/$(id);
+    }
+
+    // 這一批寫入有蓋自己的冷卻章（cooldowns 的規則保證離上一次至少 15 秒）
+    function stampedNow() {
+      return getAfter(/databases/$(database)/documents/cooldowns/$(request.auth.uid)).data.at == request.time;
+    }
+
+    function threadChanged(keys) {
+      return request.resource.data.diff(resource.data).affectedKeys().hasOnly(keys);
+    }
+
+    // 點開：一次 +1（每支手機每篇只送一次是手機端的事）
+    function threadOpened() {
+      return threadChanged(['clicks']) && request.resource.data.clicks == resource.data.clicks + 1;
+    }
+
+    // 停留時間：一次最多加 5 分鐘
+    function threadDwelled() {
+      let n = request.resource.data.dwellMs;
+      return threadChanged(['dwellMs']) && n is int
+        && n > resource.data.dwellMs && n <= resource.data.dwellMs + 300000;
+    }
+
+    function threadVoted(threadId) {
+      let vote = /databases/$(database)/documents/threads/$(threadId)/votes/$(request.auth.uid);
+      let n = request.resource.data.helpful;
+      return threadChanged(['helpful'])
+        && ((n == resource.data.helpful + 1 && !exists(vote) && existsAfter(vote))
+          || (n == resource.data.helpful - 1 && exists(vote) && !existsAfter(vote)));
+    }
+
+    function threadReplied(threadId) {
+      let d = request.resource.data;
+      return threadChanged(['replyCount', 'lastReplyId', 'lastActivityAt'])
+        && d.replyCount == resource.data.replyCount + 1
+        && d.lastReplyId is string
+        && d.lastActivityAt == request.time
+        && !exists(/databases/$(database)/documents/threads/$(threadId)/replies/$(d.lastReplyId))
+        && existsAfter(/databases/$(database)/documents/threads/$(threadId)/replies/$(d.lastReplyId));
     }
 
     // ── 暫時代碼（#01 → 醫檢師） ─────────────────────────────────
@@ -344,13 +403,81 @@ service cloud.firestore {
       && s.at == request.time;
   }
 
+  function discussRoles() {
+    return ['家長', '醫師', '護士', '醫檢師', '其他'];
+  }
+
+  function threadKeys() {
+    return ['v', 'role', 'author', 'content', 'members', 'hashtags', 'source',
+      'clicks', 'dwellMs', 'helpful', 'replyCount', 'lastReplyId', 'lastActivityAt', 'createdAt'];
+  }
+
+  // 家長版（source 'clinic'，從回饋頁過來）：身分固定家長、不署名、孩子就是 #01 填的那一位
   function validThread(d) {
-    return d.role in ['家長', '醫師', '護士', '醫檢師', '其他']
-      && d.author is string && d.author.size() <= 50
+    return d.keys().hasOnly(threadKeys()) && d.keys().hasAll(threadKeys())
+      && d.v == 1
+      && d.role in discussRoles()
+      && d.author is string && d.author.size() <= 20
       && d.content is string && d.content.size() > 0 && d.content.size() <= 2000
-      && d.members is list && d.members.size() >= 1 && d.members.size() <= 8
-      && d.hashtags is list && d.hashtags.size() <= 5
-      && d.clicks == 0 && d.replyCount == 0 && d.dwellMs == 0;
+      && validMembers(d.members)
+      && validTags(d.hashtags)
+      && (d.source == 'public'
+        || (d.source == 'clinic' && d.role == '家長' && d.author == '' && d.members.size() == 1))
+      && d.clicks == 0 && d.dwellMs == 0 && d.helpful == 0 && d.replyCount == 0
+      && d.lastReplyId == null
+      && d.createdAt == request.time
+      && d.lastActivityAt == request.time;
+  }
+
+  // 規則沒有迴圈：最多 8 位，逐一檢查
+  function validMembers(m) {
+    return m is list && m.size() >= 1 && m.size() <= 8
+      && validMember(m[0])
+      && (m.size() < 2 || validMember(m[1]))
+      && (m.size() < 3 || validMember(m[2]))
+      && (m.size() < 4 || validMember(m[3]))
+      && (m.size() < 5 || validMember(m[4]))
+      && (m.size() < 6 || validMember(m[5]))
+      && (m.size() < 7 || validMember(m[6]))
+      && (m.size() < 8 || validMember(m[7]));
+  }
+
+  // 一位孩子（ageMin == ageMax）或醫護人員的一個年齡層；「不限」= 男孩女孩都有
+  function validMember(x) {
+    return x is map
+      && x.keys().hasOnly(['ageMin', 'ageMax', 'gender']) && x.keys().hasAll(['ageMin', 'ageMax', 'gender'])
+      && x.ageMin is number && x.ageMax is number
+      && x.ageMin >= 0 && x.ageMin <= x.ageMax && x.ageMax <= 18
+      && x.gender in ['男', '女', '不限'];
+  }
+
+  function validTags(t) {
+    return t is list && t.size() <= 5
+      && (t.size() < 1 || validTag(t[0]))
+      && (t.size() < 2 || validTag(t[1]))
+      && (t.size() < 3 || validTag(t[2]))
+      && (t.size() < 4 || validTag(t[3]))
+      && (t.size() < 5 || validTag(t[4]));
+  }
+
+  function validTag(s) {
+    return s is string && s.size() >= 1 && s.size() <= 20;
+  }
+
+  function validReply(d) {
+    return d.keys().hasOnly(['v', 'role', 'author', 'content', 'source', 'createdAt'])
+      && d.keys().hasAll(['v', 'role', 'author', 'content', 'source', 'createdAt'])
+      && d.v == 1
+      && d.role in discussRoles()
+      && d.author is string && d.author.size() <= 20
+      && d.content is string && d.content.size() > 0 && d.content.size() <= 1000
+      && (d.source == 'public' || (d.source == 'clinic' && d.role == '家長' && d.author == ''))
+      && d.createdAt == request.time;
+  }
+
+  // 冷卻章、有幫助的票：只有伺服器時間
+  function validStamp(d) {
+    return d.keys().hasOnly(['at']) && d.keys().hasAll(['at']) && d.at == request.time;
   }
 
   function validPlay(id, d) {
@@ -446,11 +573,5 @@ service cloud.firestore {
     return d.keys().hasOnly(['score', 'at']) && d.keys().hasAll(['score', 'at'])
       && d.score is int && d.score >= 0 && d.score <= 100
       && d.at == request.time;
-  }
-
-  // 只有 clicks / dwellMs / replyCount / lastActivityAt 這幾個欄位可被更新
-  function onlyCounterFieldsChanged() {
-    return request.resource.data.diff(resource.data).affectedKeys()
-      .hasOnly(['clicks', 'dwellMs', 'replyCount', 'lastActivityAt']);
   }
 }
