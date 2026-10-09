@@ -155,9 +155,9 @@
           <textarea id="replyText" maxlength="1000" rows="3" aria-describedby="reply-count"></textarea>
           <p class="char-count" id="reply-count" aria-live="polite">還可以輸入 1000 字</p>
 
-          <!-- 公開版：身分、稱呼（記住上次填的） -->
-          <div class="reply-identity only-public">
-            <div>
+          <!-- 身分（公開版才要選）、稱呼（選填）；兩個都記住上次填的 -->
+          <div class="reply-identity">
+            <div class="only-public">
               <label class="mini-label" for="replyRole">身分</label>
               <select class="select" id="replyRole" aria-describedby="reply-error">
                 <option value="">請選擇</option>
@@ -170,10 +170,12 @@
             </div>
             <div>
               <label class="mini-label" for="replyAuthor">稱呼 <span class="opt">選填</span></label>
-              <input type="text" id="replyAuthor" maxlength="20" autocomplete="off" placeholder="匿名">
+              <input type="text" id="replyAuthor" maxlength="20" autocomplete="off" placeholder="匿名"
+                aria-describedby="replyAuthorPreview">
             </div>
           </div>
-          <p class="reply-as only-clinic">以「家長」身分匿名回覆</p>
+          <p class="name-preview" id="replyAuthorPreview" aria-live="polite" hidden></p>
+          <p class="reply-as only-clinic">以「家長」身分回覆；不填稱呼就顯示「匿名」。</p>
 
           <button class="btn btn-primary" type="submit" id="replyBtn">
             <span class="btn-label" id="replyLabel">送出回覆</span>
@@ -206,7 +208,7 @@
 
         <!-- 家長版：不用再填，沿用 #01 的資料（不含暱稱） -->
         <div class="identity-card only-clinic">
-          <p class="identity-title">以「家長」身分匿名分享</p>
+          <p class="identity-title">以「家長」身分分享</p>
           <p class="identity-kid">
             <svg viewBox="0 0 24 24" class="icon" aria-hidden="true">
               <circle cx="12" cy="7.5" r="3.2" />
@@ -214,16 +216,17 @@
             </svg>
             <span>孩子：<strong id="clinicKid"></strong></span>
           </p>
-          <p class="identity-note">沿用您先前填的資料，不會顯示暱稱；文字裡提到的暱稱也會自動換成「孩子」。</p>
+          <p class="identity-note">孩子的資料沿用您先前填的，不會顯示孩子的暱稱；稱呼和文字裡提到的暱稱，也會自動換成「孩子」。</p>
         </div>
 
-        <!-- ── 公開版 1. 稱呼 ── -->
-        <div class="field field-inline only-public">
+        <!-- ── 1. 稱呼（兩版都有，選填；不填 = 匿名） ── -->
+        <div class="field field-inline">
           <label class="field-label" for="author">
             您的稱呼 <span class="opt">選填</span>
           </label>
           <input type="text" id="author" maxlength="20" autocomplete="off" enterkeyhint="next"
-            placeholder="不填就顯示「匿名」">
+            placeholder="不填就顯示「匿名」" aria-describedby="authorPreview">
+          <p class="field-hint name-preview" id="authorPreview" aria-live="polite" hidden></p>
         </div>
 
         <!-- ── 公開版 2. 身分 ── -->

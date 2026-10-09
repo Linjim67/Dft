@@ -12,8 +12,8 @@ mode doesn't use. One page means search, replies and ranking can't drift apart b
 |---|---|---|
 | Reached from | shared link | 回饋 → 已收到 dialog / page |
 | Top bar | 「安心陪伴」 label (no profile, so no home) | ‹ 回主頁 |
-| Composer | 稱呼 (optional), 身分 chips, children cards, content, tags | identity card (「以家長身分匿名分享」, 孩子：3 歲半女孩), content, tags |
-| Reply | content + 身分 `<select>` + 稱呼, remembered | content only, 「以家長身分匿名回覆」 |
+| Composer | 稱呼 (optional), 身分 chips, children cards, content, tags | identity card (「以家長身分分享」, 孩子：3 歲半女孩), 稱呼 (optional), content, tags |
+| Reply | content + 身分 `<select>` + 稱呼, remembered | content + 稱呼 (optional), remembered; 「以家長身分回覆」 |
 | Extras | — | 「和{暱稱}差不多大」 chip (age ± 2); 推薦 boosts posts near the child's age |
 
 The parent URL without a profile falls back to the public page (`location.replace`, keeping `#t=…`). It does **not**
@@ -46,4 +46,8 @@ After 發布, `#new` is replaced with `#t=<id>`, so back goes to the list instea
 ## Copy
 
 Uses 您 throughout. The composer's footer says posts are public and asks people not to write full names, phone numbers or
-chart numbers. On the parent page, the identity card says the nickname is never shown and is replaced with 「孩子」 in the text.
+chart numbers. On the parent page, the identity card says the child's nickname is never shown and is replaced with 「孩子」.
+
+**Names.** 稱呼 is optional everywhere; blank shows 匿名. Parents naturally type 「小恩媽媽」, so the name goes through the same
+nickname scrub as the text. A line under the field previews the result (「會顯示為『孩子媽媽』」) whenever the scrub changes it,
+so the parent isn't surprised after posting. The phone remembers what they typed, not the scrubbed version.

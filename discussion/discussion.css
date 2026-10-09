@@ -694,6 +694,25 @@ html:not([data-discuss="clinic"]) .only-clinic {
 .reply-as {
   font-size: .9rem;
   color: var(--fg-muted);
+  text-wrap: pretty;
+}
+
+/* 家長版不用選身分：稱呼獨占一行 */
+html[data-discuss="clinic"] .reply-identity {
+  grid-template-columns: 1fr;
+}
+
+/* 稱呼裡有孩子的暱稱：先讓家長看到實際會顯示的樣子 */
+.name-preview {
+  flex: 1 0 100%;
+  margin: 0;
+  font-size: .86rem;
+  line-height: 1.5;
+  color: var(--fg-muted);
+}
+
+.name-preview strong {
+  color: var(--fg);
 }
 
 .reply-form .btn,
@@ -771,12 +790,6 @@ html:not([data-discuss="clinic"]) .only-clinic {
   font-size: .86rem;
   line-height: 1.6;
   color: var(--fg-muted);
-}
-
-/* 家長版的第一題前面沒有別的題目，不需要分隔線 */
-html[data-discuss="clinic"] #contentField {
-  border-top: 0;
-  padding-top: 0;
 }
 
 /* fieldset 的 legend 預設壓在上框線上（題目被分隔線穿過、下方空一大段）；

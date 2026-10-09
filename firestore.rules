@@ -412,7 +412,7 @@ service cloud.firestore {
       'clicks', 'dwellMs', 'helpful', 'replyCount', 'lastReplyId', 'lastActivityAt', 'createdAt'];
   }
 
-  // 家長版（source 'clinic'，從回饋頁過來）：身分固定家長、不署名、孩子就是 #01 填的那一位
+  // 家長版（source 'clinic'，從回饋頁過來）：身分固定家長、孩子就是 #01 填的那一位（稱呼和公開版一樣選填）
   function validThread(d) {
     return d.keys().hasOnly(threadKeys()) && d.keys().hasAll(threadKeys())
       && d.v == 1
@@ -422,7 +422,7 @@ service cloud.firestore {
       && validMembers(d.members)
       && validTags(d.hashtags)
       && (d.source == 'public'
-        || (d.source == 'clinic' && d.role == '家長' && d.author == '' && d.members.size() == 1))
+        || (d.source == 'clinic' && d.role == '家長' && d.members.size() == 1))
       && d.clicks == 0 && d.dwellMs == 0 && d.helpful == 0 && d.replyCount == 0
       && d.lastReplyId == null
       && d.createdAt == request.time
@@ -471,7 +471,7 @@ service cloud.firestore {
       && d.role in discussRoles()
       && d.author is string && d.author.size() <= 20
       && d.content is string && d.content.size() > 0 && d.content.size() <= 1000
-      && (d.source == 'public' || (d.source == 'clinic' && d.role == '家長' && d.author == ''))
+      && (d.source == 'public' || (d.source == 'clinic' && d.role == '家長'))
       && d.createdAt == request.time;
   }
 

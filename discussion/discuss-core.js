@@ -65,8 +65,8 @@
 
   /* ─────────────────────────────────────────────────────────────
      發文、回覆的內容：白名單欄位
-     家長版（source 'clinic'）：身分固定「家長」、不署名、孩子是 #01 填的那一位。
-     暱稱絕不上傳：內文、標籤裡提到的暱稱換成「孩子」（Anxin.scrubNickname）。
+     家長版（source 'clinic'）：身分固定「家長」、孩子是 #01 填的那一位；稱呼選填（不填 = 匿名）。
+     孩子的暱稱絕不上傳：稱呼、內文、標籤裡提到的暱稱都換成「孩子」（Anxin.scrubNickname）。
      ───────────────────────────────────────────────────────────── */
 
   function text(s, nickname, max) {
@@ -99,8 +99,9 @@
     return role;
   }
 
-  function authorOf(f, source) {
-    return source === 'clinic' ? '' : String(f.author == null ? '' : f.author).trim().slice(0, MAX.author);
+  /* 稱呼：選填，'' = 匿名。家長很自然會寫「小恩媽媽」→ 存成「孩子媽媽」 */
+  function authorName(raw, nickname) {
+    return text(raw, nickname, MAX.author);
   }
 
   /* f: { role, author, content, members: [{ ageMin, ageMax, gender }], hashtags }
@@ -115,7 +116,7 @@
     return {
       v: 1,
       role: roleOf(f, source),
-      author: authorOf(f, source),
+      author: authorName(f.author, nickname),
       content: content,
       members: members,
       hashtags: cleanTags(f.hashtags, nickname),
@@ -125,9 +126,10 @@
 
   function buildReply(f, opts) {
     var source = sourceOf(opts);
-    var content = text(f.content, opts && opts.nickname, MAX.reply);
+    var nickname = opts && opts.nickname;
+    var content = text(f.content, nickname, MAX.reply);
     if (!content) throw new Error('empty content');
-    return { v: 1, role: roleOf(f, source), author: authorOf(f, source), content: content, source: source };
+    return { v: 1, role: roleOf(f, source), author: authorName(f.author, nickname), content: content, source: source };
   }
 
   /* ─────────────────────────────────────────────────────────────
@@ -340,6 +342,7 @@
     snapIndex: snapIndex,
     normTag: normTag,
     addTags: addTags,
+    authorName: authorName,
     buildThread: buildThread,
     buildReply: buildReply,
     normalizeThread: normalizeThread,

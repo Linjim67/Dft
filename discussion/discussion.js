@@ -35,7 +35,8 @@
      ───────────────────────────────────────────────────────────── */
 
   var KEYS = {
-    me: 'anxin.discuss.me.v1',                       /* 公開版：上次的身分、稱呼 */
+    /* 上次的稱呼（公開版還有身分）。兩版分開記：家長版的稱呼不會跑到公開版 */
+    me: CLINIC ? 'anxin.discuss.me.clinic.v1' : 'anxin.discuss.me.v1',
     draft: 'anxin.discuss.draft.' + SOURCE + '.v1',  /* 還沒發布的內文、標籤 */
     opened: 'anxin.discuss.opened.v1',               /* 點開過的（點閱每支手機只算一次） */
     mine: 'anxin.discuss.mine.v1',                   /* 自己發的（不算自己的點閱、停留、有幫助） */
@@ -68,10 +69,10 @@
     writeJson(key, a.slice(-cap));
   }
 
-  var me = CLINIC ? null : readJson(KEYS.me, null);
+  var me = readJson(KEYS.me, null);
 
+  /* author 存手機上原本打的字（例如「小恩媽媽」），下次預先填好；上傳的才是換過暱稱的版本 */
   function rememberMe(role, author) {
-    if (CLINIC) return;
     me = { role: role, author: author };
     writeJson(KEYS.me, me);
     fillIdentity();
@@ -757,10 +758,29 @@
   }
 
   function fillIdentity() {
-    if (CLINIC || !me) return;
-    if (!$('replyRole').value && D.ROLES.indexOf(me.role) !== -1) $('replyRole').value = me.role;
-    if (!$('replyAuthor').value && me.author) $('replyAuthor').value = me.author;
+    if (!me || typeof me !== 'object') return;
+    if (!CLINIC && !$('replyRole').value && D.ROLES.indexOf(me.role) !== -1) $('replyRole').value = me.role;
+    if (typeof me.author === 'string' && me.author) {
+      if (!$('replyAuthor').value) $('replyAuthor').value = me.author;
+      if (!$('author').value) $('author').value = me.author;
+    }
+    previewName($('replyAuthor'), $('replyAuthorPreview'));
+    previewName($('author'), $('authorPreview'));
   }
+
+  /* 稱呼裡有孩子的暱稱（「小恩媽媽」）：先讓家長看到實際會顯示「孩子媽媽」 */
+  function previewName(input, out) {
+    var typed = input.value.trim();
+    var shown = D.authorName(typed, nickname);
+    out.hidden = !typed || shown === typed;
+    if (!out.hidden) {
+      out.innerHTML = '孩子的暱稱不會公開，會顯示為「<strong>' + esc(shown || '匿名') + '</strong>」。';
+    }
+  }
+
+  ['author', 'replyAuthor'].forEach(function (id) {
+    $(id).addEventListener('input', function () { previewName($(id), $(id + 'Preview')); });
+  });
 
   function showReplyError(msg, focusEl) {
     var el = $('reply-error');
@@ -783,9 +803,10 @@
     if (!replyText.value.trim()) return showReplyError('請先寫下回覆的內容。', replyText);
     if (!role) return showReplyError('請選擇您的身分。', $('replyRole'));
 
+    var typedName = $('replyAuthor').value.trim();
     var payload = D.buildReply({
       role: role,
-      author: CLINIC ? '' : $('replyAuthor').value,
+      author: typedName,
       content: replyText.value
     }, { source: SOURCE, nickname: nickname });
     var id = thread.id;
@@ -796,7 +817,7 @@
       return fb.discuss.reply(id, reply.id, payload);
     }), SEND_TIMEOUT_MS).then(function () {
       markPosted();
-      rememberMe(payload.role, payload.author);
+      rememberMe(payload.role, typedName);
       setReplying(false);
       if (reply.threadId === id) resetReply(id);
       Anxin.announce(live, '已送出回覆');
@@ -1111,7 +1132,7 @@
   /* ── 草稿：內文、標籤、稱呼（重新整理、離開再回來都還在） ── */
 
   function saveDraft() {
-    writeJson(KEYS.draft, { content: content.value, tags: tags, author: CLINIC ? '' : $('author').value });
+    writeJson(KEYS.draft, { content: content.value, tags: tags, author: $('author').value });
   }
 
   function clearDraft() {
@@ -1201,10 +1222,11 @@
     $('post-error').hidden = true;
 
     var payload;
+    var typedName = $('author').value.trim();
     try {
       payload = D.buildThread({
         role: role,
-        author: $('author').value,
+        author: typedName,
         content: content.value,
         members: memberPayload(),
         hashtags: tags
@@ -1224,7 +1246,7 @@
       postId = null;
       markPosted();
       addId(KEYS.mine, id, 200);
-      rememberMe(payload.role, payload.author);
+      rememberMe(payload.role, typedName);
       var now = Date.now();
       upsert(D.normalizeThread(Object.assign({ id: id, createdAt: now, lastActivityAt: now }, payload)));
       setPosting(false);
@@ -1257,7 +1279,6 @@
         r.checked = true;
         Anxin.setAnswered(r, true);
       }
-      $('author').value = me.author || '';
     }
     members = [blankMember()];
     renderMembers();
@@ -1266,7 +1287,7 @@
     if (draft && typeof draft === 'object') {
       if (typeof draft.content === 'string') content.value = draft.content.slice(0, D.MAX.content);
       if (Array.isArray(draft.tags)) tags = D.addTags([], draft.tags.join(' '));
-      if (!CLINIC && typeof draft.author === 'string' && draft.author) $('author').value = draft.author;
+      if (typeof draft.author === 'string' && draft.author) $('author').value = draft.author;
       Anxin.setAnswered(content, content.value.trim());
       updateContentCount();
     }

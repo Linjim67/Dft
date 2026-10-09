@@ -253,7 +253,7 @@ One discussion post. The page is [discussion/index.html](discussion/index.html),
 | URL | Who | What they fill in |
 |---|---|---|
 | `/discussion/` | anyone (`source: 'public'`) | name (optional), role, each child's age and gender (professionals: an age range), content, hashtags |
-| `/discussion/parent/` | parents coming from 回饋 (`source: 'clinic'`) | content and hashtags only. Role is fixed to 家長, no name, and the child is the one from #01. Without a profile on the phone, this URL falls back to `/discussion/`. |
+| `/discussion/parent/` | parents coming from 回饋 (`source: 'clinic'`) | name (optional), content, hashtags. Role is fixed to 家長 and the child is the one from #01. Without a profile on the phone, this URL falls back to `/discussion/`. |
 
 The payload is built by `AnxinDiscuss.buildThread` ([discussion/discuss-core.js](discussion/discuss-core.js)) and written by `discuss.post` in [shared/firebase.js](shared/firebase.js). Every field is whitelisted.
 
@@ -261,7 +261,7 @@ The payload is built by `AnxinDiscuss.buildThread` ([discussion/discuss-core.js]
 |---|---|---|
 | `v` | number | `1` |
 | `role` | string | `'家長'` \| `'醫師'` \| `'護士'` \| `'醫檢師'` \| `'其他'`. Always `'家長'` when `source` is `'clinic'`. |
-| `author` | string | ≤ 20 chars; `''` = 匿名. Always `''` when `source` is `'clinic'`. |
+| `author` | string | ≤ 20 chars; `''` = 匿名. The child's nickname is replaced with `孩子` (「小恩媽媽」 → 「孩子媽媽」). |
 | `content` | string | 1–2000 chars. The nickname (if this phone has a profile) is replaced with `孩子`. |
 | `members` | list (1–8) | `{ ageMin, ageMax, gender }`. A child is `ageMin == ageMax`; a professional's age group is a range. Ages 0–18 (0.5 steps below 5 on the slider, whole years from 5; a `clinic` post copies the #01 age, which can be 5.5). `gender`: `'男'` \| `'女'` \| `'不限'` (都有, ranges only). Exactly 1 when `source` is `'clinic'`. |
 | `hashtags` | list (≤ 5) | strings of 1–20 chars, without `#`, letters/digits/`_` only, Latin lower-cased. Nickname replaced too. |
@@ -299,7 +299,7 @@ Built by `AnxinDiscuss.buildReply`, written by `discuss.reply` in one batch with
 |---|---|---|
 | `v` | number | `1` |
 | `role` | string | same list as threads; `'家長'` when `source` is `'clinic'` |
-| `author` | string | ≤ 20 chars, `''` = 匿名; `''` when `source` is `'clinic'` |
+| `author` | string | ≤ 20 chars, `''` = 匿名; nickname replaced |
 | `content` | string | 1–1000 chars, nickname replaced |
 | `source` | string | `'public'` / `'clinic'` |
 | `createdAt` | Timestamp | server time |
@@ -333,5 +333,5 @@ Every query filters or sorts on a single field, so no composite indexes are need
 - `localStorage['anxin.profile.v2']`: the full profile, **including the nickname** and the code. It is dropped after 24 h. This is the only place the nickname is stored.
 - `localStorage['anxin.shotDone.v1']`: the code whose 「打針完畢」 page has already been shown.
 - `localStorage['anxin.playtime.v1']`: playtime rows the server hasn't confirmed yet (no nickname). It is cleared as rows are confirmed, and rows older than 2 days are dropped.
-- `anxin.discuss.*`: the discussion page's remembered name and role (public page), unsent draft, opened and own thread ids, and last post time.
+- `anxin.discuss.*`: the discussion page's remembered name (and role on the public page), kept separately per URL and as typed, so it can include the nickname; the unsent draft; opened and own thread ids; and the last post time.
 - The other `anxin.*` keys are per-phone game progress, drafts and UI state.
