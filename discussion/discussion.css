@@ -987,9 +987,27 @@ html[data-discuss="clinic"] .reply-identity {
   list-style: none;
 }
 
+/* 「標籤」和輸入框、加入鈕同一行（和「您的稱呼」一樣）；太窄時輸入框換到下一行 */
+.tag-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--sp-2) var(--sp-3);
+}
+
+.tag-row .field-label {
+  flex: none;
+}
+
+.tag-row+.field-hint {
+  margin: var(--sp-2) 0 0;
+}
+
 .tag-entry {
   display: flex;
+  flex: 1 1 12rem;
   gap: var(--sp-2);
+  min-width: 0;
 }
 
 .tag-entry input {

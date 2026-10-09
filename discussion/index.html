@@ -272,18 +272,20 @@
           <p class="field-error" id="content-error" hidden></p>
         </div>
 
-        <!-- ── 標籤 ── -->
+        <!-- ── 標籤（題目和輸入框同一行） ── -->
         <div class="field">
-          <label class="field-label" for="tagInput">
-            標籤 <span class="opt">選填</span>
-          </label>
-          <p class="field-hint" id="tagHint">方便別人搜尋，最多 5 個。</p>
-          <ul class="tag-chips" id="tagChips" aria-label="已加入的標籤"></ul>
-          <div class="tag-entry" id="tagEntry">
-            <input type="text" id="tagInput" maxlength="40" autocomplete="off" enterkeyhint="done"
-              placeholder="輸入後按「加入」" aria-describedby="tagHint">
-            <button class="btn btn-quiet tag-add" type="button" id="tagAdd">加入</button>
+          <div class="tag-row">
+            <label class="field-label" for="tagInput">
+              標籤 <span class="opt">選填</span>
+            </label>
+            <div class="tag-entry" id="tagEntry">
+              <input type="text" id="tagInput" maxlength="40" autocomplete="off" enterkeyhint="done"
+                placeholder="例如：深呼吸" aria-describedby="tagHint">
+              <button class="btn btn-quiet tag-add" type="button" id="tagAdd">加入</button>
+            </div>
           </div>
+          <p class="field-hint" id="tagHint">最多 5 個。</p>
+          <ul class="tag-chips" id="tagChips" aria-label="已加入的標籤"></ul>
           <div class="tag-suggest" id="tagSuggestWrap">
             <p class="mini-label" id="tagSuggestLabel">常用標籤</p>
             <div class="chip-row" id="tagSuggest" role="group" aria-labelledby="tagSuggestLabel"></div>

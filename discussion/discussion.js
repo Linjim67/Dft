@@ -1193,7 +1193,7 @@
     $('tagChips').hidden = !tags.length;
     tagInput.disabled = full;
     $('tagAdd').disabled = full;
-    tagInput.placeholder = full ? '已經 5 個了' : '輸入後按「加入」';
+    tagInput.placeholder = full ? '已經 5 個了' : '例如：深呼吸';
     var left = SUGGEST.filter(function (s) { return tags.indexOf(s) === -1; });
     $('tagSuggestWrap').hidden = full || !left.length;
     $('tagSuggest').innerHTML = left.map(function (s) {
