@@ -34,8 +34,9 @@ After 發布, `#new` is replaced with `#t=<id>`, so back goes to the list instea
   In the post view, tags are buttons that search that tag.
 - **Card colours (owner's choice)**: content text black `#1C1917` (`--primary-ink`), hashtags `#7C2D12` (`--fg`), names unchanged.
   The post page and replies use the same colours, so a post doesn't change colour when it's opened.
-- **Chips**: pills with a 1px taupe border. Selected chips get primary-wash plus a deep-orange border **and a check glyph**
-  (MASTER: colour is never the only signal). 48px tall.
+- **Chips**: pills with a 1px taupe border. Selected chips get primary-wash plus a 2px deep-orange border. **No check glyph**
+  (owner's choice, an exception to MASTER's check badge); the doubled border width is the non-colour cue, the same one the
+  #01 face scale uses. 48px tall.
 - **Role pill**: white, black text, 1px black border, the same for every role (owner's choice).
 - **有幫助 (like)**: a toggle (`aria-pressed`) on the card heart and in the post view. Pressed fills the heart, so the shape
   changes, not only the colour, with a short pop (off under reduced motion). Works on your own posts too. The phone keeps

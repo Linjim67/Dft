@@ -193,7 +193,7 @@ html:not([data-discuss="clinic"]) .only-clinic {
 }
 
 /* ═══ Chip（篩選、身分、標籤） ════════════════════════════════
-   未選：白底＋淡褐框；已選：淡橘底＋深橘框＋打勾（不單靠顏色） */
+   未選：白底＋1px 淡褐框；已選：淡橘底＋2px 深橘框（框變粗，不單靠顏色）。不打勾（使用者決定） */
 
 .chip-row {
   display: flex;
@@ -233,18 +233,6 @@ html:not([data-discuss="clinic"]) .only-clinic {
   color: var(--primary-deep);
   border-color: var(--primary-deep);
   box-shadow: var(--sh-sm), inset 0 0 0 var(--line-w) var(--primary-deep);
-}
-
-.chip[aria-pressed="true"]::before,
-.chip-radio input:checked+.chip::before {
-  --check: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M5.5 12.5 10 17l8.5-9' fill='none' stroke='%23000' stroke-width='2.6' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
-  content: "";
-  width: 15px;
-  height: 15px;
-  margin-inline-start: -4px;
-  background: currentColor;
-  -webkit-mask: var(--check) center / contain no-repeat;
-  mask: var(--check) center / contain no-repeat;
 }
 
 .chip:active,
