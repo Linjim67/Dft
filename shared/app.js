@@ -77,7 +77,7 @@
   /* 需要個人資料的頁面呼叫：沒有（或已過期）就回到 #01 */
   function requireProfile() {
     var p = loadProfile();
-    if (!p) root.location.replace('/');
+    if (!p) root.location.replace('/portal/');
     return p;
   }
 

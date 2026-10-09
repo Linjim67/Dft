@@ -54,6 +54,6 @@
   $('restartBtn').addEventListener('click', restart.open);
   $('restartConfirm').addEventListener('click', function () {
     Anxin.profile.clear();
-    window.location.replace('/');
+    window.location.replace('/portal/');
   });
 })();

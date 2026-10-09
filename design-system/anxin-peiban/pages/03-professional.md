@@ -1,6 +1,6 @@
 # 03 醫護端 + 暫時代碼 — page overrides
 
-Inherits MASTER. Covers `/pro/`, the code claim in `/` (#01), the code chip on `/shot/` and `/home/`,
+Inherits MASTER. Covers `/pro/`, the code claim in `/portal/` (#01), the code chip on `/shot/` and `/home/`,
 and the Firestore `codes`, `staff`, `staffFeedback` collections.
 
 ## Temporary code — unique by construction

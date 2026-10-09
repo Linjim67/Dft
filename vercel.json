@@ -1,4 +1,7 @@
 {
+  "redirects": [
+    { "source": "/", "destination": "/portal/", "permanent": false }
+  ],
   "rewrites": [
     { "source": "/games/:code(\\d{4})", "destination": "/games/duo/join/index.html" },
     { "source": "/games/:code(\\d{4})/", "destination": "/games/duo/join/index.html" },

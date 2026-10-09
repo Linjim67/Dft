@@ -6,14 +6,14 @@ Inherits MASTER. Covers `/home/` and the shell shared by every subpage (`/shared
 
 | Route | Needs profile | Notes |
 |---|---|---|
-| `/` | no | #01 form. A valid profile redirects to `/home/` from `<head>`, so the form never flashes. |
+| `/portal/` | no | #01 form (`/` redirects here). A valid profile redirects to `/home/` from `<head>`, so the form never flashes. |
 | `/home/` | yes | #02 hub |
 | `/guide/` `/cheer/` `/games/solo/` `/games/duo/` | yes | scaffolds — 「內容準備中」 |
 | `/shot/` `/feedback/` | yes | #03 |
 | `/thanks/` | no | profile may have expired by then; personalises only if present |
 | `/discussion/` | no | #04 placeholder; the spec opens it to everyone |
 
-Protected pages guard in `<head>` with `Anxin.requireProfile()` → `location.replace('/')`.
+Protected pages guard in `<head>` with `Anxin.requireProfile()` → `location.replace('/portal/')`.
 
 - **Every internal path is root-absolute** (`/styles.css`, `/home/`). Vercel may serve `/home` without
   redirecting to `/home/`, and from there `./home.css` resolves to `/home.css`. Absolute paths survive
