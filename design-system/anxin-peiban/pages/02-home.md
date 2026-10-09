@@ -37,6 +37,10 @@ Protected pages guard in `<head>` with `Anxin.requireProfile()` → `location.re
   Not shown on `/shot/` itself.
 - **No needle or syringe imagery anywhere.** These screens sit in front of anxious children; the CTA uses
   a neutral arrow. *Exception: the 打地鼠 game, by spec — see `07-games.md` (medical play, no tip ever shown).*
+  *Exception: the favicon (owner's choice), the owner's hand-drawn syringe whose needle is the diagonal of an N
+  (`drawing.svg` → `/favicon.svg`: cropped, black 1.8 stroke, centred on a white circle). It only appears at tab size.
+  Every page links `/favicon.ico` (32px, `sizes` set so Chrome still picks the SVG), `/favicon.svg` and
+  `/apple-touch-icon.png` (180px, white square for iPhone home screens).*
 - 重新填寫 is destructive (wipes profile + code), so it confirms in a `<dialog>` with **autofocus on
   取消** — an accidental Enter must not wipe data.
 
