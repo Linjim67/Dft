@@ -604,9 +604,10 @@
       post.setAttribute('data-id', t.id);
       post.innerHTML = metaHtml(t, Date.now()) + membersHtml(t) +
         '<div class="post-body">' + esc(t.content) + '</div>' +
-        (t.hashtags.length ? '<ul class="post-tags" aria-label="標籤（點一下搜尋）">' +
+        /* 標籤和列表卡片一樣是純文字；點一下仍會搜尋這個標籤 */
+        (t.hashtags.length ? '<ul class="card-tags post-tags" aria-label="標籤（點一下搜尋）">' +
           t.hashtags.map(function (h) {
-            return '<li><button class="chip chip-tag" type="button" data-tag="' + esc(h) + '">#' + esc(h) + '</button></li>';
+            return '<li><button class="tag-link" type="button" data-tag="' + esc(h) + '">#' + esc(h) + '</button></li>';
           }).join('') + '</ul>' : '') +
         '<div class="post-actions" id="postActions"></div>';
     }

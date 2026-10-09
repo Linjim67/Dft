@@ -260,12 +260,6 @@ html:not([data-discuss="clinic"]) .only-clinic {
   outline-offset: 3px;
 }
 
-/* 單篇裡的標籤：點了就搜尋。顏色和卡片上的標籤一樣（#7C2D12） */
-.chip-tag {
-  color: var(--fg);
-  box-shadow: none;
-}
-
 /* 已加入的標籤：點了移除 */
 .chip-picked {
   padding-inline: var(--sp-4) var(--sp-3);
@@ -671,10 +665,26 @@ html:not([data-discuss="clinic"]) .only-clinic {
   white-space: pre-wrap;
 }
 
+/* 單篇的標籤：外觀和列表卡片的 .card-tags 一樣（純文字、#7C2D12），但每個都是按鈕，點了就搜尋。
+   上下的內距放大點擊範圍，再用負邊距抵掉，行距和卡片一致 */
 .post-tags {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--sp-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.tag-link {
+  margin-block: -6px;
+  padding: 6px 0;
+  background: none;
+  border: 0;
+  color: inherit;
+  font: inherit;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.tag-link:focus-visible {
+  outline-offset: 2px;
 }
 
 .post-actions {
@@ -1051,6 +1061,11 @@ html[data-discuss="clinic"] .reply-identity {
 
   .like-btn:hover {
     background: var(--primary-wash);
+  }
+
+  .tag-link:hover {
+    text-decoration: underline;
+    text-underline-offset: 3px;
   }
 
   .chip:not([aria-pressed="true"]):hover,
