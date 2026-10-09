@@ -104,7 +104,7 @@
   };
 
   function rolePill(role) {
-    return '<span class="role-pill">' + esc(role) + '</span>';
+    return '<span class="post-role">' + esc(role) + '</span>';
   }
 
   /* 身分、稱呼、時間。文章（卡片、單篇）的這一行前面有放大鏡圖示；回覆沒有 */

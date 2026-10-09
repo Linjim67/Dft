@@ -499,17 +499,9 @@ html:not([data-discuss="clinic"]) .only-clinic {
   margin-inline-end: -2px;
 }
 
-/* 身分：白底、黑字、黑框，每種身分都一樣 */
-.role-pill {
-  display: inline-flex;
-  align-items: center;
-  min-height: 24px;
-  padding: 0 10px;
-  border-radius: var(--r-pill);
-  background: var(--card);
+/* 身分：純文字、黑色粗體，不加框（使用者決定），每種身分都一樣 */
+.post-role {
   color: var(--primary-ink);
-  border: 1px solid var(--primary-ink);
-  font-size: .8rem;
   font-weight: 700;
 }
 
