@@ -13,7 +13,7 @@ html:not([data-discuss="clinic"]) .only-clinic {
 .chip-radio,
 .sort label,
 .filter-toggle,
-.helpful-btn,
+.share-btn,
 .like-btn,
 .dual-range,
 .thread-link,
@@ -105,7 +105,7 @@ html:not([data-discuss="clinic"]) .only-clinic {
 .search-box input:focus-visible,
 .chip:focus-visible,
 .filter-toggle:focus-visible,
-.helpful-btn:focus-visible,
+.share-btn:focus-visible,
 .like-btn:focus-visible {
   border-radius: var(--r-pill);
 }
@@ -607,8 +607,7 @@ html:not([data-discuss="clinic"]) .only-clinic {
   fill: currentColor;
 }
 
-.like-btn.pop[aria-pressed="true"] .icon,
-.helpful-btn.pop[aria-pressed="true"] .icon {
+.like-btn.pop[aria-pressed="true"] .icon {
   animation: heart-pop 280ms var(--ease);
 }
 
@@ -712,52 +711,68 @@ html:not([data-discuss="clinic"]) .only-clinic {
   height: 20px;
 }
 
-.helpful-btn {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  min-height: var(--tap);
-  padding: 0 var(--sp-4) 0 var(--sp-3);
-  background: var(--card);
-  color: var(--fg);
-  font-weight: 700;
-  border: var(--line-w) solid var(--line);
-  border-radius: var(--r-pill);
-  box-shadow: var(--sh-sm);
-  transition: transform var(--t-fast) var(--ease),
-    background-color var(--t-fast) var(--ease),
-    border-color var(--t-fast) var(--ease);
+/* 單篇的愛心：和卡片一樣只有愛心＋數字（沒有外框），大一號；點擊範圍 48px，點愛心附近也算 */
+.post-actions .like-btn {
+  margin: -8px 0 -8px -10px;
+  font-size: .92rem;
 }
 
-.helpful-btn .icon {
-  width: 20px;
-  height: 20px;
+.post-actions .like-btn .icon {
+  width: 22px;
+  height: 22px;
+}
+
+/* 紙飛機：複製這篇的網址。外觀只有圖示，點擊範圍 48px */
+.share-btn {
+  display: inline-grid;
+  place-items: center;
+  min-width: var(--tap);
+  min-height: var(--tap);
+  margin: -8px -10px;
+  padding: 0;
+  background: none;
+  border: 0;
+  border-radius: var(--r-pill);
   color: var(--idle);
 }
 
-/* 按下：愛心填滿（形狀改變，不只是變色） */
-.helpful-btn[aria-pressed="true"] {
-  background: var(--primary-wash);
-  color: var(--primary-deep);
-  border-color: var(--primary-deep);
-  box-shadow: var(--sh-sm), inset 0 0 0 var(--line-w) var(--primary-deep);
+.share-btn .icon {
+  width: 22px;
+  height: 22px;
 }
 
-.helpful-btn[aria-pressed="true"] .icon {
-  color: var(--primary-deep);
-  fill: currentColor;
+.share-btn:active .icon {
+  transform: translate(2px, -2px);
 }
 
-.helpful-btn:active {
-  transform: translateY(1px);
+/* 「網址已複製」：畫面下方的深褐小膠囊（白字 9.4:1），約 2 秒後淡出 */
+.toast {
+  position: fixed;
+  left: 50%;
+  bottom: calc(var(--sp-6) + env(safe-area-inset-bottom));
+  z-index: 60;
+  padding: var(--sp-2) var(--sp-5);
+  border-radius: var(--r-pill);
+  background: var(--fg);
+  color: #FFFFFF;
+  font-size: .92rem;
+  font-weight: 700;
+  white-space: nowrap;
+  box-shadow: var(--sh-lg);
+  transform: translateX(-50%);
+  animation: toast-in var(--t-base) var(--ease);
+  transition: opacity var(--t-base) var(--ease);
 }
 
-.helpful-btn:disabled {
-  cursor: progress;
+.toast.is-out {
+  opacity: 0;
 }
 
-.helpful-count {
-  font-variant-numeric: tabular-nums;
+@keyframes toast-in {
+  from {
+    opacity: 0;
+    transform: translate(-50%, 8px);
+  }
 }
 
 .replies-title {
@@ -1066,7 +1081,8 @@ html[data-discuss="clinic"] .reply-identity {
 
 @media (hover: hover) and (pointer: fine) {
 
-  .like-btn:hover {
+  .like-btn:hover,
+  .share-btn:hover {
     background: var(--primary-wash);
   }
 
@@ -1077,8 +1093,7 @@ html[data-discuss="clinic"] .reply-identity {
 
   .chip:not([aria-pressed="true"]):hover,
   .chip-radio input:not(:checked)+.chip:hover,
-  .filter-toggle:hover,
-  .helpful-btn:not([aria-pressed="true"]):hover {
+  .filter-toggle:hover {
     background: var(--primary-wash);
     border-color: var(--primary-deep);
   }
@@ -1096,13 +1111,13 @@ html[data-discuss="clinic"] .reply-identity {
 
   .chip:active,
   .chip-radio input:active+.chip,
-  .helpful-btn:active,
+  .share-btn:active .icon,
   .thread-card:has(.thread-link:active) {
     transform: none;
   }
 
   .like-btn.pop[aria-pressed="true"] .icon,
-  .helpful-btn.pop[aria-pressed="true"] .icon {
+  .toast {
     animation: none;
   }
 }

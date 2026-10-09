@@ -98,7 +98,9 @@
     offline: '<svg viewBox="0 0 24 24" class="icon" aria-hidden="true"><path d="M3.5 9.5a12 12 0 0 1 17 0"/>' +
       '<path d="M6.8 12.9a7.4 7.4 0 0 1 10.4 0M10 16.3a2.8 2.8 0 0 1 4 0"/><path d="M4 4l16 16"/></svg>',
     search: '<svg viewBox="0 0 24 24" class="icon" aria-hidden="true"><circle cx="11" cy="11" r="6.5"/>' +
-      '<path d="m16 16 4 4"/></svg>'
+      '<path d="m16 16 4 4"/></svg>',
+    plane: '<svg viewBox="0 0 24 24" class="icon" aria-hidden="true"><path d="M20.5 3.5 3.6 10.3l6.7 3.3 3.3 6.8 6.9-16.9Z"/>' +
+      '<path d="m10.3 13.6 4.4-4.4"/></svg>'
   };
 
   function rolePill(role) {
@@ -619,13 +621,16 @@
     var bar = $('postActions');
     var t = thread.data;
     if (!bar || !t) return;
+    /* 愛心和卡片上的一樣（沒有外框，點愛心附近也算）；紙飛機複製這篇的網址 */
     if (!bar.firstChild) {
-      bar.innerHTML = '<button class="helpful-btn" type="button" id="voteBtn" aria-pressed="false">' + ICON.heart +
-        '<span>有幫助</span><span class="helpful-count" id="voteCount"></span></button>' +
-        '<p class="stat stat-lg">' + ICON.chat + '<span id="replyStat"></span></p>';
+      bar.innerHTML = '<button class="like-btn" type="button" id="voteBtn" aria-pressed="false">' + ICON.heart +
+        '<span class="like-count" id="voteCount"></span></button>' +
+        '<p class="stat stat-lg">' + ICON.chat + '<span id="replyStat"></span></p>' +
+        '<button class="share-btn" type="button" id="shareBtn" aria-label="複製這篇的網址">' + ICON.plane + '</button>';
     }
     $('voteCount').textContent = t.helpful;
     $('voteBtn').setAttribute('aria-pressed', String(isLiked(t.id)));
+    $('voteBtn').setAttribute('aria-label', '有幫助（' + t.helpful + '）');
     $('replyStat').textContent = t.replyCount;
   }
 
@@ -713,6 +718,56 @@
     });
   }
 
+  /* ─────────────────────────────────────────────────────────────
+     紙飛機：複製目前的網址（就是這篇文章的連結），畫面下方跳出「網址已複製」。
+     舊瀏覽器沒有 Clipboard API（或被擋）時，改用選取文字＋copy 指令。
+     ───────────────────────────────────────────────────────────── */
+
+  var toastTimer = 0;
+
+  function toast(msg) {
+    var el = $('toast');
+    window.clearTimeout(toastTimer);
+    el.textContent = msg;
+    el.classList.remove('is-out');
+    el.hidden = false;
+    Anxin.announce(live, msg);
+    toastTimer = window.setTimeout(function () {
+      el.classList.add('is-out');
+      toastTimer = window.setTimeout(function () { el.hidden = true; }, 220);
+    }, 1800);
+  }
+
+  function legacyCopy(text) {
+    var back = document.activeElement;
+    var ta = document.createElement('textarea');
+    ta.value = text;
+    ta.setAttribute('readonly', '');
+    ta.style.position = 'fixed';
+    ta.style.top = '0';
+    ta.style.opacity = '0';
+    document.body.appendChild(ta);
+    ta.select();
+    ta.setSelectionRange(0, text.length);
+    var ok = false;
+    try { ok = document.execCommand('copy'); } catch (e) { ok = false; }
+    document.body.removeChild(ta);
+    if (back && back.focus) back.focus({ preventScroll: true });
+    return ok ? Promise.resolve() : Promise.reject(new Error('copy failed'));
+  }
+
+  function copyLink() {
+    var url = location.href;
+    var copy = navigator.clipboard && window.isSecureContext
+      ? navigator.clipboard.writeText(url).catch(function () { return legacyCopy(url); })
+      : legacyCopy(url);
+    copy.then(function () {
+      toast('網址已複製');
+    }, function () {
+      toast('沒有複製成功，請從網址列複製');
+    });
+  }
+
   threadList.addEventListener('click', function (ev) {
     var b = ev.target.closest('[data-like]');
     if (!b) return;
@@ -727,6 +782,7 @@
       return;
     }
     if (ev.target.closest('#voteBtn') && canVote()) toggleLike(thread.id);
+    if (ev.target.closest('#shareBtn')) copyLink();
   });
 
   $('threadStatus').addEventListener('click', function (ev) {

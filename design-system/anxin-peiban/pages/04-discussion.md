@@ -38,10 +38,14 @@ After 發布, `#new` is replaced with `#t=<id>`, so back goes to the list instea
   (owner's choice, an exception to MASTER's check badge); the doubled border width is the non-colour cue, the same one the
   #01 face scale uses. 48px tall.
 - **Role pill**: white, black text, 1px black border, the same for every role (owner's choice).
-- **有幫助 (like)**: a toggle (`aria-pressed`) on the card heart and in the post view. Pressed fills the heart, so the shape
-  changes, not only the colour, with a short pop (off under reduced motion). Works on your own posts too. The phone keeps
-  the list of liked posts (`anxin.discuss.liked.v1`) so cards show filled hearts without one read per post, and re-checks
-  with the server when a post is opened.
+- **有幫助 (like)**: a toggle (`aria-pressed`), drawn the same everywhere: just the heart SVG and the count, no box and no
+  「有幫助」 text (owner's choice). The hit area is 48px around the heart, so tapping near it counts. Pressed fills the heart,
+  so the shape changes, not only the colour, with a short pop (off under reduced motion). Works on your own posts and on
+  early-prototype posts. The phone keeps the list of liked posts (`anxin.discuss.liked.v1`) so cards show filled hearts
+  without one read per post, and re-checks with the server when a post is opened.
+- **Paper plane** (post page, after the reply count): copies the current address (the post's `#t=` link) and shows
+  「網址已複製」 in a dark-brown pill near the bottom for ~2 s (also read out by the live region). Falls back to
+  select + `execCommand('copy')` where the Clipboard API is missing or blocked; if both fail it says 「沒有複製成功，請從網址列複製」.
 - **One child per post** (owner's decision): no 新增另一個孩子 button. The child's age and gender sit directly under the
   question, flat like #01, with the hint 「一篇寫一個孩子；其他孩子的經驗，可以再發一篇」. Parents get one slider
   (untouched = 「尚未選擇」, required, same as #01) and 男孩／女孩. Professionals get one age-range bar (below)
