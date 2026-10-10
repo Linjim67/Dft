@@ -1298,7 +1298,8 @@ body.is-playing .topbar {
   height: 10px;
   border-radius: var(--r-pill);
   background: var(--line);
-  transition: width .2s var(--ease), background-color .2s var(--ease);
+  /* 長短直接換（不動畫 width，不會讓版面一直重排），只有顏色慢慢變 */
+  transition: background-color .2s var(--ease);
 }
 
 .brief-dot[aria-current="step"]::before {
