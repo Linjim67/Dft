@@ -256,7 +256,6 @@
     $('mapStart').innerHTML = '<img src="' + src('flagOn') + '" alt="">';
     $('charChangeImg').src = src(CH.body);
     layoutMap();
-    caption();
   }
 
   /* 排版：一格方框 T px；路寬 0.28T；角色身高 0.5T（站在方框上面，上面要留位置） */
@@ -313,19 +312,6 @@
     $('mapPaths').innerHTML = s;
   }
 
-  /* 地圖下面一行字：角色站的那一關叫什麼；還有幾關沒打開 */
-  function caption() {
-    var n = MAP.at, F = frontier(), html = '';
-    if (n === INF && F === INF) {
-      html = '<b>無限挑戰</b><span>' + (rec.inf.best ? '最遠 ' + rec.inf.best + ' 公尺' : '五種玩法隨機出現，打贏醫生再來一輪') + '</span>';
-    } else if (n >= 1 && n <= F) {
-      var L = LV.LEVELS[n - 1];
-      html = '<b>第 ' + n + ' 關・' + vehicles(L.name) + '</b><span>' + vehicles(L.sub) + '</span>';
-    }
-    if (F <= LV.LEVELS.length) html += '<span>點方框開始；過了第 ' + F + ' 關，下一關就會打開</span>';
-    $('mapCaption').innerHTML = html;
-  }
-
   /* ── 地圖上的角色（縮小）：腳踩在 (x, y)；sx, sy 是落地壓扁；spin 是小膠囊滾動的角度 ──
      走路的角色往左走時整個翻過來；小膠囊不翻，滾的方向反過來 */
   function heroDraw(x, y, sprite, sx, sy, spin) {
@@ -354,7 +340,6 @@
       MAP.at = b;
       saveMap();
       heroAt(b);
-      caption();
       if (done) done();
     }
     if (a === b || reduce || !M.pos[a] || !M.pos[b]) { arrive(); return; }
@@ -408,7 +393,6 @@
         M.raf = 0;
         MAP.at = 0;
         heroAt(0);
-        caption();
         done();
       })();
     }
@@ -648,7 +632,7 @@
     resetInput();
 
     $('hudTitle').textContent = title();
-    $('readySub').textContent = modeHint(G.run.mode);
+    hideCtrlDemo(true);
     $('stageCanvas').setAttribute('aria-label', '遊戲畫面：' + CH.name + '往右跑。按空白鍵或向上鍵跳，Esc 暫停');
     setMode(G.run.mode);
     $('readyBox').hidden = false;
@@ -1211,6 +1195,23 @@
   function demoRotDown(c) { return demoRotSlope(c, 12, 216); }
   function demoRotUp(c) { return demoRotSlope(c, -12, 48); }
 
+  /* ── 跳跳（開始之後的說明卡，不是對話框）：
+     點一下 → 跳過一根針；按住 → 一落地就再跳，一直跳（三根針剛好在每一次跳到最高的時候經過） ── */
+  function demoCubeTap(c) {
+    return demoSvg(demoFade(demoGround(c.th, 66) + demoSeams(c.th, 66, -156) +
+      '<g>' + moveK('translate', [[0, 0, 0], [1, -156, 0]]) + demoImg('needle', 103, 54, 12, 12) + '</g>' +
+      demoHero(36, 66, 18, [[0.36, 0.58, 18]], 156)) +
+      demoTap(98, 32, [[0.34, 0.38]]), '');
+  }
+
+  function demoCubeHold(c) {
+    return demoSvg(demoFade(demoGround(c.th, 66) + demoSeams(c.th, 66, -192) +
+      '<g>' + moveK('translate', [[0, 0, 0], [1, -192, 0]]) +
+      demoImg('needle', 91, 54, 12, 12) + demoImg('needle', 134, 54, 12, 12) + demoImg('needle', 176, 54, 12, 12) + '</g>' +
+      demoHero(36, 66, 18, [[0.22, 0.42, 18], [0.44, 0.64, 18], [0.66, 0.86, 18]], 192)) +
+      demoTap(98, 32, [[0.2, 0.8]]), '');
+  }
+
   /* ── 醫生：橘色圈圈、水柱、綠色的勾、點滴袋（一圈 2.4 秒） ── */
 
   /* 水柱：從右邊飛進來、飛出左邊 */
@@ -1391,6 +1392,7 @@
   /* 回到地圖：角色站在剛剛玩的那一關；剛過關、打開了新的方框 → 先打開，再走過去。
      auto（按「打開下一關」來的）：走到了停一下，就直接開始那一關，就像點了那個方框 */
   function toLevels(auto) {
+    hideCtrlDemo(true);
     saveExit();
     stopLoop();
     G.phase = 'idle';
@@ -1596,7 +1598,42 @@
     setMode(mode);
     if (G.seen[mode]) return;
     G.seen[mode] = true;
+    /* 跳跳：不寫字，用會動的小圖說明（報讀照樣念出那一行字） */
+    if (mode === 'cube') { showCtrlDemo(); say(modeHint(mode)); return; }
     showHint(modeHint(mode));
+  }
+
+  /* ── 開始之後的說明卡：「點一下」→ 跳一下；「按住」→ 一直跳。放在天空那一塊，不擋手指，CTRL_MS 後淡出 ──
+     demoDur 是大家共用的，先設好再畫；SMIL 要等卡片看得到了才放進去（藏著的時候放進去不會動）。
+     減少動態時停在最能說明的那一格 */
+  var CTRL_MS = 5200, ctrlTimer = 0;
+
+  function showCtrlDemo() {
+    var el = $('ctrlDemo'), tn = themeName(G.run), th = THEME[tn] || THEME.orange, c = { th: th, tn: tn };
+    hideCtrlDemo(true);
+    el.style.setProperty('--demo-sky', 'linear-gradient(' + th.sky[0] + ',' + th.sky[1] + ')');
+    el.hidden = false;
+    demoDur = 2.4;
+    var steps = [['點一下', demoCubeTap(c), 0.42], ['按住', demoCubeHold(c), 0.54]];
+    el.innerHTML = steps.map(function (st) {
+      return '<figure class="ctrl-step">' + st[1] + '<figcaption>' + st[0] + '</figcaption></figure>';
+    }).join('');
+    Array.prototype.forEach.call(el.querySelectorAll('svg'), function (svg, i) {
+      if (typeof svg.pauseAnimations !== 'function') return;
+      if (reduce) { svg.pauseAnimations(); svg.setCurrentTime(steps[i][2] * demoDur); }
+      else { svg.setCurrentTime(0); svg.unpauseAnimations(); }
+    });
+    ctrlTimer = window.setTimeout(function () { hideCtrlDemo(false); }, CTRL_MS);
+  }
+
+  /* now：立刻收起來（換關、回地圖）；否則先淡出 */
+  function hideCtrlDemo(now) {
+    var el = $('ctrlDemo');
+    window.clearTimeout(ctrlTimer);
+    if (el.hidden) return;
+    if (now || reduce) { el.hidden = true; el.classList.remove('is-leaving'); el.innerHTML = ''; return; }
+    el.classList.add('is-leaving');
+    ctrlTimer = window.setTimeout(function () { hideCtrlDemo(true); }, 420);
   }
 
   function modeHint(mode) {
