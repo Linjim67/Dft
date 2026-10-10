@@ -1371,7 +1371,7 @@ body.is-playing .topbar {
 
 /* ═══ 對話框 ═══════════════════════════════════════════════════ */
 
-/* ── 暫停：大大的暫停鍵（按下去繼續玩）、右上角全螢幕、下面四顆圓按鈕（灰色的字） ── */
+/* ── 暫停：大大的繼續鍵（▶）、右上角全螢幕、下面四顆圓按鈕（小小的灰字） ── */
 .dash-pause {
   position: relative;
   width: min(28rem, calc(100% - 2 * var(--sp-4)));
@@ -1430,10 +1430,9 @@ body.is-playing .topbar {
 .pr-icon svg {
   width: 40px;
   height: 40px;
-  fill: none;
   stroke: currentColor;
-  stroke-width: 3.2;
-  stroke-linecap: round;
+  stroke-width: 2;
+  stroke-linejoin: round;
 }
 
 .pause-actions {
@@ -1465,11 +1464,11 @@ body.is-playing .topbar {
 }
 
 .pa-label {
-  font-size: .82rem;
+  font-size: .76rem;
   font-weight: 700;
   line-height: 1.35;
-  color: var(--fg-muted);
-  text-wrap: balance;
+  color: var(--idle);
+  white-space: nowrap;
 }
 
 .pause-resume:active .pr-icon,

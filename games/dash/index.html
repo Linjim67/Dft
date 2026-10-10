@@ -161,8 +161,9 @@
     </div>
   </dialog>
 
-  <!-- 暫停：大大的暫停鍵（II）＝ 按下去繼續玩；右上角是全螢幕（和頂列那一顆一樣）；
-       下面四顆圓按鈕：重頭開始、返回關卡選擇、返回遊戲主選單、換你打針（遊戲中頂列收起來，離開的路都在這裡） -->
+  <!-- 暫停：大大的繼續鍵（▶）；右上角是全螢幕（和頂列那一顆一樣）；
+       下面四顆圓按鈕（小小的灰字）：重來、選關、小遊戲、去打針（遊戲中頂列收起來，離開的路都在這裡）。
+       aria-label 都包含看得到的那兩三個字，報讀念完整一點 -->
   <dialog class="dlg dash-pause" id="pauseDlg" aria-labelledby="pauseTitle">
     <h2 class="dlg-title" id="pauseTitle">暫停中</h2>
     <button class="hud-btn hud-fs pause-fs" type="button" id="pauseFs" aria-label="全螢幕" aria-pressed="false" hidden>
@@ -171,33 +172,32 @@
         <path class="fs-out" d="M9 4v5H4M15 4v5h5M20 15h-5v5M4 15h5v5" />
       </svg>
     </button>
-    <button class="pause-resume" type="button" data-close autofocus>
-      <span class="pr-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6v12M15 6v12" /></svg></span>
-      <span class="pa-label">繼續遊戲</span>
+    <button class="pause-resume" type="button" data-close autofocus aria-label="繼續遊戲">
+      <span class="pr-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5.5v13L18.5 12Z" fill="currentColor" /></svg></span>
     </button>
     <ul class="pause-actions">
       <li>
-        <button class="pause-act" type="button" id="restartBtn">
+        <button class="pause-act" type="button" id="restartBtn" aria-label="重來（這一關重頭開始）">
           <span class="pa-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 4v6h6" /><path d="M3.5 15a9 9 0 1 0 2.1-9.4L3 10" /></svg></span>
-          <span class="pa-label">重頭開始</span>
+          <span class="pa-label">重來</span>
         </button>
       </li>
       <li>
-        <button class="pause-act" type="button" id="toLevelsBtn">
+        <button class="pause-act" type="button" id="toLevelsBtn" aria-label="選關（回到地圖選一關）">
           <span class="pa-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M19 12H5M12 19l-7-7 7-7" /></svg></span>
-          <span class="pa-label">返回關卡選擇</span>
+          <span class="pa-label">選關</span>
         </button>
       </li>
       <li>
-        <a class="pause-act" href="/games/solo/">
+        <a class="pause-act" href="/games/solo/" aria-label="小遊戲（回到小遊戲選單）">
           <span class="pa-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 6h16M4 12h16M4 18h16" /></svg></span>
-          <span class="pa-label">返回遊戲主選單</span>
+          <span class="pa-label">小遊戲</span>
         </a>
       </li>
       <li>
-        <a class="pause-act" href="/shot/">
+        <a class="pause-act" href="/shot/" aria-label="去打針">
           <span class="pa-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M14.5 6.5l3 3-9 9h-3v-3ZM13 5l6 6M17.5 6.5l2.5-2.5M18.5 2.5l3 3M5.5 18.5l-3 3M10.5 10.5l1.5 1.5M8.5 12.5l1.5 1.5" /></svg></span>
-          <span class="pa-label">換你打針</span>
+          <span class="pa-label">去打針</span>
         </a>
       </li>
     </ul>
