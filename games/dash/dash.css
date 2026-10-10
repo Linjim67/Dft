@@ -1256,12 +1256,6 @@ body.is-playing .topbar {
     transform: none;
   }
 
-  .mode-hint,
-  .boss-fill,
-  .tap-pad,
-  .turn-arrow {
-    animation: none;
-    transition: none;
   /* 地圖、選角色：不閃、不跳、不轉、不掉 */
   .map-tile.is-next,
   .map-tiles li.is-new,
@@ -1271,6 +1265,12 @@ body.is-playing .topbar {
     animation: none;
   }
 
+  .mode-hint,
+  .boss-fill,
+  .tap-pad,
+  .turn-arrow {
+    animation: none;
+    transition: none;
   }
 
   /* 手機圖示直接畫成橫的 */

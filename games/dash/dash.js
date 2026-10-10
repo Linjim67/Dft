@@ -959,6 +959,7 @@
     G.saved = true;
   }
 
+  /* 回到地圖：角色站在剛剛玩的那一關；剛過關、打開了新的方框 → 先打開，再走過去 */
   function toLevels() {
     saveExit();
     stopLoop();
@@ -1269,7 +1270,6 @@
   }
 
   function openWin(got) {
-  /* 回到地圖：角色站在剛剛玩的那一關；剛過關、打開了新的方框 → 先打開，再走過去 */
     var run = G.run, n = got.filter(Boolean).length;
     var last = G.level >= LV.LEVELS.length;
     $('winKicker').textContent = title();
