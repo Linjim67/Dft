@@ -822,6 +822,8 @@
   var BRIEF_LOCK_MS = 700;
 
   function needBrief(mode) {
+    /* 無限挑戰不跳教學（六關都玩過了） */
+    if (G.level === 'inf') return false;
     /* 跳跳（點一下就跳）的教學只在第 1 關一開始 */
     if (mode === 'cube' && G.level !== 1) return false;
     return !!BRIEFS[mode] && !G.briefed[mode];
