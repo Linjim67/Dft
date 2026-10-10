@@ -1371,11 +1371,23 @@ body.is-playing .topbar {
 
 /* ═══ 對話框 ═══════════════════════════════════════════════════ */
 
-/* ── 暫停：大大的繼續鍵（▶）、右上角全螢幕、下面四顆圓按鈕（小小的灰字） ── */
+/* ── 暫停：左邊「暫停中」＋大大的繼續鍵（▶）｜灰色直線｜右邊四顆圓按鈕 2×2（小小的灰字），右上角全螢幕 ── */
 .dash-pause {
-  position: relative;
-  width: min(28rem, calc(100% - 2 * var(--sp-4)));
+  width: min(30rem, calc(100% - 2 * var(--sp-4)));
   text-align: center;
+}
+
+.dash-pause[open] {
+  display: grid;
+  grid-template-columns: minmax(0, .8fr) 1px minmax(0, 1.2fr);
+  align-items: center;
+  column-gap: var(--sp-5);
+}
+
+.pause-left {
+  display: grid;
+  justify-items: center;
+  gap: var(--sp-3);
 }
 
 .dash-pause .dlg-title {
@@ -1383,10 +1395,19 @@ body.is-playing .topbar {
   color: var(--fg-muted);
 }
 
+.pause-divider {
+  align-self: stretch;
+  width: 1px;
+  background: #D6D3D1;
+}
+
+.pause-right {
+  display: grid;
+  gap: var(--sp-2);
+}
+
 .pause-fs {
-  position: absolute;
-  top: var(--sp-3);
-  right: var(--sp-3);
+  justify-self: end;
 }
 
 .pause-resume,
@@ -1407,7 +1428,6 @@ body.is-playing .topbar {
 
 .pause-resume {
   width: auto;
-  margin: var(--sp-3) auto 0;
 }
 
 .pr-icon,
@@ -1437,9 +1457,9 @@ body.is-playing .topbar {
 
 .pause-actions {
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: var(--sp-2);
-  margin: var(--sp-5) 0 0;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--sp-3) var(--sp-2);
+  margin: 0;
   padding: 0;
   list-style: none;
 }
@@ -1493,7 +1513,7 @@ body.is-playing .topbar {
   }
 
   .pause-actions {
-    margin-top: var(--sp-3);
+    gap: var(--sp-2);
   }
 
   .pa-icon {
