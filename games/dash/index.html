@@ -172,23 +172,11 @@
     </p>
   </dialog>
 
-  <!-- 每一局第一次遇到醫生：三張會動的小圖說明怎麼躲水、怎麼贏（圖由 dash.js 畫） -->
+  <!-- 新手教學：每一局第一次遇到新的玩法（火箭、飛碟、雙胞胎、轉轉、醫生），一穿過傳送門就停下來，
+       用兩三張會動的小圖說明怎麼玩（標題、步驟、圖都由 dash.js 放進來） -->
   <dialog class="dlg dash-brief" id="briefDlg" aria-labelledby="briefTitle">
-    <h2 class="dlg-title" id="briefTitle">醫生來玩水槍大戰！</h2>
-    <ol class="brief-steps">
-      <li class="brief-step">
-        <span class="brief-demo" id="briefJump"></span>
-        <p class="brief-text"><b>水在腳邊</b><span>圈圈縮到最小就跳</span></p>
-      </li>
-      <li class="brief-step">
-        <span class="brief-demo" id="briefStay"></span>
-        <p class="brief-text"><b>水在頭上</b><span>不用跳，待在地上</span></p>
-      </li>
-      <li class="brief-step">
-        <span class="brief-demo" id="briefWin"></span>
-        <p class="brief-text"><b>點滴袋用完</b><span>你就贏了</span></p>
-      </li>
-    </ol>
+    <h2 class="dlg-title" id="briefTitle"></h2>
+    <ol class="brief-steps" id="briefSteps"></ol>
     <div class="dlg-actions">
       <button class="btn btn-primary" type="button" id="briefGo">知道了，開始！</button>
     </div>

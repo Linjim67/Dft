@@ -594,7 +594,7 @@
     seen: {}, parts: [], angle: 0, lastLane: null,
     squashAt: 0, squashKind: '', recoilAt: 0, crashUntil: 0, holdUntil: 0, doneAt: 0,
     saved: false, started: false, raf: 0, last: 0, hintTimer: 0, round: 1, dlgAction: null, hud: {},
-    duck: 0, jumpBt: -9, coach: '', briefed: false, briefAt: 0, portraitOk: false
+    duck: 0, jumpBt: -9, coach: '', briefed: {}, briefMode: null, briefAt: 0, portraitOk: false
   };
 
   function title() {
@@ -639,7 +639,7 @@
     G.duck = 0;
     G.jumpBt = -9;
     G.coach = '';
-    G.briefed = false;
+    G.briefed = {};
     G.springs = new WeakMap();
     resetInput();
 
@@ -709,7 +709,8 @@
     G.suppress = G.nPointers > 0 || G.keyHeld;
     syncHeld();
     G.last = now();
-    hint(G.run.mode);
+    /* 一開始就是新玩法（第 5 關轉轉）：下一幀先跳教學，說明的一行字等教學關掉再出現 */
+    if (!needBrief(G.run.mode)) hint(G.run.mode);
     var ae = document.activeElement;
     if (fromKey) {
       try { $('stageCanvas').focus({ preventScroll: true }); } catch (e) { /* 忽略 */ }
@@ -803,46 +804,299 @@
   var overDlg = Anxin.wireDialog($('overDlg'));
   var briefDlg = Anxin.wireDialog($('briefDlg'));
 
-  /* ── 醫生出現：先停下來，用三張會動的小圖說明怎麼玩（每一局第一次遇到醫生都說明，打贏過也一樣） ──
+  /* ── 新手教學：每一局第一次遇到新的玩法（火箭、飛碟、雙胞胎、轉轉、醫生），一穿過傳送門就先停下來，
+     用兩三張會動的小圖說明怎麼玩（打贏過也一樣）。一開始就是新玩法的關卡（第 5 關轉轉）在點「開始」之後說明。
      小朋友正在一直點畫面，對話框剛跳出來的 0.7 秒內按「開始」不算，免得還沒看就關掉 */
   var BRIEF_LOCK_MS = 700;
 
-  function needBrief() {
-    return !G.briefed;
+  function needBrief(mode) {
+    return !!BRIEFS[mode] && !G.briefed[mode];
   }
 
-  function openBrief() {
-    G.briefed = true;
+  function openBrief(mode) {
+    mode = mode || 'boss';
+    var bf = BRIEFS[mode], dlg = $('briefDlg');
+    var tn = themeName(G.run), th = THEME[tn] || THEME.orange;
+    var head = vehicles(bf.title);
+    G.briefed[mode] = true;
+    G.briefMode = mode;
     G.phase = 'brief';
     G.briefAt = now();
     resetInput();
+    $('briefTitle').textContent = head;
+    $('briefSteps').innerHTML = bf.steps.map(function (s) {
+      return '<li class="brief-step"><span class="brief-demo"></span>' +
+        '<p class="brief-text"><b>' + s.b + '</b><span>' + s.s + '</span></p></li>';
+    }).join('');
+    dlg.setAttribute('data-steps', bf.steps.length);
+    /* 小圖的天空和這一段一樣 */
+    dlg.style.setProperty('--demo-sky', 'linear-gradient(' + th.sky[0] + ',' + th.sky[1] + ')');
     briefDlg.open();
-    briefDemos(reduce);   /* 對話框打開之後才放進去：藏起來的時候放進去的 SMIL 不會動 */
-    say('醫生來玩水槍大戰！水在腳邊：圈圈縮到最小就跳。水在頭上：不用跳。點滴袋用完，你就贏了。');
+    briefDemos(bf, { th: th, tn: tn }, reduce);   /* 對話框打開之後才放進去：藏起來的時候放進去的 SMIL 不會動 */
+    say(head + bf.steps.map(function (s) { return s.b + '：' + s.s; }).join('。') + '。');
   }
 
   function briefTooSoon() { return now() - G.briefAt < BRIEF_LOCK_MS; }
 
-  /* 三張示範小圖（SMIL，一圈 2.4 秒，和遊戲裡畫的一樣：橘色圈圈、水柱、綠色的勾）。
-     減少動態時停在最能說明的那一格：跳在水柱正上方／水從蹲著的頭上飛過／舉白旗 */
-  var DEMO_S = 2.4;
-  var DEMO_STILL = { briefJump: 1.5, briefStay: 1.45, briefWin: 2.3 };
+  /* 示範小圖（SMIL，和遊戲裡畫的一樣：同一個角色、載具、藥盒、針、橘色圈圈、水柱、綠色的勾）。
+     時間都寫「一圈的幾分之幾」（0–1），一圈幾秒看每一種玩法的 dur */
+  var demoDur = 2.4;
+  var DEMO_LINE = 'rgba(124,45,18,.6)';
 
-  function demoSvg(body) {
+  /* ground：地板（省略 = 醫生那一關的粉紅地板；空字串 = 地板畫在 body 裡，例如會轉的場景） */
+  function demoSvg(body, ground) {
     return '<svg viewBox="0 0 120 84" aria-hidden="true" focusable="false">' +
-      '<rect y="72" width="120" height="12" fill="#FDA4AF"/><path d="M0 72.5H120" stroke="#9F1239" stroke-opacity=".5" stroke-width="2"/>' +
+      (ground == null ? '<rect y="72" width="120" height="12" fill="#FDA4AF"/><path d="M0 72.5H120" stroke="#9F1239" stroke-opacity=".5" stroke-width="2"/>' : ground) +
       body + '</svg>';
   }
 
   function anim(attr, values, keyTimes, extra) {
-    return '<animate attributeName="' + attr + '" values="' + values + '" keyTimes="' + keyTimes + '" dur="' + DEMO_S +
+    return '<animate attributeName="' + attr + '" values="' + values + '" keyTimes="' + keyTimes + '" dur="' + demoDur +
       's" repeatCount="indefinite"' + (extra || '') + '/>';
   }
+
+  /* 時間軸 [[一圈的幾分之幾, 值], …] → values／keyTimes：前後補到 0 和 1，時間不會倒退 */
+  function keys(pts) {
+    var p = pts.slice(), last = 0;
+    if (p[0][0] > 0) p.unshift([0, p[0][1]]);
+    if (p[p.length - 1][0] < 1) p.push([1, p[p.length - 1][1]]);
+    return {
+      v: p.map(function (q) { return q[1]; }).join(';'),
+      k: p.map(function (q) { last = clamp(Math.max(last, q[0]), 0, 1); return +last.toFixed(4); }).join(';')
+    };
+  }
+
+  function animK(attr, pts, extra) {
+    var q = keys(pts);
+    return anim(attr, q.v, q.k, extra);
+  }
+
+  /* 會動的 transform：translate 寫 [時間, x, y]、rotate 寫 [時間, 角度(, 中心 x, 中心 y)] */
+  function moveK(type, pts) {
+    var q = keys(pts.map(function (p) { return [p[0], p.slice(1).join(' ')]; }));
+    return '<animateTransform attributeName="transform" type="' + type + '" values="' + q.v + '" keyTimes="' + q.k +
+      '" dur="' + demoDur + 's" repeatCount="indefinite"/>';
+  }
+
+  function demoImg(name, x, y, w, h, inner) {
+    var tag = '<image href="' + ART.source(name) + '" x="' + x + '" y="' + y + '" width="' + w + '" height="' + h + '"';
+    return inner ? tag + '>' + inner + '</image>' : tag + '/>';
+  }
+
+  /* 一圈的頭尾淡出淡入：重新開始時不會一下子跳回去 */
+  function demoFade(body) {
+    return '<g>' + anim('opacity', '0;1;1;0', '0;.05;.93;1') + body + '</g>';
+  }
+
+  /* 地板往左右多畫一點：轉轉的場景轉起來，角落也不會露出天空 */
+  function demoGround(th, y) {
+    return '<rect x="-60" y="' + y + '" width="240" height="70" fill="' + th.ground + '"/>' +
+      '<path d="M-60 ' + (y + 0.5) + 'H180" stroke="' + DEMO_LINE + '" stroke-width="2"/>';
+  }
+
+  /* 火箭、飛碟段落的天花板 */
+  function demoCeil(th) {
+    return '<rect width="120" height="10" fill="' + th.ground + '"/><path d="M0 9.5H120" stroke="' + DEMO_LINE + '" stroke-width="2"/>';
+  }
+
+  /* 地磚的接縫往後跑（一圈 dx，12 的倍數就接得起來） */
+  function demoSeams(th, y, dx) {
+    var d = '';
+    for (var x = -60; x <= 420; x += 12) d += 'M' + x + ' ' + (y + 3) + 'v40';
+    return '<g>' + moveK('translate', [[0, 0, 0], [1, dx, 0]]) +
+      '<path d="' + d + '" stroke="' + th.seam + '" stroke-width="1.6"/></g>';
+  }
+
+  /* 按鈕和手指（說明「按」）：taps = [[按下, 放開], …]。按著的時候按鈕是橘色的，按下去那一刻往外一圈漣漪；
+     沒有 taps = 手指停在上面不按 */
+  var FINGER = '<g transform="rotate(25) scale(.85)">' +
+    '<path d="M-3 -1.5A3 3 0 0 0 3 -1.5V-11a1.3 1.3 0 0 0 2.6 0a1.3 1.3 0 0 0 2.6 0a1.3 1.3 0 0 0 2.6 0V-21q0 -4 -4 -4H-1.5q-4 0 -4 4V-17' +
+    'C-8.6 -16.2 -7.6 -12.4 -3 -12.6Z" fill="#FED7AA" stroke="#7C2D12" stroke-width="1.4" stroke-linejoin="round"/>' +
+    '<path d="M5.6 -11.2v-2.6M8.2 -11.2v-2.6M-3 -12.6v-2" fill="none" stroke="#7C2D12" stroke-width="1" stroke-linecap="round"/>' +
+    '<rect x="-1.8" y="-5" width="3.6" height="3.2" rx="1.4" fill="#FFF7ED"/></g>';
+
+  function demoTap(cx, cy, taps) {
+    var on = [], fy = [], rings = '';
+    if (!taps.length || taps[0][0] > 0) { on.push([0, 0]); fy.push([0, 0, -6]); }
+    taps.forEach(function (w) {
+      if (w[0] > 0) {
+        on.push([w[0], 1]);
+        fy.push([w[0] - 0.03, 0, -6], [w[0], 0, 0]);
+        rings += '<circle r="9.5" fill="none" stroke="#FB923C" stroke-width="2" opacity="0">' +
+          animK('r', [[w[0], 9.5], [w[0] + 0.14, 18]]) + animK('opacity', [[w[0], 0], [w[0], 0.9], [w[0] + 0.14, 0]]) + '</circle>';
+      } else {
+        on.push([0, 1]);
+        fy.push([0, 0, 0]);
+      }
+      on.push([w[1], 0]);
+      fy.push([w[1], 0, 0], [w[1] + 0.03, 0, -6]);
+    });
+    return '<g transform="translate(' + cx + ' ' + cy + ')">' + rings +
+      '<circle r="9.5" fill="#fff" stroke="#C2410C" stroke-width="1.6"/>' +
+      '<circle r="9.5" fill="#FB923C" stroke="#C2410C" stroke-width="1.6">' + animK('opacity', on, ' calcMode="discrete"') + '</circle>' +
+      '<g>' + moveK('translate', fy) + FINGER + '</g></g>';
+  }
+
+  /* 角色：腳踩在 (x, y)、大小 s；jumps = [[起跳, 落地, 多高], …]；run = 一圈往前跑多遠——
+     小膠囊照距離滾（一圈轉整數圈），用走的角色照距離換腳（WALK_STEP 格換一張），在空中換成跳的樣子 */
+  function demoHero(x, y, s, jumps, run) {
+    var ys = [[0, 0, 0]], body;
+    jumps.forEach(function (j) {
+      for (var i = 0; i <= 8; i++) { var u = i / 8; ys.push([j[0] + (j[1] - j[0]) * u, 0, -4 * j[2] * u * (1 - u)]); }
+    });
+    if (!CH.walk) {
+      var turns = run ? Math.max(1, Math.round(run / (Math.PI * s))) : 0;
+      body = '<g transform="translate(0 ' + (-s / 2) + ')"><g>' + (turns ? moveK('rotate', [[0, 0], [1, 360 * turns]]) : '') +
+        demoImg(CH.body, -s / 2, -s / 2, s, s) + '</g></g>';
+    } else {
+      var n = CH.walk.length, steps = run ? n * Math.max(1, Math.round(run / (s * WALK_STEP) / n)) : 0;
+      var cuts = [0, 1], segs = [], names = {};
+      for (var k = 1; k < steps; k++) cuts.push(k / steps);
+      jumps.forEach(function (j) { cuts.push(j[0], j[1]); });
+      cuts.sort(function (a, b) { return a - b; });
+      for (k = 0; k < cuts.length - 1; k++) {
+        if (cuts[k + 1] <= cuts[k]) continue;
+        var mid = (cuts[k] + cuts[k + 1]) / 2;
+        var air = jumps.some(function (j) { return mid > j[0] && mid < j[1]; });
+        var pose = air ? CH.jump : steps ? CH.walk[Math.floor(mid * steps) % n] : CH.body;
+        segs.push([cuts[k], pose]);
+        names[pose] = true;
+      }
+      body = Object.keys(names).map(function (pose) {
+        return demoImg(pose, -s / 2, -s, s, s,
+          animK('opacity', segs.map(function (g) { return [g[0], g[1] === pose ? 1 : 0]; }), ' calcMode="discrete"'));
+      }).join('');
+    }
+    return '<g transform="translate(' + x + ' ' + y + ')"><g>' + moveK('translate', ys) + body + '</g></g>';
+  }
+
+  /* 火箭／飛碟：機身中間的高度 ys = [[時間, y], …]、機頭的角度 rs = [[時間, 度], …]，後面拖三條短線 */
+  function demoCraft(name, x, w, h, ys, rs) {
+    var tail = '<path d="M' + (-w / 2 - 2) + ' -4h-7M' + (-w / 2 - 1) + ' 0h-9M' + (-w / 2 - 2) + ' 4h-7"' +
+      ' stroke="rgba(124,45,18,.3)" stroke-width="1.6" stroke-linecap="round"/>';
+    return '<g transform="translate(' + x + ' 0)"><g>' + moveK('translate', ys.map(function (p) { return [p[0], 0, p[1]]; })) +
+      '<g>' + moveK('rotate', rs) + tail + demoImg(name, -w / 2, -h / 2, w, h) + '</g></g></g>';
+  }
+
+  /* 上下兩個藥盒（貼著天花板、地板），中間留一條縫，從右邊捲過去（x 78 → -20） */
+  function demoGate(tn) {
+    var b = 'block_' + tn;
+    return '<g>' + moveK('translate', [[0, 0, 0], [1, -98, 0]]) + demoImg(b, 78, 10, 16, 16) + demoImg(b, 78, 56, 16, 16) + '</g>';
+  }
+
+  /* ── 火箭：按住往上、放開往下（圖和遊戲裡一樣：1.6 : 1） ── */
+  var SHIP_W = 30, SHIP_H = 18.75, UFO_W = 28, UFO_H = 20;
+
+  function demoShipUp(c) {
+    return demoSvg(demoCeil(c.th) + demoFade(
+      demoCraft(CH.ship, 34, SHIP_W, SHIP_H, [[0, 61], [0.14, 61], [0.22, 57], [0.6, 21]],
+        [[0, 0], [0.14, 0], [0.2, -14], [0.56, -14], [0.62, 0]])) +
+      demoTap(98, 44, [[0.12, 0.86]]), demoGround(c.th, 72));
+  }
+
+  function demoShipDown(c) {
+    return demoSvg(demoCeil(c.th) + demoFade(
+      demoCraft(CH.ship, 34, SHIP_W, SHIP_H, [[0, 21], [0.18, 21], [0.26, 25], [0.66, 61]],
+        [[0, 0], [0.18, 0], [0.24, 14], [0.62, 14], [0.68, 0]])) +
+      demoTap(98, 44, [[0, 0.16]]), demoGround(c.th, 72));
+  }
+
+  /* 按一下、放一下：在縫縫裡上上下下，平平地飛過去 */
+  function demoShipGap(c) {
+    return demoSvg(demoCeil(c.th) + demoFade(demoGate(c.tn) +
+      demoCraft(CH.ship, 34, SHIP_W, SHIP_H,
+        [[0, 61], [0.06, 61], [0.1, 58], [0.3, 42], [0.34, 41], [0.4, 45], [0.44, 44], [0.5, 39], [0.54, 38.5],
+          [0.6, 43], [0.64, 42], [0.7, 38.5], [0.74, 39], [0.8, 45], [0.9, 59], [0.94, 61]],
+        [[0, 0], [0.04, 0], [0.08, -12], [0.28, -12], [0.33, 8], [0.39, 8], [0.43, -12], [0.49, -12], [0.53, 8], [0.59, 8],
+          [0.63, -12], [0.69, -12], [0.73, 8], [0.88, 8], [0.93, 0]])) +
+      demoCheck(62, 36) + demoTap(98, 44, [[0.04, 0.3], [0.4, 0.5], [0.6, 0.7]]), demoGround(c.th, 72));
+  }
+
+  /* ── 飛碟：點一下往上跳一小段，不點就往下掉 ── */
+  function demoUfoHop(c) {
+    return demoSvg(demoCeil(c.th) + demoFade(
+      demoCraft(CH.ufo, 34, UFO_W, UFO_H,
+        [[0, 62], [0.2, 62], [0.24, 50], [0.28, 42], [0.32, 37.5], [0.35, 36], [0.39, 37.5], [0.45, 42], [0.51, 48.5], [0.57, 56], [0.62, 62]],
+        [[0, 0], [0.2, 0], [0.22, -8], [0.34, -8], [0.38, 6], [0.6, 6], [0.63, 0]])) +
+      demoTap(98, 44, [[0.2, 0.25]]), demoGround(c.th, 72));
+  }
+
+  function demoUfoFall(c) {
+    return demoSvg(demoCeil(c.th) + demoFade(
+      demoCraft(CH.ufo, 34, UFO_W, UFO_H, [[0, 30], [0.06, 30], [0.16, 32], [0.28, 37], [0.4, 46], [0.5, 56], [0.54, 62]],
+        [[0, 0], [0.06, 0], [0.12, 7], [0.5, 7], [0.56, 0]])) +
+      demoTap(98, 44, []), demoGround(c.th, 72));
+  }
+
+  function demoUfoGap(c) {
+    return demoSvg(demoCeil(c.th) + demoFade(demoGate(c.tn) +
+      demoCraft(CH.ufo, 34, UFO_W, UFO_H,
+        [[0, 62], [0.08, 62], [0.12, 50], [0.16, 44], [0.2, 42], [0.24, 42.5], [0.28, 44.5], [0.31, 46],
+          [0.34, 41], [0.37, 38], [0.4, 37], [0.44, 38], [0.48, 41], [0.52, 45.5],
+          [0.55, 40], [0.58, 37], [0.61, 36.5], [0.65, 38], [0.69, 41.5], [0.73, 45], [0.78, 50], [0.84, 57], [0.88, 62]],
+        [[0, 0], [0.08, 0], [0.1, -8], [0.18, -8], [0.22, 6], [0.31, 6], [0.33, -8], [0.39, -8], [0.43, 6], [0.52, 6],
+          [0.54, -8], [0.6, -8], [0.64, 6], [0.86, 6], [0.9, 0]])) +
+      demoCheck(62, 36) + demoTap(98, 44, [[0.08, 0.12], [0.31, 0.35], [0.52, 0.56]]), demoGround(c.th, 72));
+  }
+
+  /* ── 雙胞胎：下半是原本的世界，上半是另一個世界（上下顛倒）；兩個吃同一個「點一下」 ──
+     needles = [[x, 上下不一樣嗎], …]（不一樣的：藍色＋虛線框，和遊戲裡一樣），一圈往左捲 dx */
+  function demoDuoHalf(c, needles, dx, jumps) {
+    var ns = needles.map(function (n) {
+      return demoImg(n[1] ? 'needleDiff' : 'needle', n[0], 65, 13, 13) + (n[1]
+        ? '<rect x="' + (n[0] - 1.5) + '" y="63" width="16" height="15" rx="2.5" fill="none" stroke="#0369A1" stroke-width="1.2" stroke-dasharray="2.6 2"/>'
+        : '');
+    }).join('');
+    return '<rect y="78" width="120" height="6" fill="' + c.th.ground + '"/><path d="M0 78.5H120" stroke="' + DEMO_LINE + '" stroke-width="2"/>' +
+      '<g>' + moveK('translate', [[0, 0, 0], [1, dx, 0]]) + ns + '</g>' + demoHero(30, 78, 15, jumps, -dx);
+  }
+
+  function demoDuo(c, bottom, top, dx, jumps, taps) {
+    return demoSvg(demoFade(demoDuoHalf(c, bottom, dx, jumps) +
+      '<g transform="matrix(1 0 0 -1 0 84)">' + demoDuoHalf(c, top, dx, jumps) + '</g>') +
+      '<rect y="41" width="120" height="2" fill="' + DEMO_LINE + '"/>' + demoTap(98, 42, taps), '');
+  }
+
+  /* 上下的針在同一個地方：跳一次，兩個一起過 */
+  function demoDuoJump(c) {
+    return demoDuo(c, [[120, false]], [[120, false]], -150, [[0.53, 0.75, 17]], [[0.52, 0.56]]);
+  }
+
+  /* 上下不一樣（藍色虛線框）：下面的針先到、上面的晚一點到，要跳兩次 */
+  function demoDuoDiff(c) {
+    return demoDuo(c, [[120, true]], [[165, true]], -190, [[0.4, 0.6, 17], [0.64, 0.84, 17]], [[0.39, 0.43], [0.63, 0.67]]);
+  }
+
+  /* ── 轉轉：整個場景繞著畫面中間轉。下坡（順時針）跑得快、上坡（逆時針）跑得慢 ── */
+  function demoRotStep(c) {
+    var C0 = [60, 42];
+    return demoSvg(demoFade('<g>' +
+      moveK('rotate', [[0, 0].concat(C0), [0.3, 0].concat(C0), [0.36, 6].concat(C0), [0.56, 6].concat(C0), [0.62, 12].concat(C0)]) +
+      demoGround(c.th, 66) + demoSeams(c.th, 66, -160) +
+      '<g>' + moveK('translate', [[0, 0, 0], [1, -160, 0]]) + demoImg('needle', 100, 54, 12, 12) + '</g>' +
+      demoHero(40, 66, 18, [[0.3, 0.52, 18]], 160) + '</g>') +
+      demoTap(98, 32, [[0.28, 0.32]]), '');
+  }
+
+  /* 斜坡上一直跑：地磚接縫、天上的速度線、角色滾（換腳）的快慢都照 run（一圈跑多遠） */
+  function demoRotSlope(c, angle, run) {
+    var wind = '', d = '';
+    for (var x = 0; x <= 600; x += 60) d += 'M' + x + ' 18h14M' + (x + 30) + ' 32h10';
+    wind = '<g>' + moveK('translate', [[0, 0, 0], [1, -60 * Math.max(1, Math.round(run * 1.5 / 60)), 0]]) +
+      '<path d="' + d + '" stroke="' + DEMO_LINE + '" stroke-opacity=".5" stroke-width="2" stroke-linecap="round"/></g>';
+    return demoSvg('<g transform="rotate(' + angle + ' 60 42)">' + wind + demoGround(c.th, 62) + demoSeams(c.th, 62, -run) +
+      demoHero(48, 62, 18, [], run) + '</g>', '');
+  }
+
+  function demoRotDown(c) { return demoRotSlope(c, 12, 216); }
+  function demoRotUp(c) { return demoRotSlope(c, -12, 48); }
+
+  /* ── 醫生：橘色圈圈、水柱、綠色的勾、點滴袋（一圈 2.4 秒） ── */
 
   /* 水柱：從右邊飛進來、飛出左邊 */
   function demoWater(y) {
     return '<g><animateTransform attributeName="transform" type="translate" values="0 0;0 0;-150 0;-150 0" keyTimes="0;.4;.78;1" dur="' +
-      DEMO_S + 's" repeatCount="indefinite"/>' +
+      demoDur + 's" repeatCount="indefinite"/>' +
       '<rect x="120" y="' + y + '" width="26" height="11" rx="5.5" fill="#38BDF8" stroke="#075985" stroke-width="1.6"/>' +
       '<rect x="124" y="' + (y + 2) + '" width="10" height="2.4" rx="1.2" fill="#fff" opacity=".75"/></g>';
   }
@@ -853,7 +1107,7 @@
       '<path d="M' + (x - 3.2) + ' ' + y + 'l2.4 2.6 4.2-4.8" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></g>';
   }
 
-  function briefDemos(still) {
+  function demoBossJump() {
     var egg = ART.source(CH.body);
     /* 用走的角色：跳在空中那一段換成跳的樣子 */
     var hop = CH.jump
@@ -861,7 +1115,7 @@
         '<image href="' + ART.source(CH.jump) + '" x="18" y="48" width="24" height="24" opacity="0">' +
         anim('opacity', '0;1;0', '0;.5;.8', ' calcMode="discrete"') + '</image>'
       : '<image href="' + egg + '" x="18" y="48" width="24" height="24"/>';
-    var jump =
+    return demoSvg(
       /* 目標小圈（虛線）→ 大圈圈縮過來 → 縮到最小那一刻亮一下，跳！ */
       '<circle cx="30" cy="60" r="15" fill="none" stroke="#7C2D12" stroke-opacity=".55" stroke-width="1.4" stroke-dasharray="3 2.4">' +
       anim('opacity', '1;1;0;0', '0;.49;.5;1') + '</circle>' +
@@ -870,20 +1124,26 @@
       anim('r', '34;15;15', '0;.5;1') + anim('opacity', '0;1;1;0;0', '0;.08;.56;.6;1') + '</circle>' +
       demoWater(60) +
       '<g><animateTransform attributeName="transform" type="translate" values="0 0;0 0;0 -30;0 0;0 0" keyTimes="0;.5;.62;.8;1"' +
-      ' calcMode="spline" keySplines="0 0 1 1;.2 .7 .4 1;.6 0 .8 .3;0 0 1 1" dur="' + DEMO_S + 's" repeatCount="indefinite"/>' +
+      ' calcMode="spline" keySplines="0 0 1 1;.2 .7 .4 1;.6 0 .8 .3;0 0 1 1" dur="' + demoDur + 's" repeatCount="indefinite"/>' +
       hop + '</g>' +
       /* 頭上的箭頭：縮到最小時變成實心 */
       '<path d="M30 28l6 6h-3.2v5h-5.6v-5H24Z" stroke="#C2410C" stroke-width="1.6" stroke-linejoin="round" fill="#FFEDD5">' +
       anim('fill', '#FFEDD5;#FFEDD5;#C2410C;#C2410C', '0;.49;.5;1') + anim('opacity', '0;1;1;0;0', '0;.08;.56;.6;1') + '</path>' +
-      demoCheck(48, 40);
-    var stay =
+      demoCheck(48, 40));
+  }
+
+  function demoBossStay() {
+    return demoSvg(
       demoWater(29) +
       /* 蹲低低：從底部壓扁一點點 */
       '<g transform="translate(30 72)"><g><animateTransform attributeName="transform" type="scale" values="1 1;1 1;1.14 .78;1.14 .78;1 1;1 1"' +
-      ' keyTimes="0;.3;.36;.78;.85;1" dur="' + DEMO_S + 's" repeatCount="indefinite"/>' +
-      '<image href="' + egg + '" x="-12" y="-24" width="24" height="24"/></g></g>' +
-      demoCheck(48, 52);
-    var win =
+      ' keyTimes="0;.3;.36;.78;.85;1" dur="' + demoDur + 's" repeatCount="indefinite"/>' +
+      '<image href="' + ART.source(CH.body) + '" x="-12" y="-24" width="24" height="24"/></g></g>' +
+      demoCheck(48, 52));
+  }
+
+  function demoBossWin() {
+    return demoSvg(
       /* 點滴架：袋子裡的水慢慢變少 */
       '<path d="M30 71V9M22 9h12M22 71l8-3 8 3" fill="none" stroke="#78716C" stroke-width="2" stroke-linecap="round"/>' +
       '<rect x="14" y="13" width="18" height="28" rx="4" fill="#fff"/>' +
@@ -897,14 +1157,63 @@
       /* 白旗拿在左手上（圖上 DOC.flag 的位置） */
       '<g opacity="0">' + anim('opacity', '0;0;1;1', '0;.7;.7;1', ' calcMode="discrete"') +
       '<path d="M71 56V30" stroke="#78716C" stroke-width="2" stroke-linecap="round"/>' +
-      '<path d="M71 30q-6 2-12 0v9q6 2 12 0Z" fill="#fff" stroke="#57534E" stroke-width="1.4" stroke-linejoin="round"/></g>';
-    var parts = { briefJump: jump, briefStay: stay, briefWin: win };
-    Object.keys(parts).forEach(function (id) {
-      var host = $(id);
-      host.innerHTML = demoSvg(parts[id]);
-      var s = host.firstChild;
+      '<path d="M71 30q-6 2-12 0v9q6 2 12 0Z" fill="#fff" stroke="#57534E" stroke-width="1.4" stroke-linejoin="round"/></g>');
+  }
+
+  /* 每一種玩法的教學：標題、步驟（粗體 = 怎麼做、小字 = 會怎樣）、示範小圖。
+     dur = 小圖一圈幾秒；still = 減少動態時停在一圈的哪裡（最能說明的那一格）。
+     標題裡的「體溫計火箭」「藥杯飛碟」會換成現在這個角色的載具 */
+  var BRIEFS = {
+    ship: {
+      title: '坐上體溫計火箭！', dur: 2.8,
+      steps: [
+        { b: '按住', s: '往上飛', demo: demoShipUp, still: 0.45 },
+        { b: '放開', s: '往下降', demo: demoShipDown, still: 0.45 },
+        { b: '按一下、放一下', s: '從縫縫中間飛過去', demo: demoShipGap, still: 0.5 }
+      ]
+    },
+    ufo: {
+      title: '坐上藥杯飛碟！', dur: 2.8,
+      steps: [
+        { b: '點一下', s: '往上跳一下', demo: demoUfoHop, still: 0.3 },
+        { b: '不要點', s: '慢慢往下掉', demo: demoUfoFall, still: 0.35 },
+        { b: '一下一下點', s: '從縫縫中間飛過去', demo: demoUfoGap, still: 0.5 }
+      ]
+    },
+    duo: {
+      title: '變成雙胞胎！', dur: 2.6,
+      steps: [
+        { b: '點一下', s: '上下兩個一起跳', demo: demoDuoJump, still: 0.64 },
+        { b: '藍色虛線框', s: '上下不一樣，看清楚再跳', demo: demoDuoDiff, still: 0.5 }
+      ]
+    },
+    rot: {
+      title: '畫面要轉囉！', dur: 2.6,
+      steps: [
+        { b: '跳一下、過一根針', s: '畫面就轉一點點', demo: demoRotStep, still: 0.7 },
+        { b: '下坡', s: '跑得比較快', demo: demoRotDown, still: 0.3 },
+        { b: '上坡', s: '跑得比較慢', demo: demoRotUp, still: 0.3 }
+      ]
+    },
+    /* 跳在水柱正上方／水從蹲著的頭上飛過／舉白旗 */
+    boss: {
+      title: '醫生來玩水槍大戰！', dur: 2.4,
+      steps: [
+        { b: '水在腳邊', s: '圈圈縮到最小就跳', demo: demoBossJump, still: 0.625 },
+        { b: '水在頭上', s: '不用跳，待在地上', demo: demoBossStay, still: 0.604 },
+        { b: '點滴袋用完', s: '你就贏了', demo: demoBossWin, still: 0.958 }
+      ]
+    }
+  };
+
+  function briefDemos(bf, c, still) {
+    demoDur = bf.dur;
+    var hosts = $('briefSteps').querySelectorAll('.brief-demo');
+    bf.steps.forEach(function (st, i) {
+      hosts[i].innerHTML = st.demo(c);
+      var s = hosts[i].firstChild;
       if (!s || typeof s.pauseAnimations !== 'function') return;
-      if (still) { s.pauseAnimations(); s.setCurrentTime(DEMO_STILL[id]); }
+      if (still) { s.pauseAnimations(); s.setCurrentTime(st.still * bf.dur); }
       else { s.setCurrentTime(0); s.unpauseAnimations(); }
     });
   }
@@ -923,7 +1232,7 @@
     G.phase = 'play';
     G.last = now();
     resetInput();
-    hint('boss');
+    hint(G.briefMode);
   });
 
   function pause() {
@@ -1051,7 +1360,7 @@
     if (G.phase === 'play') {
       var evs = E.advance(run, dt, G.input);
       if (evs.length) handle(evs, t);
-      if (G.phase === 'play' && run.boss && run.boss.state === 'fight' && needBrief()) openBrief();
+      if (G.phase === 'play' && needBrief(run.mode)) openBrief(run.mode);
     } else if (G.phase === 'crash' && t >= G.crashUntil) {
       afterCrash(t);
     } else if (G.phase === 'respawn' && t >= G.holdUntil) {
@@ -1101,8 +1410,8 @@
           say(G.level === 'inf' ? '拿到星星！' : '拿到星星！' + run.gotN + ' / 3');
           break;
         case 'mode':
-          /* 每一局第一次遇到醫生會先跳說明對話框，說明的一行字等對話框關掉再出現 */
-          if (e.mode === 'boss' && needBrief()) setMode('boss');
+          /* 每一局第一次遇到新的玩法會先跳教學，說明的一行字等教學關掉再出現 */
+          if (needBrief(e.mode)) setMode(e.mode);
           else hint(e.mode);
           $('bossBar').hidden = true;
           $('hudProgress').hidden = false;

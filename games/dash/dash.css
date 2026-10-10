@@ -1072,9 +1072,13 @@ body.is-playing .topbar {
   color: var(--fg-muted);
 }
 
-/* ── 醫生的說明：三張會動的小圖（直式一張一列，夠寬就排成三欄） ── */
+/* ── 新手教學（火箭、飛碟、雙胞胎、轉轉、醫生）：兩三張會動的小圖（直式一張一列，夠寬就排成一排） ── */
 .dash-brief {
   width: min(40rem, calc(100% - 2 * var(--sp-4)));
+}
+
+.dash-brief[data-steps="2"] {
+  width: min(28rem, calc(100% - 2 * var(--sp-4)));
 }
 
 .dash-brief .dlg-title {
@@ -1100,7 +1104,8 @@ body.is-playing .topbar {
   display: block;
   overflow: hidden;
   border-radius: var(--r-sm);
-  background: linear-gradient(#FFF1F2, #FECDD3);
+  /* 天空和這一段的關卡一樣（dash.js 設定） */
+  background: var(--demo-sky, linear-gradient(#FFF1F2, #FECDD3));
 }
 
 .brief-demo svg {
@@ -1127,7 +1132,8 @@ body.is-playing .topbar {
 
 @media (min-width: 560px) {
   .brief-steps {
-    grid-template-columns: repeat(3, 1fr);
+    grid-auto-flow: column;
+    grid-auto-columns: 1fr;
   }
 
   .brief-step {
