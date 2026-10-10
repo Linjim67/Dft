@@ -1,24 +1,16 @@
-/* ═══════════════════════════════════════════════════════════════
-   安心陪伴 — 衝衝衝：角色與道具（Q 版 SVG）
-   全部是醫院裡看得到的東西：
-     小膠囊（蛋形的主角）· 體溫計火箭 · 藥杯飛碟 · 針（障礙物）· 藥盒（方塊）
-     彈簧墊 · 星星 · 傳送門 · 安心旗 · 拿針筒水槍的醫生（大魔王；lowerAttack／stopAttack／upperAttack.svg）
-   另外兩個可以選的角色（照 A.jpg、B.jpg 的手稿畫）：
-     小麻糬（戴皇冠）· 小抹茶（雲朵耳朵、白肚子），各有自己的火箭和飛碟
-   每張圖畫一次成 <img>，遊戲再依格子大小轉成點陣圖快取。
-   ═══════════════════════════════════════════════════════════════ */
 (function (root) {
   'use strict';
 
   var INK = '#7C2D12';
   var EGG = 'M50 6C74 6 90 36 90 60C90 82 72 95 50 95C28 95 10 82 10 60C10 36 26 6 50 6Z';
 
+  /* SVG 外框 */
   function svg(w, h, body) {
     return '<svg xmlns="http://www.w3.org/2000/svg" width="' + w + '" height="' + h +
       '" viewBox="0 0 ' + w + ' ' + h + '">' + body + '</svg>';
   }
 
-  /* 小膠囊：上半橘、下半奶油色，中間一條膠囊接縫；臉在下半部（Q 版的大眼睛低低的） */
+  /* 小膠囊：身體（上橘下白、臉；face = 'dizzy' 是暈倒的臉） */
   function eggBody(face) {
     var eyes = face === 'dizzy'
       ? '<path d="M31 58l10 6-10 6M69 58l-10 6 10 6" fill="none" stroke="#1C1917" stroke-width="3.6" stroke-linecap="round" stroke-linejoin="round"/>' +
@@ -36,39 +28,35 @@
       eyes;
   }
 
-  /* 小膠囊縮小放進載具裡（clipPath id 不能重複，換一個名字） */
+  /* 小膠囊：縮小放進火箭、飛碟裡的身體 */
   function miniEgg(tx, ty, s) {
     return '<g transform="translate(' + tx + ' ' + ty + ') scale(' + s + ')">' +
       eggBody('').replace(/id="top"/, 'id="top2"').replace(/url\(#top\)/, 'url(#top2)') + '</g>';
   }
 
-  /* ── 小麻糬（A.jpg）：白白圓圓、頭上一頂小皇冠、左下角貼一片 OK 繃、兩隻小腳 ──
-     暈倒時皇冠歪到一邊、眼睛轉圈圈。id：放進載具時漸層的名字不能重複 */
   var MOCHI_INK = '#4A3728';
   var MOCHI = 'M50 17C72 17 87 33 89 54C91 76 77 90 50 90C23 90 9 77 11 55C13 33 28 17 50 17Z';
 
+  /* 小麻糬：頭上的皇冠 */
   function crown(tf) {
     return '<path d="M36 20L34 6.5L43 13L50 3.5L57 13L66 6.5L64 20Z" fill="#FCD34D" stroke="#B45309" stroke-width="3.2" stroke-linejoin="round"' +
       (tf ? ' transform="' + tf + '"' : '') + '/>';
   }
 
-  /* 小麻糬也是用走的（照 A.jpg「跳」的手稿：跳起來小手往兩邊張開、腳垂下來、嘴巴圓圓的 o）。
-     lean：身體（含皇冠、OK 繃）歪幾度（以腳底中間為軸）· lift：身體抬高 · look：臉往右（前進的方向）轉一點
-     feet：兩隻腳 [x, y, 轉幾度]（不跟身體歪，踩在地上）· arms：兩隻小手 [x, y, 轉幾度]（藏在身體後面，只露出一點點） */
   var MOCHI_POSE = {
     stand: { lean: 0, lift: 0, look: 0, feet: [[36, 89, 0], [64, 89, 0]] },
-    /* 走路：右腳抬起來、身體往左歪 → 兩腳併攏、身體彈高 → 左腳抬起來、身體往右歪 → 兩腳併攏；小手跟著前後擺 */
     walk1: { lean: -6, lift: -1.5, look: 4, feet: [[35, 90, 0], [72, 85, -25]], arms: [[12, 58, -25], [89, 67, 20]] },
     walk2: { lean: 0, lift: -3, look: 4, feet: [[41, 90, 0], [59, 90, 0]], arms: [[11, 63, 0], [89, 63, 0]] },
     walk3: { lean: 6, lift: -1.5, look: 4, feet: [[28, 85, 25], [65, 90, 0]], arms: [[11, 67, -20], [88, 58, 25]] },
-    /* 跳：小手往兩邊張開、腳垂下來 */
     jump: { lean: 0, lift: -3, look: 3, up: true, feet: [[39, 93, 18], [61, 93, -18]], arms: [[9, 52, -40], [91, 52, 40]] }
   };
 
+  /* 小麻糬：身體（腳、小手、皇冠、OK 繃、臉；pose = 站、走路三格、跳） */
   function mochiBody(face, id, pose) {
     id = id || 'mo';
     var P = MOCHI_POSE[pose || 'stand'], dx = P.look;
     var tf = 'translate(0 ' + P.lift + ') rotate(' + P.lean + ' 50 90)';
+    /* 小麻糬：一隻腳或一隻小手 */
     function limb(e, rx, ry, fill, sw) {
       return '<ellipse cx="' + e[0] + '" cy="' + e[1] + '" rx="' + rx + '" ry="' + ry + '" transform="rotate(' + e[2] + ' ' + e[0] + ' ' + e[1] + ')"' +
         ' fill="' + fill + '" stroke="' + MOCHI_INK + '" stroke-width="' + sw + '"/>';
@@ -82,21 +70,17 @@
       eyes = '<ellipse cx="' + ex + '" cy="52" rx="3.8" ry="4.6" fill="' + MOCHI_INK + '"/><ellipse cx="' + ex2 + '" cy="52" rx="3.8" ry="4.6" fill="' + MOCHI_INK + '"/>' +
         '<circle cx="' + (ex + 1.3) + '" cy="50.4" r="1.3" fill="#fff"/><circle cx="' + (ex2 + 1.3) + '" cy="50.4" r="1.3" fill="#fff"/>' +
         (P.up
-          /* 跳：嘴巴張成圓圓的 o */
           ? '<ellipse cx="' + (50 + dx) + '" cy="61" rx="3.4" ry="4" fill="' + MOCHI_INK + '"/><ellipse cx="' + (50 + dx) + '" cy="62.6" rx="2" ry="1.5" fill="#FB7185"/>'
           : '<path d="M' + (45 + dx) + ' 59q5 5 10 0" fill="none" stroke="' + MOCHI_INK + '" stroke-width="2.8" stroke-linecap="round"/>');
     }
-    /* 整隻縮小一點點（以腳底為準）：走路歪身體、跳起來時皇冠和小手才不會超出格子 */
     return '<defs><radialGradient id="' + id + '" cx=".18" cy=".7" r=".62">' +
       '<stop offset="0" stop-color="#FAD5AE"/><stop offset=".55" stop-color="#FCE6CC"/><stop offset="1" stop-color="#FFFDF8"/></radialGradient></defs>' +
       '<g transform="translate(50 97) scale(.94) translate(-50 -97)">' +
       P.feet.map(function (f) { return limb(f, 6, 4.5, '#D5E3DA', 3); }).join('') +
       '<g transform="' + tf + '">' +
       (P.arms || []).map(function (a) { return limb(a, 6.5, 4.6, '#FFFDF8', 3); }).join('') +
-      /* 左下角暖暖的桃色（手稿上的色鉛筆陰影），往右上淡掉 */
       '<path d="' + MOCHI + '" fill="url(#' + id + ')" stroke="' + MOCHI_INK + '" stroke-width="4.2"/>' +
       '<ellipse cx="66" cy="30" rx="8" ry="4.5" fill="#fff" transform="rotate(25 66 30)"/>' +
-      /* OK 繃 */
       '<g transform="rotate(-52 27 76)"><rect x="18" y="71.5" width="18" height="9" rx="4.5" fill="#FBCFE8" stroke="#DB7FA8" stroke-width="1.8"/>' +
       '<rect x="23.5" y="73" width="7" height="6" rx="1.5" fill="#FDF2F8"/></g>' +
       '<ellipse cx="' + (29 + dx) + '" cy="60" rx="6" ry="3.8" fill="#FBB4B4"/><ellipse cx="' + (71 + dx) + '" cy="60" rx="6" ry="3.8" fill="#FBB4B4"/>' +
@@ -105,31 +89,26 @@
       '</g></g>';
   }
 
+  /* 小麻糬：縮小放進火箭、飛碟裡的身體 */
   function miniMochi(tx, ty, s, id) {
     return '<g transform="translate(' + tx + ' ' + ty + ') scale(' + s + ')">' + mochiBody('', id) + '</g>';
   }
 
-  /* ── 小抹茶（B.jpg）：灰綠色、軟軟的，頭上兩朵雲朵耳朵、肚子一個白色的圓 ──
-     外框：每一塊先描粗邊、再蓋上填色，耳朵、手、腳才會跟身體連成一整塊。
-     小抹茶不滾，是用走的：身體（含耳朵、手）可以歪一點、抬高一點，腳照姿勢擺 */
   var MATCHA_INK = '#4D7A55';
   var MATCHA_BODY =
     '<path d="M50 18C71 18 84 30 86 47C88 62 92 72 89 81C86 90 72 92 50 92C28 92 14 90 11 81C8 72 12 62 14 47C16 30 29 18 50 18Z"/>' +
     '<circle cx="23" cy="25" r="8"/><circle cx="14" cy="28" r="6"/><circle cx="21" cy="17" r="5.5"/>' +
     '<circle cx="77" cy="22" r="8"/><circle cx="85" cy="19" r="6"/><circle cx="76" cy="14" r="5.5"/>';
 
-  /* lean：身體歪幾度（以腳底中間為軸）· lift：身體抬高 · look：臉往右（前進的方向）轉一點
-     feet：兩隻腳 [x, y, 轉幾度] · up：手舉起來（跳的時候） */
   var MATCHA_POSE = {
     stand: { lean: 0, lift: 0, look: 0, feet: [[28, 88, 0], [72, 88, 0]] },
-    /* 走路：右腳抬起來、身體往左歪 → 兩腳併攏、身體彈高 → 左腳抬起來、身體往右歪 → 兩腳併攏 */
     walk1: { lean: -6, lift: -1.5, look: 4, feet: [[28, 89, 0], [81, 82, -30]] },
     walk2: { lean: 0, lift: -3, look: 4, feet: [[34, 89, 0], [66, 89, 0]] },
     walk3: { lean: 6, lift: -1.5, look: 4, feet: [[19, 82, 30], [72, 89, 0]] },
-    /* 跳：手舉高、腳往下伸、張嘴笑 */
     jump: { lean: 0, lift: -3, look: 3, up: true, feet: [[37, 89.5, 22], [63, 89.5, -22]] }
   };
 
+  /* 小抹茶：身體（雲朵耳朵、白肚子、手、腳、臉；pose = 站、走路三格、跳） */
   function matchaBody(face, pose) {
     var P = MATCHA_POSE[pose || 'stand'], dx = P.look;
     var tf = 'translate(0 ' + P.lift + ') rotate(' + P.lean + ' 50 90)';
@@ -145,7 +124,6 @@
     if (face === 'dizzy') {
       eyes = '<path d="M31 47q2.5-3 5 0t5 0t5 0M54 47q2.5-3 5 0t5 0t5 0M44 56q1.5-2 3 0t3 0t3 0" fill="none" stroke="#1C1917" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>';
     } else if (P.up) {
-      /* 開心地跳：眼睛彎彎、嘴巴張開 */
       eyes = '<path d="M' + (ex - 4.2) + ' 48.5q4.2-5.5 8.4 0M' + (ex2 - 4.2) + ' 48.5q4.2-5.5 8.4 0" fill="none" stroke="#1C1917" stroke-width="2.8" stroke-linecap="round"/>' +
         '<path d="M' + (45.5 + dx) + ' 52q4.5 7.5 9 0Z" fill="#1C1917" stroke="#1C1917" stroke-width="1.6" stroke-linejoin="round"/>' +
         '<path d="M' + (47.6 + dx) + ' 55.6q2.4 1.8 4.8 0" fill="none" stroke="#FB7185" stroke-width="2" stroke-linecap="round"/>';
@@ -154,7 +132,6 @@
         '<circle cx="' + (ex + 1.2) + '" cy="45.4" r="1.2" fill="#fff"/><circle cx="' + (ex2 + 1.2) + '" cy="45.4" r="1.2" fill="#fff"/>' +
         '<path d="M' + (46 + dx) + ' 52.5q4 3.5 8 0" fill="none" stroke="#1C1917" stroke-width="2.6" stroke-linecap="round"/>';
     }
-    /* 整隻縮小一點點（以腳底為準）：走路歪身體、跳起來舉手時耳朵和手才不會超出格子 */
     return '<g transform="translate(50 97) scale(.94) translate(-50 -97)">' +
       '<g fill="' + MATCHA_INK + '" stroke="' + MATCHA_INK + '" stroke-width="9">' + shape + '</g>' +
       '<g fill="#CBD8CC">' + shape + '</g>' +
@@ -166,6 +143,7 @@
       eyes + '</g></g>';
   }
 
+  /* 小抹茶：縮小放進火箭、飛碟裡的身體 */
   function miniMatcha(tx, ty, s) {
     return '<g transform="translate(' + tx + ' ' + ty + ') scale(' + s + ')">' + matchaBody('') + '</g>';
   }
@@ -179,7 +157,7 @@
     dusk: { band: '#FCA5A5' }
   };
 
-  /* 藥盒：白色盒子、上面一條色帶、中間一顆兩色膠囊 */
+  /* 藥盒（方塊）：白盒子、色帶、中間的膠囊 */
   function block(band, edge) {
     return svg(100, 100,
       '<rect x="4" y="4" width="92" height="92" rx="14" fill="#fff" stroke="' + edge + '" stroke-width="5"/>' +
@@ -191,7 +169,7 @@
       '<path d="M50 55v16" stroke="' + edge + '" stroke-width="3"/></g>');
   }
 
-  /* 針：銀色的針、彩色的針座。雙胞胎關「不一樣」的那根換成藍色 */
+  /* 針（障礙物）：針身、針座；down = 倒過來掛在天花板 */
   function needle(hub, hub2, dark, down) {
     var body =
       '<defs><linearGradient id="m" x1="0" x2="1"><stop offset="0" stop-color="#FAFAF9"/><stop offset=".55" stop-color="#E7E5E4"/><stop offset="1" stop-color="#A8A29E"/></linearGradient></defs>' +
@@ -203,10 +181,11 @@
   }
 
   var SPRITES = {
+    /* 小膠囊：站著、暈倒 */
     egg: function () { return svg(100, 100, eggBody('')); },
     eggDizzy: function () { return svg(100, 100, eggBody('dizzy')); },
 
-    /* 體溫計火箭：尾端的紅球是引擎，小膠囊坐在上面 */
+    /* 小膠囊：體溫計火箭 */
     ship: function () {
       return svg(160, 100,
         '<path d="M36 60L17 40Q14 35 20 37L54 56Z" fill="#FDBA74" stroke="' + INK + '" stroke-width="4" stroke-linejoin="round"/>' +
@@ -219,7 +198,7 @@
         miniEgg(78, 2, 0.57));
     },
 
-    /* 藥杯飛碟：玻璃罩裡坐著小膠囊，下面是一個倒過來的量杯 */
+    /* 小膠囊：藥杯飛碟 */
     ufo: function () {
       return svg(140, 100,
         '<path d="M44 66H96L89 92H51Z" fill="#fff" stroke="' + INK + '" stroke-width="3.5" stroke-linejoin="round"/>' +
@@ -234,18 +213,21 @@
         '<circle cx="112" cy="64" r="4.5" fill="#FEF08A" stroke="' + INK + '" stroke-width="2"/>');
     },
 
+    /* 針：紅色（一般）、藍色（雙胞胎「不一樣」的那根），朝上、朝下 */
     needle: function () { return needle('#F87171', '#DC2626', '#7F1D1D', false); },
     needleDown: function () { return needle('#F87171', '#DC2626', '#7F1D1D', true); },
     needleDiff: function () { return needle('#7DD3FC', '#0284C7', '#0C4A6E', false); },
     needleDownDiff: function () { return needle('#7DD3FC', '#0284C7', '#0C4A6E', true); },
+    /* 藥盒：藍色（雙胞胎「不一樣」的那個） */
     blockDiff: function () { return block('#7DD3FC', '#0369A1'); },
 
-    /* 彈簧墊：灰色底座＋黃色的蓋子（中間的彈簧是 dash.js 用線畫的，踩到時才拉得長） */
+    /* 彈簧墊：灰色底座 */
     padBase: function () {
       return svg(100, 12.5,
         '<rect x="5" y="2" width="90" height="9" rx="4.5" fill="#A8A29E" stroke="#44403C" stroke-width="2.8"/>' +
         '<path d="M14 4.6H86" stroke="#fff" stroke-width="1.8" stroke-linecap="round" opacity=".6"/>');
     },
+    /* 彈簧墊：黃色的蓋子 */
     padTop: function () {
       return svg(100, 26,
         '<path d="M9 21Q9 2 50 2Q91 2 91 21Z" fill="#FACC15" stroke="#854D0E" stroke-width="3.2" stroke-linejoin="round"/>' +
@@ -254,6 +236,7 @@
         '<path d="M18 12Q23 7 31 5.5" fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round" opacity=".8"/>');
     },
 
+    /* 星星（收集品） */
     star: function () {
       return svg(100, 100,
         '<path d="M50 6l12.5 26.5 29 3.6-21.3 20 5.5 28.7L50 70.6 24.3 84.8l5.5-28.7-21.3-20 29-3.6Z" fill="#FACC15" stroke="#A16207" stroke-width="5" stroke-linejoin="round"/>' +
@@ -261,25 +244,26 @@
         '<path d="M44.5 56q5.5 5 11 0" stroke="#1C1917" stroke-width="3.2" fill="none" stroke-linecap="round"/>');
     },
 
-    /* 安心旗：經過之後變綠色、多一個勾，撞到了就從這裡重來 */
+    /* 安心旗：還沒經過（灰色）、經過了（綠色、打勾） */
     flagOff: function () { return flag(false); },
     flagOn: function () { return flag(true); },
 
-    /* 醫生（大魔王）：往下射、停下來、往上射（三張一樣大）；doctorIcon 是小圖用的（只有醫生本人） */
+    /* 醫生（大魔王）：往下射、停下來、往上射；doctorIcon = 只有醫生本人的小圖 */
     doctorLower: function () { return doctor('lower'); },
     doctorStop: function () { return doctor('stop'); },
     doctorUpper: function () { return doctor('upper'); },
     doctorIcon: function () { return doctor('stop', true); },
 
+    /* 小麻糬：站著、暈倒 */
     mochi: function () { return svg(100, 100, mochiBody('')); },
     mochiDizzy: function () { return svg(100, 100, mochiBody('dizzy')); },
-    /* 小麻糬走路（四格一輪，第二、四格一樣）和跳起來 */
+    /* 小麻糬：走路三格、跳起來 */
     mochiWalk1: function () { return svg(100, 100, mochiBody('', 'mo', 'walk1')); },
     mochiWalk2: function () { return svg(100, 100, mochiBody('', 'mo', 'walk2')); },
     mochiWalk3: function () { return svg(100, 100, mochiBody('', 'mo', 'walk3')); },
     mochiJump: function () { return svg(100, 100, mochiBody('', 'mo', 'jump')); },
 
-    /* 小麻糬的紅火箭：從上面的座艙探出頭，尾巴噴火 */
+    /* 小麻糬：紅色火箭（從座艙探出頭） */
     mochiShip: function () {
       return svg(160, 100,
         '<path d="M34 59Q16 52 5 68Q16 84 34 77Z" fill="#FDE047" stroke="#F59E0B" stroke-width="3" stroke-linejoin="round"/>' +
@@ -294,7 +278,7 @@
         '<circle cx="134" cy="68" r="7" fill="#BAE6FD" stroke="' + MOCHI_INK + '" stroke-width="3.5"/>');
     },
 
-    /* 小麻糬的飛碟：玻璃罩裡揮揮手，下面三顆黃色的腳 */
+    /* 小麻糬：飛碟（在玻璃罩裡揮手） */
     mochiUfo: function () {
       return svg(140, 100,
         '<ellipse cx="44" cy="79" rx="10" ry="6" fill="#FDE68A" stroke="' + MOCHI_INK + '" stroke-width="3"/>' +
@@ -313,15 +297,16 @@
         '<circle cx="114" cy="68" r="4.5" fill="#FCD34D" stroke="#C2410C" stroke-width="2.2"/>');
     },
 
+    /* 小抹茶：站著、暈倒 */
     matcha: function () { return svg(100, 100, matchaBody('')); },
     matchaDizzy: function () { return svg(100, 100, matchaBody('dizzy')); },
-    /* 小抹茶走路（四格一輪，第二、四格一樣）和跳起來 */
+    /* 小抹茶：走路三格、跳起來 */
     matchaWalk1: function () { return svg(100, 100, matchaBody('', 'walk1')); },
     matchaWalk2: function () { return svg(100, 100, matchaBody('', 'walk2')); },
     matchaWalk3: function () { return svg(100, 100, matchaBody('', 'walk3')); },
     matchaJump: function () { return svg(100, 100, matchaBody('', 'jump')); },
 
-    /* 小抹茶的白火箭：紅色的頭和翅膀，圓窗戶裡看得到小抹茶 */
+    /* 小抹茶：白色火箭（圓窗戶裡看得到小抹茶） */
     matchaShip: function () {
       var K = '#1C1917', R = '#EF4444';
       return svg(160, 100,
@@ -339,7 +324,7 @@
         '<circle cx="100" cy="51" r="13" fill="none" stroke="' + K + '" stroke-width="4.5"/>');
     },
 
-    /* 小抹茶的飛碟：黑框玻璃罩、灰色碟子上一排黃燈、兩隻小腳 */
+    /* 小抹茶：飛碟（黑框玻璃罩、一排黃燈） */
     matchaUfo: function () {
       var K = '#1C1917';
       return svg(140, 100,
@@ -358,9 +343,6 @@
     }
   };
 
-  /* 三個角色：小朋友在選關畫面先選一個。body／dizzy／ship／ufo 是每個姿勢用哪一張圖，
-     shipName／ufoName 換掉關卡名稱裡的載具，burst 是撞到時噴出來的碎片顏色。
-     有 walk 的角色不滾：在地上照順序換腳走路，在空中換成 jump */
   var CHARS = [
     { id: 'capsule', name: '小膠囊', body: 'egg', dizzy: 'eggDizzy', ship: 'ship', ufo: 'ufo',
       shipName: '體溫計火箭', ufoName: '藥杯飛碟', burst: ['#FB923C', '#FFF7ED', '#FDA4AF', '#FDBA74'] },
@@ -372,12 +354,13 @@
       walk: ['matchaWalk1', 'matchaWalk2', 'matchaWalk3', 'matchaWalk2'], jump: 'matchaJump' }
   ];
 
+  /* 依 id 找角色 */
   function char(id) {
     for (var i = 0; i < CHARS.length; i++) if (CHARS[i].id === id) return CHARS[i];
     return CHARS[0];
   }
 
-  /* 桿子＋往右飄的三角旗＋桿子頂端一顆金色小圓球，底下一個小底座 */
+  /* 安心旗：桿子、三角旗、頂端的小圓球、底座 */
   function flag(on) {
     var fill = on ? '#4ADE80' : '#E7E5E4', dark = on ? '#15803D' : '#78716C';
     return svg(60, 120,
@@ -389,15 +372,6 @@
       '<circle cx="11.7" cy="7.7" r="2" fill="#fff" opacity=".85"/>');
   }
 
-  /* ── 醫生（第 6 關的大魔王）：lowerAttack.svg／stopAttack.svg／upperAttack.svg 三張圖 ──
-     lines：三個檔案裡的線條原封不動照抄（Inkscape 的座標、原本的 layer 位移，只把重複的 style 收到外面那一層）。
-     fills：線稿是空心的，顏色另外描成色塊墊在線條下面（把線稿放大成點陣圖、照每一塊區域描邊、往線條底下多長 0.3 mm），
-     顏色用 ui-ux-pro-max 的 Healthcare App 色票：
-       頭 #FFFDF8 · 白袍 #FFFFFF · 刷手服 #059669 · 額鏡頭帶 #0891B2 · 額鏡 #E8F1F6／鏡片 #A5F3FC ·
-       褲子 #164E63 · 鞋子 #0C3A4A · 針筒玻璃 #ECFEFF · 推桿 #0891B2 · 針座 #22D3EE · 針 #E8F1F6
-     三張圖放進同一個框（54.1 × 41.9 mm）：身體一模一樣，用額鏡對齊在 x = 38、腳底在 y = 41.65，所以三個醫生一樣大。
-     needle：針（水射出來的那一條線）的針尖 x、中心 y；barrel：針筒裡面（蓄能的水畫在這裡，dash.js 用它當 clip）。
-     座標都是各自檔案的 viewBox，用 dx 移進框裡 */
   var DOC_FRAME = { w: 54.1, h: 41.9, floor: 41.65 };
   var DOC_ART = {
     lower: {
@@ -539,10 +513,9 @@
         '<path d="m 141.38899,132.1778 c -2.90279,0.16379 -2.78164,-1.94002 -2.78164,-1.94002"/>'
     }
   };
-  /* 輸了：stopAttack 的左手（白旗拿在這裡；框的座標） */
   var DOC_FLAG = [30.9, 29.4];
 
-  /* crop：只要醫生本人（關卡卡片、傳送門、說明的小圖）——stopAttack 沒有針筒，左邊是空的 */
+  /* 醫生：照抄三張 svg 的線條，加上墊在下面的顏色；crop = 只裁醫生本人 */
   function doctor(pose, crop) {
     var A = DOC_ART[pose];
     var vb = crop ? [22.3, 0, 31.8, DOC_FRAME.h] : [0, 0, DOC_FRAME.w, DOC_FRAME.h];
@@ -553,12 +526,13 @@
       A.lines + '</g></g></svg>';
   }
 
+  /* 藥盒：每一種關卡顏色一個 */
   Object.keys(THEMES).forEach(function (t) {
     SPRITES['block_' + t] = function () { return block(THEMES[t].band, '#9A3412'); };
   });
 
-  /* 傳送門：顏色 = 下一段的玩法 */
   var PORTAL = { cube: '#16A34A', rot: '#CA8A04', duo: '#0284C7', ship: '#DB2777', ufo: '#EA580C', boss: '#DC2626' };
+  /* 傳送門：每一種玩法一個顏色 */
   Object.keys(PORTAL).forEach(function (m) {
     SPRITES['portal_' + m] = function () {
       var c = PORTAL[m];
@@ -568,12 +542,13 @@
     };
   });
 
+  /* 一張圖的 data URL */
   function source(name) {
     var f = SPRITES[name];
     return f ? 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(f()) : null;
   }
 
-  /* 一次把全部的圖載好；回傳 name → <img> */
+  /* 預先載入全部的圖（name → <img>） */
   function images() {
     var out = {};
     if (typeof Image === 'undefined') return out;
@@ -588,7 +563,6 @@
 
   root.DashArt = {
     SPRITES: SPRITES, THEMES: THEMES, PORTAL: PORTAL, CHARS: CHARS, char: char, source: source, images: images,
-    /* 醫生的框、針、針筒裡面：dash.js 決定大小、畫蓄能的水、雷射從針尖出發 */
     DOCTOR: { frame: DOC_FRAME, art: DOC_ART, flag: DOC_FLAG, water: '#22D3EE', deep: '#0891B2' }
   };
 })(typeof window !== 'undefined' ? window : globalThis);
