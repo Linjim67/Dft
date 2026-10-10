@@ -157,23 +157,6 @@
   transition: stroke-dashoffset .35s var(--ease);
 }
 
-/* 出發台：金色的圓台子，旁邊一支小旗子 */
-.map-start {
-  position: absolute;
-  border: 3px solid #D97706;
-  border-radius: 50%;
-  background: radial-gradient(circle at 50% 35%, #FEF3C7, #FBBF24);
-  box-shadow: 0 3px 0 rgba(124, 45, 18, .15);
-}
-
-.map-start img {
-  position: absolute;
-  right: 92%;
-  bottom: 30%;
-  width: 46%;
-  height: auto;
-}
-
 .map-tiles {
   margin: 0;
   padding: 0;

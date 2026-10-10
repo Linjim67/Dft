@@ -71,11 +71,10 @@
           <span>換角色</span>
         </button>
       </div>
-      <!-- 地圖：出發台 → 第 1 關 → … → 第 6 關 → 無限挑戰，用金色的路連起來。
+      <!-- 地圖：第 1 關 → … → 第 6 關 → 無限挑戰，用金色的路連起來。
            過了前一關，下一關的方框才會打開；選的角色縮小站在方框上，點方框就走過去開始。排版、畫路都由 dash.js 做 -->
       <div class="map" id="map">
         <svg class="map-paths" id="mapPaths" aria-hidden="true" focusable="false"></svg>
-        <span class="map-start" id="mapStart" aria-hidden="true"></span>
         <ol class="map-tiles" id="mapTiles" aria-labelledby="mapTitle"></ol>
         <span class="map-hero" id="mapHero" aria-hidden="true" hidden></span>
       </div>
@@ -153,7 +152,7 @@
 
   <!-- ══════════ 對話框 ══════════ -->
   <!-- 一進來先選角色：選到的開心地跳一下，再原地踏步（小麻糬、小抹茶）或轉圈（小膠囊）。
-       按「出發！」：其他角色不見、選到的掉下去，再掉到地圖的出發台上、走到關卡。卡片由 dash.js 畫 -->
+       按「出發！」：其他角色不見、選到的掉下去，再掉到地圖的第 1 關上、走到最新的關卡。卡片由 dash.js 畫 -->
   <dialog class="dlg char-dlg" id="charDlg" aria-labelledby="charDlgTitle">
     <h2 class="dlg-title" id="charDlgTitle">選一個角色</h2>
     <p class="dlg-body">選好了，就一起出發！</p>

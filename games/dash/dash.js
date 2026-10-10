@@ -161,7 +161,7 @@
 
   /* ─────────────────────────────────────────────────────────────
      選關卡：地圖
-     出發台 → 第 1 關 → … → 第 6 關 → 無限挑戰，中間用金色的路連起來。
+     第 1 關 → … → 第 6 關 → 無限挑戰，中間用金色的路連起來（第 1 關前面沒有東西）。
      過了前一關，下一關的方框才會打開（第一次看到的：路從前一格長過去，方框啪一下跳出來）。
      選的角色縮小站在方框上面；點方框，角色沿著路走過去，再開始那一關。
      寬的畫面（橫的手機、電腦）排成一排；窄的排成 S 形：1→2→3，往下 4←5←6，再往下無限挑戰。
@@ -196,7 +196,7 @@
     return names.map(function (n) { return '<img src="' + src(pic(n)) + '" alt="">'; }).join('');
   }
 
-  var INF = LV.LEVELS.length + 1;                 /* 地圖上第 7 格是無限挑戰（第 0 格是出發台） */
+  var INF = LV.LEVELS.length + 1;                 /* 地圖上第 7 格是無限挑戰 */
   var INF_THEME = { sky: ['#FFF7ED', '#FED7AA'], ground: '#FDBA74' };
   var MAP_KEY = 'anxin.dash.map';
 
@@ -205,10 +205,10 @@
     try {
       var d = JSON.parse(storage.getItem(MAP_KEY) || 'null');
       if (d && d.code === profile.code) {
-        return { seen: clamp(Math.floor(d.seen) || 1, 1, INF), at: clamp(Math.floor(d.at) || 0, 0, INF) };
+        return { seen: clamp(Math.floor(d.seen) || 1, 1, INF), at: clamp(Math.floor(d.at) || 1, 1, INF) };
       }
     } catch (e) { /* 壞掉的紀錄 → 從頭 */ }
-    return { seen: 1, at: 0 };
+    return { seen: 1, at: 1 };
   })();
 
   /* pos：每一格在地圖上的位置（px）；busy：角色在走、方框在打開，先不能點 */
@@ -266,7 +266,6 @@
         '</button></li>';
     }
     $('mapTiles').innerHTML = html;
-    $('mapStart').innerHTML = '<img src="' + src('flagOn') + '" alt="">';
     $('charChangeImg').src = src(CH.body);
     layoutMap();
   }
@@ -275,34 +274,29 @@
   function layoutMap() {
     var box = $('map'), W = box.clientWidth;
     if (!W) return;
-    var F = frontier(), rowT = W / 9.52;
+    var F = frontier(), rowT = W / 8.68;
     var row = rowT >= 80 || (window.innerWidth > window.innerHeight && rowT >= 56);
     var T = Math.floor(Math.min(row ? rowT : W / 3.56, 128));
     var g = Math.round(T * 0.28), heroH = Math.round(T * 0.5), head = heroH + 10;
-    var pw = Math.round(T * 0.56), ph = Math.round(T * 0.2);
     var pos = [], H, i;
     function node(x, y, w, h) {
       x = Math.round(x); y = Math.round(y);
       return { x: x, y: y, w: w, h: h, cx: Math.round(x + w / 2), cy: Math.round(y + h / 2), top: y };
     }
     if (row) {
-      var x0 = (W - (pw + g + INF * T + (INF - 1) * g)) / 2;
-      pos[0] = node(x0, head + (T - ph) / 2, pw, ph);
-      for (i = 1; i <= INF; i++) pos[i] = node(x0 + pw + g + (i - 1) * (T + g), head, T, T);
+      var x0 = (W - (INF * T + (INF - 1) * g)) / 2;
+      for (i = 1; i <= INF; i++) pos[i] = node(x0 + (i - 1) * (T + g), head, T, T);
       H = head + T + 12;
     } else {
       var c0 = (W - (3 * T + 2 * g)) / 2, rg = heroH + 14;
-      var y1 = head + ph + rg, y2 = y1 + T + rg, y3 = y2 + T + rg;
+      var y1 = head, y2 = y1 + T + rg, y3 = y2 + T + rg;
       var cells = [null, [0, y1], [1, y1], [2, y1], [2, y2], [1, y2], [0, y2], [0, y3]];
-      pos[0] = node(c0 + (T - pw) / 2, head, pw, ph);
       for (i = 1; i <= INF; i++) pos[i] = node(c0 + cells[i][0] * (T + g), cells[i][1], T, T);
       H = (F >= INF ? y3 : y2) + T + 12;
     }
     M.pos = pos; M.T = T; M.heroH = heroH;
     box.style.height = H + 'px';
     box.style.setProperty('--t', T + 'px');
-    var st = $('mapStart').style;
-    st.left = pos[0].x + 'px'; st.top = pos[0].y + 'px'; st.width = pw + 'px'; st.height = ph + 'px';
     Array.prototype.forEach.call($('mapTiles').children, function (li) {
       var p = pos[Number(li.getAttribute('data-node'))], ls = li.style;
       ls.left = p.x + 'px'; ls.top = p.y + 'px'; ls.width = p.w + 'px'; ls.height = p.h + 'px';
@@ -313,10 +307,10 @@
     if (!M.raf && !$('mapHero').hidden) heroAt(MAP.at);
   }
 
-  /* 路：相鄰兩格的中心連起來（排版上一定在同一排或同一欄）。還沒打開的那一段先藏著 */
+  /* 路：相鄰兩格的中心連起來（排版上一定在同一排或同一欄），從第 1 關開始。還沒打開的那一段先藏著 */
   function drawPaths(F) {
     var w = Math.max(8, Math.round(M.T * 0.17)), s = '';
-    for (var i = 1; i <= F; i++) {
+    for (var i = 2; i <= F; i++) {
       var a = M.pos[i - 1], b = M.pos[i], d = 'M' + a.cx + ' ' + a.cy + 'L' + b.cx + ' ' + b.cy;
       s += '<g class="seg' + (i > MAP.seen ? ' is-pending' : '') + '" data-seg="' + i + '">' +
         '<path class="seg-edge" d="' + d + '" pathLength="1" stroke-width="' + (w + 5) + '"/>' +
@@ -388,10 +382,10 @@
     M.raf = window.requestAnimationFrame(frame);
   }
 
-  /* 從天上掉到出發台，落地壓扁一下 */
+  /* 從天上掉到第 1 關的方框上，落地壓扁一下 */
   function heroDrop(done) {
     try { $('map').scrollIntoView({ block: 'nearest' }); } catch (e) { /* 忽略 */ }
-    var p = M.pos[0], y1 = p.top, y0 = -$('map').getBoundingClientRect().top - M.heroH, t0 = now();
+    var p = M.pos[1], y1 = p.top, y0 = -$('map').getBoundingClientRect().top - M.heroH, t0 = now();
     $('mapHero').classList.remove('is-idle');
     heroDraw(p.cx, y0, CH.jump || CH.body);
     function fall() {
@@ -404,8 +398,8 @@
         heroDraw(p.cx, y1, CH.body, 1 + a, 1 - a);
         if (q < 1) { M.raf = window.requestAnimationFrame(squash); return; }
         M.raf = 0;
-        MAP.at = 0;
-        heroAt(0);
+        MAP.at = 1;
+        heroAt(1);
         done();
       })();
     }
@@ -468,7 +462,7 @@
   if (window.ResizeObserver) new ResizeObserver(function () { if (!views.intro.hidden) layoutMap(); }).observe($('map'));
   window.addEventListener('resize', function () { if (!views.intro.hidden) layoutMap(); });
 
-  /* 角色上地圖：從天上掉到出發台，打開還沒看過的方框，再沿著路走到最新打開的那一關 */
+  /* 角色上地圖：從天上掉到第 1 關，打開還沒看過的方框，再沿著路走到最新打開的那一關 */
   function heroEnter() {
     var F = frontier();
     $('mapHero').hidden = false;
@@ -482,7 +476,7 @@
       return;
     }
     heroDrop(function () {
-      revealNext(function () { heroWalk(0, F, ready); });
+      revealNext(function () { heroWalk(1, F, ready); });
     });
   }
 
