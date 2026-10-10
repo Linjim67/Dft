@@ -1,4 +1,4 @@
-/* ═══ 膠囊衝衝衝 ═══════════════════════════════════════════════
+/* ═══ 衝衝衝 ═══════════════════════════════════════════════
    沿用 /styles.css 的 token 與 /shared/page.css 的卡片、按鈕、對話框；
    遊戲畫面本身畫在 canvas 上，顏色寫在 dash.js 的 THEME。
    ═══════════════════════════════════════════════════════════════ */
@@ -46,19 +46,336 @@
   text-align: center;
 }
 
-.dash-list-title {
-  margin-top: var(--sp-5);
+/* ═══ 選關卡：地圖 ════════════════════════════════════════════
+   標題、說明照一般頁面的寬度；地圖可以比較寬（橫的手機、電腦排成一排） */
+
+.dash-page .topbar,
+.dash-intro {
+  max-width: 72rem;
 }
 
-.level-list {
-  display: grid;
+.dash-intro .page-head,
+.dash-intro .dash-turn {
+  max-width: 30rem;
+}
+
+.map-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
   gap: var(--sp-3);
+  margin: var(--sp-5) 0 var(--sp-2);
+}
+
+.map-head .section-title {
+  margin: 0;
+}
+
+/* 換角色：小小的頭像＋字 */
+.map-change {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-1);
+  min-height: 44px;
+  padding: 4px var(--sp-3) 4px 6px;
+  border: var(--line-w) solid var(--line);
+  border-radius: var(--r-pill);
+  background: var(--card);
+  color: var(--fg);
+  font: inherit;
+  font-size: .92rem;
+  font-weight: 700;
+  box-shadow: var(--sh-sm);
+  cursor: pointer;
+}
+
+.map-change img {
+  width: 34px;
+  height: 34px;
+}
+
+.map-change:active {
+  transform: translateY(2px);
+  box-shadow: none;
+}
+
+/* 橫的手機（矮）：標題擠一點、說明收起來，地圖才放得進一個畫面 */
+@media (max-height: 520px) {
+  .dash-intro .page-head {
+    margin-block: var(--sp-2) 0;
+  }
+
+  .dash-intro .page-head h1 {
+    font-size: 1.4rem;
+  }
+
+  .dash-intro .page-lede {
+    display: none;
+  }
+
+  .map-head {
+    margin-top: var(--sp-2);
+  }
+}
+
+/* 地圖本身：位置、大小都由 dash.js 算（--t = 一格方框多大） */
+.map {
+  position: relative;
+  margin-bottom: var(--sp-2);
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-touch-callout: none;
+}
+
+.map-paths {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+  pointer-events: none;
+}
+
+/* 金色的路：深色的邊＋亮色的路面；新打開的那一段從前一格慢慢長過來 */
+.seg path {
+  fill: none;
+  stroke-linecap: round;
+}
+
+.seg-edge {
+  stroke: #D97706;
+}
+
+.seg-fill {
+  stroke: #FBBF24;
+}
+
+.seg.is-pending path {
+  stroke-dasharray: 1;
+  stroke-dashoffset: 1;
+}
+
+.seg.is-drawing path {
+  stroke-dasharray: 1;
+  stroke-dashoffset: 0;
+  transition: stroke-dashoffset .35s var(--ease);
+}
+
+/* 出發台：金色的圓台子，旁邊一支小旗子 */
+.map-start {
+  position: absolute;
+  border: 3px solid #D97706;
+  border-radius: 50%;
+  background: radial-gradient(circle at 50% 35%, #FEF3C7, #FBBF24);
+  box-shadow: 0 3px 0 rgba(124, 45, 18, .15);
+}
+
+.map-start img {
+  position: absolute;
+  right: 92%;
+  bottom: 30%;
+  width: 46%;
+  height: auto;
+}
+
+.map-tiles {
   margin: 0;
   padding: 0;
   list-style: none;
 }
 
-/* ── 選角色：三張卡片一排（單選）。選到的：淡橘底＋深橘粗框＋右上角打勾（不只靠顏色） ── */
+.map-tiles li {
+  position: absolute;
+}
+
+/* 關卡方框（照截圖）：白色粗框、圓角；裡面是那一關的天空和地面、那一關的圖；下面一排三個星星格子 */
+.map-tile {
+  position: relative;
+  display: block;
+  width: 100%;
+  height: 100%;
+  padding: 0;
+  border: max(4px, calc(var(--t) * .055)) solid #fff;
+  border-radius: 24%;
+  background: linear-gradient(var(--sky0), var(--sky1) 70%, var(--ground) 70%);
+  box-shadow: 0 4px 0 rgba(124, 45, 18, .14), var(--sh-md);
+  font: inherit;
+  cursor: pointer;
+  transition: transform var(--t-fast) var(--ease);
+}
+
+.map-tile:active {
+  transform: translateY(2px);
+}
+
+.map-tile:focus-visible {
+  outline: 3px solid var(--primary-deep);
+  outline-offset: 4px;
+  border-radius: 24%;
+}
+
+.tile-art {
+  position: absolute;
+  inset: 8% 8% 26%;
+  display: grid;
+  place-items: center;
+}
+
+.tile-art img {
+  grid-area: 1 / 1;
+  width: 86%;
+  height: 86%;
+  object-fit: contain;
+}
+
+/* 雙胞胎：右上角一個小小的、上下顛倒 */
+.tile-art img+img {
+  width: 46%;
+  height: 46%;
+  place-self: start end;
+  transform: scaleY(-1);
+}
+
+.tile-num {
+  position: absolute;
+  left: calc(var(--t) * -.1);
+  top: calc(var(--t) * -.1);
+  min-width: 26px;
+  height: 26px;
+  padding: 0 5px;
+  border: 2px solid #fff;
+  border-radius: var(--r-pill);
+  background: var(--fg);
+  color: #fff;
+  font: 700 .82rem/22px var(--font-num);
+  text-align: center;
+}
+
+.tile-stars {
+  position: absolute;
+  left: 50%;
+  bottom: 5%;
+  display: flex;
+  gap: 3px;
+  padding: 3px 6px;
+  border-radius: var(--r-pill);
+  background: rgba(255, 255, 255, .92);
+  box-shadow: inset 0 1px 2px rgba(124, 45, 18, .1);
+  transform: translateX(-50%);
+}
+
+/* 沒拿到：灰色的圓格子；拿到：黃色星星（形狀不同，不只靠顏色） */
+.tile-star {
+  display: block;
+  width: calc(var(--t) * .15);
+  height: calc(var(--t) * .15);
+  border-radius: 50%;
+  background: #D6D3D1;
+  box-shadow: inset 0 2px 2px rgba(0, 0, 0, .18);
+}
+
+.tile-star.is-on {
+  background: none;
+  box-shadow: none;
+  fill: #FACC15;
+  stroke: #A16207;
+  stroke-width: 1.8;
+  stroke-linejoin: round;
+}
+
+/* 還沒過的那一關：外面一圈橘色的光，一閃一閃（點這裡） */
+.map-tile.is-next {
+  box-shadow: 0 4px 0 rgba(124, 45, 18, .14), 0 0 0 4px rgba(249, 115, 22, .55), var(--sh-md);
+  animation: tile-call 1.6s ease-in-out infinite;
+}
+
+@keyframes tile-call {
+  50% {
+    box-shadow: 0 4px 0 rgba(124, 45, 18, .14), 0 0 0 9px rgba(249, 115, 22, .12), var(--sh-md);
+  }
+}
+
+/* 新打開的方框：啪一下跳出來 */
+.map-tiles li.is-pending {
+  visibility: hidden;
+}
+
+.map-tiles li.is-new {
+  animation: tile-pop .5s var(--ease) both;
+}
+
+@keyframes tile-pop {
+  0% {
+    opacity: 0;
+    transform: scale(.2);
+  }
+
+  70% {
+    opacity: 1;
+    transform: scale(1.08);
+  }
+}
+
+/* 地圖上的角色（縮小）：站在方框上面；走路、跳、滾都是 dash.js 一幀一幀動 */
+.map-hero {
+  position: absolute;
+  left: 0;
+  top: 0;
+  z-index: 2;
+  pointer-events: none;
+  will-change: transform;
+}
+
+.map-hero img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  transform-origin: 50% 54%;
+}
+
+.map-hero.is-idle img {
+  animation: hero-bob 1.5s ease-in-out infinite alternate;
+}
+
+@keyframes hero-bob {
+  to {
+    transform: translateY(-4%);
+  }
+}
+
+.map-caption {
+  min-height: 3em;
+  margin-bottom: var(--sp-6);
+  line-height: 1.5;
+  text-align: center;
+}
+
+.map-caption b {
+  display: block;
+  font-size: 1.05rem;
+}
+
+.map-caption span {
+  display: block;
+  font-size: .9rem;
+  color: var(--fg-muted);
+}
+
+/* ═══ 選角色（對話框） ══════════════════════════════════════════
+   三張卡片一排（單選）。選到的：淡橘底＋深橘粗框＋右上角打勾（不只靠顏色），
+   角色開心地跳一下，再原地踏步（dash.js 換圖）或轉圈（小膠囊）。
+   按「出發！」：其他的不見、對話框變透明，選到的往下掉出去 */
+
+.char-dlg {
+  width: min(30rem, calc(100% - 2 * var(--sp-4)));
+  overflow: visible;
+  transition: background-color .3s var(--ease), box-shadow .3s var(--ease);
+}
+
+.char-dlg .char-list {
+  margin-top: var(--sp-4);
+}
+
 .char-list {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -69,6 +386,7 @@
   position: relative;
   display: block;
   cursor: pointer;
+  transition: opacity .26s var(--ease), transform .26s var(--ease);
 }
 
 .char-option input {
@@ -95,9 +413,17 @@
     background-color var(--t-fast) var(--ease), border-color var(--t-fast) var(--ease);
 }
 
-.char-body img {
-  width: 64px;
-  height: 64px;
+.char-stage {
+  display: block;
+  width: 76px;
+  height: 76px;
+}
+
+.char-stage img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  transform-origin: 50% 54%;
 }
 
 .char-name {
@@ -150,132 +476,70 @@
   transform: translateY(2px);
 }
 
-/* 選到的角色跳一下 */
-@media (prefers-reduced-motion: no-preference) {
-  .char-option input:checked+.char-body img {
-    animation: char-hop .45s var(--ease);
-  }
+/* 選到了：開心地跳一下（往上、拉長，落地壓扁） */
+.char-stage.is-hop {
+  animation: char-hop .52s var(--ease);
 }
 
 @keyframes char-hop {
-  40% {
-    transform: translateY(-8px) scale(1.04, .96);
+  0% {
+    transform: none;
+  }
+
+  45% {
+    transform: translateY(-30%) scale(.94, 1.08);
+  }
+
+  80% {
+    transform: translateY(0) scale(1.1, .88);
+  }
+
+  100% {
+    transform: none;
   }
 }
 
-/* 整張卡片就是按鈕：點下去就開始 */
-.lv-card {
-  display: grid;
-  grid-template-columns: 56px 1fr auto;
-  align-items: center;
-  gap: var(--sp-3);
-  width: 100%;
-  min-height: 80px;
-  padding: var(--sp-3) var(--sp-4) var(--sp-3) var(--sp-3);
-  border: 0;
-  border-radius: var(--r-lg);
-  background: var(--card);
-  color: var(--fg);
-  font: inherit;
-  text-align: start;
-  box-shadow: var(--sh-md);
-  cursor: pointer;
-  transition: transform var(--t-fast) var(--ease), box-shadow var(--t-fast) var(--ease),
-    background-color var(--t-fast) var(--ease);
+/* 小膠囊：原地轉圈 */
+.char-stage.is-spin img {
+  animation: char-spin 1.1s linear infinite;
 }
 
-.lv-card:active {
-  transform: translateY(2px);
-  box-shadow: var(--sh-sm);
+@keyframes char-spin {
+  to {
+    transform: rotate(1turn);
+  }
 }
 
-.lv-art {
-  position: relative;
-  display: grid;
-  place-items: center;
-  width: 56px;
-  height: 56px;
-  border-radius: var(--r-md);
-  background: var(--lv-bg, var(--primary-wash));
+/* 出發：其他角色、標題、按鈕、卡片的底都不見，只剩選到的角色 */
+.char-dlg.is-going {
+  background-color: transparent;
+  box-shadow: none;
 }
 
-.lv-art img {
-  width: 42px;
-  height: 42px;
-  object-fit: contain;
+.char-dlg.is-going .dlg-title,
+.char-dlg.is-going .dlg-body,
+.char-dlg.is-going .dlg-actions,
+.char-dlg.is-going .char-name,
+.char-dlg.is-going .char-option input:checked+.char-body .char-check {
+  opacity: 0;
+  transition: opacity .2s var(--ease);
 }
 
-.lv-art img+img {
-  position: absolute;
-  width: 26px;
-  height: 26px;
-  right: 3px;
-  top: 3px;
-  transform: scaleY(-1);
+.char-dlg.is-going .char-option:not(.is-chosen) {
+  opacity: 0;
+  transform: scale(.6);
 }
 
-.lv-num {
-  position: absolute;
-  left: -6px;
-  top: -6px;
-  min-width: 24px;
-  height: 24px;
-  padding: 0 4px;
-  border-radius: var(--r-pill);
-  background: var(--fg);
-  color: #fff;
-  font: 700 .82rem/24px var(--font-num);
-  text-align: center;
+.char-dlg.is-going .is-chosen .char-body {
+  border-color: transparent;
+  background: transparent;
+  box-shadow: none;
 }
 
-.lv-text {
-  min-width: 0;
-}
-
-.lv-name {
-  display: block;
-  font-size: 1.08rem;
-  font-weight: 700;
-  line-height: 1.4;
-}
-
-.lv-sub {
-  display: block;
-  font-size: .88rem;
-  line-height: 1.5;
-  color: var(--fg-muted);
-}
-
-.lv-side {
-  display: grid;
-  justify-items: end;
-  gap: 2px;
-}
-
-.lv-stars {
-  display: flex;
-  gap: 1px;
-}
-
-.lv-badge {
-  padding: 0 var(--sp-2);
-  border-radius: var(--r-pill);
-  font-size: .78rem;
-  font-weight: 700;
-  line-height: 1.6;
-  white-space: nowrap;
-  color: var(--fg-muted);
-  background: var(--bg-sunk);
-}
-
-/* 完成：綠底白字＋勾（不只靠顏色） */
-.lv-badge.is-done {
-  color: #fff;
-  background: var(--success);
-}
-
-.lv-card.is-inf {
-  box-shadow: var(--sh-md), inset 0 0 0 2px var(--primary-deep);
+/* 然後往下掉出去（越掉越快） */
+.char-dlg.is-falling .is-chosen .char-stage {
+  transform: translateY(80vh) rotate(-12deg);
+  transition: transform .55s cubic-bezier(.5, 0, .9, .45);
 }
 
 /* 星星：拿到 = 實心黃；沒拿到 = 空心外框（形狀不同，不只靠顏色） */
@@ -291,10 +555,6 @@
 .star.is-on {
   fill: #FACC15;
   stroke: #A16207;
-}
-
-.level-list {
-  margin-bottom: var(--sp-6);
 }
 
 /* ── 把手機橫過來：手機圖示慢慢轉成橫的（減少動態時直接畫橫的） ── */
@@ -960,8 +1220,8 @@ body.is-playing .topbar {
 }
 
 @media (hover: hover) and (pointer: fine) {
-  .lv-card:hover {
-    background: var(--primary-wash);
+  .map-tile:hover {
+    transform: translateY(-2px);
   }
 }
 
@@ -989,7 +1249,9 @@ body.is-playing .topbar {
 
 @media (prefers-reduced-motion: reduce) {
 
-  .lv-card:active,
+  .map-tile:active,
+  .map-tile:hover,
+  .map-change:active,
   .hud-btn:active {
     transform: none;
   }
@@ -1000,6 +1262,15 @@ body.is-playing .topbar {
   .turn-arrow {
     animation: none;
     transition: none;
+  /* 地圖、選角色：不閃、不跳、不轉、不掉 */
+  .map-tile.is-next,
+  .map-tiles li.is-new,
+  .map-hero.is-idle img,
+  .char-stage.is-hop,
+  .char-stage.is-spin img {
+    animation: none;
+  }
+
   }
 
   /* 手機圖示直接畫成橫的 */

@@ -226,7 +226,7 @@ How long children play. Each doc is one continuous stay on one game screen: a le
 |---|---|---|
 | `v` | number | `1` |
 | `uid` | string | the phone's anonymous uid (who may update the row) |
-| `game` | string | `'dash'` 膠囊衝衝衝 · `'golf'` 浮空小島高爾夫 · `'draw-circle'` 畫圓圈 · `'whack-a-mole'` 打地鼠 · `'whack-a-mole-duo'` 雙機打地鼠, the child's phone · `'whack-a-mole-remote'` 雙機打地鼠, the parent's remote |
+| `game` | string | `'dash'` 衝衝衝 · `'golf'` 浮空小島高爾夫 · `'draw-circle'` 畫圓圈 · `'whack-a-mole'` 打地鼠 · `'whack-a-mole-duo'` 雙機打地鼠, the child's phone · `'whack-a-mole-remote'` 雙機打地鼠, the parent's remote |
 | `level` | string | `'home'`, or the level: dash `'1'`–`'6'` / `'inf'` · golf hole `'1'`–`'3'` · whack-a-mole round `'1'`… (7 and up is 無限模式) · draw-circle `'play'`. The parent's remote follows the child's screen. |
 | `age` | number \| null | from the profile; on the child's phone in 雙機, from the room. No nickname, no code. |
 | `startAt` | Timestamp | phone clock: when the screen opened |

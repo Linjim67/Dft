@@ -3,7 +3,7 @@
 Inherits MASTER. Covers `/games/solo/` (menu), `/games/whack-a-mole/` — (S) 打地鼠, the two-phone
 (M) 打地鼠: `/games/duo/` (pairing), `/games/<code>/` (child's menu), `/games/<code>/whack-a-mole/`
 (child's game) and `/games/duo/whack-a-mole/` (parent's remote), `/games/draw-circle/` — 畫圓圈, and
-`/games/dash/` — (S) 膠囊衝衝衝 (the spec's "Geometry Dash").
+`/games/dash/` — (S) 衝衝衝 (the spec's "Geometry Dash").
 
 ## Routing
 
@@ -15,7 +15,7 @@ the code, and the page reads it with `AnxinDuo.codeFromLocation` (local dev: `?c
 「即將推出」 badge (visible text, not only greyed-out).
 
 「Mini mario」 is shown as **「跳跳冒險」** — "Mario" is a Nintendo trademark and this is a public site.
-For the same reason 「Geometry Dash」 (RobTop Games) ships as **「膠囊衝衝衝」**.
+For the same reason 「Geometry Dash」 (RobTop Games) ships as **「衝衝衝」**.
 
 ## Files
 
@@ -368,7 +368,7 @@ playfully "whack" medical tools is a recognised desensitisation technique (medic
 is drawn plunger-up with its needle end below the hole's lip, so **no tip is ever visible**, and all
 four characters have friendly faces. Outside the game, the rule still stands.
 
-膠囊衝衝衝 is the second exception, also by spec ("Spikes are needles"): here the tips *are* visible,
+衝衝衝 is the second exception, also by spec ("Spikes are needles"): here the tips *are* visible,
 because a hazard has to read as a hazard. They are drawn as cartoon needles on chunky coloured hubs
 (no blood, no skin, nothing being injected), and the child's job is to hop *over* them — mastery,
 not threat. The boss is a smiling doctor on a rolling stool playing 水槍大戰; see that section for why
@@ -629,7 +629,7 @@ removed at the product owner's request; the dashed green circle explains itself.
 
 ---
 
-# (S) 膠囊衝衝衝 — `/games/dash/` (spec: Geometry Dash)
+# (S) 衝衝衝 — `/games/dash/` (spec: Geometry Dash)
 
 | File | Role |
 |---|---|

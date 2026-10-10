@@ -1,5 +1,5 @@
 /* ═══════════════════════════════════════════════════════════════
-   安心陪伴 — 膠囊衝衝衝（單機）
+   安心陪伴 — 衝衝衝（單機）
    規則在 engine.js、關卡在 levels.js、圖在 art.js；
    這裡只處理畫面（canvas）、輸入（手指／鍵盤）、HUD、對話框和紀錄。
    ═══════════════════════════════════════════════════════════════ */
@@ -147,7 +147,11 @@
   }
 
   /* ─────────────────────────────────────────────────────────────
-     選關卡
+     選關卡：地圖
+     出發台 → 第 1 關 → … → 第 6 關 → 無限挑戰，中間用金色的路連起來。
+     過了前一關，下一關的方框才會打開（第一次看到的：路從前一格長過去，方框啪一下跳出來）。
+     選的角色縮小站在方框上面；點方框，角色沿著路走過去，再開始那一關。
+     寬的畫面（橫的手機、電腦）排成一排；窄的排成 S 形：1→2→3，往下 4←5←6，再往下無限挑戰。
      ───────────────────────────────────────────────────────────── */
 
   function starIcons(on, cls) {
@@ -158,6 +162,10 @@
     }
     return s;
   }
+
+  /* 圖片的 data URL 算一次就記住（地圖上的角色每一幀都可能換圖） */
+  var SRC = {};
+  function src(name) { return SRC[name] || (SRC[name] = ART.source(name)); }
 
   /* body／ship／ufo 換成現在選的角色那一張；其他（醫生、星星）照原本的名字 */
   var CARD_ART = { 1: ['ship'], 2: ['body'], 3: ['ufo'], 4: ['body', 'body'], 5: ['body'], 6: ['doctorIcon'] };
@@ -172,61 +180,407 @@
   }
 
   function artImgs(names) {
-    return names.map(function (n) { return '<img src="' + ART.source(pic(n)) + '" alt="">'; }).join('');
+    return names.map(function (n) { return '<img src="' + src(pic(n)) + '" alt="">'; }).join('');
   }
 
-  /* 選角色：三張卡片是一組單選按鈕（方向鍵可以換、報讀「已選取」）；換了角色，關卡卡片上的小圖跟著換 */
+  var INF = LV.LEVELS.length + 1;                 /* 地圖上第 7 格是無限挑戰（第 0 格是出發台） */
+  var INF_THEME = { sky: ['#FFF7ED', '#FED7AA'], ground: '#FDBA74' };
+  var MAP_KEY = 'anxin.dash.map';
+
+  /* seen：打開、看過的最後一格（打開的動畫只放一次）；at：角色站在哪一格。跟著個人資料的代碼記住 */
+  var MAP = (function () {
+    try {
+      var d = JSON.parse(storage.getItem(MAP_KEY) || 'null');
+      if (d && d.code === profile.code) {
+        return { seen: clamp(Math.floor(d.seen) || 1, 1, INF), at: clamp(Math.floor(d.at) || 0, 0, INF) };
+      }
+    } catch (e) { /* 壞掉的紀錄 → 從頭 */ }
+    return { seen: 1, at: 0 };
+  })();
+
+  /* pos：每一格在地圖上的位置（px）；busy：角色在走、方框在打開，先不能點 */
+  var M = { pos: [], T: 0, heroH: 0, busy: false, raf: 0, dir: 1 };
+
+  function saveMap() {
+    try { storage.setItem(MAP_KEY, JSON.stringify({ code: profile.code, seen: MAP.seen, at: MAP.at })); } catch (e) { /* 忽略 */ }
+  }
+
+  /* 打開到第幾格：第 1 關一定開；前一關過了，下一關才開；六關都過了，打開無限挑戰 */
+  function frontier() {
+    var n = 1;
+    while (n <= LV.LEVELS.length && rec.levels[n] && rec.levels[n].done) n++;
+    return n;
+  }
+
+  function tileSlots(on) {
+    var s = '';
+    for (var i = 0; i < 3; i++) {
+      s += on && on[i]
+        ? '<svg class="tile-star is-on" viewBox="0 0 24 24"><use href="#i-star"></use></svg>'
+        : '<span class="tile-star"></span>';
+    }
+    return s;
+  }
+
+  function tileLabel(n) {
+    if (n === INF) {
+      var best = rec.inf.best;
+      return '無限挑戰：五種玩法隨機出現，打贏醫生再來一輪。' + (best ? '最遠 ' + best + ' 公尺。' : '');
+    }
+    var L = LV.LEVELS[n - 1], r = rec.levels[n] || null;
+    var got = r ? r.stars.filter(Boolean).length : 0;
+    return '第 ' + n + ' 關 ' + vehicles(L.name) + '：' + vehicles(L.sub) + '。星星 ' + got + ' / 3。' +
+      (r && !r.done && r.best > 0 ? '最遠 ' + Math.round(r.best * 100) + '%。' : '');
+  }
+
+  /* 方框：打開了的才畫（還沒過前一關的根本不出現）；還沒放過打開動畫的先藏著（is-pending） */
+  function renderMap() {
+    var F = frontier(), html = '';
+    if (MAP.seen > F) MAP.seen = F;
+    for (var n = 1; n <= F; n++) {
+      var th = n === INF ? INF_THEME : THEME[LV.LEVELS[n - 1].theme], r = rec.levels[n];
+      var calling = n === F && (n < INF || !rec.inf.best);
+      html += '<li data-node="' + n + '"' + (n > MAP.seen ? ' class="is-pending"' : '') + '>' +
+        '<button type="button" class="map-tile' + (calling ? ' is-next' : '') + '" data-level="' + (n === INF ? 'inf' : n) + '"' +
+        ' aria-label="' + tileLabel(n) + '" style="--sky0:' + th.sky[0] + ';--sky1:' + th.sky[1] + ';--ground:' + th.ground + '">' +
+        '<span class="tile-art">' + artImgs(n === INF ? ['star'] : CARD_ART[n]) + '</span>' +
+        '<span class="tile-num" aria-hidden="true">' + (n === INF ? '∞' : n) + '</span>' +
+        (n === INF ? '' : '<span class="tile-stars" aria-hidden="true">' + tileSlots(r && r.stars) + '</span>') +
+        '</button></li>';
+    }
+    $('mapTiles').innerHTML = html;
+    $('mapStart').innerHTML = '<img src="' + src('flagOn') + '" alt="">';
+    $('charChangeImg').src = src(CH.body);
+    layoutMap();
+    caption();
+  }
+
+  /* 排版：一格方框 T px；路寬 0.28T；角色身高 0.5T（站在方框上面，上面要留位置） */
+  function layoutMap() {
+    var box = $('map'), W = box.clientWidth;
+    if (!W) return;
+    var F = frontier(), rowT = W / 9.52;
+    var row = rowT >= 80 || (window.innerWidth > window.innerHeight && rowT >= 56);
+    var T = Math.floor(Math.min(row ? rowT : W / 3.56, 128));
+    var g = Math.round(T * 0.28), heroH = Math.round(T * 0.5), head = heroH + 10;
+    var pw = Math.round(T * 0.56), ph = Math.round(T * 0.2);
+    var pos = [], H, i;
+    function node(x, y, w, h) {
+      x = Math.round(x); y = Math.round(y);
+      return { x: x, y: y, w: w, h: h, cx: Math.round(x + w / 2), cy: Math.round(y + h / 2), top: y };
+    }
+    if (row) {
+      var x0 = (W - (pw + g + INF * T + (INF - 1) * g)) / 2;
+      pos[0] = node(x0, head + (T - ph) / 2, pw, ph);
+      for (i = 1; i <= INF; i++) pos[i] = node(x0 + pw + g + (i - 1) * (T + g), head, T, T);
+      H = head + T + 12;
+    } else {
+      var c0 = (W - (3 * T + 2 * g)) / 2, rg = heroH + 14;
+      var y1 = head + ph + rg, y2 = y1 + T + rg, y3 = y2 + T + rg;
+      var cells = [null, [0, y1], [1, y1], [2, y1], [2, y2], [1, y2], [0, y2], [0, y3]];
+      pos[0] = node(c0 + (T - pw) / 2, head, pw, ph);
+      for (i = 1; i <= INF; i++) pos[i] = node(c0 + cells[i][0] * (T + g), cells[i][1], T, T);
+      H = (F >= INF ? y3 : y2) + T + 12;
+    }
+    M.pos = pos; M.T = T; M.heroH = heroH;
+    box.style.height = H + 'px';
+    box.style.setProperty('--t', T + 'px');
+    var st = $('mapStart').style;
+    st.left = pos[0].x + 'px'; st.top = pos[0].y + 'px'; st.width = pw + 'px'; st.height = ph + 'px';
+    Array.prototype.forEach.call($('mapTiles').children, function (li) {
+      var p = pos[Number(li.getAttribute('data-node'))], ls = li.style;
+      ls.left = p.x + 'px'; ls.top = p.y + 'px'; ls.width = p.w + 'px'; ls.height = p.h + 'px';
+    });
+    drawPaths(F);
+    var hs = $('mapHero').style;
+    hs.width = heroH + 'px'; hs.height = heroH + 'px';
+    if (!M.raf && !$('mapHero').hidden) heroAt(MAP.at);
+  }
+
+  /* 路：相鄰兩格的中心連起來（排版上一定在同一排或同一欄）。還沒打開的那一段先藏著 */
+  function drawPaths(F) {
+    var w = Math.max(8, Math.round(M.T * 0.17)), s = '';
+    for (var i = 1; i <= F; i++) {
+      var a = M.pos[i - 1], b = M.pos[i], d = 'M' + a.cx + ' ' + a.cy + 'L' + b.cx + ' ' + b.cy;
+      s += '<g class="seg' + (i > MAP.seen ? ' is-pending' : '') + '" data-seg="' + i + '">' +
+        '<path class="seg-edge" d="' + d + '" pathLength="1" stroke-width="' + (w + 5) + '"/>' +
+        '<path class="seg-fill" d="' + d + '" pathLength="1" stroke-width="' + w + '"/></g>';
+    }
+    $('mapPaths').innerHTML = s;
+  }
+
+  /* 地圖下面一行字：角色站的那一關叫什麼；還有幾關沒打開 */
+  function caption() {
+    var n = MAP.at, F = frontier(), html = '';
+    if (n === INF && F === INF) {
+      html = '<b>無限挑戰</b><span>' + (rec.inf.best ? '最遠 ' + rec.inf.best + ' 公尺' : '五種玩法隨機出現，打贏醫生再來一輪') + '</span>';
+    } else if (n >= 1 && n <= F) {
+      var L = LV.LEVELS[n - 1];
+      html = '<b>第 ' + n + ' 關・' + vehicles(L.name) + '</b><span>' + vehicles(L.sub) + '</span>';
+    }
+    if (F <= LV.LEVELS.length) html += '<span>點方框開始；過了第 ' + F + ' 關，下一關就會打開</span>';
+    $('mapCaption').innerHTML = html;
+  }
+
+  /* ── 地圖上的角色（縮小）：腳踩在 (x, y)；sx, sy 是落地壓扁；spin 是小膠囊滾動的角度 ──
+     走路的角色往左走時整個翻過來；小膠囊不翻，滾的方向反過來 */
+  function heroDraw(x, y, sprite, sx, sy, spin) {
+    var s = M.heroH, flip = CH.walk ? M.dir : 1;
+    $('mapHero').style.transform = 'translate(' + (x - s / 2) + 'px,' + (y - s * 0.97) + 'px)' +
+      ' translate(' + (s / 2) + 'px,' + s + 'px) scale(' + flip * (sx || 1) + ',' + (sy || 1) + ')' +
+      ' translate(' + (-s / 2) + 'px,' + (-s) + 'px)';
+    var img = $('mapHeroImg'), u = src(sprite);
+    if (img.getAttribute('src') !== u) img.setAttribute('src', u);
+    img.style.transform = spin ? 'rotate(' + spin + 'rad)' : '';
+  }
+
+  /* 站好（一上一下輕輕呼吸） */
+  function heroAt(n) {
+    var p = M.pos[n];
+    if (!p) return;
+    $('mapHero').classList.add('is-idle');
+    heroDraw(p.cx, p.top, CH.body);
+  }
+
+  /* 沿著路從第 a 格走到第 b 格（一格一格經過中間的方框）：同一排用走的（小膠囊用滾的），換排用跳的。
+     最多 1.8 秒：走得遠就走快一點。減少動態時直接站過去 */
+  function heroWalk(a, b, done) {
+    function arrive() {
+      M.raf = 0;
+      MAP.at = b;
+      saveMap();
+      heroAt(b);
+      caption();
+      if (done) done();
+    }
+    if (a === b || reduce || !M.pos[a] || !M.pos[b]) { arrive(); return; }
+    var pts = [], segs = [], total = 0, step = a < b ? 1 : -1, i;
+    for (i = a; i !== b + step; i += step) pts.push([M.pos[i].cx, M.pos[i].top]);
+    for (i = 1; i < pts.length; i++) {
+      var L = Math.sqrt(Math.pow(pts[i][0] - pts[i - 1][0], 2) + Math.pow(pts[i][1] - pts[i - 1][1], 2));
+      segs.push(L);
+      total += L;
+    }
+    var speed = Math.max(M.T * 3.4, total / 1.8), d = 0, last = now();
+    $('mapHero').classList.remove('is-idle');
+    function frame() {
+      var t = now();
+      d = Math.min(total, d + speed * Math.min(0.05, (t - last) / 1000));
+      last = t;
+      var k = 0, acc = 0;
+      while (k < segs.length - 1 && acc + segs[k] < d) { acc += segs[k]; k++; }
+      var u = segs[k] ? clamp((d - acc) / segs[k], 0, 1) : 1;
+      var p0 = pts[k], p1 = pts[k + 1], dx = p1[0] - p0[0], dy = p1[1] - p0[1];
+      var y = p0[1] + dy * u, sprite = CH.body;
+      if (Math.abs(dx) > 1) M.dir = dx < 0 ? -1 : 1;
+      if (Math.abs(dy) > 2) {
+        y -= M.T * 0.3 * 4 * u * (1 - u);
+        sprite = CH.jump || CH.body;
+      } else if (CH.walk) {
+        sprite = CH.walk[Math.floor(d / (M.T * 0.16)) % CH.walk.length];
+      }
+      heroDraw(p0[0] + dx * u, y, sprite, 1, 1, CH.walk ? 0 : M.dir * d / (M.heroH * 0.42));
+      if (d < total) M.raf = window.requestAnimationFrame(frame);
+      else arrive();
+    }
+    M.raf = window.requestAnimationFrame(frame);
+  }
+
+  /* 從天上掉到出發台，落地壓扁一下 */
+  function heroDrop(done) {
+    try { $('map').scrollIntoView({ block: 'nearest' }); } catch (e) { /* 忽略 */ }
+    var p = M.pos[0], y1 = p.top, y0 = -$('map').getBoundingClientRect().top - M.heroH, t0 = now();
+    $('mapHero').classList.remove('is-idle');
+    heroDraw(p.cx, y0, CH.jump || CH.body);
+    function fall() {
+      var k = Math.min(1, (now() - t0) / 500);
+      heroDraw(p.cx, y0 + (y1 - y0) * k * k, CH.jump || CH.body);
+      if (k < 1) { M.raf = window.requestAnimationFrame(fall); return; }
+      var t1 = now();
+      (function squash() {
+        var q = Math.min(1, (now() - t1) / 200), a = Math.sin(q * Math.PI) * 0.2;
+        heroDraw(p.cx, y1, CH.body, 1 + a, 1 - a);
+        if (q < 1) { M.raf = window.requestAnimationFrame(squash); return; }
+        M.raf = 0;
+        MAP.at = 0;
+        heroAt(0);
+        caption();
+        done();
+      })();
+    }
+    M.raf = window.requestAnimationFrame(fall);
+  }
+
+  /* 打開還沒看過的方框，一格一格來：路從前一格長過去，方框啪一下跳出來 */
+  function revealNext(done) {
+    var F = frontier();
+    if (MAP.seen >= F) { done(); return; }
+    var n = MAP.seen + 1;
+    MAP.seen = n;
+    saveMap();
+    var seg = $('mapPaths').querySelector('[data-seg="' + n + '"]');
+    var li = $('mapTiles').querySelector('[data-node="' + n + '"]');
+    say((n === INF ? '無限挑戰' : '第 ' + n + ' 關') + '打開了！');
+    if (reduce) {
+      if (seg) seg.classList.remove('is-pending');
+      if (li) li.classList.remove('is-pending');
+      revealNext(done);
+      return;
+    }
+    if (li) { try { li.scrollIntoView({ block: 'nearest' }); } catch (e) { /* 忽略 */ } }
+    if (seg) {
+      window.getComputedStyle(seg.firstChild).strokeDashoffset;   /* 先算好「藏著」的樣子，路才會慢慢長出來 */
+      seg.classList.add('is-drawing');
+      seg.classList.remove('is-pending');
+    }
+    window.setTimeout(function () {
+      if (li) { li.classList.remove('is-pending'); li.classList.add('is-new'); }
+      window.setTimeout(function () {
+        if (li) li.classList.remove('is-new');
+        if (seg) seg.classList.remove('is-drawing');
+        revealNext(done);
+      }, 520);
+    }, 360);
+  }
+
+  function focusTile(n) {
+    var b = $('mapTiles').querySelector('[data-node="' + n + '"] button');
+    if (!b) return;
+    try { b.scrollIntoView({ block: 'nearest' }); b.focus({ preventScroll: true }); } catch (e) { /* 忽略 */ }
+  }
+
+  /* 點方框：角色先走過去，再開始那一關（先要全螢幕：剛點過才可以） */
+  $('mapTiles').addEventListener('click', function (ev) {
+    var b = ev.target.closest('button[data-level]');
+    if (!b || M.busy) return;
+    autoFs();
+    var v = b.getAttribute('data-level'), n = v === 'inf' ? INF : Number(v);
+    M.busy = true;
+    heroWalk(MAP.at, n, function () {
+      M.busy = false;
+      start(v === 'inf' ? 'inf' : n);
+    });
+  });
+
+  if (window.ResizeObserver) new ResizeObserver(function () { if (!views.intro.hidden) layoutMap(); }).observe($('map'));
+  window.addEventListener('resize', function () { if (!views.intro.hidden) layoutMap(); });
+
+  /* 角色上地圖：從天上掉到出發台，打開還沒看過的方框，再沿著路走到最新打開的那一關 */
+  function heroEnter() {
+    var F = frontier();
+    $('mapHero').hidden = false;
+    layoutMap();
+    M.busy = true;
+    function ready() { M.busy = false; focusTile(MAP.at); }
+    if (reduce) {
+      MAP.seen = F;
+      renderMap();
+      heroWalk(MAP.at, F, ready);
+      return;
+    }
+    heroDrop(function () {
+      revealNext(function () { heroWalk(0, F, ready); });
+    });
+  }
+
+  /* ─────────────────────────────────────────────────────────────
+     選角色（一進來就先選；地圖上的「換角色」也會打開）
+     選到的：開心地跳一下，再原地踏步（小麻糬、小抹茶換走路的圖）或轉圈（小膠囊）。
+     按「出發！」（或 Esc）：其他角色不見、選到的往下掉出去；接著在地圖上從天上掉下來（heroEnter）
+     ───────────────────────────────────────────────────────────── */
+
+  var charDlg = Anxin.wireDialog($('charDlg'));
+  var PK = { id: CH.id, hop: 0, step: 0, going: false };
+
   function renderChars() {
     $('charList').innerHTML = ART.CHARS.map(function (c) {
-      return '<label class="char-option"><input type="radio" name="dashChar" value="' + c.id + '"' +
-        (c.id === CH.id ? ' checked' : '') + '>' +
-        '<span class="char-body"><img src="' + ART.source(c.body) + '" alt="">' +
+      return '<label class="char-option" data-char="' + c.id + '"><input type="radio" name="dashChar" value="' + c.id + '"' +
+        (c.id === PK.id ? ' checked' : '') + '>' +
+        '<span class="char-body"><span class="char-stage"><img src="' + src(c.body) + '" alt=""></span>' +
         '<span class="char-name">' + c.name + '</span>' +
         '<svg class="char-check" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 12.5l3.3 3.3L17 9"/></svg></span></label>';
     }).join('');
   }
 
-  $('charList').addEventListener('change', function (ev) {
-    if (!ev.target || ev.target.name !== 'dashChar') return;
-    CH = ART.char(ev.target.value);
-    try { storage.setItem(CHAR_KEY, JSON.stringify({ code: profile.code, id: CH.id })); } catch (e) { /* 忽略 */ }
-    renderLevels();
-  });
-
-  function renderLevels() {
-    var html = LV.LEVELS.map(function (L) {
-      var r = rec.levels[L.id] || null;
-      var got = r ? r.stars.filter(Boolean).length : 0;
-      var badge = '';
-      /* 過關的關卡不另外標「完成」：星星就是成績 */
-      if (r && r.done) badge = '';
-      else if (r && r.best > 0) badge = '<span class="lv-badge">最遠 ' + Math.round(r.best * 100) + '%</span>';
-      var name = vehicles(L.name), sub = vehicles(L.sub);
-      var label = '第 ' + L.id + ' 關 ' + name + '：' + sub + '。' +
-        '星星 ' + got + ' / 3。';
-      return '<li><button type="button" class="lv-card" data-level="' + L.id + '" aria-label="' + label + '">' +
-        '<span class="lv-art" style="--lv-bg:' + THEME[L.theme].sky[1] + '"><span class="lv-num">' + L.id + '</span>' +
-        artImgs(CARD_ART[L.id]) + '</span>' +
-        '<span class="lv-text"><span class="lv-name">' + name + '</span><span class="lv-sub">' + sub + '</span></span>' +
-        '<span class="lv-side"><span class="lv-stars">' + starIcons(r && r.stars) + '</span>' + badge + '</span>' +
-        '</button></li>';
-    }).join('');
-    var best = rec.inf.best;
-    html += '<li><button type="button" class="lv-card is-inf" data-level="inf" aria-label="無限挑戰：五種玩法隨機出現，打贏醫生再來一輪。' +
-      (best ? '最遠 ' + best + ' 公尺。' : '') + '">' +
-      '<span class="lv-art" style="--lv-bg:#FFEDD5"><span class="lv-num">∞</span>' + artImgs(['star']) + '</span>' +
-      '<span class="lv-text"><span class="lv-name">無限挑戰</span><span class="lv-sub">五種玩法隨機出現，打贏醫生再來一輪</span></span>' +
-      '<span class="lv-side">' + (best ? '<span class="lv-badge">最遠 ' + best + ' 公尺</span>' : '') + '</span>' +
-      '</button></li>';
-    $('levelList').innerHTML = html;
+  /* 全部停下來、換回站著的樣子 */
+  function quietChars() {
+    window.clearTimeout(PK.hop);
+    window.clearInterval(PK.step);
+    Array.prototype.forEach.call($('charList').querySelectorAll('.char-option'), function (o) {
+      var st = o.querySelector('.char-stage');
+      st.classList.remove('is-hop', 'is-spin');
+      st.querySelector('img').src = src(ART.char(o.getAttribute('data-char')).body);
+    });
   }
 
-  $('levelList').addEventListener('click', function (ev) {
-    var b = ev.target.closest('button[data-level]');
-    if (!b) return;
-    var v = b.getAttribute('data-level');
-    start(v === 'inf' ? 'inf' : Number(v));
+  function cheer(id) {
+    quietChars();
+    if (reduce) return;
+    var C0 = ART.char(id), opt = $('charList').querySelector('[data-char="' + id + '"]');
+    if (!opt) return;
+    var st = opt.querySelector('.char-stage'), img = st.querySelector('img');
+    void st.offsetWidth;
+    st.classList.add('is-hop');
+    if (C0.jump) img.src = src(C0.jump);
+    PK.hop = window.setTimeout(function () {
+      st.classList.remove('is-hop');
+      img.src = src(C0.body);
+      if (C0.walk) {
+        var k = 0;
+        PK.step = window.setInterval(function () { img.src = src(C0.walk[k++ % C0.walk.length]); }, 150);
+      } else {
+        st.classList.add('is-spin');
+      }
+    }, 520);
+  }
+
+  function openChars() {
+    PK.id = CH.id;
+    PK.going = false;
+    renderChars();
+    $('mapHero').hidden = true;
+    charDlg.open();
+    var c = $('charList').querySelector('input:checked');
+    try { if (c) c.focus(); } catch (e) { /* 忽略 */ }
+    cheer(PK.id);
+  }
+
+  $('charList').addEventListener('change', function (ev) {
+    if (!ev.target || ev.target.name !== 'dashChar' || PK.going) return;
+    PK.id = ev.target.value;
+    cheer(PK.id);
   });
+
+  function charGo() {
+    if (PK.going) return;
+    PK.going = true;
+    CH = ART.char(PK.id);
+    try { storage.setItem(CHAR_KEY, JSON.stringify({ code: profile.code, id: CH.id })); } catch (e) { /* 忽略 */ }
+    renderMap();
+    var dlg = $('charDlg');
+    quietChars();
+    if (reduce) { dlg.close(); return; }
+    var opt = $('charList').querySelector('[data-char="' + CH.id + '"]');
+    opt.querySelector('.char-stage img').src = src(CH.jump || CH.body);
+    opt.classList.add('is-chosen');
+    dlg.classList.add('is-going');
+    window.setTimeout(function () {
+      dlg.classList.add('is-falling');
+      window.setTimeout(function () { if (dlg.open) dlg.close(); }, 560);
+    }, 300);
+  }
+
+  $('charGo').addEventListener('click', charGo);
+  $('charDlg').addEventListener('cancel', function (ev) {
+    ev.preventDefault();
+    charGo();
+  });
+  $('charDlg').addEventListener('close', function () {
+    $('charDlg').classList.remove('is-going', 'is-falling');
+    quietChars();
+    heroEnter();
+  });
+  $('charChange').addEventListener('click', function () { if (!M.busy) openChars(); });
 
   /* ─────────────────────────────────────────────────────────────
      一局
@@ -609,12 +963,18 @@
     saveExit();
     stopLoop();
     G.phase = 'idle';
-    var lv = G.level;
-    renderLevels();
+    if (G.level) MAP.at = G.level === 'inf' ? INF : G.level;
+    saveMap();
     show('intro');
     track('home');
-    var card = document.querySelector('.lv-card[data-level="' + lv + '"]');
-    try { (card || $('introTitle')).focus({ preventScroll: true }); } catch (e) { /* 忽略 */ }
+    $('mapHero').hidden = false;
+    renderMap();
+    var F = frontier();
+    if (MAP.seen >= F) { focusTile(MAP.at); return; }
+    M.busy = true;
+    revealNext(function () {
+      heroWalk(MAP.at, F, function () { M.busy = false; focusTile(MAP.at); });
+    });
   }
 
   function restart() {
@@ -650,11 +1010,9 @@
     });
   });
 
-  $('nextBtn').addEventListener('click', dlgAction($('winDlg'), function () {
-    start(G.level < LV.LEVELS.length ? G.level + 1 : 'inf');
-  }));
+  /* 下一關：回到地圖，看新的方框打開、角色走過去，再點方框開始 */
+  $('nextBtn').addEventListener('click', dlgAction($('winDlg'), toLevels));
   $('againBtn').addEventListener('click', dlgAction($('winDlg'), function () { start(G.level); }));
-  $('winLevelsBtn').addEventListener('click', dlgAction($('winDlg'), toLevels));
   $('sameSeedBtn').addEventListener('click', dlgAction($('overDlg'), function () { start('inf', G.seed); }));
   $('newSeedBtn').addEventListener('click', dlgAction($('overDlg'), function () { start('inf'); }));
   $('overLevelsBtn').addEventListener('click', dlgAction($('overDlg'), toLevels));
@@ -911,6 +1269,7 @@
   }
 
   function openWin(got) {
+  /* 回到地圖：角色站在剛剛玩的那一關；剛過關、打開了新的方框 → 先打開，再走過去 */
     var run = G.run, n = got.filter(Boolean).length;
     var last = G.level >= LV.LEVELS.length;
     $('winKicker').textContent = title();
@@ -922,7 +1281,8 @@
     line += run.deaths ? '試了 ' + (run.deaths + 1) + ' 次，好有耐心！' : '一次就成功！';
     if (last) line = '點滴袋空了，你打敗醫生了！' + line;
     $('winLine').textContent = line;
-    $('nextBtn').textContent = last ? '挑戰無限模式' : '下一關：' + vehicles(LV.LEVELS[G.level].name);
+    /* 這一次打開了新的方框才說「打開」；重玩已經過的關卡就是回地圖 */
+    $('nextBtn').textContent = MAP.seen >= frontier() ? '回到地圖' : last ? '打開無限挑戰' : '打開下一關';
     winDlg.open();
   }
 
@@ -1904,8 +2264,8 @@
     ctx.globalAlpha = 1;
   }
 
-  renderChars();
-  renderLevels();
+  renderMap();
+  openChars();
   track('home');
 
   /* 測試用 */
