@@ -325,6 +325,7 @@
 /* ═══ 選角色（對話框） ══════════════════════════════════════════
    三張卡片一排（單選）。選到的：淡橘底＋深橘粗框＋右上角打勾（不只靠顏色），
    角色開心地跳一下，再原地踏步（dash.js 換圖）或轉圈（小膠囊）。
+   沒有標題、說明，一開始誰都沒選：「出發！」先淡淡的、按不下去，選了才亮起來。
    按「出發！」：其他的不見、對話框變透明，選到的往下掉出去 */
 
 .char-dlg {
@@ -333,8 +334,19 @@
   transition: background-color .3s var(--ease), box-shadow .3s var(--ease);
 }
 
-.char-dlg .char-list {
-  margin-top: var(--sp-4);
+/* 打開時焦點放在對話框本身（不是第一張卡片，才不會看起來像已經選了） */
+.char-dlg:focus {
+  outline: none;
+}
+
+.char-dlg .btn {
+  transition: opacity .2s var(--ease), transform var(--t-fast) var(--ease), box-shadow var(--t-fast) var(--ease);
+}
+
+.char-dlg .btn:disabled {
+  opacity: .4;
+  box-shadow: none;
+  cursor: default;
 }
 
 .char-list {
@@ -471,14 +483,12 @@
   }
 }
 
-/* 出發：其他角色、標題、按鈕、卡片的底都不見，只剩選到的角色 */
+/* 出發：其他角色、按鈕、卡片的底都不見，只剩選到的角色 */
 .char-dlg.is-going {
   background-color: transparent;
   box-shadow: none;
 }
 
-.char-dlg.is-going .dlg-title,
-.char-dlg.is-going .dlg-body,
 .char-dlg.is-going .dlg-actions,
 .char-dlg.is-going .char-name,
 .char-dlg.is-going .char-option input:checked+.char-body .char-check {
@@ -1113,6 +1123,33 @@ body.is-playing .topbar {
   font-size: .85rem;
   line-height: 1.6;
   color: var(--fg-muted);
+}
+
+/* 直式手機一進來（選角色之前）：整個畫面請小朋友把手機橫過來，內容和上面那塊一樣 */
+.turn-dlg {
+  width: 100%;
+  max-width: none;
+  height: 100%;
+  max-height: none;
+  margin: 0;
+  padding: var(--sp-5) var(--sp-4);
+  border-radius: 0;
+  background: var(--bg);
+  box-shadow: none;
+  text-align: center;
+}
+
+.turn-dlg[open] {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--sp-2);
+}
+
+.turn-dlg .rotate-skip {
+  width: auto;
+  min-width: 12rem;
 }
 
 /* ── 新手教學（火箭、飛碟、雙胞胎、轉轉、醫生）：兩三張會動的小圖（直式一張一列，夠寬就排成一排） ── */

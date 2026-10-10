@@ -483,11 +483,13 @@
   /* ─────────────────────────────────────────────────────────────
      選角色（一進來就先選；地圖上的「換角色」也會打開）
      選到的：開心地跳一下，再原地踏步（小麻糬、小抹茶換走路的圖）或轉圈（小膠囊）。
-     按「出發！」（或 Esc）：其他角色不見、選到的往下掉出去；接著在地圖上從天上掉下來（heroEnter）
+     一開始誰都沒選，「出發！」按不下去，選了才能按。
+     按「出發！」（或 Esc）：其他角色不見、選到的往下掉出去；接著在地圖上從天上掉下來（heroEnter）。
+     「換角色」打開的、還沒選就按 Esc：照舊用原來的角色
      ───────────────────────────────────────────────────────────── */
 
   var charDlg = Anxin.wireDialog($('charDlg'));
-  var PK = { id: CH.id, hop: 0, step: 0, going: false };
+  var PK = { id: null, back: false, hop: 0, step: 0, going: false };
 
   function renderChars() {
     $('charList').innerHTML = ART.CHARS.map(function (c) {
@@ -531,25 +533,27 @@
     }, 520);
   }
 
-  function openChars() {
-    PK.id = CH.id;
+  /* back：從地圖的「換角色」打開的（已經有角色了） */
+  function openChars(back) {
+    PK.id = null;
+    PK.back = back === true;
     PK.going = false;
     renderChars();
+    $('charGo').disabled = true;
     $('mapHero').hidden = true;
     charDlg.open();
-    var c = $('charList').querySelector('input:checked');
-    try { if (c) c.focus(); } catch (e) { /* 忽略 */ }
-    cheer(PK.id);
+    try { $('charDlg').focus(); } catch (e) { /* 忽略 */ }
   }
 
   $('charList').addEventListener('change', function (ev) {
     if (!ev.target || ev.target.name !== 'dashChar' || PK.going) return;
     PK.id = ev.target.value;
+    $('charGo').disabled = false;
     cheer(PK.id);
   });
 
   function charGo() {
-    if (PK.going) return;
+    if (PK.going || !PK.id) return;
     PK.going = true;
     CH = ART.char(PK.id);
     try { storage.setItem(CHAR_KEY, JSON.stringify({ code: profile.code, id: CH.id })); } catch (e) { /* 忽略 */ }
@@ -570,14 +574,15 @@
   $('charGo').addEventListener('click', charGo);
   $('charDlg').addEventListener('cancel', function (ev) {
     ev.preventDefault();
-    charGo();
+    if (PK.id) charGo();
+    else if (PK.back && !PK.going) charDlg.close();
   });
   $('charDlg').addEventListener('close', function () {
     $('charDlg').classList.remove('is-going', 'is-falling');
     quietChars();
     heroEnter();
   });
-  $('charChange').addEventListener('click', function () { if (!M.busy) openChars(); });
+  $('charChange').addEventListener('click', function () { if (!M.busy) openChars(true); });
 
   /* ─────────────────────────────────────────────────────────────
      一局
@@ -697,16 +702,37 @@
   }
 
   if (portraitMq) {
-    var onTurn = function () { if (G.run) rotateCheck(); };
+    var onTurn = function () {
+      if ($('turnDlg').open && !portraitMq.matches) turnDlg.close();
+      if (G.run) rotateCheck();
+    };
     if (portraitMq.addEventListener) portraitMq.addEventListener('change', onTurn);
     else if (portraitMq.addListener) portraitMq.addListener(onTurn);
   }
 
-  $('rotateSkip').addEventListener('click', function () {
+  function skipPortrait() {
     G.portraitOk = true;
     try { window.sessionStorage.setItem(SKIP_KEY, '1'); } catch (e) { /* 忽略 */ }
+  }
+
+  $('rotateSkip').addEventListener('click', function () {
+    skipPortrait();
     rotateCheck();
   });
+
+  /* 一進來：直式手機先請小朋友把手機橫過來，轉過來（或按「直的也可以玩」）才選角色 */
+  var turnDlg = Anxin.wireDialog($('turnDlg'));
+
+  function openHome() {
+    if (portraitMq && portraitMq.matches && !portraitOk()) turnDlg.open();
+    else openChars();
+  }
+
+  $('turnSkip').addEventListener('click', function () {
+    skipPortrait();
+    turnDlg.close();
+  });
+  $('turnDlg').addEventListener('close', function () { openChars(); });
 
   /* fromKey：用鍵盤開始的才把焦點移到畫面上（手指點的不要出現焦點框） */
   function begin(fromKey) {
@@ -2884,7 +2910,7 @@
   }
 
   renderMap();
-  openChars();
+  openHome();
   track('home');
 
   /* 測試用 */
