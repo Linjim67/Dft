@@ -201,6 +201,10 @@
   /* pos：每一格在地圖上的位置（px）；busy：角色在走、方框在打開，先不能點 */
   var M = { pos: [], T: 0, heroH: 0, busy: false, raf: 0, dir: 1 };
 
+  /* 換角色的頭像、地圖上的角色：圖片一放進去就有 src（HTML 裡不留空白的 img） */
+  $('charChange').insertAdjacentHTML('afterbegin', '<img id="charChangeImg" src="' + src(CH.body) + '" alt="">');
+  $('mapHero').innerHTML = '<img id="mapHeroImg" src="' + src(CH.body) + '" alt="">';
+
   function saveMap() {
     try { storage.setItem(MAP_KEY, JSON.stringify({ code: profile.code, seen: MAP.seen, at: MAP.at })); } catch (e) { /* 忽略 */ }
   }
@@ -644,7 +648,6 @@
     resetInput();
 
     $('hudTitle').textContent = title();
-    $('readyName').textContent = title();
     $('readySub').textContent = modeHint(G.run.mode);
     $('stageCanvas').setAttribute('aria-label', '遊戲畫面：' + CH.name + '往右跑。按空白鍵或向上鍵跳，Esc 暫停');
     setMode(G.run.mode);
@@ -654,11 +657,24 @@
     $('hudProgress').hidden = false;
     $('hudProgress').classList.toggle('is-endless', level === 'inf');
     show('play');
+    readyIntro();
     track(level);
     fit(true);
     updateHud();
     if (!rotateCheck()) $('goBtn').focus({ preventScroll: true });
     startLoop();
+  }
+
+  /* 開始畫面的關卡標題：先跳出「第 n 關」、一條線展開、再出現關卡名稱，最後才是「點一下開始」（CSS 的 is-intro）。
+     無限挑戰：「無限挑戰」→ 線 →「第 n 輪」。每次開始一關都重播一次 */
+  function readyIntro() {
+    var inf = G.level === 'inf';
+    $('readyNum').textContent = inf ? '無限挑戰' : '第 ' + G.level + ' 關';
+    $('readyTitle').textContent = inf ? '第 ' + G.round + ' 輪' : vehicles(LV.LEVELS[G.level - 1].name);
+    var box = $('readyBox');
+    box.classList.remove('is-intro');
+    void box.offsetWidth;
+    box.classList.add('is-intro');
   }
 
   /* ─────────────────────────────────────────────────────────────
@@ -681,6 +697,7 @@
     box.hidden = !ask;
     if (ask) say('把手機橫過來玩，畫面會比較大');
     else if (G.phase === 'ready') {
+      readyIntro();   /* 剛剛被「把手機橫過來」蓋住：轉過來之後再播一次關卡標題 */
       try { $('goBtn').focus({ preventScroll: true }); } catch (e) { /* 忽略 */ }
     }
     return ask;
@@ -1268,8 +1285,9 @@
     G.saved = true;
   }
 
-  /* 回到地圖：角色站在剛剛玩的那一關；剛過關、打開了新的方框 → 先打開，再走過去 */
-  function toLevels() {
+  /* 回到地圖：角色站在剛剛玩的那一關；剛過關、打開了新的方框 → 先打開，再走過去。
+     auto（按「打開下一關」來的）：走到了停一下，就直接開始那一關，就像點了那個方框 */
+  function toLevels(auto) {
     saveExit();
     stopLoop();
     G.phase = 'idle';
@@ -1283,7 +1301,17 @@
     if (MAP.seen >= F) { focusTile(MAP.at); return; }
     M.busy = true;
     revealNext(function () {
-      heroWalk(MAP.at, F, function () { M.busy = false; focusTile(MAP.at); });
+      heroWalk(MAP.at, F, function () {
+        if (auto === true) {
+          window.setTimeout(function () {
+            M.busy = false;
+            start(F === INF ? 'inf' : F);
+          }, 350);
+          return;
+        }
+        M.busy = false;
+        focusTile(MAP.at);
+      });
     });
   }
 
@@ -1320,8 +1348,8 @@
     });
   });
 
-  /* 下一關：回到地圖，看新的方框打開、角色走過去，再點方框開始 */
-  $('nextBtn').addEventListener('click', dlgAction($('winDlg'), toLevels));
+  /* 下一關：回到地圖，看新的方框打開、角色走過去，走到了就直接開始那一關 */
+  $('nextBtn').addEventListener('click', dlgAction($('winDlg'), function () { toLevels(true); }));
   $('againBtn').addEventListener('click', dlgAction($('winDlg'), function () { start(G.level); }));
   $('sameSeedBtn').addEventListener('click', dlgAction($('overDlg'), function () { start('inf', G.seed); }));
   $('newSeedBtn').addEventListener('click', dlgAction($('overDlg'), function () { start('inf'); }));

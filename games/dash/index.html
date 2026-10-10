@@ -64,8 +64,8 @@
 
       <div class="map-head">
         <h2 class="section-title" id="mapTitle">選一關</h2>
+        <!-- 頭像（目前的角色）由 dash.js 放在字的前面 -->
         <button class="map-change" type="button" id="charChange">
-          <img id="charChangeImg" alt="">
           <span>換角色</span>
         </button>
       </div>
@@ -75,7 +75,7 @@
         <svg class="map-paths" id="mapPaths" aria-hidden="true" focusable="false"></svg>
         <span class="map-start" id="mapStart" aria-hidden="true"></span>
         <ol class="map-tiles" id="mapTiles" aria-labelledby="mapTitle"></ol>
-        <span class="map-hero" id="mapHero" aria-hidden="true" hidden><img id="mapHeroImg" alt=""></span>
+        <span class="map-hero" id="mapHero" aria-hidden="true" hidden></span>
       </div>
       <p class="map-caption" id="mapCaption"></p>
     </section>
@@ -119,7 +119,13 @@
         <p class="mode-hint" id="modeHint" hidden></p>
 
         <div class="ready" id="readyBox">
-          <p class="ready-name" id="readyName">第 1 關・出發囉</p>
+          <!-- 每一關開始：先跳出「第 n 關」、一條線展開、再出現關卡名稱（dash.js 加 is-intro 重播） -->
+          <p class="ready-name" id="readyName">
+            <span class="rn-num" id="readyNum">第 1 關</span>
+            <span class="rn-sep">・</span>
+            <span class="rn-line" aria-hidden="true"></span>
+            <span class="rn-title" id="readyTitle">出發囉</span>
+          </p>
           <button class="btn btn-primary ready-btn" type="button" id="goBtn">點一下開始</button>
           <p class="ready-sub" id="readySub">點一下：跳　按住：一直跳</p>
         </div>
