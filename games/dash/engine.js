@@ -480,7 +480,8 @@
           P.vy = C.PAD_V;
           P.grounded = false;
           P.coyote = 0;
-          if (main) emit(run, 'pad');
+          /* 雙胞胎上面那個也送：畫面要讓那一個彈簧彈起來（top = 不是主角） */
+          emit(run, 'pad', { obj: b, top: !main });
         }
       } else if (b.k === 'star' && main && !run.got[b.id]) {
         var dx = x - (b.x + 0.5), dy = P.y - (b.y + 0.5), R = C.STAR_R + hz;

@@ -235,6 +235,7 @@
     G.jumpBt = -9;
     G.coach = '';
     G.briefed = false;
+    G.springs = new WeakMap();
     resetInput();
 
     $('hudTitle').textContent = title();
@@ -679,7 +680,8 @@
           puff(run.x - 0.3, run.p.y - 0.5, 2, '#E0F2FE');
           break;
         case 'pad':
-          puff(run.x, run.p.y - 0.4, 6, '#FDE047');
+          if (e.obj) G.springs.set(e.obj, t);
+          if (!e.top) puff(run.x, run.p.y - 0.4, 6, '#FDE047');
           break;
         case 'star':
           puff(run.x + 0.2, run.p.y, 8, '#FACC15');
@@ -1105,6 +1107,65 @@
     drawPlayer(P, a, gY, t);
   }
 
+  /* ── 彈簧墊：底座、彈簧、黃色蓋子（單位：格，從地板往上量）──
+     平常彈簧壓得短短的；踩到的那一刻蓋子往上衝、彈簧拉長，再晃幾下縮回去。
+     碰撞範圍不變（engine.js 的 C.PAD），這裡只是畫面。減少動態時不彈 */
+  var SPRING = {
+    baseW: 0.8, baseH: 0.1, capW: 0.84, capH: 0.2184,
+    foot: 0.05, rest: 0.26, w: 0.46, turns: 3,
+    reach: 0.85, riseMs: 80, decayMs: 160, waveMs: 190, endMs: 760
+  };
+
+  function springExt(o, t) {
+    var t0 = G.springs && G.springs.get(o), S = SPRING;
+    if (t0 === undefined || reduce) return 0;
+    var k = t - t0;
+    if (k < 0 || k > S.endMs) return 0;
+    if (k < S.riseMs) {
+      var u = 1 - k / S.riseMs;
+      return S.reach * (1 - u * u);
+    }
+    k -= S.riseMs;
+    /* 晃回去：往下最多只壓一點點（彈簧不會壓到比平常短很多） */
+    return Math.max(-0.05, S.reach * Math.exp(-k / S.decayMs) * Math.cos(Math.PI * k / S.waveMs));
+  }
+
+  function drawSpring(o, sx, floorY, t) {
+    var T = V.T, S = SPRING, cx = sx + 0.5 * T;
+    var top = floorY - (S.rest + springExt(o, t)) * T;
+    coil(cx, floorY - S.foot * T, top, S.w * T, S.turns);
+    blit('padBase', cx - S.baseW / 2 * T, floorY - S.baseH * T, S.baseW, S.baseH);
+    blit('padTop', cx - S.capW / 2 * T, top - (S.capH - 0.03) * T, S.capW, S.capH);
+  }
+
+  /* 彈簧：從側面稍微往下看的螺旋。後半圈（往上彎）細、顏色深，先畫；前半圈（往下彎）粗、有外框，後畫 */
+  function coil(cx, yb, yt, w, turns) {
+    var T = V.T, n = turns * 2, step = (yb - yt) / n, bulge = 0.05 * T, i, y0, y1;
+    ctx.save();
+    ctx.lineCap = 'round';
+    ctx.strokeStyle = '#78716C';
+    ctx.lineWidth = Math.max(1.5, 0.045 * T);
+    for (i = 1; i < n; i += 2) {
+      y0 = yb - i * step; y1 = y0 - step;
+      ctx.beginPath();
+      ctx.moveTo(cx + w / 2, y0);
+      ctx.quadraticCurveTo(cx, (y0 + y1) / 2 - bulge, cx - w / 2, y1);
+      ctx.stroke();
+    }
+    [['#44403C', 0.085], ['#E7E5E4', 0.04]].forEach(function (pass) {
+      ctx.strokeStyle = pass[0];
+      ctx.lineWidth = Math.max(1, pass[1] * T);
+      for (i = 0; i < n; i += 2) {
+        y0 = yb - i * step; y1 = y0 - step;
+        ctx.beginPath();
+        ctx.moveTo(cx - w / 2, y0);
+        ctx.quadraticCurveTo(cx, (y0 + y1) / 2 + bulge, cx + w / 2, y1);
+        ctx.stroke();
+      }
+    });
+    ctx.restore();
+  }
+
   /* 傳送門前的漏斗：地板往上斜、天花板往下斜，只有門口過得去 */
   function drawFunnels(camX, gY, c0, c1, th) {
     var T = V.T, F = C.FUNNEL, sky = 14;
@@ -1195,7 +1256,7 @@
     var T = V.T, sx = (o.x - camX) * T, sy = gY - (o.y + 1) * T;
     if (o.k === 'block') blit(o.diff ? 'blockDiff' : 'block_' + tn, sx, sy, 1, 1);
     else if (o.k === 'needle') blit((o.dir < 0 ? 'needleDown' : 'needle') + (o.diff ? 'Diff' : ''), sx, sy, 1, 1);
-    else if (o.k === 'pad') blit('pad', sx, sy + 0.6 * T, 1, 0.4);
+    else if (o.k === 'pad') drawSpring(o, sx, sy + T, t);
     else if (o.k === 'star') {
       if (G.run.got[o.id]) return;
       var bob = reduce ? 0 : Math.sin(t / 260 + o.x) * 0.06 * T;

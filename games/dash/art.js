@@ -177,11 +177,18 @@
     needleDownDiff: function () { return needle('#7DD3FC', '#0284C7', '#0C4A6E', true); },
     blockDiff: function () { return block('#7DD3FC', '#0369A1'); },
 
-    /* 彈簧墊（寬 1 格、高 0.4 格） */
-    pad: function () {
-      return svg(100, 40,
-        '<path d="M8 38Q8 5 50 5Q92 5 92 38Z" fill="#FACC15" stroke="#854D0E" stroke-width="4" stroke-linejoin="round"/>' +
-        '<path d="M36 29l14-12 14 12" fill="none" stroke="#854D0E" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>');
+    /* 彈簧墊：灰色底座＋黃色的蓋子（中間的彈簧是 dash.js 用線畫的，踩到時才拉得長） */
+    padBase: function () {
+      return svg(100, 12.5,
+        '<rect x="5" y="2" width="90" height="9" rx="4.5" fill="#A8A29E" stroke="#44403C" stroke-width="2.8"/>' +
+        '<path d="M14 4.6H86" stroke="#fff" stroke-width="1.8" stroke-linecap="round" opacity=".6"/>');
+    },
+    padTop: function () {
+      return svg(100, 26,
+        '<path d="M9 21Q9 2 50 2Q91 2 91 21Z" fill="#FACC15" stroke="#854D0E" stroke-width="3.2" stroke-linejoin="round"/>' +
+        '<rect x="4" y="17" width="92" height="7" rx="3.5" fill="#EAB308" stroke="#854D0E" stroke-width="2.8"/>' +
+        '<path d="M38 15L50 7L62 15" fill="none" stroke="#854D0E" stroke-width="3.6" stroke-linecap="round" stroke-linejoin="round"/>' +
+        '<path d="M18 12Q23 7 31 5.5" fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round" opacity=".8"/>');
     },
 
     star: function () {
@@ -191,9 +198,9 @@
         '<path d="M44.5 56q5.5 5 11 0" stroke="#1C1917" stroke-width="3.2" fill="none" stroke-linecap="round"/>');
     },
 
-    /* 安心旗：經過之後變綠色，撞到了就從這裡重來 */
-    flagOff: function () { return flag('#E7E5E4', '#78716C'); },
-    flagOn: function () { return flag('#4ADE80', '#15803D'); },
+    /* 安心旗：經過之後變綠色、多一個勾，撞到了就從這裡重來 */
+    flagOff: function () { return flag(false); },
+    flagOn: function () { return flag(true); },
 
     /* 醫生（大魔王）：坐在會滾的看診椅上，笑咪咪的——是陪你玩水槍，不是壞人 */
     doctor: function () { return doctor(false); },
@@ -292,11 +299,16 @@
     return CHARS[0];
   }
 
-  function flag(fill, dark) {
+  /* 桿子＋往右飄的三角旗＋桿子頂端一顆金色小圓球，底下一個小底座 */
+  function flag(on) {
+    var fill = on ? '#4ADE80' : '#E7E5E4', dark = on ? '#15803D' : '#78716C';
     return svg(60, 120,
-      '<rect x="8" y="8" width="6" height="110" rx="3" fill="#78716C"/>' +
-      '<path d="M14 12H52L42 28L52 44H14Z" fill="' + fill + '" stroke="' + dark + '" stroke-width="3" stroke-linejoin="round"/>' +
-      '<path d="M26 23a5 5 0 0 1 8.5-1.6A5 5 0 0 1 43 23c0 5.5-8.5 10.5-8.5 10.5S26 28.5 26 23Z" fill="#fff"/>');
+      '<rect x="4" y="111" width="20" height="7.5" rx="3.75" fill="#A8A29E" stroke="#57534E" stroke-width="2.5"/>' +
+      '<rect x="11" y="14" width="6" height="99" rx="3" fill="#D6D3D1" stroke="#57534E" stroke-width="2.5"/>' +
+      '<path d="M17 18L57 36L17 54Z" fill="' + fill + '" stroke="' + dark + '" stroke-width="3" stroke-linejoin="round"/>' +
+      (on ? '<path d="M23.5 36l4.5 4.5 8.5-9.5" fill="none" stroke="#fff" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>' : '') +
+      '<circle cx="14" cy="10" r="7" fill="#FACC15" stroke="#A16207" stroke-width="2.5"/>' +
+      '<circle cx="11.7" cy="7.7" r="2" fill="#fff" opacity=".85"/>');
   }
 
   function doctor(happy) {
