@@ -1009,60 +1009,6 @@ body.is-playing .topbar {
   min-width: 12rem;
 }
 
-/* ── 開始之後的說明卡：兩張會動的小圖（點一下：跳；按住：一直跳），在天空那一塊，不擋手指，幾秒後淡出 ── */
-.ctrl-demo {
-  position: absolute;
-  top: var(--sp-3);
-  left: 50%;
-  z-index: 2;
-  display: flex;
-  gap: var(--sp-3);
-  padding: var(--sp-2) var(--sp-3);
-  border-radius: var(--r-lg);
-  background: rgba(255, 255, 255, .92);
-  box-shadow: var(--sh-md);
-  transform: translateX(-50%);
-  pointer-events: none;
-  animation: hint-in var(--t-base) var(--ease);
-  transition: opacity .4s var(--ease);
-}
-
-.ctrl-demo[hidden] {
-  display: none;
-}
-
-.ctrl-demo.is-leaving {
-  opacity: 0;
-}
-
-.ctrl-step {
-  display: grid;
-  justify-items: center;
-  gap: 2px;
-  margin: 0;
-}
-
-.ctrl-step svg {
-  display: block;
-  width: 104px;
-  height: auto;
-  overflow: hidden;
-  border-radius: var(--r-sm);
-  background: var(--demo-sky, linear-gradient(#FFF7ED, #FFE4C4));
-}
-
-.ctrl-step figcaption {
-  font-size: .88rem;
-  font-weight: 700;
-  color: var(--fg);
-}
-
-@media (max-height: 520px) {
-  .ctrl-step svg {
-    width: 84px;
-  }
-}
-
 .tap-zone {
   container-type: size;
   flex: 1 1 auto;
@@ -1292,6 +1238,16 @@ body.is-playing .topbar {
 .brief-arrow:active {
   transform: translateY(2px);
   box-shadow: none;
+}
+
+/* 只有一張（第 1 關的「點一下就跳」）：不要箭頭、點點 */
+.dash-brief.is-single .brief-carousel {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.dash-brief.is-single .brief-arrow,
+.dash-brief.is-single .brief-dots {
+  display: none;
 }
 
 /* 第一張沒有「上一個」、最後一張沒有「下一個」（位置留著） */
@@ -1745,7 +1701,6 @@ body.is-playing .topbar {
   .ready.is-intro .rn-title,
   .ready.is-intro .ready-btn,
   .dash-brief.is-last .brief-go,
-  .ctrl-demo,
   .dash-result[open],
   .dash-result.is-playing .res-kicker,
   .dash-result.is-playing .res-tile,

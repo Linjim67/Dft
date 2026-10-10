@@ -116,8 +116,6 @@
         <!-- 跳躍遊戲是即時的手眼協調（WCAG 2.5.7 的「必要」例外）；進度與事件另外以文字播報 -->
         <canvas class="stage-canvas" id="stageCanvas" tabindex="0" role="img" aria-label="遊戲畫面：小膠囊往右跑。按空白鍵或向上鍵跳，Esc 暫停"></canvas>
         <p class="mode-hint" id="modeHint" hidden></p>
-        <!-- 開始之後：用兩張會動的小圖說明怎麼跳（點一下：跳；按住：一直跳），幾秒後自己消失，不擋手指 -->
-        <div class="ctrl-demo" id="ctrlDemo" aria-hidden="true" hidden></div>
 
         <div class="ready" id="readyBox">
           <!-- 每一關開始：先跳出「第 n 關」、一條線展開、再出現關卡名稱（dash.js 加 is-intro 重播）；按鈕在最下面 -->
