@@ -455,6 +455,20 @@ body.is-playing .topbar {
   box-shadow: var(--sh-sm);
 }
 
+/* 全螢幕按鈕：四個角往外＝進全螢幕；四個角往內＝離開 */
+.dash-hud.has-fs {
+  grid-template-columns: 48px minmax(0, 1fr) auto 48px;
+}
+
+.hud-fs .fs-out,
+.hud-fs[aria-pressed="true"] .fs-in {
+  display: none;
+}
+
+.hud-fs[aria-pressed="true"] .fs-out {
+  display: inline;
+}
+
 .hud-mid {
   min-width: 0;
 }
@@ -966,6 +980,10 @@ body.is-playing .topbar {
 
   .dash-hud {
     grid-template-columns: 44px minmax(0, 1fr) auto;
+  }
+
+  .dash-hud.has-fs {
+    grid-template-columns: 44px minmax(0, 1fr) auto 44px;
   }
 }
 

@@ -90,6 +90,57 @@
     window.scrollTo(0, 0);
   }
 
+  /* ─────────────────────────────────────────────────────────────
+     全螢幕：藏起網址列、分頁列，橫的手機畫面大很多。
+     手機、平板（手指操作）開始一關時自動進全螢幕；HUD 右邊的按鈕可以切換（電腦也有）。
+     瀏覽器規定要「剛點過」才能進全螢幕：關卡卡片、下一關、再玩一次、重新開始都是點擊，所以在 start() 裡要求。
+     用按鈕離開全螢幕的，之後就不再自動進去。iPhone 的瀏覽器不支援網頁全螢幕：按鈕不出現，照原本的畫面玩
+     ───────────────────────────────────────────────────────────── */
+
+  var docEl = document.documentElement;
+  var fsRequest = docEl.requestFullscreen || docEl.webkitRequestFullscreen;
+  var fsExit = document.exitFullscreen || document.webkitExitFullscreen;
+  var fsOk = !!(fsRequest && fsExit && (document.fullscreenEnabled || document.webkitFullscreenEnabled));
+  var touchMq = window.matchMedia ? window.matchMedia('(pointer: coarse)') : null;
+  var fsDeclined = false;
+
+  function fsOn() { return !!(document.fullscreenElement || document.webkitFullscreenElement); }
+
+  /* 進出全螢幕之後更新按鈕；被瀏覽器拒絕就照原本的畫面玩 */
+  function settle(p) { if (p && p.then) p.then(syncFs, function () { syncFs(); }); }
+
+  function enterFs() {
+    if (!fsOk || fsOn()) return;
+    try { settle(fsRequest.call(docEl, { navigationUI: 'hide' })); } catch (e) { /* 忽略 */ }
+  }
+
+  function autoFs() {
+    if (touchMq && touchMq.matches && !fsDeclined) enterFs();
+  }
+
+  function syncFs() { if (fsOk) $('fsBtn').setAttribute('aria-pressed', fsOn() ? 'true' : 'false'); }
+
+  if (fsOk) {
+    $('fsBtn').hidden = false;
+    $('fsBtn').parentNode.classList.add('has-fs');
+    $('fsBtn').addEventListener('click', function (ev) {
+      if (fsOn()) {
+        fsDeclined = true;
+        try { settle(fsExit.call(document)); } catch (e) { /* 忽略 */ }
+      } else {
+        fsDeclined = false;
+        enterFs();
+      }
+      /* 用手指、滑鼠按的：焦點不要留在按鈕上（空白鍵要拿來跳） */
+      if (ev.detail) ev.currentTarget.blur();
+    });
+    /* 有的瀏覽器 fullscreenchange 來得晚：視窗大小一變（進出全螢幕一定會變）也對一次 */
+    document.addEventListener('fullscreenchange', syncFs);
+    document.addEventListener('webkitfullscreenchange', syncFs);
+    window.addEventListener('resize', syncFs);
+    syncFs();
+  }
+
   /* 遊戲時間（shared/playtime.js）：選關畫面 = home，每一關 = 1–6／inf */
   function track(level) {
     if (window.AnxinPlay) window.AnxinPlay.at('dash', level);
@@ -208,6 +259,7 @@
   }
 
   function start(level, seed) {
+    autoFs();
     var world;
     if (level === 'inf') {
       G.seed = seed || LV.newSeed();
