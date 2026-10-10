@@ -202,15 +202,16 @@
     </div>
   </dialog>
 
-  <dialog class="dlg dash-win" id="winDlg" aria-labelledby="winTitle" aria-describedby="winLine">
-    <p class="win-kicker" id="winKicker">第 1 關・出發囉</p>
-    <h2 class="dlg-title" id="winTitle">過關了！</h2>
-    <p class="win-stars" id="winStars"></p>
-    <p class="dlg-body" id="winLine"></p>
-    <div class="dlg-actions">
-      <button class="btn btn-primary" type="button" id="nextBtn">下一關</button>
-      <button class="btn btn-quiet" type="button" id="againBtn">再玩一次</button>
+  <!-- 過關結算（整個畫面的動畫）：「第 n 關」和淡淡的小方框 → 方框亮一下、彈大 → 「通關！」→
+       星星一顆一顆跳出來 → 最下面「按一下以繼續」，這時候點哪裡都回到地圖。內容和動畫由 dash.js 放 -->
+  <dialog class="dash-result" id="winDlg" aria-labelledby="resTitle">
+    <div class="res-stage">
+      <p class="res-kicker" id="resKicker">第 1 關</p>
+      <span class="res-tile" id="resTile" aria-hidden="true"></span>
+      <h2 class="res-title" id="resTitle">通關！</h2>
+      <p class="res-stars" id="resStars" role="img" aria-label="拿到 0 / 3 顆星星"></p>
     </div>
+    <button class="res-go" type="button" id="resGo">按一下以繼續</button>
   </dialog>
 
   <dialog class="dlg dash-over" id="overDlg" aria-labelledby="overTitle" aria-describedby="overLine">

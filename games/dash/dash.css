@@ -1438,22 +1438,260 @@ body.is-playing .topbar {
   color: var(--fg-muted);
 }
 
-.win-stars {
-  display: flex;
-  justify-content: center;
-  gap: var(--sp-2);
-  margin-top: var(--sp-3);
-}
-
-.win-stars .star {
-  width: 44px;
-  height: 44px;
-  stroke-width: 1.4;
-}
-
-.dash-win .dlg-title,
 .dash-over .dlg-title {
   font-size: 1.6rem;
+}
+
+/* ═══ 過關結算（整個畫面）════════════════════════════════════════
+   0 秒「第 n 關」和淡淡的小方框 → 0.6 秒方框亮一下、彈大 → 1.35 秒「通關！」→
+   1.75 秒起星星一顆一顆跳出來（拿到的：黃色、彈一下；沒拿到：灰色空心）→ 2.8 秒「按一下以繼續」 */
+.dash-result {
+  width: 100%;
+  height: 100%;
+  max-width: none;
+  max-height: none;
+  margin: 0;
+  padding: calc(var(--sp-5) + env(safe-area-inset-top)) var(--sp-4) calc(var(--sp-5) + env(safe-area-inset-bottom));
+  border: 0;
+  background: radial-gradient(circle at 50% 42%, #FFFBEB 0, #FFF7ED 45%, #FFEDD5 100%);
+  color: var(--fg);
+  cursor: pointer;
+  overscroll-behavior: contain;
+}
+
+.dash-result::backdrop {
+  background: transparent;
+}
+
+.dash-result[open] {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  animation: rn-fade .25s var(--ease);
+}
+
+.res-stage {
+  flex: 1 1 auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--sp-4);
+  min-height: 0;
+}
+
+.res-kicker {
+  font-size: 1.6rem;
+  font-weight: 700;
+  line-height: 1.2;
+  letter-spacing: .04em;
+  color: var(--primary-deep);
+}
+
+/* 大廳的方框（同一張圖）；--t 給方框裡的大小用 */
+.res-tile {
+  --t: clamp(96px, 24vmin, 150px);
+  position: relative;
+  display: block;
+  width: var(--t);
+  height: var(--t);
+}
+
+.res-tile .map-tile {
+  cursor: inherit;
+  transition: none;
+}
+
+.res-tile .map-tile:active,
+.res-tile .map-tile:hover {
+  transform: none;
+}
+
+/* 亮一下：白色的光圈往外散 */
+.res-flash {
+  position: absolute;
+  inset: -6%;
+  border-radius: 30%;
+  box-shadow: 0 0 0 6px rgba(255, 255, 255, .95), 0 0 34px 10px rgba(253, 224, 71, .8);
+  opacity: 0;
+  pointer-events: none;
+}
+
+.res-title {
+  font-size: 2.4rem;
+  font-weight: 700;
+  line-height: 1.2;
+  letter-spacing: .06em;
+  color: var(--primary-deep);
+}
+
+.res-stars {
+  display: flex;
+  gap: var(--sp-3);
+}
+
+.res-star svg {
+  display: block;
+  width: 52px;
+  height: 52px;
+  fill: none;
+  stroke: var(--line);
+  stroke-width: 1.4;
+  stroke-linejoin: round;
+}
+
+.res-star.is-on svg {
+  fill: #FACC15;
+  stroke: #A16207;
+}
+
+/* 「按一下以繼續」：動畫跑完才出現（之前點了也不算） */
+.res-go {
+  min-height: 48px;
+  padding: var(--sp-2) var(--sp-5);
+  border: 0;
+  background: none;
+  color: var(--fg-muted);
+  font: inherit;
+  font-size: 1.05rem;
+  font-weight: 700;
+  cursor: pointer;
+  visibility: hidden;
+}
+
+.dash-result.is-ready .res-go {
+  visibility: visible;
+  animation: rn-fade .35s var(--ease) both, res-breathe 1.6s .35s ease-in-out infinite;
+}
+
+/* 動畫：.is-playing 加上去就照時間一樣一樣出來 */
+.dash-result.is-playing .res-kicker {
+  animation: rn-pop .45s var(--ease) both;
+}
+
+.dash-result.is-playing .res-tile {
+  animation: res-tile 1.2s .1s var(--ease) both;
+}
+
+.dash-result.is-playing .res-flash {
+  animation: res-flash .7s .75s ease-out both;
+}
+
+.dash-result.is-playing .res-title {
+  animation: rn-pop .45s 1.35s var(--ease) both;
+}
+
+.dash-result.is-playing .res-star {
+  animation: res-star-off .3s var(--d) var(--ease) both;
+}
+
+.dash-result.is-playing .res-star.is-on {
+  animation: res-star .5s var(--d) var(--ease) both;
+}
+
+@keyframes res-tile {
+  0% {
+    opacity: 0;
+    transform: scale(.55);
+    filter: saturate(.35) brightness(1.15);
+  }
+
+  22% {
+    opacity: .6;
+    transform: scale(.78);
+    filter: saturate(.35) brightness(1.15);
+  }
+
+  48% {
+    opacity: .6;
+    transform: scale(.78);
+    filter: saturate(.35) brightness(1.15);
+  }
+
+  60% {
+    opacity: 1;
+    transform: scale(.92);
+    filter: saturate(1) brightness(1.6);
+  }
+
+  80% {
+    transform: scale(1.14);
+    filter: brightness(1.12);
+  }
+
+  100% {
+    opacity: 1;
+    transform: none;
+    filter: none;
+  }
+}
+
+@keyframes res-flash {
+  0% {
+    opacity: 0;
+    transform: scale(.85);
+  }
+
+  25% {
+    opacity: 1;
+  }
+
+  100% {
+    opacity: 0;
+    transform: scale(1.35);
+  }
+}
+
+@keyframes res-star {
+  0% {
+    opacity: 0;
+    transform: scale(0) rotate(-40deg);
+  }
+
+  65% {
+    opacity: 1;
+    transform: scale(1.3) rotate(8deg);
+  }
+
+  100% {
+    transform: none;
+  }
+}
+
+@keyframes res-star-off {
+  from {
+    opacity: 0;
+    transform: scale(.6);
+  }
+}
+
+@keyframes res-breathe {
+  50% {
+    opacity: .55;
+  }
+}
+
+@media (max-height: 520px) {
+  .res-stage {
+    gap: var(--sp-2);
+  }
+
+  .res-kicker {
+    font-size: 1.3rem;
+  }
+
+  .res-tile {
+    --t: clamp(80px, 26vh, 120px);
+  }
+
+  .res-title {
+    font-size: 1.9rem;
+  }
+
+  .res-star svg {
+    width: 40px;
+    height: 40px;
+  }
 }
 
 .over-seed {
@@ -1511,7 +1749,15 @@ body.is-playing .topbar {
   .ready.is-intro .rn-title,
   .ready.is-intro .ready-btn,
   .dash-brief.is-last .brief-go,
-  .ctrl-demo {
+  .ctrl-demo,
+  .dash-result[open],
+  .dash-result.is-playing .res-kicker,
+  .dash-result.is-playing .res-tile,
+  .dash-result.is-playing .res-flash,
+  .dash-result.is-playing .res-title,
+  .dash-result.is-playing .res-star,
+  .dash-result.is-playing .res-star.is-on,
+  .dash-result.is-ready .res-go {
     animation: none;
   }
 

@@ -401,6 +401,8 @@
 
   /* 打開還沒看過的方框，一格一格來：路從前一格長過去，方框啪一下跳出來 */
   function revealNext(done) {
+    /* 地圖已經不在畫面上（已經開始玩了）：先不打開，留到回地圖的時候再打開給小朋友看 */
+    if (views.intro.hidden) { M.busy = false; return; }
     var F = frontier();
     if (MAP.seen >= F) { done(); return; }
     var n = MAP.seen + 1;
@@ -1389,9 +1391,8 @@
     G.saved = true;
   }
 
-  /* 回到地圖：角色站在剛剛玩的那一關；剛過關、打開了新的方框 → 先打開，再走過去。
-     auto（按「打開下一關」來的）：走到了停一下，就直接開始那一關，就像點了那個方框 */
-  function toLevels(auto) {
+  /* 回到地圖：角色站在剛剛玩的那一關；剛過關、打開了新的方框 → 先打開，再走過去，等小朋友點方框才開始 */
+  function toLevels() {
     hideCtrlDemo(true);
     saveExit();
     stopLoop();
@@ -1406,17 +1407,7 @@
     if (MAP.seen >= F) { focusTile(MAP.at); return; }
     M.busy = true;
     revealNext(function () {
-      heroWalk(MAP.at, F, function () {
-        if (auto === true) {
-          window.setTimeout(function () {
-            M.busy = false;
-            start(F === INF ? 'inf' : F);
-          }, 350);
-          return;
-        }
-        M.busy = false;
-        focusTile(MAP.at);
-      });
+      heroWalk(MAP.at, F, function () { M.busy = false; focusTile(MAP.at); });
     });
   }
 
@@ -1444,7 +1435,7 @@
     };
   }
 
-  /* 過關、無限挑戰結束的對話框：按 Esc 關掉 = 回選關卡 */
+  /* 過關結算、無限挑戰結束：關掉 = 回地圖（無限挑戰的按鈕另外設定要做什麼） */
   ['winDlg', 'overDlg'].forEach(function (id) {
     $(id).addEventListener('close', function () {
       var fn = G.dlgAction || toLevels;
@@ -1453,9 +1444,6 @@
     });
   });
 
-  /* 下一關：回到地圖，看新的方框打開、角色走過去，走到了就直接開始那一關 */
-  $('nextBtn').addEventListener('click', dlgAction($('winDlg'), function () { toLevels(true); }));
-  $('againBtn').addEventListener('click', dlgAction($('winDlg'), function () { start(G.level); }));
   $('sameSeedBtn').addEventListener('click', dlgAction($('overDlg'), function () { start('inf', G.seed); }));
   $('newSeedBtn').addEventListener('click', dlgAction($('overDlg'), function () { start('inf'); }));
   $('overLevelsBtn').addEventListener('click', dlgAction($('overDlg'), toLevels));
@@ -1746,22 +1734,52 @@
     openWin(o.got);
   }
 
+  /* ── 過關結算（整個畫面的動畫，CSS 的 .is-playing 照時間播）──
+     「第 n 關」和淡淡的小方框（大廳那一張）→ 方框亮一下、彈大 →「通關！」→ 星星一顆一顆跳出來 →
+     「按一下以繼續」。出現之前點了不算（小朋友還在一直點）；出現之後點哪裡、按 Enter／空白鍵／Esc 都回到地圖 */
+  var RES_READY_MS = 2800;
+  var resTimer = 0;
+
   function openWin(got) {
-    var run = G.run, n = got.filter(Boolean).length;
-    var last = G.level >= LV.LEVELS.length;
-    $('winKicker').textContent = title();
-    $('winTitle').textContent = last ? '打贏醫生了！' : '過關了！';
-    $('winStars').innerHTML = starIcons(got);
-    $('winStars').setAttribute('aria-label', '拿到 ' + n + ' / 3 顆星星');
-    $('winStars').setAttribute('role', 'img');
-    var line = n === 3 ? '三顆星星全部拿到了！' : n ? '拿到 ' + n + ' 顆星星。' : '這次沒拿到星星，下次跳高一點看看！';
-    line += run.deaths ? '試了 ' + (run.deaths + 1) + ' 次，好有耐心！' : '一次就成功！';
-    if (last) line = '點滴袋空了，你打敗醫生了！' + line;
-    $('winLine').textContent = line;
-    /* 這一次打開了新的方框才說「打開」；重玩已經過的關卡就是回地圖 */
-    $('nextBtn').textContent = MAP.seen >= frontier() ? '回到地圖' : last ? '打開無限挑戰' : '打開下一關';
+    var n = got.filter(Boolean).length, lv = G.level;
+    var th = THEME[LV.LEVELS[lv - 1].theme], dlg = $('winDlg');
+    $('resKicker').textContent = '第 ' + lv + ' 關';
+    $('resTile').innerHTML = '<span class="map-tile" style="--sky0:' + th.sky[0] + ';--sky1:' + th.sky[1] + ';--ground:' + th.ground + '">' +
+      '<span class="tile-art">' + artImgs(CARD_ART[lv]) + '</span></span><span class="res-flash"></span>';
+    $('resStars').innerHTML = got.map(function (on, i) {
+      return '<span class="res-star' + (on ? ' is-on' : '') + '" style="--d:' + (1.75 + i * 0.3).toFixed(2) + 's">' +
+        '<svg viewBox="0 0 24 24" aria-hidden="true"><use href="#i-star"></use></svg></span>';
+    }).join('');
+    $('resStars').setAttribute('aria-label', '拿到 ' + n + ' / 3 顆星星');
+    dlg.classList.remove('is-playing', 'is-ready');
+    void dlg.offsetWidth;
+    dlg.classList.add('is-playing');
     winDlg.open();
+    say('第 ' + lv + ' 關通關！拿到 ' + n + ' 顆星星。');
+    window.clearTimeout(resTimer);
+    resTimer = window.setTimeout(resReady, reduce ? 300 : RES_READY_MS);
   }
+
+  function resReady() {
+    var dlg = $('winDlg');
+    if (!dlg.open) return;
+    dlg.classList.add('is-ready');
+    try { $('resGo').focus({ preventScroll: true }); } catch (e) { /* 忽略 */ }
+    say('按一下以繼續');
+  }
+
+  function resContinue() {
+    var dlg = $('winDlg');
+    if (!dlg.open || !dlg.classList.contains('is-ready')) return;
+    dlg.close();      /* 關掉 → 回地圖（上面的 close 處理） */
+  }
+
+  /* 整個畫面都可以點；按鈕本身也是（鍵盤） */
+  $('winDlg').addEventListener('click', resContinue);
+  $('winDlg').addEventListener('cancel', function (ev) {
+    ev.preventDefault();
+    resContinue();
+  });
 
   function infOver() {
     var run = G.run;
