@@ -80,27 +80,60 @@
   }
 
   /* ── 小抹茶（B.jpg）：灰綠色、軟軟的，頭上兩朵雲朵耳朵、肚子一個白色的圓 ──
-     外框：每一塊先描粗邊、再蓋上填色，耳朵和腳才會跟身體連成一整塊 */
+     外框：每一塊先描粗邊、再蓋上填色，耳朵、手、腳才會跟身體連成一整塊。
+     小抹茶不滾，是用走的：身體（含耳朵、手）可以歪一點、抬高一點，腳照姿勢擺 */
   var MATCHA_INK = '#4D7A55';
-  var MATCHA_PARTS =
+  var MATCHA_BODY =
     '<path d="M50 18C71 18 84 30 86 47C88 62 92 72 89 81C86 90 72 92 50 92C28 92 14 90 11 81C8 72 12 62 14 47C16 30 29 18 50 18Z"/>' +
     '<circle cx="23" cy="25" r="8"/><circle cx="14" cy="28" r="6"/><circle cx="21" cy="17" r="5.5"/>' +
-    '<circle cx="77" cy="22" r="8"/><circle cx="85" cy="19" r="6"/><circle cx="76" cy="14" r="5.5"/>' +
-    '<ellipse cx="28" cy="88" rx="8" ry="6.5"/><ellipse cx="72" cy="88" rx="8" ry="6.5"/>';
+    '<circle cx="77" cy="22" r="8"/><circle cx="85" cy="19" r="6"/><circle cx="76" cy="14" r="5.5"/>';
 
-  function matchaBody(face) {
-    var eyes = face === 'dizzy'
-      ? '<path d="M31 47q2.5-3 5 0t5 0t5 0M54 47q2.5-3 5 0t5 0t5 0M44 56q1.5-2 3 0t3 0t3 0" fill="none" stroke="#1C1917" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>'
-      : '<ellipse cx="38" cy="47" rx="3.8" ry="4.4" fill="#1C1917"/><ellipse cx="62" cy="47" rx="3.8" ry="4.4" fill="#1C1917"/>' +
-        '<circle cx="39.2" cy="45.4" r="1.2" fill="#fff"/><circle cx="63.2" cy="45.4" r="1.2" fill="#fff"/>' +
-        '<path d="M46 52.5q4 3.5 8 0" fill="none" stroke="#1C1917" stroke-width="2.6" stroke-linecap="round"/>';
-    return '<g fill="' + MATCHA_INK + '" stroke="' + MATCHA_INK + '" stroke-width="9">' + MATCHA_PARTS + '</g>' +
-      '<g fill="#CBD8CC">' + MATCHA_PARTS + '</g>' +
+  /* lean：身體歪幾度（以腳底中間為軸）· lift：身體抬高 · look：臉往右（前進的方向）轉一點
+     feet：兩隻腳 [x, y, 轉幾度] · up：手舉起來（跳的時候） */
+  var MATCHA_POSE = {
+    stand: { lean: 0, lift: 0, look: 0, feet: [[28, 88, 0], [72, 88, 0]] },
+    /* 走路：右腳抬起來、身體往左歪 → 兩腳併攏、身體彈高 → 左腳抬起來、身體往右歪 → 兩腳併攏 */
+    walk1: { lean: -6, lift: -1.5, look: 4, feet: [[28, 89, 0], [81, 82, -30]] },
+    walk2: { lean: 0, lift: -3, look: 4, feet: [[34, 89, 0], [66, 89, 0]] },
+    walk3: { lean: 6, lift: -1.5, look: 4, feet: [[19, 82, 30], [72, 89, 0]] },
+    /* 跳：手舉高、腳往下伸、張嘴笑 */
+    jump: { lean: 0, lift: -3, look: 3, up: true, feet: [[37, 89.5, 22], [63, 89.5, -22]] }
+  };
+
+  function matchaBody(face, pose) {
+    var P = MATCHA_POSE[pose || 'stand'], dx = P.look;
+    var tf = 'translate(0 ' + P.lift + ') rotate(' + P.lean + ' 50 90)';
+    var arms = P.up
+      ? '<ellipse cx="13" cy="45" rx="5.5" ry="9" transform="rotate(-38 13 45)"/><ellipse cx="87" cy="45" rx="5.5" ry="9" transform="rotate(38 87 45)"/>'
+      : '';
+    var feet = P.feet.map(function (f) {
+      return '<ellipse cx="' + f[0] + '" cy="' + f[1] + '" rx="8" ry="6.5" transform="rotate(' + f[2] + ' ' + f[0] + ' ' + f[1] + ')"/>';
+    }).join('');
+    var shape = '<g transform="' + tf + '">' + MATCHA_BODY + arms + '</g>' + feet;
+    var ex = 38 + dx, ex2 = 62 + dx;
+    var eyes;
+    if (face === 'dizzy') {
+      eyes = '<path d="M31 47q2.5-3 5 0t5 0t5 0M54 47q2.5-3 5 0t5 0t5 0M44 56q1.5-2 3 0t3 0t3 0" fill="none" stroke="#1C1917" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>';
+    } else if (P.up) {
+      /* 開心地跳：眼睛彎彎、嘴巴張開 */
+      eyes = '<path d="M' + (ex - 4.2) + ' 48.5q4.2-5.5 8.4 0M' + (ex2 - 4.2) + ' 48.5q4.2-5.5 8.4 0" fill="none" stroke="#1C1917" stroke-width="2.8" stroke-linecap="round"/>' +
+        '<path d="M' + (45.5 + dx) + ' 52q4.5 7.5 9 0Z" fill="#1C1917" stroke="#1C1917" stroke-width="1.6" stroke-linejoin="round"/>' +
+        '<path d="M' + (47.6 + dx) + ' 55.6q2.4 1.8 4.8 0" fill="none" stroke="#FB7185" stroke-width="2" stroke-linecap="round"/>';
+    } else {
+      eyes = '<ellipse cx="' + ex + '" cy="47" rx="3.8" ry="4.4" fill="#1C1917"/><ellipse cx="' + ex2 + '" cy="47" rx="3.8" ry="4.4" fill="#1C1917"/>' +
+        '<circle cx="' + (ex + 1.2) + '" cy="45.4" r="1.2" fill="#fff"/><circle cx="' + (ex2 + 1.2) + '" cy="45.4" r="1.2" fill="#fff"/>' +
+        '<path d="M' + (46 + dx) + ' 52.5q4 3.5 8 0" fill="none" stroke="#1C1917" stroke-width="2.6" stroke-linecap="round"/>';
+    }
+    /* 整隻縮小一點點（以腳底為準）：走路歪身體、跳起來舉手時耳朵和手才不會超出格子 */
+    return '<g transform="translate(50 97) scale(.94) translate(-50 -97)">' +
+      '<g fill="' + MATCHA_INK + '" stroke="' + MATCHA_INK + '" stroke-width="9">' + shape + '</g>' +
+      '<g fill="#CBD8CC">' + shape + '</g>' +
+      '<g transform="' + tf + '">' +
       '<ellipse cx="40" cy="31" rx="9" ry="4.5" fill="#fff" opacity=".55" transform="rotate(-18 40 31)"/>' +
-      '<path d="M21 62q-4 6 1 11M79 62q4 6-1 11" fill="none" stroke="' + MATCHA_INK + '" stroke-width="3" stroke-linecap="round"/>' +
-      '<ellipse cx="50" cy="71.5" rx="17.5" ry="14.5" fill="#fff" stroke="' + MATCHA_INK + '" stroke-width="3.5"/>' +
-      '<ellipse cx="30" cy="56" rx="5.5" ry="3.6" fill="#F4B6C2"/><ellipse cx="70" cy="56" rx="5.5" ry="3.6" fill="#F4B6C2"/>' +
-      eyes;
+      (P.up ? '' : '<path d="M21 62q-4 6 1 11M79 62q4 6-1 11" fill="none" stroke="' + MATCHA_INK + '" stroke-width="3" stroke-linecap="round"/>') +
+      '<ellipse cx="' + (50 + dx / 2) + '" cy="71.5" rx="17.5" ry="14.5" fill="#fff" stroke="' + MATCHA_INK + '" stroke-width="3.5"/>' +
+      '<ellipse cx="' + (30 + dx) + '" cy="56" rx="5.5" ry="3.6" fill="#F4B6C2"/><ellipse cx="' + (70 + dx) + '" cy="56" rx="5.5" ry="3.6" fill="#F4B6C2"/>' +
+      eyes + '</g></g>';
   }
 
   function miniMatcha(tx, ty, s) {
@@ -245,6 +278,11 @@
 
     matcha: function () { return svg(100, 100, matchaBody('')); },
     matchaDizzy: function () { return svg(100, 100, matchaBody('dizzy')); },
+    /* 小抹茶走路（四格一輪，第二、四格一樣）和跳起來 */
+    matchaWalk1: function () { return svg(100, 100, matchaBody('', 'walk1')); },
+    matchaWalk2: function () { return svg(100, 100, matchaBody('', 'walk2')); },
+    matchaWalk3: function () { return svg(100, 100, matchaBody('', 'walk3')); },
+    matchaJump: function () { return svg(100, 100, matchaBody('', 'jump')); },
 
     /* 小抹茶的白火箭：紅色的頭和翅膀，圓窗戶裡看得到小抹茶 */
     matchaShip: function () {
@@ -284,14 +322,16 @@
   };
 
   /* 三個角色：小朋友在選關畫面先選一個。body／dizzy／ship／ufo 是每個姿勢用哪一張圖，
-     shipName／ufoName 換掉關卡名稱裡的載具，burst 是撞到時噴出來的碎片顏色 */
+     shipName／ufoName 換掉關卡名稱裡的載具，burst 是撞到時噴出來的碎片顏色。
+     有 walk 的角色不滾：在地上照順序換腳走路，在空中換成 jump */
   var CHARS = [
     { id: 'capsule', name: '小膠囊', body: 'egg', dizzy: 'eggDizzy', ship: 'ship', ufo: 'ufo',
       shipName: '體溫計火箭', ufoName: '藥杯飛碟', burst: ['#FB923C', '#FFF7ED', '#FDA4AF', '#FDBA74'] },
     { id: 'mochi', name: '小麻糬', body: 'mochi', dizzy: 'mochiDizzy', ship: 'mochiShip', ufo: 'mochiUfo',
       shipName: '紅色火箭', ufoName: '小飛碟', burst: ['#FCD34D', '#FFFDF8', '#FBB4B4', '#FAD5AE'] },
     { id: 'matcha', name: '小抹茶', body: 'matcha', dizzy: 'matchaDizzy', ship: 'matchaShip', ufo: 'matchaUfo',
-      shipName: '白色火箭', ufoName: '小飛碟', burst: ['#A9C2AC', '#FFFFFF', '#F4B6C2', '#CBD8CC'] }
+      shipName: '白色火箭', ufoName: '小飛碟', burst: ['#A9C2AC', '#FFFFFF', '#F4B6C2', '#CBD8CC'],
+      walk: ['matchaWalk1', 'matchaWalk2', 'matchaWalk3', 'matchaWalk2'], jump: 'matchaJump' }
   ];
 
   function char(id) {

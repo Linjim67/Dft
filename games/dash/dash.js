@@ -451,6 +451,12 @@
 
   function briefDemos(still) {
     var egg = ART.source(CH.body);
+    /* 用走的角色：跳在空中那一段換成跳的樣子 */
+    var hop = CH.jump
+      ? '<image href="' + egg + '" x="18" y="48" width="24" height="24">' + anim('opacity', '1;0;1', '0;.5;.8', ' calcMode="discrete"') + '</image>' +
+        '<image href="' + ART.source(CH.jump) + '" x="18" y="48" width="24" height="24" opacity="0">' +
+        anim('opacity', '0;1;0', '0;.5;.8', ' calcMode="discrete"') + '</image>'
+      : '<image href="' + egg + '" x="18" y="48" width="24" height="24"/>';
     var jump =
       /* 目標小圈（虛線）→ 大圈圈縮過來 → 縮到最小那一刻亮一下，跳！ */
       '<circle cx="30" cy="60" r="15" fill="none" stroke="#7C2D12" stroke-opacity=".55" stroke-width="1.4" stroke-dasharray="3 2.4">' +
@@ -461,7 +467,7 @@
       demoWater(60) +
       '<g><animateTransform attributeName="transform" type="translate" values="0 0;0 0;0 -30;0 0;0 0" keyTimes="0;.5;.62;.8;1"' +
       ' calcMode="spline" keySplines="0 0 1 1;.2 .7 .4 1;.6 0 .8 .3;0 0 1 1" dur="' + DEMO_S + 's" repeatCount="indefinite"/>' +
-      '<image href="' + egg + '" x="18" y="48" width="24" height="24"/></g>' +
+      hop + '</g>' +
       /* 頭上的箭頭：縮到最小時變成實心 */
       '<path d="M30 28l6 6h-3.2v5h-5.6v-5H24Z" stroke="#C2410C" stroke-width="1.6" stroke-linejoin="round" fill="#FFEDD5">' +
       anim('fill', '#FFEDD5;#FFEDD5;#C2410C;#C2410C', '0;.49;.5;1') + anim('opacity', '0;1;1;0;0', '0;.08;.56;.6;1') + '</path>' +
@@ -1342,7 +1348,8 @@
       var tilt = P.grounded ? 0 : clamp(-P.vy / C.JUMP_V, -1, 1) * 14;
       /* 滾著前進（畫面插值到這一幀的位置）；撞到時轉正，看得到暈暈的臉；減少動態時只微微傾斜 */
       var xr = G.phase === 'play' ? run.prevX + (run.x - run.prevX) * a : run.x;
-      var spin = dead ? 0 : reduce ? tilt * Math.PI / 180 : G.roll - (run.x - xr) / ROLL_R;
+      /* 用走的角色（小抹茶）不轉，靠換腳和跳的姿勢 */
+      var spin = dead || CH.walk ? 0 : reduce ? tilt * Math.PI / 180 : G.roll - (run.x - xr) / ROLL_R;
       /* 蹲下來的時候轉正（臉朝前），起來再接著滾 */
       if (G.duck > 0 && !dead) {
         var up = ((spin % (2 * Math.PI)) + 2 * Math.PI) % (2 * Math.PI);
@@ -1363,7 +1370,7 @@
       ctx.scale(sxs, sys);
       ctx.translate(0, -0.45 * T);
       ctx.rotate(spin);
-      blit(dead ? CH.dizzy : CH.body, -0.5 * T, -0.52 * T, 1, 1);
+      blit(dead ? CH.dizzy : CH.walk ? walkPose(P, xr + dash) : CH.body, -0.5 * T, -0.52 * T, 1, 1);
     } else if (pm === 'ship') {
       ctx.rotate(clamp(-P.vy / C.SHIP_VMAX, -1, 1) * 20 * Math.PI / 180);
       blit(CH.ship, -0.72 * T, -0.55 * T, 1.44, 0.9);
@@ -1372,6 +1379,18 @@
       blit(CH.ufo, -0.66 * T, -0.52 * T, 1.32, 0.94);
     }
     ctx.restore();
+  }
+
+  /* 走路的角色：在空中是跳的樣子；在地上照走過的距離換腳（每 WALK_STEP 格換一張，跑得快換得快、腳不會在地上滑）。
+     停著的時候（準備、從旗子重來）站好；減少動態時不換腳，只分站著和跳 */
+  var WALK_STEP = 0.4;
+
+  function walkPose(P, dist) {
+    var o = G.outro && (G.phase === 'outro' || G.phase === 'over') ? G.outro : null;
+    if (o ? o.vy !== 0 : !P.grounded) return CH.jump;
+    if (reduce || (G.phase !== 'play' && G.phase !== 'outro')) return CH.body;
+    var n = CH.walk.length;
+    return CH.walk[((Math.floor(dist / WALK_STEP) % n) + n) % n];
   }
 
   /* ── 大魔王：醫生坐在看診椅上、旁邊的點滴架、針筒、雷射瞄準、水柱 ──
