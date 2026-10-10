@@ -52,27 +52,57 @@
       (tf ? ' transform="' + tf + '"' : '') + '/>';
   }
 
-  function mochiBody(face, id) {
+  /* 小麻糬也是用走的（照 A.jpg「跳」的手稿：跳起來小手往兩邊張開、腳垂下來、嘴巴圓圓的 o）。
+     lean：身體（含皇冠、OK 繃）歪幾度（以腳底中間為軸）· lift：身體抬高 · look：臉往右（前進的方向）轉一點
+     feet：兩隻腳 [x, y, 轉幾度]（不跟身體歪，踩在地上）· arms：兩隻小手 [x, y, 轉幾度]（藏在身體後面，只露出一點點） */
+  var MOCHI_POSE = {
+    stand: { lean: 0, lift: 0, look: 0, feet: [[36, 89, 0], [64, 89, 0]] },
+    /* 走路：右腳抬起來、身體往左歪 → 兩腳併攏、身體彈高 → 左腳抬起來、身體往右歪 → 兩腳併攏；小手跟著前後擺 */
+    walk1: { lean: -6, lift: -1.5, look: 4, feet: [[35, 90, 0], [72, 85, -25]], arms: [[12, 58, -25], [89, 67, 20]] },
+    walk2: { lean: 0, lift: -3, look: 4, feet: [[41, 90, 0], [59, 90, 0]], arms: [[11, 63, 0], [89, 63, 0]] },
+    walk3: { lean: 6, lift: -1.5, look: 4, feet: [[28, 85, 25], [65, 90, 0]], arms: [[11, 67, -20], [88, 58, 25]] },
+    /* 跳：小手往兩邊張開、腳垂下來 */
+    jump: { lean: 0, lift: -3, look: 3, up: true, feet: [[39, 93, 18], [61, 93, -18]], arms: [[9, 52, -40], [91, 52, 40]] }
+  };
+
+  function mochiBody(face, id, pose) {
     id = id || 'mo';
-    var eyes = face === 'dizzy'
-      ? '<path d="M38 52a1.6 1.6 0 1 1 3.2 0a3.2 3.2 0 1 1-6.4 0a4.8 4.8 0 1 1 9.6 0M62 52a1.6 1.6 0 1 1 3.2 0a3.2 3.2 0 1 1-6.4 0a4.8 4.8 0 1 1 9.6 0" fill="none" stroke="' + MOCHI_INK + '" stroke-width="2.6" stroke-linecap="round"/>' +
-        '<ellipse cx="50" cy="66" rx="3.6" ry="4.4" fill="' + MOCHI_INK + '"/>'
-      : '<ellipse cx="38" cy="52" rx="3.8" ry="4.6" fill="' + MOCHI_INK + '"/><ellipse cx="62" cy="52" rx="3.8" ry="4.6" fill="' + MOCHI_INK + '"/>' +
-        '<circle cx="39.3" cy="50.4" r="1.3" fill="#fff"/><circle cx="63.3" cy="50.4" r="1.3" fill="#fff"/>' +
-        '<path d="M45 59q5 5 10 0" fill="none" stroke="' + MOCHI_INK + '" stroke-width="2.8" stroke-linecap="round"/>';
-    /* 左下角暖暖的桃色（手稿上的色鉛筆陰影），往右上淡掉 */
+    var P = MOCHI_POSE[pose || 'stand'], dx = P.look;
+    var tf = 'translate(0 ' + P.lift + ') rotate(' + P.lean + ' 50 90)';
+    function limb(e, rx, ry, fill, sw) {
+      return '<ellipse cx="' + e[0] + '" cy="' + e[1] + '" rx="' + rx + '" ry="' + ry + '" transform="rotate(' + e[2] + ' ' + e[0] + ' ' + e[1] + ')"' +
+        ' fill="' + fill + '" stroke="' + MOCHI_INK + '" stroke-width="' + sw + '"/>';
+    }
+    var ex = 38 + dx, ex2 = 62 + dx;
+    var eyes;
+    if (face === 'dizzy') {
+      eyes = '<path d="M38 52a1.6 1.6 0 1 1 3.2 0a3.2 3.2 0 1 1-6.4 0a4.8 4.8 0 1 1 9.6 0M62 52a1.6 1.6 0 1 1 3.2 0a3.2 3.2 0 1 1-6.4 0a4.8 4.8 0 1 1 9.6 0" fill="none" stroke="' + MOCHI_INK + '" stroke-width="2.6" stroke-linecap="round"/>' +
+        '<ellipse cx="50" cy="66" rx="3.6" ry="4.4" fill="' + MOCHI_INK + '"/>';
+    } else {
+      eyes = '<ellipse cx="' + ex + '" cy="52" rx="3.8" ry="4.6" fill="' + MOCHI_INK + '"/><ellipse cx="' + ex2 + '" cy="52" rx="3.8" ry="4.6" fill="' + MOCHI_INK + '"/>' +
+        '<circle cx="' + (ex + 1.3) + '" cy="50.4" r="1.3" fill="#fff"/><circle cx="' + (ex2 + 1.3) + '" cy="50.4" r="1.3" fill="#fff"/>' +
+        (P.up
+          /* 跳：嘴巴張成圓圓的 o */
+          ? '<ellipse cx="' + (50 + dx) + '" cy="61" rx="3.4" ry="4" fill="' + MOCHI_INK + '"/><ellipse cx="' + (50 + dx) + '" cy="62.6" rx="2" ry="1.5" fill="#FB7185"/>'
+          : '<path d="M' + (45 + dx) + ' 59q5 5 10 0" fill="none" stroke="' + MOCHI_INK + '" stroke-width="2.8" stroke-linecap="round"/>');
+    }
+    /* 整隻縮小一點點（以腳底為準）：走路歪身體、跳起來時皇冠和小手才不會超出格子 */
     return '<defs><radialGradient id="' + id + '" cx=".18" cy=".7" r=".62">' +
       '<stop offset="0" stop-color="#FAD5AE"/><stop offset=".55" stop-color="#FCE6CC"/><stop offset="1" stop-color="#FFFDF8"/></radialGradient></defs>' +
-      '<ellipse cx="36" cy="89" rx="6" ry="4.5" fill="#D5E3DA" stroke="' + MOCHI_INK + '" stroke-width="3"/>' +
-      '<ellipse cx="64" cy="89" rx="6" ry="4.5" fill="#D5E3DA" stroke="' + MOCHI_INK + '" stroke-width="3"/>' +
+      '<g transform="translate(50 97) scale(.94) translate(-50 -97)">' +
+      P.feet.map(function (f) { return limb(f, 6, 4.5, '#D5E3DA', 3); }).join('') +
+      '<g transform="' + tf + '">' +
+      (P.arms || []).map(function (a) { return limb(a, 6.5, 4.6, '#FFFDF8', 3); }).join('') +
+      /* 左下角暖暖的桃色（手稿上的色鉛筆陰影），往右上淡掉 */
       '<path d="' + MOCHI + '" fill="url(#' + id + ')" stroke="' + MOCHI_INK + '" stroke-width="4.2"/>' +
       '<ellipse cx="66" cy="30" rx="8" ry="4.5" fill="#fff" transform="rotate(25 66 30)"/>' +
       /* OK 繃 */
       '<g transform="rotate(-52 27 76)"><rect x="18" y="71.5" width="18" height="9" rx="4.5" fill="#FBCFE8" stroke="#DB7FA8" stroke-width="1.8"/>' +
       '<rect x="23.5" y="73" width="7" height="6" rx="1.5" fill="#FDF2F8"/></g>' +
-      '<ellipse cx="29" cy="60" rx="6" ry="3.8" fill="#FBB4B4"/><ellipse cx="71" cy="60" rx="6" ry="3.8" fill="#FBB4B4"/>' +
+      '<ellipse cx="' + (29 + dx) + '" cy="60" rx="6" ry="3.8" fill="#FBB4B4"/><ellipse cx="' + (71 + dx) + '" cy="60" rx="6" ry="3.8" fill="#FBB4B4"/>' +
       eyes +
-      (face === 'dizzy' ? crown('rotate(32 50 12) translate(14 -4)') : crown());
+      (face === 'dizzy' ? crown('rotate(32 50 12) translate(14 -4)') : crown()) +
+      '</g></g>';
   }
 
   function miniMochi(tx, ty, s, id) {
@@ -243,6 +273,11 @@
 
     mochi: function () { return svg(100, 100, mochiBody('')); },
     mochiDizzy: function () { return svg(100, 100, mochiBody('dizzy')); },
+    /* 小麻糬走路（四格一輪，第二、四格一樣）和跳起來 */
+    mochiWalk1: function () { return svg(100, 100, mochiBody('', 'mo', 'walk1')); },
+    mochiWalk2: function () { return svg(100, 100, mochiBody('', 'mo', 'walk2')); },
+    mochiWalk3: function () { return svg(100, 100, mochiBody('', 'mo', 'walk3')); },
+    mochiJump: function () { return svg(100, 100, mochiBody('', 'mo', 'jump')); },
 
     /* 小麻糬的紅火箭：從上面的座艙探出頭，尾巴噴火 */
     mochiShip: function () {
@@ -330,7 +365,8 @@
     { id: 'capsule', name: '小膠囊', body: 'egg', dizzy: 'eggDizzy', ship: 'ship', ufo: 'ufo',
       shipName: '體溫計火箭', ufoName: '藥杯飛碟', burst: ['#FB923C', '#FFF7ED', '#FDA4AF', '#FDBA74'] },
     { id: 'mochi', name: '小麻糬', body: 'mochi', dizzy: 'mochiDizzy', ship: 'mochiShip', ufo: 'mochiUfo',
-      shipName: '紅色火箭', ufoName: '小飛碟', burst: ['#FCD34D', '#FFFDF8', '#FBB4B4', '#FAD5AE'] },
+      shipName: '紅色火箭', ufoName: '小飛碟', burst: ['#FCD34D', '#FFFDF8', '#FBB4B4', '#FAD5AE'],
+      walk: ['mochiWalk1', 'mochiWalk2', 'mochiWalk3', 'mochiWalk2'], jump: 'mochiJump' },
     { id: 'matcha', name: '小抹茶', body: 'matcha', dizzy: 'matchaDizzy', ship: 'matchaShip', ufo: 'matchaUfo',
       shipName: '白色火箭', ufoName: '小飛碟', burst: ['#A9C2AC', '#FFFFFF', '#F4B6C2', '#CBD8CC'],
       walk: ['matchaWalk1', 'matchaWalk2', 'matchaWalk3', 'matchaWalk2'], jump: 'matchaJump' }

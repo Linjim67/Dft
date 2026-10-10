@@ -1344,7 +1344,7 @@
       var tilt = P.grounded ? 0 : clamp(-P.vy / C.JUMP_V, -1, 1) * 14;
       /* 滾著前進（畫面插值到這一幀的位置）；撞到時轉正，看得到暈暈的臉；減少動態時只微微傾斜 */
       var xr = G.phase === 'play' ? run.prevX + (run.x - run.prevX) * a : run.x;
-      /* 用走的角色（小抹茶）不轉，靠換腳和跳的姿勢 */
+      /* 用走的角色（小麻糬、小抹茶）不轉，靠換腳和跳的姿勢 */
       var spin = dead || CH.walk ? 0 : reduce ? tilt * Math.PI / 180 : G.roll - (run.x - xr) / ROLL_R;
       /* 蹲下來的時候轉正（臉朝前），起來再接著滾 */
       if (G.duck > 0 && !dead) {
