@@ -15,8 +15,11 @@
   var live = $('liveRegion');
 
   var PX = 2.8;             /* 小膠囊在畫面上的位置（從左邊數第幾格） */
-  var ROWS = 9;             /* 畫面高 9 格 */
-  var MIN_COLS = 11;        /* 直式手機至少看得到 11 格（往前約 8 格） */
+  var ZOOM = 1.25;          /* 所有東西放大 1.25 倍：畫面高原本 9 格 → 7.2 格 */
+  var ROWS = 9 / ZOOM;
+  var FLOOR = 2 / ZOOM;     /* 地板的厚度（格）：畫面上是原本 1 格地板的兩倍高 */
+  var SKY = ROWS - FLOOR;   /* 地板上面看得到幾格（5.6）；比這更高的地方，畫面跟著角色往上捲 */
+  var MIN_COLS = 11;        /* 直式手機至少看得到 11 格（往前約 8 格；直的手機格子大小不變） */
   var FONT = '"PingFang TC","Noto Sans TC","Microsoft JhengHei",system-ui,sans-serif';
   var ROLL_R = 0.45;        /* 小膠囊滾動的半徑（格）：走 1 格轉 1/0.45 弧度，不打滑 */
 
@@ -641,6 +644,7 @@
     G.coach = '';
     G.briefed = {};
     G.springs = new WeakMap();
+    G.camY = 0;
     resetInput();
 
     $('hudTitle').textContent = title();
@@ -1511,6 +1515,7 @@
     if (Math.abs(G.angle - target) < 0.01) G.angle = target;
     var dk = duckTarget(run);
     G.duck = reduce ? dk : G.duck + clamp(dk - G.duck, -dt * 8, dt * 8);
+    camFollow(run, dt);
     stepParticles(dt);
     updateHud();
     render(t);
@@ -1649,6 +1654,7 @@
   function afterCrash(t) {
     if (G.run.world.endless) { infOver(); return; }
     E.respawn(G.run);
+    G.camY = camTarget(G.run);
     G.rollX = E.playerX(G.run);
     G.roll = 0;
     G.phase = 'respawn';
@@ -1905,12 +1911,31 @@
     return MODE_THEME[s ? s.mode : 'cube'] || 'orange';
   }
 
+  /* ── 畫面上下跟著角色（G.camY：往上捲了幾格）──
+     平常地板在畫面最下面；角色快到畫面頂端（彈簧、疊高的藥盒、火箭飛高）就往上捲，地板往下退出畫面，回到低處再慢慢降回來。
+     往上捲得快、降回來慢一點；火箭、飛碟捲到看得到天花板就停；雙胞胎（上下兩個畫面）不捲；減少動態時直接到位 */
+  function camTarget(run) {
+    if (!run || run.mode === 'duo' || !run.p) return 0;
+    var out = G.outro && (G.phase === 'outro' || G.phase === 'over');
+    var y = out ? G.outro.y : run.p.y, cube = E.physMode(run.mode) === 'cube';
+    var t = Math.max(0, y + (cube ? 1.5 : 1.3) - SKY);
+    return cube ? t : Math.min(t, C.CEIL + 0.35 - SKY);
+  }
+
+  function camFollow(run, dt) {
+    var ct = camTarget(run), d = ct - (G.camY || 0);
+    G.camY = reduce ? ct : (G.camY || 0) + d * Math.min(1, dt * (d > 0 ? 9 : 4));
+    /* 跳太快（彈簧）也不讓角色跑出畫面上緣 */
+    if (run.mode !== 'duo' && run.p) G.camY = Math.max(G.camY, run.p.y + 0.6 - SKY);
+  }
+
   function render(t) {
     if (!ctx || !V.T || !G.run) return;
     var run = G.run, T = V.T, W = V.w, H = V.h;
     var a = G.phase === 'play' ? clamp(run.acc / C.DT, 0, 1) : 1;
     var x = run.prevX + (run.x - run.prevX) * a;
     var camX = x - PX;
+    var gY = H - (FLOOR - (G.camY || 0)) * T;     /* 地面在畫面上的高度（往上捲的時候地板往下退） */
     var tn = themeName(run), th = THEME[tn] || THEME.orange;
 
     ctx.setTransform(V.dpr, 0, 0, V.dpr, 0, 0);
@@ -1941,10 +1966,10 @@
       ctx.fillStyle = 'rgba(124,45,18,.6)';
       ctx.fillRect(-W, H / 2 - 2, 3 * W, 4);
     } else {
-      scene(camX, H - T, run.world.cols, run.p, a, th, tn, t, false);
+      scene(camX, gY, run.world.cols, run.p, a, th, tn, t, false);
     }
-    if (run.boss) drawBoss(camX, H - T, run.boss, t);
-    drawParticles(camX, run.mode === 'duo' ? H - 0.5 * T : H - T);
+    if (run.boss) drawBoss(camX, gY, run.boss, t);
+    drawParticles(camX, run.mode === 'duo' ? H - 0.5 * T : gY);
     ctx.restore();
     edgeWarn(a);
   }
@@ -1969,7 +1994,8 @@
     var c0 = Math.floor(camX) - extra, c1 = Math.ceil(camX + W / T) + extra;
     var left = -extra * T, right = W + extra * T;
 
-    clouds(camX, gY, left, right);
+    /* 雙胞胎上下兩個畫面太矮，雲會被中間的線切到：不畫雲 */
+    if (run.mode !== 'duo') clouds(camX, gY, left, right);
     if (!top) speedLines(camX, t);
 
     /* 火箭、飛碟段落的天花板 */
@@ -2131,7 +2157,7 @@
       var h1 = hash(i * 3.17), h2 = hash(i * 7.73 + 1), h3 = hash(i * 1.31 + 5);
       if (h3 > 0.45 + 0.5 * k) continue;
       var x = (i * span + h1 * span - base) * T;
-      var y = (0.5 + h2 * 6.6) * T;
+      var y = (0.4 + h2 * (SKY - 1.2)) * T;
       var len = (1.2 + h3 * 2.4) * T;
       var w = Math.max(2, 0.07 * T);
       /* 淺色天空上白線看不到：用暖棕色的半透明線，上緣一條細白光 */
@@ -2148,8 +2174,8 @@
   /* 雲朵（art.js 的三種雲）：兩層——遠的小、淡、跟著畫面走得慢；近的大、亮、走得快一點。
      大小只取到 0.1 格（點陣圖快取不會一直變多） */
   var CLOUD_LAYERS = [
-    { par: 0.12, span: 9, w: [1.3, 1.9], y: [6.4, 7.7], alpha: 0.55 },
-    { par: 0.3, span: 8, w: [2.2, 3.2], y: [4.9, 6.7], alpha: 0.95 }
+    { par: 0.12, span: 9, w: [1.3, 1.9], y: [4.1, 5.2], alpha: 0.55 },
+    { par: 0.3, span: 8, w: [2.2, 3.2], y: [2.9, 4.3], alpha: 0.95 }
   ];
 
   function clouds(camX, gY, left, right) {
