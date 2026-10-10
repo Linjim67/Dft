@@ -14,6 +14,7 @@
     DT: 1 / 120,
     MAX_REAL_DT: 0.1,         /* 切回分頁時不會一口氣跑好幾秒 */
     SPEED: 7.8,               /* 格／遊戲秒 */
+    ENDLESS_RAMP: 400,        /* 無限挑戰：速度 ∝ √(1 + 跑過的格數 ÷ 400) */
 
     HALF: 0.43,               /* 碰方塊用的半徑（和畫出來的大小一樣） */
     HAZ: 0.30,                /* 碰針、水柱用的半徑：比看起來小，擦邊不算 */
@@ -345,7 +346,7 @@
         setMode(run, g.mode);
         if (g.mode === 'boss') startBoss(run, g);
       } else if (g.k === 'speed') {
-        run.speedMul = g.mul;
+        if (g.mul != null) run.speedMul = g.mul;
         emit(run, 'speed', { mul: g.mul, round: g.round });
       } else if (g.k === 'check') {
         if (run.checkpoints) run.cp = snapshot(run, g.x);
@@ -704,6 +705,8 @@
     var C = CONFIG;
     run.ev = [];
     if (run.dead || run.done) return run.ev;
+    /* 無限挑戰：不分輪，一路越跑越快 */
+    if (run.world.endless) run.speedMul = Math.sqrt(1 + Math.max(0, run.x) / C.ENDLESS_RAMP);
     run.acc += clamp(realDt, 0, C.MAX_REAL_DT) * run.baseScale * run.speedMul * tiltScale(run);
     var press = input.presses > 0;
     while (run.acc >= C.DT && !run.dead && !run.done) {

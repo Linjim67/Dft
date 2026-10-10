@@ -321,11 +321,12 @@
 
   /* ─────────────────────────────────────────────────────────────
      無限挑戰（規格 g）：五種玩法 [跳跳, 火箭, 飛碟, 雙胞胎, 轉轉] 用種子洗牌，
-     依序穿過傳送門；五種都玩完 → 大魔王 → 下一輪（再洗一次牌，更快一點）。
+     依序穿過傳送門；五種都玩完 → 大魔王 → 下一輪（再洗一次牌）。
+     速度不分輪：跑越遠越快（engine 的 ENDLESS_RAMP），換輪的 speed 只用來報「第 n 輪」。
      ───────────────────────────────────────────────────────────── */
 
   var INF_MODES = ['cube', 'ship', 'ufo', 'duo', 'rot'];
-  var INF = { LEN: 83, STAR_CHANCE: 0.35, SPEED_STEP: 0.06, SPEED_CAP: 1.3, SHOTS_BASE: 5, SHOTS_CAP: 12 };
+  var INF = { LEN: 83, STAR_CHANCE: 0.35, SHOTS_BASE: 5, SHOTS_CAP: 12 };
 
   /* 換到下一種玩法：漏斗＋傳送門；回傳這一段的起點和放障礙物的起點 */
   function infPortal(w, st, mode, extra) {
@@ -342,7 +343,7 @@
     var d = R === 1 ? [1, 2] : R === 2 ? [2, 2] : [2, 3];
     var order = E.shuffle(INF_MODES, st.r);
     st.orders.push(order);
-    E.addTrigger(w, { k: 'speed', x: st.x + 0.5, mul: Math.min(1 + INF.SPEED_STEP * (R - 1), INF.SPEED_CAP), round: R });
+    E.addTrigger(w, { k: 'speed', x: st.x + 0.5, round: R });
     order.forEach(function (mode) {
       var x0 = st.x, from = st.x;
       if (mode !== st.mode) {
