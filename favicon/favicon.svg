@@ -1,0 +1,16 @@
+<!-- 安心陪伴 favicon：ver1.svg（Inkscape 原稿）兩支針筒組成的 N，第二支是第一支轉 180°；線條加粗到 1.2 才看得清楚，白色圓角方底 -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 36 36">
+  <rect width="36" height="36" rx="7.92" fill="#fff"/>
+  <g transform="translate(-55.398 -14.186)" fill="none" stroke="#000" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round">
+    <g id="s">
+      <rect x="57.43" y="41.95" width="8.72" height="1.36" rx=".68"/>
+      <rect x="60.75" y="43.31" width="2.09" height="2.11"/>
+      <rect x="58.89" y="45.42" width="5.79" height="1.47" rx=".74"/>
+      <path d="M59.06 39.21V31.01c0-.47.39-.85.88-.85h3.69c.49 0 .88.38.88.85v8.2"/>
+      <rect x="59.06" y="39.21" width="5.45" height="2.74"/>
+      <path d="M63.3 30.16A1.51 1.5 0 0 0 60.28 30.16Z"/>
+      <path d="M61.79 28.66 61.78 24.23C61.78 23.38 61.56 14.38 65.12 18.6 69.73 24.74 76.62 33.97 82.18 42.73"/>
+    </g>
+    <use href="#s" transform="rotate(180 73.398 32.186)"/>
+  </g>
+</svg>
