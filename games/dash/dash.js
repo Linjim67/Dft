@@ -109,7 +109,7 @@
   }
 
   /* body／ship／ufo 換成現在選的角色那一張；其他（醫生、星星）照原本的名字 */
-  var CARD_ART = { 1: ['ship'], 2: ['body'], 3: ['ufo'], 4: ['body', 'body'], 5: ['body'], 6: ['doctorStop'] };
+  var CARD_ART = { 1: ['ship'], 2: ['body'], 3: ['ufo'], 4: ['body', 'body'], 5: ['body'], 6: ['doctorIcon'] };
 
   /* 關卡名稱、提示裡的「體溫計火箭」「藥杯飛碟」是小膠囊的載具；換成現在這個角色的 */
   function vehicles(text) {
@@ -488,14 +488,11 @@
       '<rect x="14" y="13" width="18" height="28" rx="4" fill="none" stroke="#57534E" stroke-width="1.6"/>' +
       '<path d="M23 41v6" stroke="#57534E" stroke-width="1.6"/>' +
       /* 醫生：袋子空了就笑咪咪舉白旗 */
-      '<image href="' + ART.source('doctorStop') + '" x="50" y="9" width="64" height="64">' +
-      anim('opacity', '1;1;0;0', '0;.7;.7;1', ' calcMode="discrete"') + '</image>' +
-      '<image href="' + ART.source('doctorHappy') + '" x="50" y="9" width="64" height="64" opacity="0">' +
-      anim('opacity', '0;0;1;1', '0;.7;.7;1', ' calcMode="discrete"') + '</image>' +
-      /* 白旗拿在舉高的那隻手上（圖上 DOC.flag 的位置） */
+      '<image href="' + ART.source('doctorIcon') + '" x="58" y="9" width="48.6" height="64"/>' +
+      /* 白旗拿在左手上（圖上 DOC.flag 的位置） */
       '<g opacity="0">' + anim('opacity', '0;0;1;1', '0;.7;.7;1', ' calcMode="discrete"') +
-      '<path d="M79 39V13" stroke="#78716C" stroke-width="2" stroke-linecap="round"/>' +
-      '<path d="M79 13q-6 2-12 0v9q6 2 12 0Z" fill="#fff" stroke="#57534E" stroke-width="1.4" stroke-linejoin="round"/></g>';
+      '<path d="M71 56V30" stroke="#78716C" stroke-width="2" stroke-linecap="round"/>' +
+      '<path d="M71 30q-6 2-12 0v9q6 2 12 0Z" fill="#fff" stroke="#57534E" stroke-width="1.4" stroke-linejoin="round"/></g>';
     var parts = { briefJump: jump, briefStay: stay, briefWin: win };
     Object.keys(parts).forEach(function (id) {
       var host = $(id);
@@ -1280,7 +1277,7 @@
     }
   }
 
-  var PORTAL_ICON = { cube: 'body', rot: 'body', duo: 'body', ship: 'ship', ufo: 'ufo', boss: 'doctorStop' };
+  var PORTAL_ICON = { cube: 'body', rot: 'body', duo: 'body', ship: 'ship', ufo: 'ufo', boss: 'doctorIcon' };
 
   function drawTrigger(g, camX, gY, t) {
     var T = V.T, sx = (g.x - camX) * T, run = G.run;
@@ -1290,8 +1287,8 @@
       var h = (fn ? fn.gap : F.GAP) + 0.2, yb = (fn ? fn.floor : F.FLOOR) - 0.1;
       blit('portal_' + g.mode, sx - 0.4 * T, gY - (yb + h) * T, 0.8, h);
       var icon = PORTAL_ICON[g.mode] || 'body';
-      var iw = icon === 'doctorStop' ? 0.7 : icon === 'body' ? 0.5 : 0.62;
-      var ih = icon === 'doctorStop' ? 0.7 : icon === 'body' ? 0.5 : 0.42;
+      var iw = icon === 'doctorIcon' ? 0.53 : icon === 'body' ? 0.5 : 0.62;
+      var ih = icon === 'doctorIcon' ? 0.7 : icon === 'body' ? 0.5 : 0.42;
       blit(pic(icon), sx - iw / 2 * T, gY - (yb + h / 2 + ih / 2) * T, iw, ih);
     } else if (g.k === 'speed') {
       ctx.save();
@@ -1393,11 +1390,22 @@
     return CH.walk[((Math.floor(dist / WALK_STEP) % n) + n) % n];
   }
 
-  /* ── 大魔王：醫生（抱著針筒水槍）、旁邊的點滴架、雷射瞄準、水柱 ──
-     醫生三個姿勢（art.js）：蓄力時往那一排水瞄（低 → lower、高 → upper），其他時候針筒朝上（stop）。
-     每一發先「蓄能」：水從點滴袋經過管子流進針筒，針筒裡的一條線從尾端慢慢長到針尖（點滴袋跟著變少），
-     同時雷射筆的紅光貼著地面指到小膠囊身上；滿了就射出去。點滴袋空了 = 打敗醫生。 */
-  var DOC = ART.DOCTOR;
+  /* ── 大魔王：醫生（lowerAttack／stopAttack／upperAttack.svg）、旁邊的點滴架、雷射瞄準、水柱 ──
+     蓄力時照那一排水換圖（低 → lower、高 → upper），其他時候 stop（手上沒有針筒）。
+     每一發先「蓄能」：點滴袋的水經過管子流進針筒，針筒裡的水從底下慢慢漲滿（點滴袋跟著變少），
+     同時雷射筆的紅光貼著地面指到小膠囊身上；滿了就射出去。點滴袋空了 = 打敗醫生。
+     大小：upperAttack 的針（往上射的那一條線）剛好在高的水柱的高度——圖上 1 格 = DOC_MM 公釐，
+     三張圖用同一個比例，所以一樣大；針尖放在引擎射出水柱的地方（醫生左邊 B.TIP 格）。 */
+  var DOC = ART.DOCTOR, DOC_ART = DOC.art;
+  var DOC_MM = (DOC.frame.floor - DOC_ART.upper.needle[1]) / E.laneMid('high');
+  var DOC_TIP = DOC_ART.upper.needle[0] + DOC_ART.upper.dx;        /* 針尖在框裡的 x */
+  var DOC_HEAD = 38;                                              /* 額鏡（頭的中間）在框裡的 x */
+  var DOC_CLIP = {};                                              /* 針筒裡面的形狀（Path2D），用到才做 */
+
+  /* 這一排水：針在離地幾格（雷射從這裡出發） */
+  function needleH(lane) {
+    return (DOC.frame.floor - DOC_ART[lane === 'low' ? 'lower' : 'upper'].needle[1]) / DOC_MM;
+  }
 
   function laneY(lane) { return E.laneMid(lane); }
 
@@ -1412,66 +1420,97 @@
     var tells = E.bossTells(b);
     var charge = tells.length ? tells[0].frac : 0;
 
+    var tipX = docX - B.TIP * T;
     for (var i = tells.length - 1; i >= 0; i--) {
-      laneBand(tells[i], gY, docX - B.TIP * T, t, i === 0);
-      laser(tells[i], camX, gY, docX - B.TIP * T, dY);
+      laneBand(tells[i], gY, tipX, t, i === 0);
+      laser(tells[i], camX, gY, tipX, dY);
     }
 
-    var bag = ivStand(docX + 0.95 * T, dY, E.bossBag(b), t);
-    var pose = done ? 'happy' : docPose(tells, t);
+    var pose = done ? 'stop' : docPose(tells, t);
     /* 射出去的那一下往後退一點點 */
     var rk = G.recoilAt ? (t - G.recoilAt) / 160 : 1;
     var recoil = !reduce && !done && rk >= 0 && rk < 1 ? (1 - rk) * 0.2 * T : 0;
-    var u = T / 100, ox = docX - DOC.cx * u + recoil, oy = dY - 3 * T;   /* 圖的左上角（圖 300 = 3 格） */
-    var rear = done ? null : DOC.point(pose, DOC.syringe.rear, 0);
-    /* 針筒朝上時尾端在腳邊：管子從醫生背後繞過去；瞄準時尾端在右肩前面，管子畫在前面 */
-    if (pose === 'stop') tube(bag, ox + rear[0] * u, oy + rear[1] * u, false, t);
-    blit('doctor' + pose.charAt(0).toUpperCase() + pose.slice(1), ox, oy, 3, 3);
-    if (!done) {
-      if (pose !== 'stop') {
-        tube(bag, ox + rear[0] * u, oy + rear[1] * u, charge > 0, t);
-        chargeStroke(pose, ox, oy, charge);
-      }
-    } else {
-      whiteFlag(ox + DOC.flag[0] * u, oy + DOC.flag[1] * u + 0.12 * T, t);
+    var u = T / DOC_MM;                                            /* 圖上 1 公釐 = u px */
+    var ox = tipX - DOC_TIP * u + recoil, oy = dY - DOC.frame.floor * u;   /* 框的左上角 */
+    /* 點滴架在醫生右邊；管子從點滴袋繞到醫生背後（右肩），接到手上的針筒 */
+    var bag = ivStand(ox + 60 * u, dY, E.bossBag(b), t);
+    if (!done) tube(bag, ox + 50 * u, oy + 22 * u, charge > 0, t);
+    blit('doctor' + pose.charAt(0).toUpperCase() + pose.slice(1), ox, oy, DOC.frame.w / DOC_MM, DOC.frame.h / DOC_MM);
+    if (!done && pose !== 'stop') {
+      /* 剛射完：水一口氣倒光 */
+      var drain = !tells.length && G.recoilAt ? 1 - (t - G.recoilAt) / DRAIN_MS : 0;
+      chargeFill(pose, ox, oy, u, tells.length ? charge : reduce ? 0 : drain, t);
     }
+    if (done) whiteFlag(ox + DOC.flag[0] * u, oy + DOC.flag[1] * u, t);
 
     for (i = 0; i < b.shots.length; i++) water(b.shots[i], camX, gY);
 
-    if (b.bt < B.INTRO_S && !done) bubble(docX, dY - 3.15 * T, '來玩水槍大戰！');
-    else if (done) bubble(docX, dY - 3.15 * T, '點滴用完了，你贏了！');
-    else if (tells.length) exclaim(docX - 0.3 * T, dY - 2.85 * T);   /* 頭上（點滴袋在右邊） */
+    var headX = ox + DOC_HEAD * u;
+    if (b.bt < B.INTRO_S && !done) bubble(headX, oy - 0.1 * T, '來玩水槍大戰！');
+    else if (done) bubble(headX, oy - 0.1 * T, '點滴用完了，你贏了！');
+    else if (tells.length) exclaim(headX - 0.75 * T, oy + 0.05 * T);
 
     var P = G.run.p;
     if (!G.run.dead && G.phase !== 'respawn') jumpRing(E.bossCue(b), P, gY, t);
   }
 
-  /* 醫生的姿勢：蓄力時瞄那一排水，剛射完再瞄 0.3 秒，其他時候針筒朝上 */
+  /* 醫生的姿勢：蓄力時照那一排水換圖，剛射完再停 0.3 秒，其他時候 stop */
   function docPose(tells, t) {
     var lane = tells.length ? tells[0].lane : G.recoilAt && t - G.recoilAt < 300 ? G.lastLane : null;
     return lane === 'low' ? 'lower' : lane === 'high' ? 'upper' : 'stop';
   }
 
-  /* 蓄能：針筒裡面一條粗粗的線，從尾端往針尖慢慢變長；滿了變深色。線上面一條細白光 */
-  function chargeStroke(pose, ox, oy, fill) {
-    var f = clamp(fill, 0, 1);
-    if (f <= 0) return;
-    var u = V.T / 100, S = DOC.syringe, len = S.barrel[0] + (S.barrel[1] - S.barrel[0]) * f;
-    function seg(across) {
-      var a = DOC.point(pose, -S.barrel[0], across), b = DOC.point(pose, -len, across);
-      ctx.beginPath();
-      ctx.moveTo(ox + a[0] * u, oy + a[1] * u);
-      ctx.lineTo(ox + b[0] * u, oy + b[1] * u);
-      ctx.stroke();
-    }
+  /* 蓄能：針筒裡的水（子彈）從底下慢慢漲滿。水面有小波浪、水裡有小泡泡往上冒，快滿的時候一閃一閃；
+     射出去之後 DRAIN_MS 內水一口氣倒光。畫在針筒裡面（art.js 的 barrel 當 clip），線條不會被蓋到。
+     減少動態時：水位照樣漲（這是「還有多久」的資訊），沒有波浪、泡泡、閃爍 */
+  var DRAIN_MS = 220;
+
+  function chargeFill(pose, ox, oy, u, fill, t) {
+    var A = DOC_ART[pose], R = A.barrel, f = clamp(fill, 0, 1);
+    if (!R || f <= 0 || typeof Path2D === 'undefined') return;
+    var clip = DOC_CLIP[pose] || (DOC_CLIP[pose] = new Path2D(R.d));
+    var level = R.y1 - (R.y1 - R.y0) * f;
+    var amp = reduce ? 0 : 0.35 * Math.sin(Math.PI * f), ph = t / 170;
+    function surface(x) { return level + amp * Math.sin(x * 1.25 + ph); }
     ctx.save();
-    ctx.lineCap = 'round';
-    ctx.strokeStyle = f >= 0.999 ? DOC.colors.cyan : DOC.colors.aqua;
-    ctx.lineWidth = S.thick * u;
-    seg(0);
-    ctx.strokeStyle = 'rgba(255,255,255,.8)';
-    ctx.lineWidth = Math.max(1, S.thick * 0.2 * u);
-    seg(-S.thick * 0.24);
+    /* 從這裡開始用圖上的公釐（各自檔案的 viewBox）畫 */
+    ctx.translate(ox + A.dx * u, oy);
+    ctx.scale(u, u);
+    ctx.clip(clip);
+    var g = ctx.createLinearGradient(0, R.y0, 0, R.y1);
+    g.addColorStop(0, DOC.water);
+    g.addColorStop(1, DOC.deep);
+    ctx.fillStyle = g;
+    ctx.beginPath();
+    ctx.moveTo(R.x0 - 1, R.y1 + 1);
+    for (var x = R.x0 - 1; x <= R.x1 + 1; x += 0.5) ctx.lineTo(x, surface(x));
+    ctx.lineTo(R.x1 + 1, R.y1 + 1);
+    ctx.closePath();
+    ctx.fill();
+    /* 水面一條細細的白光 */
+    ctx.strokeStyle = 'rgba(255,255,255,.75)';
+    ctx.lineWidth = 0.35;
+    ctx.beginPath();
+    for (x = R.x0 - 1; x <= R.x1 + 1; x += 0.5) x === R.x0 - 1 ? ctx.moveTo(x, surface(x) + 0.3) : ctx.lineTo(x, surface(x) + 0.3);
+    ctx.stroke();
+    if (!reduce) {
+      /* 小泡泡：從底下冒到水面就不見 */
+      ctx.fillStyle = 'rgba(255,255,255,.35)';
+      ctx.strokeStyle = 'rgba(255,255,255,.85)';
+      ctx.lineWidth = 0.18;
+      for (var i = 0; i < 6; i++) {
+        var k = (t / 1300 + hash(i + 3)) % 1;
+        var bx = R.x0 + 2 + (R.x1 - R.x0 - 4) * hash(i + 11) + Math.sin(t / 300 + i) * 0.3;
+        var by = R.y1 - 0.4 - (R.y1 - level) * k;
+        if (by < surface(bx) + 0.5) continue;
+        ctx.beginPath(); ctx.arc(bx, by, 0.28 + 0.18 * hash(i + 5), 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+      }
+      /* 快滿了：整管一閃一閃（要射了） */
+      if (f > 0.85) {
+        ctx.fillStyle = 'rgba(255,255,255,' + ((f - 0.85) / 0.15 * (0.18 + 0.18 * Math.sin(t / 55))).toFixed(3) + ')';
+        ctx.fillRect(R.x0 - 1, R.y0 - 1, R.x1 - R.x0 + 2, R.y1 - R.y0 + 2);
+      }
+    }
     ctx.restore();
   }
 
@@ -1577,7 +1616,7 @@
   function laser(tl, camX, gY, tipX, dY) {
     var T = V.T, w = G.run.world, mid = laneY(tl.lane);
     var a = 0.35 + 0.65 * tl.frac;            /* 蓄力越滿越亮 */
-    var startY = dY - mid * T, pts = [];     /* 針尖就在這一排水的高度 */
+    var startY = dY - needleH(tl.lane) * T, pts = [];     /* 從針尖出發，第一格內接到這一排水的高度 */
     var relTip = (tipX / T) - PX;
     for (var r = relTip; r > -PX - 2; r -= 0.25) {
       var y = gY - (E.floorAt(w, camX + PX + r) + mid) * T;
