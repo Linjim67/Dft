@@ -397,13 +397,12 @@
   var overDlg = Anxin.wireDialog($('overDlg'));
   var briefDlg = Anxin.wireDialog($('briefDlg'));
 
-  /* ── 醫生第一次出現：先停下來，用三張會動的小圖說明怎麼玩（還沒打贏過醫生才出現） ──
+  /* ── 醫生出現：先停下來，用三張會動的小圖說明怎麼玩（每一局第一次遇到醫生都說明，打贏過也一樣） ──
      小朋友正在一直點畫面，對話框剛跳出來的 0.7 秒內按「開始」不算，免得還沒看就關掉 */
   var BRIEF_LOCK_MS = 700;
 
   function needBrief() {
-    var l6 = rec.levels['6'];
-    return !G.briefed && !(l6 && l6.done);
+    return !G.briefed;
   }
 
   function openBrief() {
@@ -691,7 +690,7 @@
           say(G.level === 'inf' ? '拿到星星！' : '拿到星星！' + run.gotN + ' / 3');
           break;
         case 'mode':
-          /* 醫生第一次出現會先跳說明對話框，說明的一行字等對話框關掉再出現 */
+          /* 每一局第一次遇到醫生會先跳說明對話框，說明的一行字等對話框關掉再出現 */
           if (e.mode === 'boss' && needBrief()) setMode('boss');
           else hint(e.mode);
           $('bossBar').hidden = true;
