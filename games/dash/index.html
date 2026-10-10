@@ -161,19 +161,46 @@
     </div>
   </dialog>
 
-  <dialog class="dlg" id="pauseDlg" aria-labelledby="pauseTitle">
+  <!-- 暫停：大大的暫停鍵（II）＝ 按下去繼續玩；右上角是全螢幕（和頂列那一顆一樣）；
+       下面四顆圓按鈕：重頭開始、返回關卡選擇、返回遊戲主選單、換你打針（遊戲中頂列收起來，離開的路都在這裡） -->
+  <dialog class="dlg dash-pause" id="pauseDlg" aria-labelledby="pauseTitle">
     <h2 class="dlg-title" id="pauseTitle">暫停中</h2>
-    <p class="dlg-body">休息一下，準備好再繼續。</p>
-    <div class="dlg-actions">
-      <button class="btn btn-primary" type="button" data-close autofocus>繼續玩</button>
-      <button class="btn btn-quiet" type="button" id="restartBtn">這一關重新開始</button>
-      <button class="btn btn-quiet" type="button" id="toLevelsBtn">回到地圖</button>
-    </div>
-    <!-- 遊戲中頂列收起來（小朋友亂點不會跑出遊戲），離開的路放在暫停裡 -->
-    <p class="dlg-links">
-      <a class="quiet-link" href="/games/solo/">小遊戲選單</a>
-      <a class="quiet-link" href="/shot/">開始打針</a>
-    </p>
+    <button class="hud-btn hud-fs pause-fs" type="button" id="pauseFs" aria-label="全螢幕" aria-pressed="false" hidden>
+      <svg viewBox="0 0 24 24" aria-hidden="true">
+        <path class="fs-in" d="M4 9V4h5M15 4h5v5M20 15v5h-5M9 20H4v-5" />
+        <path class="fs-out" d="M9 4v5H4M15 4v5h5M20 15h-5v5M4 15h5v5" />
+      </svg>
+    </button>
+    <button class="pause-resume" type="button" data-close autofocus>
+      <span class="pr-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6v12M15 6v12" /></svg></span>
+      <span class="pa-label">繼續遊戲</span>
+    </button>
+    <ul class="pause-actions">
+      <li>
+        <button class="pause-act" type="button" id="restartBtn">
+          <span class="pa-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 4v6h6" /><path d="M3.5 15a9 9 0 1 0 2.1-9.4L3 10" /></svg></span>
+          <span class="pa-label">重頭開始</span>
+        </button>
+      </li>
+      <li>
+        <button class="pause-act" type="button" id="toLevelsBtn">
+          <span class="pa-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M19 12H5M12 19l-7-7 7-7" /></svg></span>
+          <span class="pa-label">返回關卡選擇</span>
+        </button>
+      </li>
+      <li>
+        <a class="pause-act" href="/games/solo/">
+          <span class="pa-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 6h16M4 12h16M4 18h16" /></svg></span>
+          <span class="pa-label">返回遊戲主選單</span>
+        </a>
+      </li>
+      <li>
+        <a class="pause-act" href="/shot/">
+          <span class="pa-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M14.5 6.5l3 3-9 9h-3v-3ZM13 5l6 6M17.5 6.5l2.5-2.5M18.5 2.5l3 3M5.5 18.5l-3 3M10.5 10.5l1.5 1.5M8.5 12.5l1.5 1.5" /></svg></span>
+          <span class="pa-label">換你打針</span>
+        </a>
+      </li>
+    </ul>
   </dialog>
 
   <!-- 新手教學：每一局第一次遇到新的玩法（火箭、飛碟、雙胞胎、轉轉、醫生），一穿過傳送門就停下來，

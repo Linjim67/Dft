@@ -1371,17 +1371,136 @@ body.is-playing .topbar {
 
 /* ═══ 對話框 ═══════════════════════════════════════════════════ */
 
-.dlg-links {
-  display: flex;
-  justify-content: center;
-  gap: var(--sp-4);
-  margin-top: var(--sp-3);
+/* ── 暫停：大大的暫停鍵（按下去繼續玩）、右上角全螢幕、下面四顆圓按鈕（灰色的字） ── */
+.dash-pause {
+  position: relative;
+  width: min(28rem, calc(100% - 2 * var(--sp-4)));
+  text-align: center;
 }
 
-.dlg-links .quiet-link {
-  font-size: .92rem;
-  text-decoration: underline;
-  text-underline-offset: 3px;
+.dash-pause .dlg-title {
+  font-size: 1.1rem;
+  color: var(--fg-muted);
+}
+
+.pause-fs {
+  position: absolute;
+  top: var(--sp-3);
+  right: var(--sp-3);
+}
+
+.pause-resume,
+.pause-act {
+  display: grid;
+  justify-items: center;
+  align-content: start;
+  gap: var(--sp-1);
+  width: 100%;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--fg-muted);
+  font: inherit;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.pause-resume {
+  width: auto;
+  margin: var(--sp-3) auto 0;
+}
+
+.pr-icon,
+.pa-icon {
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  transition: transform var(--t-fast) var(--ease), box-shadow var(--t-fast) var(--ease);
+}
+
+.pr-icon {
+  width: 88px;
+  height: 88px;
+  border: 2px solid var(--primary-deep);
+  background: var(--primary-wash);
+  color: var(--primary-deep);
+  box-shadow: var(--sh-md);
+}
+
+.pr-icon svg {
+  width: 40px;
+  height: 40px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 3.2;
+  stroke-linecap: round;
+}
+
+.pause-actions {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: var(--sp-2);
+  margin: var(--sp-5) 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.pa-icon {
+  width: 56px;
+  height: 56px;
+  border: var(--line-w) solid var(--line);
+  background: var(--card);
+  color: var(--fg);
+  box-shadow: var(--sh-sm);
+}
+
+.pa-icon svg {
+  width: 26px;
+  height: 26px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2.2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.pa-label {
+  font-size: .82rem;
+  font-weight: 700;
+  line-height: 1.35;
+  color: var(--fg-muted);
+  text-wrap: balance;
+}
+
+.pause-resume:active .pr-icon,
+.pause-act:active .pa-icon {
+  transform: translateY(2px);
+  box-shadow: none;
+}
+
+@media (max-height: 520px) {
+  .dash-pause {
+    padding: var(--sp-4);
+  }
+
+  .pr-icon {
+    width: 64px;
+    height: 64px;
+  }
+
+  .pr-icon svg {
+    width: 30px;
+    height: 30px;
+  }
+
+  .pause-actions {
+    margin-top: var(--sp-3);
+  }
+
+  .pa-icon {
+    width: 48px;
+    height: 48px;
+  }
 }
 
 .win-kicker {
@@ -1686,7 +1805,9 @@ body.is-playing .topbar {
   .map-tile:active,
   .map-tile:hover,
   .map-change:active,
-  .hud-btn:active {
+  .hud-btn:active,
+  .pause-resume:active .pr-icon,
+  .pause-act:active .pa-icon {
     transform: none;
   }
 

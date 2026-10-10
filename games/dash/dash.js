@@ -118,22 +118,32 @@
     if (touchMq && touchMq.matches && !fsDeclined) enterFs();
   }
 
-  function syncFs() { if (fsOk) $('fsBtn').setAttribute('aria-pressed', fsOn() ? 'true' : 'false'); }
+  /* 全螢幕的按鈕有兩顆：頂列、暫停畫面 */
+  function syncFs() {
+    if (!fsOk) return;
+    var on = fsOn() ? 'true' : 'false';
+    $('fsBtn').setAttribute('aria-pressed', on);
+    $('pauseFs').setAttribute('aria-pressed', on);
+  }
+
+  function toggleFs(ev) {
+    if (fsOn()) {
+      fsDeclined = true;
+      try { settle(fsExit.call(document)); } catch (e) { /* 忽略 */ }
+    } else {
+      fsDeclined = false;
+      enterFs();
+    }
+    /* 用手指、滑鼠按的：焦點不要留在按鈕上（空白鍵要拿來跳） */
+    if (ev.detail) ev.currentTarget.blur();
+  }
 
   if (fsOk) {
     $('fsBtn').hidden = false;
+    $('pauseFs').hidden = false;
     $('fsBtn').parentNode.classList.add('has-fs');
-    $('fsBtn').addEventListener('click', function (ev) {
-      if (fsOn()) {
-        fsDeclined = true;
-        try { settle(fsExit.call(document)); } catch (e) { /* 忽略 */ }
-      } else {
-        fsDeclined = false;
-        enterFs();
-      }
-      /* 用手指、滑鼠按的：焦點不要留在按鈕上（空白鍵要拿來跳） */
-      if (ev.detail) ev.currentTarget.blur();
-    });
+    $('fsBtn').addEventListener('click', toggleFs);
+    $('pauseFs').addEventListener('click', toggleFs);
     /* 有的瀏覽器 fullscreenchange 來得晚：視窗大小一變（進出全螢幕一定會變）也對一次 */
     document.addEventListener('fullscreenchange', syncFs);
     document.addEventListener('webkitfullscreenchange', syncFs);
