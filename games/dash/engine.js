@@ -21,9 +21,10 @@
     STEP_TOL: 0.22,           /* 撞到方塊邊緣時差一點點就自動踩上去 */
     EPS: 0.02,
 
-    /* 撞到藥盒側面不會死：角色被藥盒擋住、落在畫面捲動的後面（lag 格）。畫面照樣往前，角色在畫面上一直往左退；
-       退到畫面左邊（MAX_LAG：dash.js 的 PX 2.8 − 半個角色）才撞到。跳過去之後跑得比捲動快 CATCH 倍，追回原來的位置 */
-    PUSH: { MAX_LAG: 2.3, CATCH: 0.6 },
+    /* 撞到藥盒側面不會死：角色被藥盒擋住、落在畫面捲動的後面（lag 格）。擋住的時候整個地圖（畫面）捲動慢一半（SLOW），
+       角色在畫面上慢慢往左退；退到畫面左邊（MAX_LAG：dash.js 的 PX 2.8 − 半個角色）才撞到。
+       跳過去之後跑得比捲動快 CATCH 倍，追回原來的位置 */
+    PUSH: { MAX_LAG: 2.3, CATCH: 0.6, SLOW: 0.5 },
 
     /* 小膠囊（跳跳）：往上的重力比較輕、往下的重力重 1.4 倍（像 Geometry Dash 一樣「咚」一下落地）。
        跳約 2.25 格高，平地上 0.49 秒落地 ≈ 3.8 格遠 */
@@ -681,7 +682,8 @@
     run.t += C.DT;
     run.prevX = run.x;
     run.prevLag = run.lag;
-    run.x += C.SPEED * C.DT;
+    /* 被藥盒擋住的時候，地圖和畫面捲動慢一半 */
+    run.x += C.SPEED * C.DT * (run.wasBlocked ? C.PUSH.SLOW : 1);
     /* 沒被擋住：跑得比捲動快，慢慢追回原來的位置 */
     if (run.lag > 0) run.lag = Math.max(0, run.lag - C.PUSH.CATCH * C.SPEED * C.DT);
     run.blocked = false;

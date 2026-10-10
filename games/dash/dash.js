@@ -2369,9 +2369,7 @@
     for (i = 0; i < b.shots.length; i++) water(b.shots[i], camX, gY, t);
 
     var headX = ox + DOC_HEAD * u;
-    if (b.bt < B.INTRO_S && !done) {
-      bubble(headX, oy - 0.1 * T, [['來玩', BUBBLE_INK], ['水槍大戰', BUBBLE_KEY], ['！', BUBBLE_INK]], b.bt);
-    } else if (done) {
+    if (done) {
       bubble(headX, oy - 0.1 * T, [['點滴用完了，', BUBBLE_INK], ['你贏了！', BUBBLE_WIN]], G.doneAt ? (t - G.doneAt) / 1000 : null);
     }
     else if (tells.length) exclaim(headX - 0.75 * T, oy + 0.05 * T);
@@ -2746,12 +2744,12 @@
     ctx.restore();
   }
 
-  /* 醫生說話的對話框：圓圓的粉圓體（Huninn，只下載用得到的字）、兩種顏色的字（重點是深青色）、
+  /* 醫生輸了說的話（「點滴用完了，你贏了！」）：圓圓的粉圓體（Huninn，只下載用得到的字）、兩種顏色的字（你贏了是綠色）、
      白底咖啡色的邊、尾巴彎彎地指著醫生、底下一點陰影；剛出現時彈一下（age 秒；減少動態時不彈） */
   var BUBBLE_FONT = '"Huninn", ' + FONT;
-  var BUBBLE_INK = '#7C2D12', BUBBLE_KEY = '#0E7490', BUBBLE_WIN = '#15803D';
+  var BUBBLE_INK = '#7C2D12', BUBBLE_WIN = '#15803D';
   if (document.fonts && document.fonts.load) {
-    document.fonts.load('32px "Huninn"', '來玩水槍大戰！點滴用完了，你贏').catch(function () { /* 載不到就用系統字 */ });
+    document.fonts.load('32px "Huninn"', '點滴用完了，你贏！').catch(function () { /* 載不到就用系統字 */ });
   }
 
   function bubble(cx, bottom, segs, age) {
