@@ -105,10 +105,6 @@
     margin-block: var(--sp-2) 0;
   }
 
-  .dash-intro .page-head h1 {
-    font-size: 1.4rem;
-  }
-
   .dash-intro .page-lede {
     display: none;
   }
