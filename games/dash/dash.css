@@ -1161,37 +1161,58 @@ body.is-playing .topbar {
 }
 
 /* ── 新手教學（火箭、飛碟、雙胞胎、轉轉、醫生）：兩三張會動的小圖（直式一張一列，夠寬就排成一排） ── */
+/* ── 新手教學（輪播）：一次一張；左右滑、旁邊的箭頭、下面的點點都可以換張。
+      看到最後一張，「繼續遊戲」才跳出來（位置先留好，對話框不會忽大忽小） ── */
 .dash-brief {
-  width: min(40rem, calc(100% - 2 * var(--sp-4)));
-}
-
-.dash-brief[data-steps="2"] {
-  width: min(28rem, calc(100% - 2 * var(--sp-4)));
+  width: min(26rem, calc(100% - 2 * var(--sp-4)));
 }
 
 .dash-brief .dlg-title {
   text-align: center;
 }
 
-.brief-steps {
+.brief-carousel {
   display: grid;
-  gap: var(--sp-3);
-  margin: var(--sp-4) 0 0;
+  grid-template-columns: 44px minmax(0, 1fr) 44px;
+  align-items: center;
+  gap: var(--sp-2);
+  margin-top: var(--sp-3);
+}
+
+/* 手指左右拖動由 dash.js 處理；上下照常捲動 */
+.brief-viewport {
+  overflow: hidden;
+  touch-action: pan-y;
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+.brief-steps {
+  display: flex;
+  margin: 0;
   padding: 0;
   list-style: none;
+  transition: transform .32s var(--ease);
+}
+
+.brief-steps.is-dragging {
+  transition: none;
 }
 
 .brief-step {
+  flex: 0 0 100%;
   display: grid;
-  grid-template-columns: 120px 1fr;
-  align-items: center;
-  gap: var(--sp-3);
+  justify-items: center;
+  gap: var(--sp-2);
+  text-align: center;
 }
 
 .brief-demo {
   display: block;
+  width: 100%;
+  max-width: 260px;
   overflow: hidden;
-  border-radius: var(--r-sm);
+  border-radius: var(--r-md);
   /* 天空和這一段的關卡一樣（dash.js 設定） */
   background: var(--demo-sky, linear-gradient(#FFF1F2, #FECDD3));
 }
@@ -1208,7 +1229,7 @@ body.is-playing .topbar {
 
 .brief-text b {
   display: block;
-  font-size: 1.1rem;
+  font-size: 1.15rem;
   color: var(--fg);
 }
 
@@ -1218,48 +1239,146 @@ body.is-playing .topbar {
   color: var(--fg-muted);
 }
 
-@media (min-width: 560px) {
-  .brief-steps {
-    grid-auto-flow: column;
-    grid-auto-columns: 1fr;
+.brief-arrow {
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  border: var(--line-w) solid var(--line);
+  border-radius: 50%;
+  background: var(--card);
+  color: var(--fg);
+  box-shadow: var(--sh-sm);
+  cursor: pointer;
+}
+
+.brief-arrow svg {
+  width: 22px;
+  height: 22px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2.6;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.brief-arrow:active {
+  transform: translateY(2px);
+  box-shadow: none;
+}
+
+/* 第一張沒有「上一個」、最後一張沒有「下一個」（位置留著） */
+.brief-arrow.is-off {
+  visibility: hidden;
+}
+
+/* 點點：目前這一張是長長的深橘色（形狀不同，不只靠顏色）；每一顆都可以點 */
+.brief-dots {
+  display: flex;
+  justify-content: center;
+  gap: 2px;
+  margin-top: var(--sp-3);
+}
+
+.brief-dot {
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 28px;
+  padding: 0;
+  border: 0;
+  background: none;
+  cursor: pointer;
+}
+
+.brief-dot::before {
+  content: "";
+  width: 10px;
+  height: 10px;
+  border-radius: var(--r-pill);
+  background: var(--line);
+  transition: width .2s var(--ease), background-color .2s var(--ease);
+}
+
+.brief-dot[aria-current="step"]::before {
+  width: 24px;
+  background: var(--primary-deep);
+}
+
+/* 提示和「繼續遊戲」疊在同一格：看完之前是提示，最後一張換成按鈕 */
+.dash-brief .dlg-actions {
+  margin-top: var(--sp-3);
+}
+
+.dash-brief .dlg-actions>* {
+  grid-area: 1 / 1;
+}
+
+.brief-swipe {
+  align-self: center;
+  font-size: .92rem;
+  font-weight: 700;
+  color: var(--fg-muted);
+  text-align: center;
+}
+
+.dash-brief.is-last .brief-swipe {
+  visibility: hidden;
+}
+
+/* 「繼續遊戲」：最後一張才跳出來 */
+.dash-brief:not(.is-last) .brief-go {
+  visibility: hidden;
+}
+
+.dash-brief.is-last .brief-go {
+  animation: brief-go .4s var(--ease) both;
+}
+
+@keyframes brief-go {
+  0% {
+    opacity: 0;
+    transform: scale(.85);
   }
 
-  .brief-step {
-    grid-template-columns: 1fr;
-    justify-items: center;
-    text-align: center;
+  70% {
+    opacity: 1;
+    transform: scale(1.04);
   }
 
-  .brief-demo {
-    width: 100%;
-    max-width: 168px;
+  100% {
+    transform: none;
   }
 }
 
 @media (max-height: 520px) {
   .dash-brief {
-    padding: var(--sp-4);
+    padding: var(--sp-3) var(--sp-4);
   }
 
   .dash-brief .dlg-title {
     font-size: 1.15rem;
   }
 
-  .dash-brief .dlg-actions {
-    margin-top: var(--sp-3);
+  .brief-carousel {
+    margin-top: var(--sp-2);
   }
 
-  .brief-steps {
-    margin-top: var(--sp-2);
-    gap: var(--sp-2);
+  .brief-demo {
+    max-width: 180px;
   }
 
   .brief-step {
     gap: var(--sp-1);
   }
 
-  .brief-demo {
-    max-width: 132px;
+  .brief-dots {
+    margin-top: var(--sp-1);
+  }
+
+  .dash-brief .dlg-actions {
+    margin-top: var(--sp-2);
   }
 
   .dash-brief .btn {
@@ -1360,8 +1479,18 @@ body.is-playing .topbar {
   .ready.is-intro .rn-line,
   .ready.is-intro .rn-title,
   .ready.is-intro .ready-btn,
-  .ready.is-intro .ready-sub {
+  .ready.is-intro .ready-sub,
+  .dash-brief.is-last .brief-go {
     animation: none;
+  }
+
+  .brief-steps,
+  .brief-dot::before {
+    transition: none;
+  }
+
+  .brief-arrow:active {
+    transform: none;
   }
 
   .mode-hint,

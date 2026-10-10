@@ -845,15 +845,118 @@
       return '<li class="brief-step"><span class="brief-demo"></span>' +
         '<p class="brief-text"><b>' + s.b + '</b><span>' + s.s + '</span></p></li>';
     }).join('');
-    dlg.setAttribute('data-steps', bf.steps.length);
+    $('briefDots').innerHTML = bf.steps.map(function (s, k) {
+      return '<button type="button" class="brief-dot" data-step="' + k + '" aria-label="第 ' + (k + 1) + ' 個，共 ' + bf.steps.length + ' 個"></button>';
+    }).join('');
+    BR.n = bf.steps.length;
+    BR.steps = bf.steps;
+    /* 先直接停在第一張（不要從上一次的最後一張滑回來），箭頭、點點、按鈕也先擺好再打開 */
+    var track = $('briefSteps');
+    track.classList.add('is-dragging');
+    briefGoTo(0, true);
+    void track.offsetWidth;
+    track.classList.remove('is-dragging');
     /* 小圖的天空和這一段一樣 */
     dlg.style.setProperty('--demo-sky', 'linear-gradient(' + th.sky[0] + ',' + th.sky[1] + ')');
     briefDlg.open();
     briefDemos(bf, { th: th, tn: tn }, reduce);   /* 對話框打開之後才放進去：藏起來的時候放進去的 SMIL 不會動 */
-    say(head + bf.steps.map(function (s) { return s.b + '：' + s.s; }).join('。') + '。');
+    say(head + briefLine(0) + (BR.n > 1 ? '一共 ' + BR.n + ' 個，滑一下或按「下一個」看下一個。' : ''));
   }
 
   function briefTooSoon() { return now() - G.briefAt < BRIEF_LOCK_MS; }
+
+  /* ── 輪播：一次一張。往左滑（手指往左）或按「下一個」、點點換張；看到最後一張，「繼續遊戲」才跳出來。
+     對話框剛跳出來的 0.7 秒內，箭頭、點點、滑動都不算（小朋友還在一直點畫面）。
+     換到哪一張，那一張的小圖從頭播（減少動態時停在最能說明的那一格，換張也不滑） ── */
+  var BR = { i: 0, n: 0, steps: [], drag: null };
+
+  function briefLine(i) {
+    var s = BR.steps[i];
+    return s ? s.b + '：' + s.s + '。' : '';
+  }
+
+  function briefGoTo(i, quiet) {
+    i = clamp(i, 0, BR.n - 1);
+    var moved = i !== BR.i;
+    BR.i = i;
+    var track = $('briefSteps');
+    track.style.transform = 'translateX(' + (-100 * i) + '%)';
+    Array.prototype.forEach.call(track.children, function (li, k) {
+      if (k === i) li.removeAttribute('aria-hidden');
+      else li.setAttribute('aria-hidden', 'true');
+    });
+    Array.prototype.forEach.call($('briefDots').children, function (d, k) {
+      if (k === i) d.setAttribute('aria-current', 'step');
+      else d.removeAttribute('aria-current');
+    });
+    var last = i === BR.n - 1, ae = document.activeElement;
+    $('briefPrev').classList.toggle('is-off', i === 0);
+    $('briefNext').classList.toggle('is-off', last);
+    $('briefDlg').classList.toggle('is-last', last);
+    /* 按著的箭頭不見了（到頭了）：焦點移到「繼續遊戲」或另一邊的箭頭 */
+    if (ae && ae.classList && ae.classList.contains('brief-arrow') && ae.classList.contains('is-off')) {
+      try { (last ? $('briefGo') : $('briefNext')).focus(); } catch (e) { /* 忽略 */ }
+    }
+    if (!reduce && moved) {
+      var svg = track.children[i] && track.children[i].querySelector('svg');
+      if (svg && typeof svg.setCurrentTime === 'function') svg.setCurrentTime(0);
+    }
+    if (!quiet) say('第 ' + (i + 1) + ' 個，共 ' + BR.n + ' 個。' + briefLine(i) + (last ? '看完了，可以按「繼續遊戲」。' : ''));
+  }
+
+  function briefStep(d) {
+    if (briefTooSoon()) return;
+    briefGoTo(BR.i + d);
+  }
+
+  $('briefPrev').addEventListener('click', function () { briefStep(-1); });
+  $('briefNext').addEventListener('click', function () { briefStep(1); });
+
+  $('briefDots').addEventListener('click', function (ev) {
+    var d = ev.target.closest('[data-step]');
+    if (!d || briefTooSoon()) return;
+    briefGoTo(Number(d.getAttribute('data-step')));
+  });
+
+  /* 鍵盤：← → 換張 */
+  $('briefDlg').addEventListener('keydown', function (ev) {
+    if (ev.key === 'ArrowRight') { ev.preventDefault(); briefStep(1); }
+    else if (ev.key === 'ArrowLeft') { ev.preventDefault(); briefStep(-1); }
+  });
+
+  /* 手指拖：跟著手指動，放開時拖超過兩成寬（或甩得夠快）就換張；第一張、最後一張拖不太動 */
+  (function () {
+    var vp = $('briefViewport'), track = $('briefSteps');
+    vp.addEventListener('pointerdown', function (ev) {
+      if (BR.n < 2 || ev.button > 0) return;
+      BR.drag = { id: ev.pointerId, x: ev.clientX, t: now(), dx: 0, on: false };
+      try { vp.setPointerCapture(ev.pointerId); } catch (e) { /* 忽略 */ }
+    });
+    vp.addEventListener('pointermove', function (ev) {
+      var d = BR.drag;
+      if (!d || d.id !== ev.pointerId) return;
+      d.dx = ev.clientX - d.x;
+      if (!d.on && Math.abs(d.dx) < 6) return;
+      d.on = true;
+      var edge = (BR.i === 0 && d.dx > 0) || (BR.i === BR.n - 1 && d.dx < 0);
+      track.classList.add('is-dragging');
+      track.style.transform = 'translateX(calc(' + (-100 * BR.i) + '% + ' + (edge ? d.dx * 0.3 : d.dx) + 'px))';
+    });
+    function end(ev) {
+      var d = BR.drag;
+      if (!d || d.id !== ev.pointerId) return;
+      BR.drag = null;
+      track.classList.remove('is-dragging');
+      var fast = Math.abs(d.dx) / Math.max(1, now() - d.t) > 0.5;
+      if (d.on && !briefTooSoon() && (Math.abs(d.dx) > vp.clientWidth * 0.2 || (fast && Math.abs(d.dx) > 24))) {
+        briefGoTo(BR.i + (d.dx < 0 ? 1 : -1));
+      } else {
+        briefGoTo(BR.i, true);
+      }
+    }
+    vp.addEventListener('pointerup', end);
+    vp.addEventListener('pointercancel', end);
+  })();
 
   /* 示範小圖（SMIL，和遊戲裡畫的一樣：同一個角色、載具、藥盒、針、橘色圈圈、水柱、綠色的勾）。
      時間都寫「一圈的幾分之幾」（0–1），一圈幾秒看每一種玩法的 dur */

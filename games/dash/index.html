@@ -182,9 +182,23 @@
        用兩三張會動的小圖說明怎麼玩（標題、步驟、圖都由 dash.js 放進來） -->
   <dialog class="dlg dash-brief" id="briefDlg" aria-labelledby="briefTitle">
     <h2 class="dlg-title" id="briefTitle"></h2>
-    <ol class="brief-steps" id="briefSteps"></ol>
+    <!-- 輪播：一次一張。往左滑（或按旁邊的箭頭、下面的點點）看下一張；看到最後一張才出現「繼續遊戲」 -->
+    <div class="brief-carousel">
+      <button class="brief-arrow" type="button" id="briefPrev" aria-label="上一個">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5 8 12l7 7" /></svg>
+      </button>
+      <div class="brief-viewport" id="briefViewport">
+        <ol class="brief-steps" id="briefSteps"></ol>
+      </div>
+      <button class="brief-arrow" type="button" id="briefNext" aria-label="下一個">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m9 5 7 7-7 7" /></svg>
+      </button>
+    </div>
+    <div class="brief-dots" id="briefDots" role="group" aria-label="第幾個教學"></div>
+    <!-- 同一個位置：還沒看完是「滑一下」的提示，看到最後一張換成「繼續遊戲」 -->
     <div class="dlg-actions">
-      <button class="btn btn-primary" type="button" id="briefGo">知道了，開始！</button>
+      <p class="brief-swipe" aria-hidden="true">滑一下，看下一個</p>
+      <button class="btn btn-primary brief-go" type="button" id="briefGo">知道了，繼續遊戲！</button>
     </div>
   </dialog>
 
