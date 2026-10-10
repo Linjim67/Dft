@@ -237,6 +237,11 @@
     },
 
     /* 星星（收集品） */
+    /* 雲朵：三種形狀（大團、兩團、長長扁扁） */
+    cloud1: function () { return cloud([[60, 62, 28], [100, 46, 36], [142, 60, 28], [36, 74, 18], [166, 74, 18]], 30, 170, 'c1'); },
+    cloud2: function () { return cloud([[72, 58, 30], [120, 54, 34], [152, 70, 20], [46, 72, 20]], 34, 166, 'c2'); },
+    cloud3: function () { return cloud([[52, 70, 20], [86, 58, 26], [122, 60, 24], [154, 70, 18]], 34, 170, 'c3'); },
+
     star: function () {
       return svg(100, 100,
         '<path d="M50 6l12.5 26.5 29 3.6-21.3 20 5.5 28.7L50 70.6 24.3 84.8l5.5-28.7-21.3-20 29-3.6Z" fill="#FACC15" stroke="#A16207" stroke-width="5" stroke-linejoin="round"/>' +
@@ -358,6 +363,17 @@
   function char(id) {
     for (var i = 0; i < CHARS.length; i++) if (CHARS[i].id === id) return CHARS[i];
     return CHARS[0];
+  }
+
+  /* 雲朵：幾團圓圓的雲疊在平平的底上，淡藍灰的邊、底下一點點陰影 */
+  function cloud(puffs, x0, x1, id) {
+    var shape = puffs.map(function (p) { return '<circle cx="' + p[0] + '" cy="' + p[1] + '" r="' + p[2] + '"/>'; }).join('') +
+      '<rect x="' + x0 + '" y="62" width="' + (x1 - x0) + '" height="30" rx="15"/>';
+    return svg(200, 100,
+      '<defs><clipPath id="' + id + '">' + shape + '</clipPath></defs>' +
+      '<g fill="#D6E4F0" stroke="#D6E4F0" stroke-width="6">' + shape + '</g>' +
+      '<g fill="#fff">' + shape + '</g>' +
+      '<ellipse cx="100" cy="92" rx="86" ry="14" fill="#E8F1F8" clip-path="url(#' + id + ')"/>');
   }
 
   /* 安心旗：桿子、三角旗、頂端的小圓球、底座 */

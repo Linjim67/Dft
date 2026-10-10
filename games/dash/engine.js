@@ -21,6 +21,10 @@
     STEP_TOL: 0.22,           /* 撞到方塊邊緣時差一點點就自動踩上去 */
     EPS: 0.02,
 
+    /* 撞到藥盒側面不會死：角色被藥盒擋住、落在畫面捲動的後面（lag 格）。畫面照樣往前，角色在畫面上一直往左退；
+       退到畫面左邊（MAX_LAG：dash.js 的 PX 2.8 − 半個角色）才撞到。跳過去之後跑得比捲動快 CATCH 倍，追回原來的位置 */
+    PUSH: { MAX_LAG: 2.3, CATCH: 0.6 },
+
     /* 小膠囊（跳跳）：往上的重力比較輕、往下的重力重 1.4 倍（像 Geometry Dash 一樣「咚」一下落地）。
        跳約 2.25 格高，平地上 0.49 秒落地 ≈ 3.8 格遠 */
     JUMP_V: 16.52,
@@ -260,6 +264,7 @@
       p: newPlayer(), p2: null, ti: 0, speedMul: 1,
       baseScale: opt.timeScale || 1, acc: 0,
       dead: false, done: false, deaths: 0, invuln: 0, got: {}, gotN: 0,
+      lag: 0, prevLag: 0, blocked: false, wasBlocked: false,
       rot: { angle: 0, dir: 1, view: 0 }, boss: null,
       checkpoints: opt.checkpoints !== false, cp: null,
       passCol: Math.floor(-1.5), ev: []
@@ -303,10 +308,15 @@
     }
   }
 
+  /* 角色真正在哪裡（畫面捲到 run.x；被藥盒擋住時角色落後 lag 格） */
+  function playerX(run) {
+    return run.x - run.lag;
+  }
+
   /* extra：水柱撞到的時候帶上是哪一排、撞到時小膠囊在地上還是空中（畫面用來教下一次怎麼躲） */
   function crash(run, why, extra) {
     run.dead = true;
-    var e = { why: why, x: run.x, y: run.p.y };
+    var e = { why: why, x: playerX(run), y: run.p.y };
     if (extra) for (var k in extra) e[k] = extra[k];
     emit(run, 'crash', e);
     return false;
@@ -328,7 +338,7 @@
 
   function fireTriggers(run) {
     var tr = run.world.triggers;
-    while (run.ti < tr.length && tr[run.ti].x <= run.x) {
+    while (run.ti < tr.length && tr[run.ti].x <= playerX(run)) {
       var g = tr[run.ti++];
       if (g.k === 'portal') {
         setMode(run, g.mode);
@@ -352,7 +362,7 @@
      ───────────────────────────────────────────────────────────── */
 
   function movePlayer(run, P, cols, held, press, main) {
-    var C = CONFIG, dt = C.DT, H = C.HALF, x = run.x, m = physMode(run.mode);
+    var C = CONFIG, dt = C.DT, H = C.HALF, x = playerX(run), m = physMode(run.mode);
     var i, b, objs;
     P.py = P.y;
 
@@ -382,7 +392,7 @@
 
     objs = near(cols, x, 1.5);
 
-    /* 1. 往前走一步之後，有沒有卡進方塊裡（側面撞到 → 撞到了） */
+    /* 1. 往前走一步之後，有沒有卡進方塊裡（側面撞到 → 被藥盒擋住，貼著藥盒的左邊） */
     for (var pass = 0; pass < 2; pass++) {
       var moved = false;
       for (i = 0; i < objs.length; i++) {
@@ -403,7 +413,8 @@
           if (P.vy < 0) P.vy = 0;
           moved = true;
         } else {
-          return crash(run, 'block');
+          x = blockedBy(run, b);
+          moved = true;
         }
       }
       if (!moved) break;
@@ -440,7 +451,7 @@
         if (P.vy < 0) P.vy = 0;
         ground = true;
       } else {
-        return crash(run, 'block');
+        x = blockedBy(run, b);
       }
     }
 
@@ -495,9 +506,17 @@
     return true;
   }
 
+  /* 被藥盒 b 擋住：角色停在藥盒左邊（畫面照樣往前捲，lag 變大）；回傳角色新的 x */
+  function blockedBy(run, b) {
+    var x = b.x - CONFIG.HALF;
+    run.lag = Math.max(run.lag, run.x - x);
+    run.blocked = true;
+    return run.x - run.lag;
+  }
+
   /* 轉轉關要知道「越過了一根針」 */
   function passNeedles(run) {
-    var col = Math.floor(run.x - 1.5);
+    var col = Math.floor(playerX(run) - 1.5);
     for (var c = run.passCol + 1; c <= col; c++) {
       var l = run.world.cols[c];
       if (!l) continue;
@@ -614,7 +633,7 @@
     b.bt += C.DT;
     if (!b.cp2 && b.bt >= b.phase2At) {
       b.cp2 = true;
-      if (run.checkpoints) run.cp = snapshot(run, run.x);
+      if (run.checkpoints) run.cp = snapshot(run, playerX(run));
       emit(run, 'bossPhase', { phase: 2 });
     }
     while (b.next < b.list.length && b.list[b.next].at <= b.bt) {
@@ -623,20 +642,20 @@
       b.tank--;
       emit(run, 'shot', { lane: s.lane });
     }
-    var P = run.p, hz = C.HAZ, pad = C.HAZ_PAD;
+    var P = run.p, hz = C.HAZ, pad = C.HAZ_PAD, px = playerX(run);
     for (var i = b.shots.length - 1; i >= 0; i--) {
       var w = b.shots[i];
       w.x -= B.SHOT_V * C.DT;
       if (w.x < run.x - 8) { b.shots.splice(i, 1); continue; }
       var yc = shotY(run.world, w.x, w.lane), hh = laneHalf(w.lane);
       if (!(run.invuln > 0) &&
-        overlap(run.x - hz, run.x + hz, w.x - B.LEN / 2 - pad, w.x + B.LEN / 2 + pad) &&
+        overlap(px - hz, px + hz, w.x - B.LEN / 2 - pad, w.x + B.LEN / 2 + pad) &&
         overlap(P.y - hz, P.y + hz, yc - hh - pad, yc + hh + pad)) {
         crash(run, 'water', { lane: w.lane, grounded: P.grounded, vy: P.vy });
         return;
       }
       /* 水柱整條過了小膠囊 = 躲過了（事件留給測試與之後用；畫面不再跳綠色的勾） */
-      if (!w.passed && w.x + B.LEN / 2 < run.x - hz) {
+      if (!w.passed && w.x + B.LEN / 2 < px - hz) {
         w.passed = true;
         emit(run, 'dodge', { lane: w.lane });
       }
@@ -661,11 +680,19 @@
     var C = CONFIG;
     run.t += C.DT;
     run.prevX = run.x;
+    run.prevLag = run.lag;
     run.x += C.SPEED * C.DT;
+    /* 沒被擋住：跑得比捲動快，慢慢追回原來的位置 */
+    if (run.lag > 0) run.lag = Math.max(0, run.lag - C.PUSH.CATCH * C.SPEED * C.DT);
+    run.blocked = false;
     fireTriggers(run);
     if (run.done) { run.p.py = run.p.y; return; }
     if (!movePlayer(run, run.p, run.world.cols, held, press, true)) return;
     if (run.p2 && !movePlayer(run, run.p2, run.world.topCols, held, press, false)) return;
+    /* 被擋到畫面左邊才算撞到 */
+    if (run.lag >= C.PUSH.MAX_LAG) { crash(run, 'edge'); return; }
+    if (run.blocked && !run.wasBlocked) emit(run, 'bump', { x: playerX(run), y: run.p.y });
+    run.wasBlocked = run.blocked;
     passNeedles(run);
     if (run.boss) stepBoss(run);
   }
@@ -689,6 +716,8 @@
     var cp = run.cp, C = CONFIG;
     var cube = physMode(cp.mode) === 'cube';
     run.x = run.prevX = cp.x;
+    run.lag = run.prevLag = 0;
+    run.blocked = run.wasBlocked = false;
     run.mode = cp.mode;
     run.ti = cp.ti;
     run.speedMul = cp.speedMul;
@@ -723,9 +752,9 @@
       var b = run.boss;
       if (b && b.state === 'done') return 0.98;
       if (b) return 0.4 + 0.58 * (1 - b.tank / b.total);
-      return 0.4 * clamp(run.x / w.bossAt, 0, 1);
+      return 0.4 * clamp(playerX(run) / w.bossAt, 0, 1);
     }
-    return w.goalX ? clamp(run.x / w.goalX, 0, 1) : 0;
+    return w.goalX ? clamp(playerX(run) / w.goalX, 0, 1) : 0;
   }
 
   /* ─────────────────────────────────────────────────────────────
@@ -815,6 +844,7 @@
     ceilAt: ceilAt,
     newRun: newRun,
     cloneRun: cloneRun,
+    playerX: playerX,
     step: step,
     advance: advance,
     respawn: respawn,
