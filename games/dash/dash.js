@@ -55,6 +55,16 @@
   })();
 
   var rec = E.loadRecord(storage, profile.code);
+
+  /* 選的角色（小膠囊／小麻糬／小抹茶）：只換圖，玩法完全一樣。跟著個人資料的代碼記住 */
+  var CHAR_KEY = 'anxin.dash.char';
+  var CH = (function () {
+    try {
+      var d = JSON.parse(storage.getItem(CHAR_KEY) || 'null');
+      if (d && d.code === profile.code) return ART.char(d.id);
+    } catch (e) { /* 壞掉的紀錄 → 預設角色 */ }
+    return ART.CHARS[0];
+  })();
   var speed = E.ageScale(profile.age);
 
   var mq = window.matchMedia ? window.matchMedia('(prefers-reduced-motion: reduce)') : null;
@@ -98,11 +108,39 @@
     return s;
   }
 
-  var CARD_ART = { 1: ['ship'], 2: ['egg'], 3: ['ufo'], 4: ['egg', 'egg'], 5: ['egg'], 6: ['doctor'] };
+  /* body／ship／ufo 換成現在選的角色那一張；其他（醫生、星星）照原本的名字 */
+  var CARD_ART = { 1: ['ship'], 2: ['body'], 3: ['ufo'], 4: ['body', 'body'], 5: ['body'], 6: ['doctor'] };
+
+  /* 關卡名稱、提示裡的「體溫計火箭」「藥杯飛碟」是小膠囊的載具；換成現在這個角色的 */
+  function vehicles(text) {
+    return text.replace('體溫計火箭', CH.shipName).replace('藥杯飛碟', CH.ufoName);
+  }
+
+  function pic(role) {
+    return role === 'body' || role === 'dizzy' || role === 'ship' || role === 'ufo' ? CH[role] : role;
+  }
 
   function artImgs(names) {
-    return names.map(function (n) { return '<img src="' + ART.source(n) + '" alt="">'; }).join('');
+    return names.map(function (n) { return '<img src="' + ART.source(pic(n)) + '" alt="">'; }).join('');
   }
+
+  /* 選角色：三張卡片是一組單選按鈕（方向鍵可以換、報讀「已選取」）；換了角色，關卡卡片上的小圖跟著換 */
+  function renderChars() {
+    $('charList').innerHTML = ART.CHARS.map(function (c) {
+      return '<label class="char-option"><input type="radio" name="dashChar" value="' + c.id + '"' +
+        (c.id === CH.id ? ' checked' : '') + '>' +
+        '<span class="char-body"><img src="' + ART.source(c.body) + '" alt="">' +
+        '<span class="char-name">' + c.name + '</span>' +
+        '<svg class="char-check" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 12.5l3.3 3.3L17 9"/></svg></span></label>';
+    }).join('');
+  }
+
+  $('charList').addEventListener('change', function (ev) {
+    if (!ev.target || ev.target.name !== 'dashChar') return;
+    CH = ART.char(ev.target.value);
+    try { storage.setItem(CHAR_KEY, JSON.stringify({ code: profile.code, id: CH.id })); } catch (e) { /* 忽略 */ }
+    renderLevels();
+  });
 
   function renderLevels() {
     var html = LV.LEVELS.map(function (L) {
@@ -112,12 +150,13 @@
       /* 過關的關卡不另外標「完成」：星星就是成績 */
       if (r && r.done) badge = '';
       else if (r && r.best > 0) badge = '<span class="lv-badge">最遠 ' + Math.round(r.best * 100) + '%</span>';
-      var label = '第 ' + L.id + ' 關 ' + L.name + '：' + L.sub + '。' +
+      var name = vehicles(L.name), sub = vehicles(L.sub);
+      var label = '第 ' + L.id + ' 關 ' + name + '：' + sub + '。' +
         '星星 ' + got + ' / 3。';
       return '<li><button type="button" class="lv-card" data-level="' + L.id + '" aria-label="' + label + '">' +
         '<span class="lv-art" style="--lv-bg:' + THEME[L.theme].sky[1] + '"><span class="lv-num">' + L.id + '</span>' +
         artImgs(CARD_ART[L.id]) + '</span>' +
-        '<span class="lv-text"><span class="lv-name">' + L.name + '</span><span class="lv-sub">' + L.sub + '</span></span>' +
+        '<span class="lv-text"><span class="lv-name">' + name + '</span><span class="lv-sub">' + sub + '</span></span>' +
         '<span class="lv-side"><span class="lv-stars">' + starIcons(r && r.stars) + '</span>' + badge + '</span>' +
         '</button></li>';
     }).join('');
@@ -156,7 +195,7 @@
   function title() {
     if (G.level === 'inf') return '無限挑戰・第 ' + G.round + ' 輪';
     var L = LV.LEVELS[G.level - 1];
-    return '第 ' + L.id + ' 關・' + L.name;
+    return '第 ' + L.id + ' 關・' + vehicles(L.name);
   }
 
   function resetInput() {
@@ -200,7 +239,8 @@
 
     $('hudTitle').textContent = title();
     $('readyName').textContent = title();
-    $('readySub').textContent = MODES[G.run.mode].hint;
+    $('readySub').textContent = modeHint(G.run.mode);
+    $('stageCanvas').setAttribute('aria-label', '遊戲畫面：' + CH.name + '往右跑。按空白鍵或向上鍵跳，Esc 暫停');
     setMode(G.run.mode);
     $('readyBox').hidden = false;
     $('modeHint').hidden = true;
@@ -409,7 +449,7 @@
   }
 
   function briefDemos(still) {
-    var egg = ART.source('egg');
+    var egg = ART.source(CH.body);
     var jump =
       /* 目標小圈（虛線）→ 大圈圈縮過來 → 縮到最小那一刻亮一下，跳！ */
       '<circle cx="30" cy="60" r="15" fill="none" stroke="#7C2D12" stroke-opacity=".55" stroke-width="1.4" stroke-dasharray="3 2.4">' +
@@ -701,7 +741,11 @@
     setMode(mode);
     if (G.seen[mode]) return;
     G.seen[mode] = true;
-    showHint((MODES[mode] || MODES.cube).hint);
+    showHint(modeHint(mode));
+  }
+
+  function modeHint(mode) {
+    return vehicles((MODES[mode] || MODES.cube).hint);
   }
 
   function showHint(text, ms, spoken) {
@@ -822,7 +866,7 @@
     line += run.deaths ? '試了 ' + (run.deaths + 1) + ' 次，好有耐心！' : '一次就成功！';
     if (last) line = '點滴袋空了，你打敗醫生了！' + line;
     $('winLine').textContent = line;
-    $('nextBtn').textContent = last ? '挑戰無限模式' : '下一關：' + LV.LEVELS[G.level].name;
+    $('nextBtn').textContent = last ? '挑戰無限模式' : '下一關：' + vehicles(LV.LEVELS[G.level].name);
     winDlg.open();
   }
 
@@ -1169,7 +1213,7 @@
     }
   }
 
-  var PORTAL_ICON = { cube: 'egg', rot: 'egg', duo: 'egg', ship: 'ship', ufo: 'ufo', boss: 'doctor' };
+  var PORTAL_ICON = { cube: 'body', rot: 'body', duo: 'body', ship: 'ship', ufo: 'ufo', boss: 'doctor' };
 
   function drawTrigger(g, camX, gY, t) {
     var T = V.T, sx = (g.x - camX) * T, run = G.run;
@@ -1178,10 +1222,10 @@
       var fn = E.funnelAt(run.world, g.x), F = C.FUNNEL;
       var h = (fn ? fn.gap : F.GAP) + 0.2, yb = (fn ? fn.floor : F.FLOOR) - 0.1;
       blit('portal_' + g.mode, sx - 0.4 * T, gY - (yb + h) * T, 0.8, h);
-      var icon = PORTAL_ICON[g.mode] || 'egg';
-      var iw = icon === 'doctor' ? 0.42 : icon === 'egg' ? 0.5 : 0.62;
-      var ih = icon === 'doctor' ? 0.7 : icon === 'egg' ? 0.5 : 0.42;
-      blit(icon, sx - iw / 2 * T, gY - (yb + h / 2 + ih / 2) * T, iw, ih);
+      var icon = PORTAL_ICON[g.mode] || 'body';
+      var iw = icon === 'doctor' ? 0.42 : icon === 'body' ? 0.5 : 0.62;
+      var ih = icon === 'doctor' ? 0.7 : icon === 'body' ? 0.5 : 0.42;
+      blit(pic(icon), sx - iw / 2 * T, gY - (yb + h / 2 + ih / 2) * T, iw, ih);
     } else if (g.k === 'speed') {
       ctx.save();
       ctx.strokeStyle = '#15803D';
@@ -1258,13 +1302,13 @@
       ctx.scale(sxs, sys);
       ctx.translate(0, -0.45 * T);
       ctx.rotate(spin);
-      blit(dead ? 'eggDizzy' : 'egg', -0.5 * T, -0.52 * T, 1, 1);
+      blit(dead ? CH.dizzy : CH.body, -0.5 * T, -0.52 * T, 1, 1);
     } else if (pm === 'ship') {
       ctx.rotate(clamp(-P.vy / C.SHIP_VMAX, -1, 1) * 20 * Math.PI / 180);
-      blit('ship', -0.72 * T, -0.55 * T, 1.44, 0.9);
+      blit(CH.ship, -0.72 * T, -0.55 * T, 1.44, 0.9);
     } else {
       ctx.rotate(clamp(-P.vy / C.UFO_VMAX, -1, 1) * 8 * Math.PI / 180);
-      blit('ufo', -0.66 * T, -0.52 * T, 1.32, 0.94);
+      blit(CH.ufo, -0.66 * T, -0.52 * T, 1.32, 0.94);
     }
     ctx.restore();
   }
@@ -1672,7 +1716,7 @@
 
   function burst(x, y) {
     if (reduce) return;
-    var cs = ['#FB923C', '#FFF7ED', '#FDA4AF', '#FDBA74'];
+    var cs = CH.burst;
     for (var i = 0; i < 14; i++) {
       var ang = Math.random() * Math.PI * 2, sp = 2 + Math.random() * 3;
       G.parts.push({ x: x, y: y, vx: Math.cos(ang) * sp, vy: Math.sin(ang) * sp + 1.5, t: 0, life: 0.7, r: 0.08 + Math.random() * 0.08, c: cs[i % cs.length], g: 7 });
@@ -1704,6 +1748,7 @@
     ctx.globalAlpha = 1;
   }
 
+  renderChars();
   renderLevels();
   track('home');
 

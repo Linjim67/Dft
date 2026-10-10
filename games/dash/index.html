@@ -50,7 +50,7 @@
     <section class="wrap" id="introView" aria-labelledby="introTitle">
       <div class="page-head">
         <h1 id="introTitle" tabindex="-1">膠囊衝衝衝</h1>
-        <p class="page-lede">小膠囊要衝到終點！跳過針頭、坐火箭、開飛碟，還要和醫生玩水槍。</p>
+        <p class="page-lede">選一個好朋友，一起衝到終點！跳過針頭、坐火箭、開飛碟，還要和醫生玩水槍。</p>
       </div>
 
       <!-- 直式手機才出現：請小朋友把手機橫過來玩 -->
@@ -61,6 +61,10 @@
         </svg>
         <span><b>把手機橫過來玩</b><span class="turn-sub">畫面比較大，可以看得更遠</span></span>
       </p>
+
+      <!-- 先選角色（小膠囊／小麻糬／小抹茶，只換圖，玩法一樣），再選關卡。卡片由 dash.js 畫 -->
+      <h2 class="section-title dash-list-title" id="charTitle">選一個角色</h2>
+      <div class="char-list" id="charList" role="radiogroup" aria-labelledby="charTitle"></div>
 
       <h2 class="section-title dash-list-title">選一關</h2>
       <ol class="level-list" id="levelList"></ol>

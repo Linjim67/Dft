@@ -58,6 +58,111 @@
   list-style: none;
 }
 
+/* ── 選角色：三張卡片一排（單選）。選到的：淡橘底＋深橘粗框＋右上角打勾（不只靠顏色） ── */
+.char-list {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--sp-3);
+}
+
+.char-option {
+  position: relative;
+  display: block;
+  cursor: pointer;
+}
+
+.char-option input {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  opacity: 0;
+  cursor: pointer;
+}
+
+.char-body {
+  position: relative;
+  display: grid;
+  justify-items: center;
+  gap: var(--sp-1);
+  padding: var(--sp-3) var(--sp-1) var(--sp-2);
+  border-radius: var(--r-lg);
+  border: var(--line-w) solid var(--line);
+  background: var(--card);
+  box-shadow: var(--sh-sm);
+  transition: transform var(--t-fast) var(--ease), box-shadow var(--t-fast) var(--ease),
+    background-color var(--t-fast) var(--ease), border-color var(--t-fast) var(--ease);
+}
+
+.char-body img {
+  width: 64px;
+  height: 64px;
+}
+
+.char-name {
+  font-size: 1rem;
+  font-weight: 700;
+  line-height: 1.4;
+  color: var(--fg);
+}
+
+.char-check {
+  position: absolute;
+  right: -7px;
+  top: -7px;
+  width: 24px;
+  height: 24px;
+  padding: 2px;
+  border-radius: var(--r-pill);
+  background: var(--primary-deep);
+  fill: none;
+  stroke: #fff;
+  stroke-width: 2.6;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  opacity: 0;
+  transform: scale(.6);
+  transition: opacity var(--t-fast) var(--ease), transform var(--t-fast) var(--ease);
+}
+
+.char-option input:checked+.char-body {
+  background: var(--primary-wash);
+  border-color: var(--primary-deep);
+  box-shadow: var(--sh-md), inset 0 0 0 var(--line-w) var(--primary-deep);
+}
+
+.char-option input:checked+.char-body .char-name {
+  color: var(--primary-deep);
+}
+
+.char-option input:checked+.char-body .char-check {
+  opacity: 1;
+  transform: none;
+}
+
+.char-option input:focus-visible+.char-body {
+  outline: 3px solid var(--primary-deep);
+  outline-offset: 3px;
+}
+
+.char-option input:active+.char-body {
+  transform: translateY(2px);
+}
+
+/* 選到的角色跳一下 */
+@media (prefers-reduced-motion: no-preference) {
+  .char-option input:checked+.char-body img {
+    animation: char-hop .45s var(--ease);
+  }
+}
+
+@keyframes char-hop {
+  40% {
+    transform: translateY(-8px) scale(1.04, .96);
+  }
+}
+
 /* 整張卡片就是按鈕：點下去就開始 */
 .lv-card {
   display: grid;
