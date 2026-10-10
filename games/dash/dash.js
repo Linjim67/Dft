@@ -109,7 +109,7 @@
   }
 
   /* body／ship／ufo 換成現在選的角色那一張；其他（醫生、星星）照原本的名字 */
-  var CARD_ART = { 1: ['ship'], 2: ['body'], 3: ['ufo'], 4: ['body', 'body'], 5: ['body'], 6: ['doctor'] };
+  var CARD_ART = { 1: ['ship'], 2: ['body'], 3: ['ufo'], 4: ['body', 'body'], 5: ['body'], 6: ['doctorStop'] };
 
   /* 關卡名稱、提示裡的「體溫計火箭」「藥杯飛碟」是小膠囊的載具；換成現在這個角色的 */
   function vehicles(text) {
@@ -186,7 +186,7 @@
   var G = {
     run: null, level: null, seed: null, phase: 'idle', resume: null,
     input: { held: false, presses: 0 }, pointers: {}, nPointers: 0, keyHeld: false, suppress: false,
-    seen: {}, parts: [], angle: 0, aimY: 0.9, lastLane: null,
+    seen: {}, parts: [], angle: 0, lastLane: null,
     squashAt: 0, squashKind: '', recoilAt: 0, crashUntil: 0, holdUntil: 0, doneAt: 0,
     saved: false, started: false, raf: 0, last: 0, hintTimer: 0, round: 1, dlgAction: null, hud: {},
     duck: 0, jumpBt: -9, coach: '', briefed: false, briefAt: 0, portraitOk: false
@@ -225,7 +225,6 @@
     G.seen = {};
     G.parts = [];
     G.angle = 0;
-    G.aimY = 0.9;
     G.lastLane = null;
     G.doneAt = 0;
     G.hud = {};
@@ -489,13 +488,14 @@
       '<rect x="14" y="13" width="18" height="28" rx="4" fill="none" stroke="#57534E" stroke-width="1.6"/>' +
       '<path d="M23 41v6" stroke="#57534E" stroke-width="1.6"/>' +
       /* 醫生：袋子空了就笑咪咪舉白旗 */
-      '<image href="' + ART.source('doctor') + '" x="62" y="10" width="38" height="63">' +
+      '<image href="' + ART.source('doctorStop') + '" x="50" y="9" width="64" height="64">' +
       anim('opacity', '1;1;0;0', '0;.7;.7;1', ' calcMode="discrete"') + '</image>' +
-      '<image href="' + ART.source('doctorHappy') + '" x="62" y="10" width="38" height="63" opacity="0">' +
+      '<image href="' + ART.source('doctorHappy') + '" x="50" y="9" width="64" height="64" opacity="0">' +
       anim('opacity', '0;0;1;1', '0;.7;.7;1', ' calcMode="discrete"') + '</image>' +
+      /* 白旗拿在舉高的那隻手上（圖上 DOC.flag 的位置） */
       '<g opacity="0">' + anim('opacity', '0;0;1;1', '0;.7;.7;1', ' calcMode="discrete"') +
-      '<path d="M58 54V26" stroke="#78716C" stroke-width="2" stroke-linecap="round"/>' +
-      '<path d="M58 26q-6 2-12 0v9q6 2 12 0Z" fill="#fff" stroke="#57534E" stroke-width="1.4" stroke-linejoin="round"/></g>';
+      '<path d="M79 39V13" stroke="#78716C" stroke-width="2" stroke-linecap="round"/>' +
+      '<path d="M79 13q-6 2-12 0v9q6 2 12 0Z" fill="#fff" stroke="#57534E" stroke-width="1.4" stroke-linejoin="round"/></g>';
     var parts = { briefJump: jump, briefStay: stay, briefWin: win };
     Object.keys(parts).forEach(function (id) {
       var host = $(id);
@@ -1280,7 +1280,7 @@
     }
   }
 
-  var PORTAL_ICON = { cube: 'body', rot: 'body', duo: 'body', ship: 'ship', ufo: 'ufo', boss: 'doctor' };
+  var PORTAL_ICON = { cube: 'body', rot: 'body', duo: 'body', ship: 'ship', ufo: 'ufo', boss: 'doctorStop' };
 
   function drawTrigger(g, camX, gY, t) {
     var T = V.T, sx = (g.x - camX) * T, run = G.run;
@@ -1290,8 +1290,8 @@
       var h = (fn ? fn.gap : F.GAP) + 0.2, yb = (fn ? fn.floor : F.FLOOR) - 0.1;
       blit('portal_' + g.mode, sx - 0.4 * T, gY - (yb + h) * T, 0.8, h);
       var icon = PORTAL_ICON[g.mode] || 'body';
-      var iw = icon === 'doctor' ? 0.42 : icon === 'body' ? 0.5 : 0.62;
-      var ih = icon === 'doctor' ? 0.7 : icon === 'body' ? 0.5 : 0.42;
+      var iw = icon === 'doctorStop' ? 0.7 : icon === 'body' ? 0.5 : 0.62;
+      var ih = icon === 'doctorStop' ? 0.7 : icon === 'body' ? 0.5 : 0.42;
       blit(pic(icon), sx - iw / 2 * T, gY - (yb + h / 2 + ih / 2) * T, iw, ih);
     } else if (g.k === 'speed') {
       ctx.save();
@@ -1393,9 +1393,11 @@
     return CH.walk[((Math.floor(dist / WALK_STEP) % n) + n) % n];
   }
 
-  /* ── 大魔王：醫生坐在看診椅上、旁邊的點滴架、針筒、雷射瞄準、水柱 ──
-     每一發先「蓄力」：水從點滴袋經過管子流進針筒，針筒慢慢變滿（點滴袋跟著變少），
+  /* ── 大魔王：醫生（抱著針筒水槍）、旁邊的點滴架、雷射瞄準、水柱 ──
+     醫生三個姿勢（art.js）：蓄力時往那一排水瞄（低 → lower、高 → upper），其他時候針筒朝上（stop）。
+     每一發先「蓄能」：水從點滴袋經過管子流進針筒，針筒裡的一條線從尾端慢慢長到針尖（點滴袋跟著變少），
      同時雷射筆的紅光貼著地面指到小膠囊身上；滿了就射出去。點滴袋空了 = 打敗醫生。 */
+  var DOC = ART.DOCTOR;
 
   function laneY(lane) { return E.laneMid(lane); }
 
@@ -1403,9 +1405,9 @@
     var T = V.T, w = G.run.world;
     var off = 0;
     if (b.bt < 1.2) off = Math.pow(1 - b.bt / 1.2, 2) * 7 * T;
-    if (b.state === 'done' && G.doneAt) off = Math.max(0, (t - G.doneAt - 1000) / 1000) * 9 * T;   /* 舉旗 1 秒，再滾走 */
+    if (b.state === 'done' && G.doneAt) off = Math.max(0, (t - G.doneAt - 1000) / 1000) * 9 * T;   /* 舉旗 1 秒，再離開 */
     var docX = (PX + B.DX) * T + off;
-    var dY = gY - E.floorAt(w, camX + PX + B.DX + off / T) * T;   /* 椅子在山丘上滾 */
+    var dY = gY - E.floorAt(w, camX + PX + B.DX + off / T) * T;   /* 醫生站在山丘上 */
     var done = b.state === 'done';
     var tells = E.bossTells(b);
     var charge = tells.length ? tells[0].frac : 0;
@@ -1415,27 +1417,62 @@
       laser(tells[i], camX, gY, docX - B.TIP * T, dY);
     }
 
-    var bag = ivStand(docX + 0.72 * T, dY, E.bossBag(b), t);
-    blit(done ? 'doctorHappy' : 'doctor', docX - 0.9 * T, dY - 3 * T, 1.8, 3);
-
-    var target = tells.length ? laneY(tells[0].lane) : G.lastLane ? laneY(G.lastLane) : 0.9;
-    G.aimY += (target - G.aimY) * (reduce ? 1 : 0.18);
+    var bag = ivStand(docX + 0.95 * T, dY, E.bossBag(b), t);
+    var pose = done ? 'happy' : docPose(tells, t);
+    /* 射出去的那一下往後退一點點 */
+    var rk = G.recoilAt ? (t - G.recoilAt) / 160 : 1;
+    var recoil = !reduce && !done && rk >= 0 && rk < 1 ? (1 - rk) * 0.2 * T : 0;
+    var u = T / 100, ox = docX - DOC.cx * u + recoil, oy = dY - 3 * T;   /* 圖的左上角（圖 300 = 3 格） */
+    var rear = done ? null : DOC.point(pose, DOC.syringe.rear, 0);
+    /* 針筒朝上時尾端在腳邊：管子從醫生背後繞過去；瞄準時尾端在右肩前面，管子畫在前面 */
+    if (pose === 'stop') tube(bag, ox + rear[0] * u, oy + rear[1] * u, false, t);
+    blit('doctor' + pose.charAt(0).toUpperCase() + pose.slice(1), ox, oy, 3, 3);
     if (!done) {
-      var tipX = docX - B.TIP * T, tipY = dY - G.aimY * T;
-      tube(bag, tipX + 2.0 * T, tipY, charge > 0, t);
-      syringe(tipX, tipY, charge, t);
+      if (pose !== 'stop') {
+        tube(bag, ox + rear[0] * u, oy + rear[1] * u, charge > 0, t);
+        chargeStroke(pose, ox, oy, charge);
+      }
     } else {
-      whiteFlag(docX - 0.55 * T, dY - 1.6 * T, t);
+      whiteFlag(ox + DOC.flag[0] * u, oy + DOC.flag[1] * u + 0.12 * T, t);
     }
 
     for (i = 0; i < b.shots.length; i++) water(b.shots[i], camX, gY);
 
     if (b.bt < B.INTRO_S && !done) bubble(docX, dY - 3.15 * T, '來玩水槍大戰！');
     else if (done) bubble(docX, dY - 3.15 * T, '點滴用完了，你贏了！');
-    else if (tells.length) exclaim(docX + 0.55 * T, dY - 3.25 * T);
+    else if (tells.length) exclaim(docX - 0.3 * T, dY - 2.85 * T);   /* 頭上（點滴袋在右邊） */
 
     var P = G.run.p;
     if (!G.run.dead && G.phase !== 'respawn') jumpRing(E.bossCue(b), P, gY, t);
+  }
+
+  /* 醫生的姿勢：蓄力時瞄那一排水，剛射完再瞄 0.3 秒，其他時候針筒朝上 */
+  function docPose(tells, t) {
+    var lane = tells.length ? tells[0].lane : G.recoilAt && t - G.recoilAt < 300 ? G.lastLane : null;
+    return lane === 'low' ? 'lower' : lane === 'high' ? 'upper' : 'stop';
+  }
+
+  /* 蓄能：針筒裡面一條粗粗的線，從尾端往針尖慢慢變長；滿了變深色。線上面一條細白光 */
+  function chargeStroke(pose, ox, oy, fill) {
+    var f = clamp(fill, 0, 1);
+    if (f <= 0) return;
+    var u = V.T / 100, S = DOC.syringe, len = S.barrel[0] + (S.barrel[1] - S.barrel[0]) * f;
+    function seg(across) {
+      var a = DOC.point(pose, -S.barrel[0], across), b = DOC.point(pose, -len, across);
+      ctx.beginPath();
+      ctx.moveTo(ox + a[0] * u, oy + a[1] * u);
+      ctx.lineTo(ox + b[0] * u, oy + b[1] * u);
+      ctx.stroke();
+    }
+    ctx.save();
+    ctx.lineCap = 'round';
+    ctx.strokeStyle = f >= 0.999 ? DOC.colors.cyan : DOC.colors.aqua;
+    ctx.lineWidth = S.thick * u;
+    seg(0);
+    ctx.strokeStyle = 'rgba(255,255,255,.8)';
+    ctx.lineWidth = Math.max(1, S.thick * 0.2 * u);
+    seg(-S.thick * 0.24);
+    ctx.restore();
   }
 
   /* 現在最先會碰到的是哪一排水：還在飛、沒過小膠囊的 → 正在蓄力的 */
@@ -1540,7 +1577,7 @@
   function laser(tl, camX, gY, tipX, dY) {
     var T = V.T, w = G.run.world, mid = laneY(tl.lane);
     var a = 0.35 + 0.65 * tl.frac;            /* 蓄力越滿越亮 */
-    var startY = dY - G.aimY * T, pts = [];
+    var startY = dY - mid * T, pts = [];     /* 針尖就在這一排水的高度 */
     var relTip = (tipX / T) - PX;
     for (var r = relTip; r > -PX - 2; r -= 0.25) {
       var y = gY - (E.floorAt(w, camX + PX + r) + mid) * T;
@@ -1625,10 +1662,10 @@
     return { x: cx, y: cy + 0.3 * T };
   }
 
-  /* 管子：點滴袋 → 針筒尾端；蓄力時管子裡的水滴往針筒流 */
+  /* 管子：點滴袋 → 針筒尾端（繞過醫生的右肩）；蓄力時管子裡的水滴往針筒流 */
   function tube(bag, ex, ey, flowing, t) {
     var T = V.T;
-    var c1x = bag.x, c1y = bag.y + 1.2 * T, c2x = ex + 0.6 * T, c2y = ey;
+    var c1x = bag.x + 0.5 * T, c1y = bag.y + 0.8 * T, c2x = ex + 0.9 * T, c2y = ey;
     ctx.save();
     ctx.lineCap = 'round';
     ctx.strokeStyle = flowing ? 'rgba(14,165,233,.85)' : 'rgba(186,230,253,.95)';
@@ -1643,57 +1680,6 @@
         ctx.beginPath(); ctx.arc(px, py, Math.max(1.2, 0.03 * T), 0, Math.PI * 2); ctx.fill();
       }
     }
-    ctx.restore();
-  }
-
-  /* 針筒（水槍）：蓄力時從空慢慢變滿，射出去就空了 */
-  function syringe(tipX, y, fill, t) {
-    var T = V.T;
-    var rk = G.recoilAt ? (t - G.recoilAt) / 160 : 1;
-    var recoil = !reduce && rk >= 0 && rk < 1 ? (1 - rk) * 0.2 * T : 0;
-    ctx.save();
-    ctx.translate(tipX + recoil, y);
-    ctx.lineCap = 'round';
-    /* 針（短短的，水從這裡出來） */
-    ctx.strokeStyle = '#44403C';
-    ctx.lineWidth = Math.max(2.5, 0.08 * T);
-    ctx.beginPath(); ctx.moveTo(0, 0); ctx.lineTo(0.38 * T, 0); ctx.stroke();
-    ctx.strokeStyle = '#F5F5F4';
-    ctx.lineWidth = Math.max(1, 0.03 * T);
-    ctx.beginPath(); ctx.moveTo(0.04 * T, 0); ctx.lineTo(0.36 * T, 0); ctx.stroke();
-    /* 針座 */
-    ctx.fillStyle = '#38BDF8';
-    ctx.strokeStyle = '#0C4A6E';
-    ctx.lineWidth = 2;
-    rrect(0.36 * T, -0.13 * T, 0.16 * T, 0.26 * T, 3); ctx.fill(); ctx.stroke();
-    /* 針筒：水從推桿那頭進來，慢慢裝滿 */
-    var bx = 0.5 * T, bw = 1.15 * T, bh = 0.5 * T, inner = bw - 0.1 * T;
-    ctx.fillStyle = 'rgba(255,255,255,.95)';
-    ctx.strokeStyle = '#57534E';
-    ctx.lineWidth = Math.max(2, 0.05 * T);
-    rrect(bx, -bh / 2, bw, bh, 0.12 * T); ctx.fill();
-    var f = clamp(fill, 0, 1);
-    if (f > 0) {
-      ctx.fillStyle = f >= 0.999 ? '#0EA5E9' : '#38BDF8';
-      ctx.fillRect(bx + 0.05 * T, -bh / 2 + 0.07 * T, inner * f, bh - 0.14 * T);
-    }
-    rrect(bx, -bh / 2, bw, bh, 0.12 * T); ctx.stroke();
-    ctx.strokeStyle = 'rgba(87,83,78,.7)';
-    ctx.lineWidth = 1.5;
-    for (var k = 1; k < 5; k++) {
-      ctx.beginPath(); ctx.moveTo(bx + k * bw / 5, -bh / 2); ctx.lineTo(bx + k * bw / 5, -bh / 2 + 0.14 * T); ctx.stroke();
-    }
-    /* 推桿：裝越滿拉得越出來 */
-    var pull = (0.12 + 0.3 * f) * T;
-    ctx.fillStyle = '#A8A29E';
-    ctx.fillRect(bx + bw - 0.1 * T, -0.06 * T, pull + 0.1 * T, 0.12 * T);
-    ctx.fillStyle = '#57534E';
-    rrect(bx + bw + pull, -0.24 * T, 0.11 * T, 0.48 * T, 3); ctx.fill();
-    /* 醫生的手 */
-    ctx.fillStyle = '#FFE7D1';
-    ctx.strokeStyle = '#9A3412';
-    ctx.lineWidth = 2;
-    ctx.beginPath(); ctx.arc(bx + bw * 0.62, 0.2 * T, 0.17 * T, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
     ctx.restore();
   }
 

@@ -2,7 +2,7 @@
    安心陪伴 — 膠囊衝衝衝：角色與道具（Q 版 SVG）
    全部是醫院裡看得到的東西：
      小膠囊（蛋形的主角）· 體溫計火箭 · 藥杯飛碟 · 針（障礙物）· 藥盒（方塊）
-     彈簧墊 · 星星 · 傳送門 · 安心旗 · 坐旋轉椅的醫生（大魔王，笑咪咪的）
+     彈簧墊 · 星星 · 傳送門 · 安心旗 · 抱著針筒水槍的醫生（大魔王，笑咪咪的；照 A.jpg 的手稿）
    另外兩個可以選的角色（照 A.jpg、B.jpg 的手稿畫）：
      小麻糬（戴皇冠）· 小抹茶（雲朵耳朵、白肚子），各有自己的火箭和飛碟
    每張圖畫一次成 <img>，遊戲再依格子大小轉成點陣圖快取。
@@ -235,9 +235,11 @@
     flagOff: function () { return flag(false); },
     flagOn: function () { return flag(true); },
 
-    /* 醫生（大魔王）：坐在會滾的看診椅上，笑咪咪的——是陪你玩水槍，不是壞人 */
-    doctor: function () { return doctor(false); },
-    doctorHappy: function () { return doctor(true); },
+    /* 醫生（大魔王）：三個姿勢＋輸了舉白旗。是陪你玩水槍，不是壞人 */
+    doctorLower: function () { return doctor('lower'); },
+    doctorStop: function () { return doctor('stop'); },
+    doctorUpper: function () { return doctor('upper'); },
+    doctorHappy: function () { return doctor('happy'); },
 
     mochi: function () { return svg(100, 100, mochiBody('')); },
     mochiDizzy: function () { return svg(100, 100, mochiBody('dizzy')); },
@@ -351,35 +353,125 @@
       '<circle cx="11.7" cy="7.7" r="2" fill="#fff" opacity=".85"/>');
   }
 
-  function doctor(happy) {
-    var face = happy
-      ? '<path d="M40 67q6-7 12 0M68 67q6-7 12 0" fill="none" stroke="#1C1917" stroke-width="3.6" stroke-linecap="round"/>' +
-        '<path d="M49 76q11 13 22 0Z" fill="#1C1917"/><path d="M53 80q7 5 14 0" fill="#FB7185"/>'
-      : '<path d="M38 52l12 3M82 52l-12 3" stroke="#44403C" stroke-width="3.6" stroke-linecap="round"/>' +
-        '<ellipse cx="46" cy="65" rx="4.6" ry="5.8" fill="#1C1917"/><ellipse cx="74" cy="65" rx="4.6" ry="5.8" fill="#1C1917"/>' +
-        '<circle cx="47.6" cy="62.8" r="1.7" fill="#fff"/><circle cx="75.6" cy="62.8" r="1.7" fill="#fff"/>' +
-        '<path d="M51 77q9 8 18 0" fill="none" stroke="#1C1917" stroke-width="3.4" stroke-linecap="round"/>';
-    return svg(120, 200,
-      /* 看診椅 */
-      '<rect x="56" y="150" width="8" height="30" fill="#78716C"/>' +
-      '<path d="M28 186L60 176L92 186" stroke="#57534E" stroke-width="6" fill="none" stroke-linecap="round" stroke-linejoin="round"/>' +
-      '<circle cx="28" cy="190" r="7" fill="#44403C"/><circle cx="92" cy="190" r="7" fill="#44403C"/><circle cx="60" cy="190" r="7" fill="#44403C"/>' +
-      '<ellipse cx="60" cy="150" rx="36" ry="8" fill="#38BDF8" stroke="#0C4A6E" stroke-width="4"/>' +
-      /* 白袍 */
-      '<path d="M24 150Q22 103 60 97Q98 103 96 150Z" fill="#fff" stroke="#57534E" stroke-width="4" stroke-linejoin="round"/>' +
-      '<path d="M60 100L47 125M60 100L73 125" stroke="#57534E" stroke-width="3" fill="none" stroke-linecap="round"/>' +
-      '<path d="M60 112V148" stroke="#D6D3D1" stroke-width="2.5"/>' +
-      '<rect x="70" y="129" width="15" height="11" rx="2" fill="none" stroke="#A8A29E" stroke-width="2.5"/>' +
-      '<path d="M74 124v9" stroke="#2563EB" stroke-width="3" stroke-linecap="round"/>' +
+  /* ── 醫生（第 6 關的大魔王，照 A.jpg 的手稿）：白白圓圓的醫生，頭戴額鏡、穿白袍和綠色刷手服，
+     兩手抱著一支大針筒水槍。圖 300×300 = 3×3 格：醫生的中心在 x 210（遊戲裡的 docX），腳底在 y 300。
+     顏色：ui-ux-pro-max 的 Healthcare App 色票——安心的青藍（#0891B2／#22D3EE）、健康綠（#059669）、
+     深青色的線（#164E63）、淡青灰的白袍陰影（#E8F1F6）、玻璃的淡青（#ECFEFF／#A5F3FC）。
+     三個姿勢：
+       lower 往下瞄（低的水柱，針尖在離地 0.4 格）· stop 針筒朝上抱著（還沒要射，不對著小朋友）·
+       upper 往上瞄（高的水柱，針尖在離地 1.5 格）；輸了（happy）把針筒放在地上、舉手拿白旗。
+     針筒的位置（pivot＝後面那隻手握的地方、angle＝轉幾度）也給 dash.js 用：蓄能那一條線畫在針筒裡面、管子接在尾端 */
+  var DOC = {
+    ink: '#164E63', coat: '#FFFFFF', shade: '#E8F1F6', skin: '#FFFDF8',
+    cyan: '#0891B2', aqua: '#22D3EE', green: '#059669', glass: '#ECFEFF', lens: '#A5F3FC'
+  };
+  /* 針筒自己的座標：針尖在 (0,0)、往右是尾端；pivot 對到針筒上 x = TIP 的地方 */
+  var SYR = {
+    tip: 194,            /* pivot 到針尖 */
+    rear: 42,            /* pivot 到推桿尾端 */
+    barrel: [10, 134],   /* 針筒裡面（蓄能的線）：從 pivot 往針尖量 10 → 134 */
+    thick: 26            /* 蓄能的線多粗 */
+  };
+  var DOC_FLAG = [136, 128];   /* 輸了舉白旗的那隻手（旗桿的下端） */
+  var DOC_POSE = {
+    lower: { pivot: [206, 205], angle: -16.5, face: 'aim' },
+    stop: { pivot: [150, 236], angle: 80, face: 'smile' },
+    upper: { pivot: [206, 205], angle: 16.5, face: 'aim' },
+    happy: { face: 'happy' }
+  };
+
+  /* 針筒上的一點（從 pivot 往尾端量 along、往下量 across）→ 圖上的座標 */
+  function docPoint(pose, along, across) {
+    var P = DOC_POSE[pose], a = P.angle * Math.PI / 180;
+    var c = Math.cos(a), s = Math.sin(a);
+    return [P.pivot[0] + along * c - across * s, P.pivot[1] + along * s + across * c];
+  }
+
+  function n1(v) { return Math.round(v * 10) / 10; }
+
+  function syringeSvg(tf) {
+    var K = DOC.ink;
+    return '<g transform="' + tf + '">' +
+      '<rect x="0" y="-3" width="36" height="6" rx="3" fill="#E7E5E4" stroke="' + K + '" stroke-width="2.5"/>' +
+      '<path d="M34 -7L52 -13V13L34 7Z" fill="' + DOC.aqua + '" stroke="' + K + '" stroke-width="3" stroke-linejoin="round"/>' +
+      '<rect x="196" y="-6" width="30" height="12" fill="#A8A29E" stroke="' + K + '" stroke-width="2.5"/>' +
+      '<rect x="224" y="-22" width="11" height="44" rx="4" fill="' + DOC.cyan + '" stroke="' + K + '" stroke-width="3"/>' +
+      '<rect x="50" y="-21" width="142" height="42" rx="9" fill="' + DOC.glass + '" fill-opacity=".92" stroke="' + K + '" stroke-width="4"/>' +
+      '<path d="M74 -21v10M98 -21v10M122 -21v10M146 -21v10M170 -21v10" stroke="' + DOC.cyan + '" stroke-width="2.5"/>' +
+      '<path d="M62 14H180" stroke="#fff" stroke-width="3" stroke-linecap="round" opacity=".9"/>' +
+      '<rect x="188" y="-32" width="10" height="64" rx="4" fill="' + DOC.cyan + '" stroke="' + K + '" stroke-width="3"/>' +
+      '</g>';
+  }
+
+  /* 袖子（白袍）從肩膀到手，手是一顆白白的圓 */
+  function sleeve(from, to) {
+    var d = 'M' + from[0] + ' ' + from[1] + 'L' + n1(to[0]) + ' ' + n1(to[1]);
+    return '<path d="' + d + '" stroke="' + DOC.ink + '" stroke-width="27" stroke-linecap="round"/>' +
+      '<path d="' + d + '" stroke="' + DOC.coat + '" stroke-width="20" stroke-linecap="round"/>';
+  }
+
+  function hand(p) {
+    return '<circle cx="' + n1(p[0]) + '" cy="' + n1(p[1]) + '" r="11.5" fill="' + DOC.skin + '" stroke="' + DOC.ink + '" stroke-width="3.5"/>';
+  }
+
+  function doctor(pose) {
+    var K = DOC.ink, P = DOC_POSE[pose];
+    var BODY = 'M210 60C260 60 286 104 287 160C288 222 262 272 210 272C158 272 132 222 133 160C134 104 160 60 210 60Z';
+    var shoulderF = [152, 180], shoulderB = [266, 180];
+    var arms = '', top = '', under = '';
+    if (P.pivot) {
+      var front = docPoint(pose, -84, 16), back = docPoint(pose, 12, 14);
+      var tf = 'translate(' + P.pivot[0] + ' ' + P.pivot[1] + ') rotate(' + P.angle + ') translate(-' + SYR.tip + ' 0)';
+      arms = sleeve(shoulderB, back) + sleeve(shoulderF, front) + syringeSvg(tf) + hand(back) + hand(front);
+    } else {
+      /* 輸了：針筒放在地上，一隻手舉高（白旗的桿子由 dash.js 畫在這隻手上），另一隻手放下來 */
+      under = syringeSvg('translate(26 285) scale(.72)');
+      arms = sleeve(shoulderB, [276, 226]) + sleeve(shoulderF, DOC_FLAG) + hand([276, 226]) + hand(DOC_FLAG);
+    }
+    var face;
+    if (P.face === 'aim') {
+      /* 瞄準：一隻眼睛瞇起來，眉毛認真，嘴巴小小的 ω */
+      face = '<path d="M170 101l15 5" stroke="' + K + '" stroke-width="3.6" stroke-linecap="round"/>' +
+        '<ellipse cx="181" cy="117" rx="5" ry="6" fill="' + K + '"/><circle cx="182.6" cy="115" r="1.8" fill="#fff"/>' +
+        '<path d="M219 111l10 6-10 6" fill="none" stroke="' + K + '" stroke-width="3.6" stroke-linecap="round" stroke-linejoin="round"/>' +
+        '<path d="M195 129q3.5 4.5 7 0q3.5 4.5 7 0" fill="none" stroke="' + K + '" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>';
+    } else if (P.face === 'happy') {
+      face = '<path d="M174 120q7-9 14 0M216 120q7-9 14 0" fill="none" stroke="' + K + '" stroke-width="3.6" stroke-linecap="round"/>' +
+        '<path d="M194 127q8 13 16 0Z" fill="' + K + '" stroke="' + K + '" stroke-width="2" stroke-linejoin="round"/>' +
+        '<path d="M198 133q4 3 8 0" fill="none" stroke="#FB7185" stroke-width="2.6" stroke-linecap="round"/>';
+    } else {
+      face = '<ellipse cx="181" cy="117" rx="5" ry="6" fill="' + K + '"/><ellipse cx="223" cy="117" rx="5" ry="6" fill="' + K + '"/>' +
+        '<circle cx="182.6" cy="115" r="1.8" fill="#fff"/><circle cx="224.6" cy="115" r="1.8" fill="#fff"/>' +
+        '<path d="M195 126q7 7 14 0" fill="none" stroke="' + K + '" stroke-width="3.2" stroke-linecap="round"/>';
+    }
+    return svg(300, 300,
+      under +
+      /* 褲子、鞋子 */
+      '<rect x="174" y="252" width="24" height="36" rx="7" fill="' + K + '"/><rect x="222" y="252" width="24" height="36" rx="7" fill="' + K + '"/>' +
+      '<ellipse cx="183" cy="290" rx="20" ry="8.5" fill="' + K + '"/><ellipse cx="240" cy="290" rx="20" ry="8.5" fill="' + K + '"/>' +
+      '<path d="M170 286h18M228 286h18" stroke="#fff" stroke-width="2.5" stroke-linecap="round" opacity=".35"/>' +
+      /* 白白圓圓的身體 */
+      '<path d="' + BODY + '" fill="' + DOC.skin + '" stroke="' + K + '" stroke-width="4.5"/>' +
+      '<path d="M206 61q3-9 7 0q3-9 7 0" fill="none" stroke="' + K + '" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>' +
+      /* 白袍：下面一圈、陰影、領子、裡面綠色的刷手服、釦子、口袋 */
+      '<path d="M135 178C138 238 166 278 210 278C254 278 282 238 285 178C262 158 238 150 210 150C182 150 158 158 135 178Z" fill="' + DOC.coat + '" stroke="' + K + '" stroke-width="4" stroke-linejoin="round"/>' +
+      '<path d="M140 190C144 236 168 270 200 275C176 262 158 230 156 186Z" fill="' + DOC.shade + '"/>' +
+      '<path d="M190 152L210 190L230 152Z" fill="' + DOC.green + '" stroke="' + K + '" stroke-width="3" stroke-linejoin="round"/>' +
+      '<path d="M180 154L210 202M240 154L210 202M210 202V276" fill="none" stroke="' + K + '" stroke-width="3.2" stroke-linecap="round"/>' +
+      '<circle cx="219" cy="224" r="3.2" fill="' + K + '"/><circle cx="219" cy="248" r="3.2" fill="' + K + '"/>' +
+      '<path d="M236 226h26v18q0 4-4 4h-18q-4 0-4-4Z" fill="none" stroke="' + K + '" stroke-width="2.6" stroke-linejoin="round"/>' +
       /* 聽診器 */
-      '<path d="M44 102Q38 126 50 133Q60 137 61 126" stroke="#0EA5E9" stroke-width="4" fill="none" stroke-linecap="round"/>' +
-      '<circle cx="61" cy="123" r="5" fill="#E7E5E4" stroke="#57534E" stroke-width="2.5"/>' +
-      /* 大頭（Q 版） */
-      '<circle cx="60" cy="60" r="40" fill="#FFE7D1" stroke="#9A3412" stroke-width="4"/>' +
-      '<path d="M21 56Q22 18 60 18Q98 18 99 56Q88 36 60 36Q32 36 21 56Z" fill="#57534E" stroke="#44403C" stroke-width="3" stroke-linejoin="round"/>' +
-      '<circle cx="60" cy="28" r="9.5" fill="#F5F5F4" stroke="#78716C" stroke-width="3"/><circle cx="60" cy="28" r="3.2" fill="#A8A29E"/>' +
-      '<ellipse cx="35" cy="75" rx="6.5" ry="3.8" fill="#FDA4AF"/><ellipse cx="85" cy="75" rx="6.5" ry="3.8" fill="#FDA4AF"/>' +
-      face);
+      '<path d="M184 156Q174 190 188 206M238 156Q248 186 236 200" fill="none" stroke="' + DOC.cyan + '" stroke-width="4.5" stroke-linecap="round"/>' +
+      '<circle cx="190" cy="211" r="6.5" fill="#E7E5E4" stroke="' + K + '" stroke-width="2.6"/>' +
+      /* 額鏡：綠色的頭帶＋一面圓鏡子 */
+      '<path d="M139 110C162 81 258 81 281 110" fill="none" stroke="' + K + '" stroke-width="18" stroke-linecap="round"/>' +
+      '<path d="M139 110C162 81 258 81 281 110" fill="none" stroke="' + DOC.green + '" stroke-width="11" stroke-linecap="round"/>' +
+      '<circle cx="194" cy="85" r="17" fill="#F1F5F9" stroke="' + K + '" stroke-width="3.5"/>' +
+      '<circle cx="194" cy="85" r="9" fill="' + DOC.lens + '" stroke="' + K + '" stroke-width="2.5"/>' +
+      '<circle cx="194" cy="85" r="3" fill="' + K + '"/><path d="M184 78a12 12 0 0 1 7-5" fill="none" stroke="#fff" stroke-width="2.6" stroke-linecap="round"/>' +
+      /* 臉（往左邊——小朋友那邊——看） */
+      '<ellipse cx="165" cy="131" rx="9" ry="5.5" fill="#FBB4B4"/><ellipse cx="241" cy="131" rx="9" ry="5.5" fill="#FBB4B4"/>' +
+      face + arms + top);
   }
 
   Object.keys(THEMES).forEach(function (t) {
@@ -415,5 +507,9 @@
     return out;
   }
 
-  root.DashArt = { SPRITES: SPRITES, THEMES: THEMES, PORTAL: PORTAL, CHARS: CHARS, char: char, source: source, images: images };
+  root.DashArt = {
+    SPRITES: SPRITES, THEMES: THEMES, PORTAL: PORTAL, CHARS: CHARS, char: char, source: source, images: images,
+    /* 醫生的針筒在圖上的位置：dash.js 畫蓄能的線、接管子用 */
+    DOCTOR: { size: 300, cx: 210, syringe: SYR, colors: DOC, point: docPoint, flag: DOC_FLAG }
+  };
 })(typeof window !== 'undefined' ? window : globalThis);
