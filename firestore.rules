@@ -139,6 +139,12 @@ service cloud.firestore {
       allow read, update, delete: if false;
     }
 
+    // 過期代碼封存：archivedCode/{領取日 YYYYMMDD}/codes/{代碼-領取時間}。
+    // 只有伺服器排程（functions/，Admin SDK）每天 00:00 寫入；任何手機都不能讀寫。
+    match /archivedCode/{document=**} {
+      allow read, write: if false;
+    }
+
     function lockPath(code) {
       return /databases/$(database)/documents/codes/$(code);
     }

@@ -13,6 +13,8 @@ codes/{code}                          4-digit temporary code (lock)
   └─ private/profile                  child profile for the 醫檢師
 staff/{uid}                           staff login session
 staffFeedback/{code}-{claimMs}        醫檢師 feedback after the shot
+archivedCode/{YYYYMMDD}               (no fields: the doc is never written)
+  └─ codes/{code}-{claimMs}           expired lock, moved here nightly at 00:00
 feedback/{autoId}                     parent feedback form
 rooms/{code}                          two-phone game room
   ├─ cmds/{autoId}                    parent → child commands
@@ -32,6 +34,7 @@ cooldowns/{uid}                       time of this phone's last post or reply (1
 | `codes/*/private` | parent's phone (claim) | staff only, while the code is active | 03 醫護端 |
 | `staff` | staff page | that uid only | 03 醫護端 |
 | `staffFeedback` | staff | **nobody** (Console / Admin SDK only) | 03 醫護端 |
+| `archivedCode/*/codes` | the nightly function in [functions/](functions/index.js) | **nobody** (Console / Admin SDK only) | — |
 | `feedback` | parent's phone | **nobody** (Console / Admin SDK only) | 03 回饋 |
 | `rooms` | parent's phone; child's phone joins | anyone signed in, one code at a time | 07 雙機 |
 | `rooms/*/cmds` | parent | room members | 07 雙機打地鼠 |
@@ -74,6 +77,7 @@ The lock for one 4-digit temporary code: who holds it, its status and when it ex
 3. **Finish** (staff submits feedback). This is one batch with three writes: create `staffFeedback/…`, set `status: 'done'` and `doneAt`, and delete `private/profile`. Only `status` and `doneAt` can change.
 4. **Parent's phone** listens to its own lock. When `status` becomes `done`, the phone goes to `/shot/?done=1`.
 5. A `done` code is not reissued before its `expiresAt`, because `rooms/{code}` uses the same number.
+6. **Archive** (every day at 00:00 Taipei time). The `archiveExpiredCodes` Cloud Function in [functions/index.js](functions/index.js) moves every lock whose `expiresAt` has passed to [`archivedCode/…`](#archivedcodeyyyymmddcodescode-claimms). For each code, one batch writes the archive copy, deletes the lock and deletes any leftover `private/profile`. The lock is deleted only if it hasn't changed since the query; if a new family claimed the number in the meantime, their lock and profile stay and only the old claim is archived. After that, the staff page shows the code as 查無 instead of 已過期.
 
 **When a number is reused**
 
@@ -81,8 +85,8 @@ Two families never hold the same code at the same time. After a code expires, a 
 
 | Path | Old family's data |
 |---|---|
-| `codes/{code}` | Overwritten by the new claim. Nothing records that the earlier claim happened, except its `staffFeedback` doc if staff finished it. |
-| `codes/{code}/private/profile` | Already deleted if staff finished the code. Otherwise the TTL policy removes it (see the next section); without that policy it stays until the new claim overwrites it. |
+| `codes/{code}` | Usually already moved to `archivedCode/` at the first midnight after it expired, so the new claim creates a fresh doc. If the number is claimed again before that midnight, the new claim overwrites the lock and the earlier claim is lost (except its `staffFeedback` doc if staff finished it). |
+| `codes/{code}/private/profile` | Already deleted if staff finished the code. Otherwise the midnight archive or the TTL policy removes it (see the next section), whichever comes first. It is never archived. |
 | `staffFeedback/{code}-{claimMs}` | Kept, and no collision is possible: every claim has a different `claimMs`. |
 | `rooms/{code}` | Overwritten when the new parent opens 雙機. `childUid` goes back to `null`, so the old child's phone stops. |
 | `rooms/{code}/cmds`, `state/child` | Kept, because overwriting a doc doesn't delete its subcollections. The child only runs commands from the last 2 minutes. The parent's remote ignores any `state/child` older than the room's `createdAt`. |
@@ -94,7 +98,7 @@ A phone whose clock is more than 10 minutes fast can think an expired code is fr
 
 The child profile shown to the 醫檢師. The doc id is always `profile`. It is written only in the claim transaction and deleted in the finish batch. It is built by `Anxin.codes.buildProfile`.
 
-If staff never finishes the code, the profile is deleted by a Firestore **TTL policy** on collection group `private`, field `expiresAt`, usually within about a day after it expires. That policy is set in the Firebase Console (Firestore → Time-to-live), not in this repo. Without it, the profile stays (unreadable) until the number is claimed again.
+If staff never finishes the code, the profile is deleted by the midnight archive together with its lock (it is not copied to the archive). As a backup, a Firestore **TTL policy** on collection group `private`, field `expiresAt`, also deletes it, usually within about a day after it expires. That policy is set in the Firebase Console (Firestore → Time-to-live), not in this repo.
 
 | Field | Type | Value |
 |---|---|---|
@@ -121,7 +125,7 @@ The doc is deleted on sign-out. Only its own uid can read or delete it, and it c
 
 The 醫檢師's rating of how afraid the child actually was, compared with what the parent said. It can be created but never read, updated or deleted by any client. It is built by `Anxin.buildStaffFeedback`.
 
-Doc id = `code + '-' + lock.createdAt` in milliseconds, e.g. `0427-1791234567890`, so there is at most one per claim. The id matches the lock's `createdAt`. That joins it to `codes/{code}` only until the code is claimed again, because a new claim overwrites the lock.
+Doc id = `code + '-' + lock.createdAt` in milliseconds, e.g. `0427-1791234567890`, so there is at most one per claim. The id matches the lock's `createdAt`. That joins it to `codes/{code}` while the lock is live, and to `archivedCode/{YYYYMMDD}/codes/{code}-{claimMs}` after the midnight archive (same id).
 
 | Field | Type | Value |
 |---|---|---|
@@ -131,6 +135,22 @@ Doc id = `code + '-' + lock.createdAt` in milliseconds, e.g. `0427-1791234567890
 | `profile` | map | `{ age, gender, worryLevel }`; the rules check it matches `private/profile` |
 | `scaleVersion` | string | `'staff-v1'` |
 | `createdAt` | Timestamp | server time |
+
+## `archivedCode/{YYYYMMDD}/codes/{code}-{claimMs}`
+
+An expired `codes/{code}` lock, moved here by the `archiveExpiredCodes` Cloud Function ([functions/index.js](functions/index.js)), which runs every day at 00:00 Asia/Taipei. No client can read or write it.
+
+- `{YYYYMMDD}` is the **claim day** in Taipei time (UTC+8), from the lock's `createdAt`, i.e. the family's visit day. It is not the day the job ran. Like `circleDays`, the day doc itself has no fields and is never written.
+- `{code}-{claimMs}` is the same id as `staffFeedback`, so a finished code joins to its feedback.
+
+| Field | Type | Value |
+|---|---|---|
+| `v`, `code`, `holderUid`, `status`, `expiresAt`, `doneAt`, `createdAt` | | copied unchanged from the lock. `status` shows whether staff finished it (`'done'`) or it simply expired (`'active'`) |
+| `archivedAt` | Timestamp | server time of the move |
+
+The profile is not archived. A code that fails to move stays in `codes/` and is retried (Cloud Scheduler retries the run up to 3 times, and the next midnight picks up anything left).
+
+Deploy (needs the Blaze plan): `cd functions && npm install`, then `firebase deploy --only functions` from the repo root. The schedule is in the code, not in the Console.
 
 ## `feedback/{autoId}`
 
@@ -327,7 +347,7 @@ Every post and reply sets it in the same batch, and an update is accepted only w
 
 Every query filters or sorts on a single field, so no composite indexes are needed:
 
-- `codes`: `expiresAt >`
+- `codes`: `expiresAt >` (staff list), `expiresAt <` (midnight archive)
 - `rooms/{code}/cmds`: `at >=`
 - `circleDays/{day}/scores`: `orderBy score desc, limit 3`
 - `threads`: `orderBy createdAt desc, limit 300`
