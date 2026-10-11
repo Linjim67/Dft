@@ -16,7 +16,7 @@ Inherits MASTER. Covers `/home/` and the shell shared by every subpage (`/shared
 
 Protected pages guard in `<head>` with `Anxin.requireProfile()` → `location.replace('/portal/')`.
 
-- **Every internal path is root-absolute** (`/styles.css`, `/home/`). Vercel may serve `/home` without
+- **Every internal path is root-absolute** (`/shared/styles.css`, `/home/`). Vercel may serve `/home` without
   redirecting to `/home/`, and from there `./home.css` resolves to `/home.css`. Absolute paths survive
   both forms; the smoke test requests both.
 - Navigation that shouldn't be returned to uses `location.replace` — submitting #01 must not leave a

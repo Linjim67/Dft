@@ -1,6 +1,6 @@
 /* ═══ 討論區（#04）═════════════════════════════════════════════
    兩個網址、同一張頁面：<html data-discuss="public | clinic"> 決定顯示哪些欄位。
-   表單元件沿用 #01（/styles.css），外框沿用 /shared/page.css；只用既有 token，不另開色票。
+   表單元件沿用 #01（/shared/styles.css），外框沿用 /shared/page.css；只用既有 token，不另開色票。
    ═══════════════════════════════════════════════════════════════ */
 
 html[data-discuss="clinic"] .only-public,

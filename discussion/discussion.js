@@ -979,7 +979,7 @@
      點一下軌道（不用拖），最近的那一端就跳過去。
      ───────────────────────────────────────────────────────────── */
 
-  var THUMB = 32; /* /styles.css 的滑桿把手寬度 */
+  var THUMB = 32; /* /shared/styles.css 的滑桿把手寬度 */
   var drag = null;
 
   function dualHtml(p, lo, hi, title) {
