@@ -304,6 +304,18 @@
     return [p.nickname].concat(p.formerNicknames || []);
   }
 
+  /* 給醫護人員的兩題選填（孩子的地雷、孩子的安慰魔法，各 ≤ 200 字）：
+     有填才放進 out，沒填就沒有這個欄位（規則也當成選填） */
+  var CARE_TEXTS = ['triggers', 'comfort'];
+
+  function withCareTexts(out, p) {
+    CARE_TEXTS.forEach(function (k) {
+      var t = freeText(p[k], nicknamesOf(p), 200);
+      if (t) out[k] = t;
+    });
+    return out;
+  }
+
   function level(v, name) {
     var n = Number(v);
     if (!(n >= 1 && n <= 5 && n % 1 === 0)) throw new Error('invalid ' + name + ': ' + v);
@@ -322,13 +334,13 @@
       cryLevel: level(a.cryLevel, 'cryLevel'),
       effectiveness: level(a.effectiveness, 'effectiveness'),
       suggestion: freeText(a.suggestion, nicknamesOf(p), 1000),
-      profile: {
+      profile: withCareTexts({
         age: Number(p.age),
         gender: p.gender,
         fearLevel: level(p.fearLevel, 'fearLevel'),
         worryLevel: level(p.worryLevel, 'worryLevel'),
         specialNeeds: freeText(p.specialNeeds, nicknamesOf(p), 200)
-      },
+      }, p),
       scaleVersion: SCALE_VERSION
     };
   }
@@ -400,14 +412,14 @@
 
   /* 給醫檢師看的個人資料（codes/{代碼}/private/profile）。白名單：沒有暱稱 */
   function buildCodeProfile(p) {
-    return {
+    return withCareTexts({
       age: Number(p.age),
       gender: p.gender,
       fearLevel: level(p.fearLevel, 'fearLevel'),
       worryLevel: level(p.worryLevel, 'worryLevel'),
       specialNeeds: freeText(p.specialNeeds, nicknamesOf(p), 200),
       expiresAt: Number(p.expiresAt)
-    };
+    }, p);
   }
 
   /* ─────────────────────────────────────────────────────────────

@@ -96,7 +96,7 @@ A phone whose clock is more than 10 minutes fast can think an expired code is fr
 
 ## `codes/{code}/private/profile`
 
-The child profile shown to the 醫檢師. The doc id is always `profile`. It is written only in the claim transaction and deleted in the finish batch. It is built by `Anxin.codes.buildProfile`.
+The child profile shown to the 醫檢師. The doc id is always `profile`. It is written in the claim transaction and deleted in the finish batch. In between, the phone that holds the code may rewrite it (修改填寫內容) while the code is still active; `expiresAt` must stay the same. It is built by `Anxin.codes.buildProfile`.
 
 If staff never finishes the code, the profile is deleted by the archive job together with its lock (it is not copied to the archive). As a backup, a Firestore **TTL policy** on collection group `private`, field `expiresAt`, also deletes it, usually within about a day after it expires. That policy is set in the Firebase Console (Firestore → Time-to-live), not in this repo.
 
@@ -107,6 +107,8 @@ If staff never finishes the code, the profile is deleted by the archive job toge
 | `fearLevel` | level | 小孩會害怕抽血嗎: 1 完全不會 … 5 非常害怕 |
 | `worryLevel` | level | 家長會擔心嗎: 1 完全不會 … 5 非常擔心 |
 | `specialNeeds` | string | ≤ 200 chars, may be `''` |
+| `triggers` | string | 孩子的地雷 (what the staff should be careful about): ≤ 200 chars. **Optional**: the field is left out when the parent didn't answer |
+| `comfort` | string | 孩子的安慰魔法 (what helps the child feel safe): ≤ 200 chars. **Optional**, like `triggers` |
 | `expiresAt` | Timestamp | must equal the lock's `expiresAt` |
 
 ## `staff/{uid}`
@@ -168,7 +170,7 @@ It has **no code and no nickname**, so a `feedback` doc cannot be linked to a co
 | `cryLevel` | level | 小孩實際的哭鬧程度: 1 很平靜 · 2 有點緊張 · 3 小哭一下 · 4 哭得明顯 · 5 大哭大鬧 |
 | `effectiveness` | level | 是否有效緩解緊張: 1 非常無效 · 2 無效 · 3 普通 · 4 有效 · 5 非常有效 |
 | `suggestion` | string | ≤ 1000 chars |
-| `profile` | map | `{ age, gender, fearLevel, worryLevel, specialNeeds }`, same types as `private/profile` |
+| `profile` | map | `{ age, gender, fearLevel, worryLevel, specialNeeds }` plus the optional `triggers` and `comfort`, same types as `private/profile` |
 | `scaleVersion` | string | `'balanced-v1'` (balanced 5-point scale with 普通 in the middle) |
 | `createdAt` | Timestamp | server time |
 

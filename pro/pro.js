@@ -488,6 +488,10 @@
     '<path d="M12 3.5 2.5 20h19L12 3.5Z"/><path d="M12 9.5v4.5M12 17h.01"/></svg>';
   var ICON_INFO = '<svg viewBox="0 0 24 24" class="icon" aria-hidden="true">' +
     '<circle cx="12" cy="12" r="8.2"/><path d="M12 11v5M12 8h.01"/></svg>';
+  /* 安慰魔法：一大一小的星光 */
+  var ICON_SPARKLE = '<svg viewBox="0 0 24 24" class="icon" aria-hidden="true">' +
+    '<path d="M10 4.5 11.6 9l4.4 1.6-4.4 1.6L10 16.7l-1.6-4.5L4 10.6 8.4 9 10 4.5Z"/>' +
+    '<path d="M17.5 14.5 18.3 16.7 20.5 17.5 18.3 18.3 17.5 20.5 16.7 18.3 14.5 17.5 16.7 16.7 17.5 14.5Z"/></svg>';
   var ICON_CHECK = '<svg viewBox="0 0 24 24" class="icon" aria-hidden="true"><path d="M6 12.4 10.2 16.6 18 8.8"/></svg>';
   var ICON_DOWN = '<svg viewBox="0 0 24 24" class="icon" aria-hidden="true"><path d="M12 5v14M6 13l6 6 6-6"/></svg>';
   var ICON_UP = '<svg viewBox="0 0 24 24" class="icon" aria-hidden="true"><path d="M12 19V5M6 11l6-6 6 6"/></svg>';
@@ -499,6 +503,11 @@
     return '<div class="meter"><dt>' + label + '</dt>' +
       '<dd class="meter-text">' + esc(caption) + '<span class="meter-num">' + n + ' / 5</span></dd>' +
       '<dd class="meter-bar" aria-hidden="true">' + bars + '</dd></div>';
+  }
+
+  function note(cls, icon, label, text) {
+    return '<div class="needs' + cls + '">' + icon + '<div><p class="needs-label">' + label + '</p>' +
+      '<p class="needs-text">' + esc(text) + '</p></div></div>';
   }
 
   function renderCase() {
@@ -515,7 +524,10 @@
       '<dl class="meters">' +
       meter('害怕（家長估）', fear, p.fearLevel) +
       meter('家長擔心', WORRY[p.worryLevel - 1], p.worryLevel) +
-      '</dl>' + 
+      '</dl>' +
+      /* 家長給醫護人員的兩題（選填，沒填就不顯示）：先看要避開的，再看能幫上忙的 */
+      (p.triggers ? note('', ICON_ALERT, '孩子的地雷', p.triggers) : '') +
+      (p.comfort ? note(' is-comfort', ICON_SPARKLE, '孩子的安慰魔法', p.comfort) : '') +
       (p.specialNeeds
         ? '<div class="needs">' + ICON_ALERT + '<div><p class="needs-label">特別注意</p>' +
         '<p class="needs-text">' + esc(p.specialNeeds) + '</p></div></div>'
@@ -565,6 +577,8 @@
     /* 電腦：焦點不動（打錯可以直接重打）；觸控：移到「打針前」 */
     if (!pcLayout.matches) $('beforeTitle').focus();
     Anxin.announce(live, current.code + '：' + Anxin.ageLabel(p.age) + gender +
+      (p.triggers ? '，孩子的地雷：' + p.triggers : '') +
+      (p.comfort ? '，安慰魔法：' + p.comfort : '') +
       (p.specialNeeds ? '，特別注意：' + p.specialNeeds : '') + '。家長說' + fear);
   }
 

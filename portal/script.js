@@ -116,13 +116,20 @@
      字數提示與作答狀態
      ───────────────────────────────────────────────────────────── */
 
-  var needs = $('specialNeeds');
-  var needsCount = $('needs-count');
-  var NEEDS_MAX = 200;
+  /* 三題選填的文字（給醫護人員看）：[欄位 id = 存檔的鍵, 字數提示 id]，各 200 字 */
+  var TEXT_MAX = 200;
+  var TEXT_FIELDS = [
+    ['triggers', 'triggers-count'],   /* 孩子的地雷 */
+    ['comfort', 'comfort-count'],     /* 孩子的安慰魔法 */
+    ['specialNeeds', 'needs-count']   /* 特殊需求 */
+  ];
 
-  needs.addEventListener('input', function () {
-    needsCount.textContent = '還可以輸入 ' + (NEEDS_MAX - needs.value.length) + ' 字';
-    Anxin.setAnswered(needs, needs.value.trim());
+  TEXT_FIELDS.forEach(function (f) {
+    var ta = $(f[0]);
+    ta.addEventListener('input', function () {
+      $(f[1]).textContent = '還可以輸入 ' + (TEXT_MAX - ta.value.length) + ' 字';
+      Anxin.setAnswered(ta, ta.value.trim());
+    });
   });
 
   $('nickname').addEventListener('input', function () {
@@ -270,9 +277,9 @@
       age: indexToAge(ageIdx),
       gender: form.querySelector('[name="gender"]:checked').value,
       fearLevel: Number(form.querySelector('[name="fearLevel"]:checked').value),
-      worryLevel: Number(form.querySelector('[name="worryLevel"]:checked').value),
-      specialNeeds: needs.value.trim()
+      worryLevel: Number(form.querySelector('[name="worryLevel"]:checked').value)
     };
+    TEXT_FIELDS.forEach(function (f) { answers[f[0]] = $(f[0]).value.trim(); });
 
     if (editing) {
       saveEdit(answers);
@@ -343,8 +350,10 @@
       }
     });
 
-    needs.value = p.specialNeeds || '';
-    needs.dispatchEvent(new Event('input')); /* 字數提示與作答狀態 */
+    TEXT_FIELDS.forEach(function (f) {
+      $(f[0]).value = p[f[0]] || '';
+      $(f[0]).dispatchEvent(new Event('input')); /* 字數提示與作答狀態 */
+    });
   }
 
   if (editing) {

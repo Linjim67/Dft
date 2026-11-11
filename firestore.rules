@@ -518,14 +518,21 @@ service cloud.firestore {
 
   // 欄位必須與 Anxin.codes.buildProfile（shared/app.js）完全一致；不含暱稱
   function validCodeProfile(p, lock) {
-    return p.keys().hasOnly(['age', 'gender', 'fearLevel', 'worryLevel', 'specialNeeds', 'expiresAt'])
+    return p.keys().hasOnly(['age', 'gender', 'fearLevel', 'worryLevel', 'specialNeeds', 'triggers', 'comfort', 'expiresAt'])
       && p.keys().hasAll(['age', 'gender', 'fearLevel', 'worryLevel', 'specialNeeds', 'expiresAt'])
       && p.age is number && p.age >= 0 && p.age <= 18
       && p.gender in ['男', '女']
       && isLevel(p.fearLevel)
       && isLevel(p.worryLevel)
       && p.specialNeeds is string && p.specialNeeds.size() <= 200
+      && validCareTexts(p)
       && p.expiresAt == lock.expiresAt;
+  }
+
+  // 孩子的地雷（triggers）、孩子的安慰魔法（comfort）：選填，有填才有這個欄位，各 ≤ 200 字
+  function validCareTexts(p) {
+    return (!('triggers' in p) || (p.triggers is string && p.triggers.size() <= 200))
+      && (!('comfort' in p) || (p.comfort is string && p.comfort.size() <= 200));
   }
 
   // 醫護人員密碼（目前是 123456）。頁面算 key = PBKDF2-SHA256(密碼, 'anxin-staff-v1', 600000 次, 32 bytes) 的 hex，
@@ -565,13 +572,14 @@ service cloud.firestore {
   // 個人資料：不含暱稱、不含暫時代碼
   function validFeedbackProfile(p) {
     return p is map
-      && p.keys().hasOnly(['age', 'gender', 'fearLevel', 'worryLevel', 'specialNeeds'])
+      && p.keys().hasOnly(['age', 'gender', 'fearLevel', 'worryLevel', 'specialNeeds', 'triggers', 'comfort'])
       && p.keys().hasAll(['age', 'gender', 'fearLevel', 'worryLevel', 'specialNeeds'])
       && p.age is number && p.age >= 0 && p.age <= 18
       && p.gender in ['男', '女']
       && isLevel(p.fearLevel)
       && isLevel(p.worryLevel)
-      && p.specialNeeds is string && p.specialNeeds.size() <= 200;
+      && p.specialNeeds is string && p.specialNeeds.size() <= 200
+      && validCareTexts(p);
   }
 
   // 台灣時間（UTC+8）的今天，YYYYMMDD

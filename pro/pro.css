@@ -815,6 +815,16 @@
   color: var(--fg);
 }
 
+/* 安慰魔法：能幫上忙的事，換成綠色調，和「要避開」的橘色分開（另有星光圖示，不只靠顏色） */
+.needs.is-comfort {
+  background: var(--success-wash);
+}
+
+.needs.is-comfort > .icon,
+.needs.is-comfort .needs-label {
+  color: var(--success);
+}
+
 .needs.is-empty {
   background: var(--bg-sunk);
 }

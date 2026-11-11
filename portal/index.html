@@ -156,7 +156,31 @@
           <p class="field-error" id="worryLevel-error" hidden></p>
         </fieldset>
 
-        <!-- ── 6. 特殊需求 ── -->
+        <!-- ── 6. 孩子的地雷（給醫護人員看） ── -->
+        <div class="field">
+          <label class="field-label" for="triggers">
+            孩子的地雷 <span class="opt">選填</span>
+          </label>
+          <p class="field-hint" id="triggers-hint">孩子有沒有什麼特別敏感的地方，需要醫療人員多加留意？</p>
+          <textarea id="triggers" name="triggers" maxlength="200" rows="3"
+            placeholder="例如：不喜歡被陌生人碰觸身體、不能接受別人提到疼痛、對特定聲音或事物敏感。"
+            aria-describedby="triggers-hint triggers-count"></textarea>
+          <p class="char-count" id="triggers-count" aria-live="polite">還可以輸入 200 字</p>
+        </div>
+
+        <!-- ── 7. 孩子的安慰魔法（給醫護人員看） ── -->
+        <div class="field">
+          <label class="field-label" for="comfort">
+            孩子的安慰魔法 <span class="opt">選填</span>
+          </label>
+          <p class="field-hint" id="comfort-hint">有沒有什麼方法，特別容易讓您的孩子感到安心，希望能和醫護人員一起做到的？</p>
+          <textarea id="comfort" name="comfort" maxlength="200" rows="3"
+            placeholder="例如：特別的鼓勵方式、用糖果建立關係。"
+            aria-describedby="comfort-hint comfort-count"></textarea>
+          <p class="char-count" id="comfort-count" aria-live="polite">還可以輸入 200 字</p>
+        </div>
+
+        <!-- ── 8. 特殊需求 ── -->
         <div class="field">
           <label class="field-label" for="specialNeeds">
             有什麼需求，我們需要注意的嗎？ <span class="opt">選填</span>
