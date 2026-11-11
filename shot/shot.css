@@ -59,7 +59,7 @@
   font-size: 1.5rem;
   line-height: 1.3;
   letter-spacing: .14em;
-  color: var(--fg-accent);
+  color: var(--primary-deep);
   font-variant-numeric: tabular-nums;
 }
 

@@ -44,7 +44,7 @@ a.btn {
   padding-inline: var(--sp-4) var(--sp-3);
   border-radius: var(--r-pill);
   background: var(--primary-wash);
-  color: var(--fg-accent);
+  color: var(--primary-deep);
   border: 2px solid var(--primary-deep);
   font-weight: 700;
   text-decoration: none;
@@ -299,7 +299,7 @@ a.btn {
 
 /* 打開：標題轉深橘（5.18:1）＋ 圓鈕翻轉，不只靠顏色 */
 .topic[open]>.topic-head .topic-title {
-  color: var(--fg-accent);
+  color: var(--primary-deep);
 }
 
 .topic[open]>.topic-head .topic-toggle {
@@ -432,7 +432,7 @@ mark {
   .back-link:hover,
   .quiet-link:hover,
   .topic-head:hover .topic-title {
-    color: var(--fg-accent);
+    color: var(--primary-deep);
   }
 
   .topic-head:hover .topic-toggle {

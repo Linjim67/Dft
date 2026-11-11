@@ -147,7 +147,7 @@
 .chip input:checked+.chip-face {
   background: var(--primary-wash);
   border-color: var(--primary-deep);
-  color: var(--fg-accent);
+  color: var(--primary-deep);
   box-shadow: inset 0 0 0 var(--line-w) var(--primary-deep);
 }
 
@@ -178,7 +178,7 @@
   color: var(--fg-muted);
 }
 
-/* 文字按鈕：字是黑的，靠底線看出可以按 */
+/* 深橘字配頁面底 4.89:1 */
 .text-btn {
   flex: none;
   min-height: var(--tap);
@@ -187,12 +187,10 @@
   border: 0;
   border-radius: var(--r-sm);
   background: none;
-  color: var(--fg-accent);
+  color: var(--primary-deep);
   font-size: .92rem;
   font-weight: 700;
   white-space: nowrap;
-  text-decoration: underline;
-  text-underline-offset: 3px;
 }
 
 /* 篩選把前一段整段藏起來時，下一段不要再留段落間距 */
@@ -249,7 +247,7 @@
 }
 
 .know.is-tip .know-label {
-  color: var(--fg-accent);
+  color: var(--primary-deep);
 }
 
 /* ═══ 找不到 ═════════════════════════════════════════════════ */
@@ -317,7 +315,7 @@
   border-radius: var(--r-pill);
   border: 2px solid var(--primary-deep);
   background: var(--card);
-  color: var(--fg-accent);
+  color: var(--primary-deep);
   font-weight: 700;
   text-decoration: none;
 }
@@ -337,13 +335,13 @@
   .suggest-chip:hover {
     background: var(--primary-wash);
     border-color: var(--primary-deep);
-    color: var(--fg-accent);
+    color: var(--primary-deep);
   }
 
   .search-clear:hover,
   .text-btn:hover {
     background: var(--primary-wash);
-    color: var(--fg-accent);
+    color: var(--primary-deep);
   }
 
   .help-link:hover {

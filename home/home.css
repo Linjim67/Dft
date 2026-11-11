@@ -28,10 +28,10 @@
   margin-top: var(--sp-2);
   font-size: .88rem;
   font-weight: 700;
-  color: var(--fg-accent);
+  color: var(--primary-deep);
 }
 
-/* 已完成：數字退成灰階，說明退成灰字，前面加綠色勾勾 */
+/* 已完成：數字退成灰階，說明改綠色（附勾勾，不只靠顏色） */
 .code-card.is-done .code-digits {
   color: var(--idle);
 }
@@ -40,7 +40,7 @@
   display: inline-flex;
   align-items: center;
   gap: var(--sp-1);
-  color: var(--fg-muted);
+  color: var(--success);
 }
 
 .code-card.is-done .code-note::before {
@@ -48,7 +48,7 @@
   flex: none;
   width: 16px;
   height: 16px;
-  background: var(--success);
+  background: currentColor;
   -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M5 12.4 10 17.4 19 7.8' fill='none' stroke='%23000' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") center / contain no-repeat;
   mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M5 12.4 10 17.4 19 7.8' fill='none' stroke='%23000' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") center / contain no-repeat;
 }
