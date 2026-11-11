@@ -139,7 +139,9 @@
   height: 16px;
   opacity: 0;
   stroke-width: 2.6;
-  transition: width var(--t-fast) var(--ease), opacity var(--t-fast) var(--ease);
+  /* 寬度直接切換（不做版面動畫），只淡入勾勾 */
+  transform: scale(.6);
+  transition: opacity var(--t-fast) var(--ease), transform var(--t-fast) var(--ease);
 }
 
 .chip input:checked+.chip-face {
@@ -152,6 +154,7 @@
 .chip input:checked+.chip-face .chip-check {
   width: 16px;
   opacity: 1;
+  transform: none;
 }
 
 .chip input:focus-visible+.chip-face {
