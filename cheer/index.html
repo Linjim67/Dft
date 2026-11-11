@@ -44,19 +44,76 @@
       <p class="page-lede">您也辛苦了。先弄懂抽血現場在做什麼，心裡會踏實一點。</p>
     </div>
 
+    <!-- ── 找問題：搜尋 + 依時間篩選（說明中心的做法：先搜尋，再瀏覽） ── -->
+    <div class="faq-tools">
+      <div class="search">
+        <label class="live-region" for="faqSearch">搜尋常見問題</label>
+        <svg viewBox="0 0 24 24" class="icon search-icon" aria-hidden="true">
+          <circle cx="11" cy="11" r="6.5" />
+          <path d="m16 16 4.5 4.5" />
+        </svg>
+        <input type="search" id="faqSearch" placeholder="搜尋：頭暈、空腹、瘀青…" autocomplete="off"
+          enterkeyhint="search" aria-describedby="faqCount">
+        <button class="search-clear" type="button" id="searchClear" aria-label="清除搜尋" hidden>
+          <svg viewBox="0 0 24 24" class="icon" aria-hidden="true"><path d="M7 7l10 10M17 7 7 17" /></svg>
+        </button>
+      </div>
+
+      <fieldset class="phase-pick">
+        <legend class="live-region">依時間篩選</legend>
+        <div class="chips" id="phaseChips"></div>
+      </fieldset>
+
+      <div class="faq-status">
+        <p class="faq-count" id="faqCount" role="status"></p>
+        <button class="text-btn" type="button" id="expandAll">全部展開</button>
+      </div>
+    </div>
+
     <!-- ── 對家長的衛教 part 1：醫療現場解密 ── -->
-    <section class="part" aria-labelledby="whyTitle">
-      <h2 class="part-title" id="whyTitle">醫療現場解密</h2>
-      <p class="part-sub">醫護人員為什麼這樣做？</p>
+    <section class="part" id="why" aria-labelledby="whyTitle">
+      <div class="part-head">
+        <h2 class="part-title" id="whyTitle">醫療現場解密 <span class="part-count" id="whyCount"></span></h2>
+        <p class="part-sub">醫護人員為什麼這樣做？</p>
+      </div>
       <div class="topic-list" id="whyList"></div>
     </section>
 
     <!-- ── 對家長的衛教 part 2：打針大小問 ── -->
-    <section class="part" aria-labelledby="faqTitle">
-      <h2 class="part-title" id="faqTitle">打針大小問</h2>
-      <p class="part-sub">家長常見的疑問</p>
+    <section class="part" id="faq" aria-labelledby="faqTitle">
+      <div class="part-head">
+        <h2 class="part-title" id="faqTitle">打針大小問 <span class="part-count" id="faqListCount"></span></h2>
+        <p class="part-sub">家長常見的疑問</p>
+      </div>
       <div class="topic-list" id="faqList"></div>
     </section>
+
+    <!-- 搜尋／篩選後一題都沒有 -->
+    <div class="empty-state faq-empty" id="faqEmpty" hidden>
+      <svg viewBox="0 0 24 24" class="icon" aria-hidden="true">
+        <circle cx="11" cy="11" r="6.5" />
+        <path d="m16 16 4.5 4.5M8.5 11h5" />
+      </svg>
+      <strong id="faqEmptyTitle">沒有找到相關的問題</strong>
+      <span>換個說法試試看：</span>
+      <div class="suggest" id="faqSuggest"></div>
+    </div>
+
+    <!-- 說明中心的收尾：找不到答案時，下一步去哪裡 -->
+    <aside class="help-card" aria-labelledby="helpTitle">
+      <span class="help-icon" aria-hidden="true">
+        <svg viewBox="0 0 24 24" class="icon">
+          <path d="M20 15a2 2 0 0 1-2 2H8l-4 4V5a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2Z" />
+          <path d="M10 8.2a2.2 2.2 0 1 1 3 2c-.6.3-1 .8-1 1.4v.4M12 14.5h.01" />
+        </svg>
+      </span>
+      <h2 class="help-title" id="helpTitle">還有其他疑問嗎？</h2>
+      <p>每個孩子的狀況都不一樣。抽血前後有任何擔心，直接問現場的醫護人員最準確。</p>
+      <a class="help-link" href="/discussion/parent/">
+        <span>看看其他家長的經驗</span>
+        <svg viewBox="0 0 24 24" class="icon" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6" /></svg>
+      </a>
+    </aside>
   </main>
 
   <!-- 醫檢師送出回饋時轉到「打針完畢」頁；載不到時頁面照常 -->

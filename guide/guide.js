@@ -1,6 +1,6 @@
 /* ═══════════════════════════════════════════════════════════════
    安心陪伴 — 家長安慰指南
-   內容在 /guide/content.js（GUIDE_CONTENT）；這裡只負責排版與切換年紀。
+   內容在 /guide/content.js（GUIDE_CONTENT）；這裡只負責排版、切換年紀、段落選單。
    ═══════════════════════════════════════════════════════════════ */
 (function () {
   'use strict';
@@ -23,12 +23,35 @@
     return n;
   }
 
+  /* 圖示都是這個檔裡的常數，不含使用者輸入 */
   function svg(paths, cls) {
     var wrap = doc.createElement('span');
-    wrap.innerHTML = '<svg viewBox="0 0 24 24" class="icon ' + (cls || '') +
+    wrap.innerHTML = '<svg viewBox="0 0 24 24" class="icon' + (cls ? ' ' + cls : '') +
       '" aria-hidden="true">' + paths + '</svg>';
     return wrap.firstChild;
   }
+
+  var ICONS = {
+    /* 年紀 */
+    baby: '<circle cx="12" cy="13" r="7.5"/><path d="M12 5.5c0-1.6 1.2-2.8 2.8-2.8"/>' +
+      '<path d="M9.4 12.2h.01M14.6 12.2h.01"/><path d="M10 15.6c1.2.9 2.8.9 4 0"/>',
+    bear: '<circle cx="6.8" cy="7" r="2.6"/><circle cx="17.2" cy="7" r="2.6"/>' +
+      '<circle cx="12" cy="13.5" r="7"/><path d="M9.8 12.4h.01M14.2 12.4h.01"/>' +
+      '<path d="M10.8 16h2.4"/>',
+    backpack: '<path d="M5.5 11a6.5 6.5 0 0 1 13 0v8a2 2 0 0 1-2 2h-9a2 2 0 0 1-2-2Z"/>' +
+      '<path d="M9 5.2V4.5a3 3 0 0 1 6 0v.7"/><path d="M9 14.5h6v3.5H9Z"/>',
+    /* 打針當下 */
+    shield: '<path d="M12 3 5 6v5.2c0 4.3 2.9 8.1 7 9.8 4.1-1.7 7-5.5 7-9.8V6Z"/>' +
+      '<path d="m9 12 2.2 2.2L15.5 10"/>',
+    listen: '<path d="M20 15a2 2 0 0 1-2 2H8l-4 4V5a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2Z"/>' +
+      '<path d="M8 8.5h8M8 12.5h5"/>',
+    alert: '<circle cx="12" cy="12" r="9"/><path d="M12 7.5v5.5M12 16.5h.01"/>',
+    wind: '<path d="M3 8.5h10a3 3 0 1 0-3-3"/><path d="M3 12.5h15a3 3 0 1 1-3 3"/>' +
+      '<path d="M3 16.5h6"/>',
+    bubbles: '<circle cx="9" cy="14" r="5.5"/><circle cx="17.5" cy="6.5" r="3"/>' +
+      '<circle cx="18.5" cy="16.5" r="1.8"/><path d="M6.8 11.8a3 3 0 0 1 2.2-1.3"/>'
+  };
+  var AGE_ICON = { baby: 'baby', preschool: 'bear', school: 'backpack' };
 
   var ICON_X = '<path d="M7 7l10 10M17 7 7 17"/>';
   var ICON_CHECK = '<path d="M6 12.4 10.2 16.6 18 8.8"/>';
@@ -64,29 +87,43 @@
     return ul;
   }
 
+  /* 標題下的小字：「5 句」或「4 個做法」，讓人不用點開就知道裡面有什麼 */
+  function countLabel(items) {
+    var says = items.filter(function (it) { return !it.do; }).length;
+    var dos = items.length - says;
+    var parts = [];
+    if (says) parts.push(says + ' 句可以說的話');
+    if (dos) parts.push(dos + ' 個做法');
+    return parts.join('・');
+  }
+
   /* ── 1. 你可以這樣跟他說！──────────────────────────────── */
 
-  var seg = doc.getElementById('ageSeg');
+  var options = doc.getElementById('ageOptions');
   var panelsHost = doc.getElementById('agePanels');
   var hint = doc.getElementById('ageHint');
   var panels = {};
 
   C.ageGroups.forEach(function (g) {
-    var label = el('label', 'segmented-option');
+    var label = el('label', 'age-opt');
     var input = el('input');
     input.type = 'radio';
     input.name = 'ageGroup';
     input.value = g.id;
     input.setAttribute('aria-controls', 'panel-' + g.id);
     label.appendChild(input);
-    label.appendChild(el('span', 'segmented-face', g.label));
-    seg.appendChild(label);
+    var face = el('span', 'age-face');
+    face.appendChild(svg(ICONS[AGE_ICON[g.id]], 'age-icon'));
+    face.appendChild(el('span', 'age-label', g.label));
+    face.appendChild(svg(ICON_CHECK, 'age-check'));
+    label.appendChild(face);
+    options.appendChild(label);
 
     var panel = el('div', 'topic-list age-panel');
     panel.id = 'panel-' + g.id;
     panel.hidden = true;
     g.topics.forEach(function (t, i) {
-      var topic = Anxin.buildTopic(t.title, { open: i === 0 });
+      var topic = Anxin.buildTopic(t.title, { open: i === 0, meta: countLabel(t.items) });
       topic.body.appendChild(renderItems(t.items));
       panel.appendChild(topic.root);
     });
@@ -98,10 +135,10 @@
     Object.keys(panels).forEach(function (k) { panels[k].hidden = k !== id; });
   }
 
-  seg.addEventListener('change', function (ev) { showGroup(ev.target.value); });
+  options.addEventListener('change', function (ev) { showGroup(ev.target.value); });
 
   var startId = pickAgeGroup(p.age);
-  seg.querySelector('input[value="' + startId + '"]').checked = true;
+  options.querySelector('input[value="' + startId + '"]').checked = true;
   showGroup(startId);
 
   /* 說明為什麼先選這一組；名字用 textContent，不拼 HTML */
@@ -116,7 +153,7 @@
 
   var duringList = doc.getElementById('duringList');
   C.during.forEach(function (t) {
-    var topic = Anxin.buildTopic(t.title);
+    var topic = Anxin.buildTopic(t.title, { icon: ICONS[t.icon] });
     t.body.forEach(function (b) {
       if (typeof b === 'string') {
         topic.body.appendChild(el('p', null, b));
@@ -135,7 +172,8 @@
     duringList.appendChild(topic.root);
   });
 
-  /* ── 3. 這些話先不要跟小孩說！避免的第 n 句 ↔ 改說的第 n 句 ─────── */
+  /* ── 3. 這些話先不要跟小孩說！避免的第 n 句 ↔ 改說的第 n 句 ───────
+     每個人都該看到，所以直接攤開，不收進折疊 */
 
   function pairRow(kind, tag, icon, text) {
     var row = el('p', 'pair-row ' + kind);
@@ -149,7 +187,8 @@
 
   var dontList = doc.getElementById('dontList');
   C.dont.forEach(function (t) {
-    var topic = Anxin.buildTopic(t.title);
+    var card = el('section', 'dont-card');
+    card.appendChild(el('h3', 'dont-title', t.title));
     var ul = el('ul', 'pair-list');
     t.avoid.forEach(function (bad, i) {
       var li = el('li', 'pair');
@@ -157,7 +196,38 @@
       if (t.better[i]) li.appendChild(pairRow('is-better', '改說', ICON_CHECK, t.better[i]));
       ul.appendChild(li);
     });
-    topic.body.appendChild(ul);
-    dontList.appendChild(topic.root);
+    card.appendChild(ul);
+    dontList.appendChild(card);
   });
+
+  /* ── 段落選單：標出目前看到的段落（aria-current），點了平滑捲過去 ── */
+
+  var links = Array.prototype.slice.call(doc.querySelectorAll('.jump-link'));
+  var jump = doc.querySelector('.jump');
+
+  function markCurrent(id) {
+    links.forEach(function (a) {
+      if (a.getAttribute('href') === '#' + id) a.setAttribute('aria-current', 'true');
+      else a.removeAttribute('aria-current');
+    });
+  }
+  markCurrent('say');
+
+  if ('IntersectionObserver' in window) {
+    /* 段落頂端進到畫面上方三分之一時，就算「正在看」 */
+    var spy = new IntersectionObserver(function (entries) {
+      entries.forEach(function (e) { if (e.isIntersecting) markCurrent(e.target.id); });
+    }, { rootMargin: '-80px 0px -65% 0px' });
+    links.forEach(function (a) {
+      var sec = doc.getElementById(a.getAttribute('href').slice(1));
+      if (sec) spy.observe(sec);
+    });
+
+    /* 選單黏住後加一點陰影，和內容分開 */
+    var sentinel = el('div', 'jump-sentinel');
+    jump.parentNode.insertBefore(sentinel, jump);
+    new IntersectionObserver(function (entries) {
+      jump.classList.toggle('is-stuck', !entries[0].isIntersecting);
+    }).observe(sentinel);
+  }
 })();

@@ -180,11 +180,23 @@ a.btn {
 
 /* ═══ 內容頁的段落（指南、鼓勵頁） ═══════════════════════════ */
 
+/* 指南頁有黏在頂端的段落選單：跳過去時標題不要被蓋住 */
+.part {
+  scroll-margin-top: 76px;
+}
+
 .part+.part {
   margin-top: var(--sp-7);
 }
 
+.part-head {
+  margin-bottom: var(--sp-4);
+}
+
 .part-title {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
   font-size: 1.3rem;
   font-weight: 700;
   line-height: 1.4;
@@ -197,22 +209,20 @@ a.btn {
   color: var(--fg-muted);
 }
 
-.part-title+.topic-list,
-.part-sub+.topic-list {
-  margin-top: var(--sp-4);
-}
-
-/* ═══ 可展開的主題卡（Anxin.buildTopic → 原生 <details>） ═══ */
+/* ═══ 可展開的主題（Anxin.buildTopic → 原生 <details>） ═══════
+   同一組放在同一張卡片裡、用細線分隔（像設定頁／說明中心），
+   不再一題一張浮起的卡片：十幾道陰影疊在一起太吵。 */
 
 .topic-list {
-  display: grid;
-  gap: var(--sp-3);
-}
-
-.topic {
   background: var(--card);
   border-radius: var(--r-lg);
-  box-shadow: var(--sh-sm);
+  box-shadow: var(--sh-md);
+  overflow: hidden;
+}
+
+/* 篩選時會藏掉部分題目：分隔線只畫在「前面還有可見題目」的那幾題上 */
+.topic:not([hidden])~.topic:not([hidden]) {
+  border-top: 1px solid var(--hairline);
 }
 
 .topic-head {
@@ -220,40 +230,96 @@ a.btn {
   grid-template-columns: 1fr auto;
   align-items: center;
   gap: var(--sp-3);
-  min-height: 60px;
+  min-height: 64px;
   padding: var(--sp-3) var(--sp-4);
-  font-weight: 700;
-  line-height: 1.5;
   list-style: none;
   cursor: pointer;
-  border-radius: var(--r-lg);
+  -webkit-tap-highlight-color: transparent;
+}
+
+.topic-head.has-icon {
+  grid-template-columns: auto 1fr auto;
 }
 
 .topic-head::-webkit-details-marker {
   display: none;
 }
 
-.topic-chev {
-  width: 20px;
-  height: 20px;
-  color: var(--idle);
-  transition: transform var(--t-base) var(--ease);
+/* 卡片 overflow:hidden 會切掉外圈焦點框：改畫在內側 */
+.topic-head:focus-visible {
+  outline-offset: -3px;
+  border-radius: var(--r-lg);
 }
 
-/* 打開的標題轉深橘（5.18:1），箭頭翻轉：不只靠顏色 */
-.topic[open]>.topic-head {
+.topic-icon {
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  border-radius: var(--r-md);
+  background: var(--primary-wash);
   color: var(--primary-deep);
 }
 
-.topic[open]>.topic-head .topic-chev {
+.topic-text {
+  min-width: 0;
+}
+
+.topic-title {
+  display: block;
+  font-weight: 700;
+  line-height: 1.5;
+}
+
+.topic-meta {
+  display: block;
+  margin-top: 2px;
+  font-size: .82rem;
+  line-height: 1.5;
+  color: var(--fg-muted);
+}
+
+.topic-toggle {
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: var(--bg-sunk);
+  color: var(--fg-muted);
+  transition: transform var(--t-base) var(--ease),
+    background-color var(--t-fast) var(--ease),
+    color var(--t-fast) var(--ease);
+}
+
+.topic-toggle .icon {
+  width: 18px;
+  height: 18px;
+}
+
+/* 打開：標題轉深橘（5.18:1）＋ 圓鈕翻轉，不只靠顏色 */
+.topic[open]>.topic-head .topic-title {
+  color: var(--primary-deep);
+}
+
+.topic[open]>.topic-head .topic-toggle {
   transform: rotate(180deg);
+  background: var(--primary-wash);
   color: var(--primary-deep);
 }
 
 .topic-body {
   display: grid;
   gap: var(--sp-3);
-  padding: 0 var(--sp-4) var(--sp-4);
+  padding: 0 var(--sp-4) var(--sp-5);
+}
+
+/* 搜尋命中的字：深字配淺橘底 6.92:1；打開的深橘標題裡也維持深字 */
+mark {
+  padding: 0 1px;
+  border-radius: 3px;
+  background: #FED7AA;
+  color: var(--fg);
 }
 
 /* ═══ 開發中的空狀態 ══════════════════════════════════════════ */
@@ -365,7 +431,12 @@ a.btn {
 
   .back-link:hover,
   .quiet-link:hover,
-  .topic-head:hover {
+  .topic-head:hover .topic-title {
+    color: var(--primary-deep);
+  }
+
+  .topic-head:hover .topic-toggle {
+    background: var(--primary-wash);
     color: var(--primary-deep);
   }
 

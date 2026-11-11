@@ -1,32 +1,159 @@
 /* ═══ 家長安慰指南 ═══════════════════════════════════════════════
-   段落標題與展開卡片沿用 /shared/page.css（.part、.topic）。
-   這裡只放本頁的：年紀切換、對話框、清單、猜謎、避免／改說。
+   段落標題與展開主題沿用 /shared/page.css（.part、.topic-list、.topic）。
+   這裡放本頁的：段落選單、年紀卡、對話框、清單、猜謎、「我要打針了」、避免／改說。
    ═══════════════════════════════════════════════════════════════ */
 
-/* ═══ 年紀切換（沿用 .segmented 的選取樣式，改成三欄） ═══════ */
+html {
+  scroll-behavior: smooth;
+}
+
+/* ═══ 段落選單（黏在頂端） ═══════════════════════════════════ */
+
+.jump {
+  position: sticky;
+  top: 0;
+  z-index: 5;
+  display: flex;
+  gap: var(--sp-2);
+  margin: 0 calc(var(--sp-5) * -1) var(--sp-5);
+  padding: var(--sp-2) var(--sp-5);
+  background: var(--bg);
+  transition: box-shadow var(--t-base) var(--ease);
+}
+
+.jump.is-stuck {
+  box-shadow: 0 8px 16px -12px rgba(124, 45, 18, .35);
+}
+
+.jump-link {
+  flex: 1 1 0;
+  display: grid;
+  place-items: center;
+  min-height: var(--tap);
+  padding-inline: var(--sp-2);
+  border-radius: var(--r-pill);
+  background: var(--card);
+  box-shadow: var(--sh-sm);
+  color: var(--fg-muted);
+  font-size: .95rem;
+  font-weight: 700;
+  text-decoration: none;
+  white-space: nowrap;
+  transition: background-color var(--t-fast) var(--ease),
+    color var(--t-fast) var(--ease),
+    box-shadow var(--t-fast) var(--ease);
+}
+
+/* 目前段落：淡橘底＋深橘內框（形狀也變，不只靠顏色） */
+.jump-link[aria-current="true"] {
+  background: var(--primary-wash);
+  color: var(--primary-deep);
+  box-shadow: inset 0 0 0 2px var(--primary-deep);
+}
+
+/* ═══ 年紀卡（單選；選到的有勾勾） ═══════════════════════════ */
 
 .age-pick {
-  margin: var(--sp-4) 0 0;
+  position: relative;
+  margin: 0;
   padding: 0;
   border: 0;
   min-width: 0;
 }
 
-.age-pick-legend {
-  padding: 0;
-  margin-bottom: var(--sp-2);
-  font-size: .92rem;
+.age-options {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: var(--sp-2);
+}
+
+.age-opt {
+  position: relative;
+  display: block;
+  cursor: pointer;
+}
+
+.age-opt input {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  opacity: 0;
+  cursor: pointer;
+}
+
+.age-face {
+  position: relative;
+  display: grid;
+  justify-items: center;
+  gap: var(--sp-1);
+  min-height: 84px;
+  padding: var(--sp-3) var(--sp-1) var(--sp-2);
+  border-radius: var(--r-md);
+  background: var(--card);
+  border: var(--line-w) solid var(--line);
+  box-shadow: var(--sh-sm);
   font-weight: 700;
+  transition: transform var(--t-fast) var(--ease),
+    box-shadow var(--t-fast) var(--ease),
+    background-color var(--t-fast) var(--ease),
+    border-color var(--t-fast) var(--ease),
+    color var(--t-fast) var(--ease);
+}
+
+.age-icon {
+  width: 30px;
+  height: 30px;
   color: var(--fg-muted);
 }
 
-.age-seg {
-  grid-template-columns: repeat(3, 1fr);
+.age-label {
+  font-size: .98rem;
+  line-height: 1.4;
+  white-space: nowrap;
 }
 
-.age-seg .segmented-face {
-  font-size: 1rem;
-  white-space: nowrap;
+/* 白勾配深橘底 5.18:1 */
+.age-check {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  width: 20px;
+  height: 20px;
+  padding: 3px;
+  border-radius: 50%;
+  background: var(--primary-deep);
+  color: #FFFFFF;
+  stroke-width: 3;
+  opacity: 0;
+  transform: scale(.6);
+  transition: opacity var(--t-fast) var(--ease), transform var(--t-fast) var(--ease);
+}
+
+.age-opt input:checked+.age-face {
+  background: var(--primary-wash);
+  color: var(--primary-deep);
+  border-color: var(--primary-deep);
+  box-shadow: var(--sh-md), inset 0 0 0 var(--line-w) var(--primary-deep);
+}
+
+.age-opt input:checked+.age-face .age-icon {
+  color: var(--primary-deep);
+}
+
+.age-opt input:checked+.age-face .age-check {
+  opacity: 1;
+  transform: none;
+}
+
+.age-opt input:focus-visible+.age-face {
+  outline: 3px solid var(--primary-deep);
+  outline-offset: 3px;
+}
+
+.age-opt input:active+.age-face {
+  transform: translateY(1px);
 }
 
 .age-hint {
@@ -40,7 +167,7 @@
   margin-top: var(--sp-4);
 }
 
-/* 「全年齡適用」小標籤 */
+/* 「全年齡適用」小標籤（深橘配淡橘 4.52:1） */
 .all-ages {
   display: inline-block;
   margin-inline-end: var(--sp-2);
@@ -146,26 +273,80 @@
   height: 18px;
 }
 
-/* ═══ 「我要打針了」：這一段的結尾 ════════════════════════════ */
+/* ═══ 「我要打針了」：這一段的結尾，整張卡都是連結 ════════════ */
 
-.ready-btn {
-  flex-direction: column;
-  gap: 0;
-  margin-top: var(--sp-5);
-  line-height: 1.4;
+.ready-card {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: var(--sp-3) var(--sp-4);
+  min-height: 76px;
+  margin-top: var(--sp-4);
+  padding: var(--sp-4);
+  border-radius: var(--r-lg);
+  background: var(--primary-wash);
+  border: 2px solid var(--primary-deep);
+  box-shadow: var(--sh-md);
+  color: var(--fg);
+  text-decoration: none;
+  transition: transform var(--t-fast) var(--ease),
+    box-shadow var(--t-fast) var(--ease);
 }
 
+.ready-icon {
+  display: grid;
+  place-items: center;
+  width: 46px;
+  height: 46px;
+  border-radius: var(--r-md);
+  background: var(--card);
+  color: var(--primary-deep);
+}
+
+/* 1.1rem 粗體屬大字級：深橘配淡橘 4.52:1 */
 .ready-label {
-  font-size: 1.15rem;
+  display: block;
+  font-size: 1.1rem;
+  font-weight: 700;
+  line-height: 1.4;
+  color: var(--primary-deep);
 }
 
 .ready-sub {
-  font-size: .86rem;
-  font-weight: 400;
-  color: var(--fg);
+  display: block;
+  font-size: .88rem;
+  line-height: 1.55;
 }
 
-/* ═══ 避免 → 改說 ═══════════════════════════════════════════ */
+.ready-arrow {
+  color: var(--primary-deep);
+}
+
+.ready-card:active {
+  transform: translateY(2px);
+  box-shadow: var(--sh-sm);
+}
+
+/* ═══ 避免 → 改說（攤開，不折疊） ═══════════════════════════ */
+
+.dont-list {
+  display: grid;
+  gap: var(--sp-3);
+}
+
+.dont-card {
+  padding: var(--sp-4);
+  border-radius: var(--r-lg);
+  background: var(--card);
+  box-shadow: var(--sh-md);
+}
+
+.dont-title {
+  margin: 0 0 var(--sp-3);
+  font-size: 1.02rem;
+  font-weight: 700;
+  line-height: 1.5;
+}
 
 .pair-list {
   display: grid;
@@ -194,7 +375,15 @@
   grid-template-columns: auto 1fr;
   align-items: start;
   gap: var(--sp-2);
+  padding-inline: var(--sp-3);
   line-height: 1.6;
+}
+
+/* 改說的那句就是「可以說的話」：和上面的對話框同一個樣子 */
+.pair-row.is-better {
+  padding-block: var(--sp-2);
+  background: var(--bg-sunk);
+  border-radius: var(--r-md) var(--r-md) var(--r-md) 4px;
 }
 
 .pair-tag {
@@ -241,5 +430,27 @@
     background: var(--primary-wash);
     border-color: var(--primary-deep);
     color: var(--primary-deep);
+  }
+
+  .jump-link:not([aria-current="true"]):hover {
+    color: var(--primary-deep);
+    background: var(--primary-wash);
+  }
+
+  .age-opt input:not(:checked)+.age-face:hover {
+    background: var(--primary-wash);
+    border-color: var(--primary-deep);
+  }
+
+  .ready-card:hover {
+    box-shadow: var(--sh-lg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+
+  .ready-card:active,
+  .age-opt input:active+.age-face {
+    transform: none;
   }
 }

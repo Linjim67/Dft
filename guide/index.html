@@ -44,13 +44,23 @@
       <p class="page-lede">陪孩子度過打針的小方法。</p>
     </div>
 
+    <!-- 段落選單：捲動時黏在頂端，目前所在的段落會標出來 -->
+    <nav class="jump" aria-label="本頁段落">
+      <a class="jump-link" href="#say">怎麼說</a>
+      <a class="jump-link" href="#during">打針當下</a>
+      <a class="jump-link" href="#dont">不要說</a>
+    </nav>
+
     <!-- ── 1. 你可以這樣跟他說！依年紀分組（預設依小檔案的年紀選好） ── -->
-    <section class="part" aria-labelledby="sayTitle">
-      <h2 class="part-title" id="sayTitle">你可以這樣跟他說！</h2>
+    <section class="part" id="say" aria-labelledby="sayTitle">
+      <div class="part-head">
+        <h2 class="part-title" id="sayTitle">你可以這樣跟他說！</h2>
+        <p class="part-sub">先選孩子的年紀，點開主題就能看到可以說的話。</p>
+      </div>
 
       <fieldset class="age-pick">
-        <legend class="age-pick-legend">孩子的年紀</legend>
-        <div class="segmented age-seg" id="ageSeg"></div>
+        <legend class="live-region">孩子的年紀</legend>
+        <div class="age-options" id="ageOptions"></div>
       </fieldset>
       <p class="age-hint" id="ageHint" hidden></p>
 
@@ -58,23 +68,36 @@
     </section>
 
     <!-- ── 2. 打針當下，家長可以這樣做！（全年齡） ── -->
-    <section class="part" aria-labelledby="duringTitle">
-      <h2 class="part-title" id="duringTitle">打針當下，家長可以這樣做！</h2>
-      <p class="part-sub"><span class="all-ages">全年齡適用</span>你的陪伴很重要，你的配合更是孩子安全完成抽血的重要關鍵。</p>
+    <section class="part" id="during" aria-labelledby="duringTitle">
+      <div class="part-head">
+        <h2 class="part-title" id="duringTitle">打針當下，家長可以這樣做！</h2>
+        <p class="part-sub"><span class="all-ages">全年齡適用</span>你的陪伴很重要，你的配合更是孩子安全完成抽血的重要關鍵。</p>
+      </div>
       <div class="topic-list" id="duringList"></div>
 
       <!-- 規格：這一塊最下方放「我要打針了」，直接連到轉移注意力的小遊戲 -->
-      <a class="btn btn-primary ready-btn" href="/games/solo/">
-        <span class="ready-label">我要打針了</span>
-        <span class="ready-sub">打開小遊戲，讓孩子專心玩</span>
+      <a class="ready-card" href="/games/solo/">
+        <span class="ready-icon" aria-hidden="true">
+          <svg viewBox="0 0 24 24" class="icon">
+            <rect x="3" y="7.5" width="18" height="10" rx="5" />
+            <path d="M8 10.5v4M6 12.5h4M15.5 11.5h.01M17.5 13.5h.01" />
+          </svg>
+        </span>
+        <span>
+          <span class="ready-label">我要打針了</span>
+          <span class="ready-sub">打開小遊戲，讓孩子專心玩</span>
+        </span>
+        <svg viewBox="0 0 24 24" class="icon ready-arrow" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6" /></svg>
       </a>
     </section>
 
-    <!-- ── 3. 這些話先不要跟小孩說！（全年齡）：避免的第 n 句對應改說的第 n 句 ── -->
-    <section class="part" aria-labelledby="dontTitle">
-      <h2 class="part-title" id="dontTitle">這些話先不要跟小孩說！</h2>
-      <p class="part-sub"><span class="all-ages">全年齡適用</span>每一句都附上可以換成的說法。</p>
-      <div class="topic-list" id="dontList"></div>
+    <!-- ── 3. 這些話先不要跟小孩說！（全年齡）：每個人都該看到，不收進折疊 ── -->
+    <section class="part" id="dont" aria-labelledby="dontTitle">
+      <div class="part-head">
+        <h2 class="part-title" id="dontTitle">這些話先不要跟小孩說！</h2>
+        <p class="part-sub"><span class="all-ages">全年齡適用</span>每一句都附上可以換成的說法。</p>
+      </div>
+      <div class="dont-list" id="dontList"></div>
     </section>
   </main>
 

@@ -1,7 +1,221 @@
-/* ═══ 給家長的鼓勵 ═══════════════════════════════════════════════
-   段落標題與展開卡片沿用 /shared/page.css（.part、.topic）。
-   這裡只放「醫療小知識／給家長的小提醒」兩個小區塊。
+/* ═══ 給家長的鼓勵（常見問題） ═══════════════════════════════════
+   段落標題與展開主題沿用 /shared/page.css（.part、.topic-list、.topic）。
+   這裡放：搜尋框、時間篩選、狀態列、答案內容、找不到時、還有疑問嗎。
    ═══════════════════════════════════════════════════════════════ */
+
+/* ═══ 找問題的工具列 ═════════════════════════════════════════ */
+
+.faq-tools {
+  display: grid;
+  gap: var(--sp-3);
+  margin-bottom: var(--sp-5);
+}
+
+.search {
+  position: relative;
+}
+
+.search-icon {
+  position: absolute;
+  left: var(--sp-4);
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--fg-muted);
+  pointer-events: none;
+}
+
+/* 框線 3.48:1（控制項邊界）；焦點時換深橘，和其他輸入框一致 */
+.search input {
+  display: block;
+  width: 100%;
+  min-height: 54px;
+  padding: 0 52px 0 48px;
+  border-radius: var(--r-pill);
+  background: var(--card);
+  border: var(--line-w) solid var(--line);
+  box-shadow: var(--sh-sm);
+  font-size: 1rem;
+  -webkit-appearance: none;
+  appearance: none;
+  transition: border-color var(--t-fast) var(--ease);
+}
+
+.search input::-webkit-search-cancel-button,
+.search input::-webkit-search-decoration {
+  -webkit-appearance: none;
+  appearance: none;
+  display: none;
+}
+
+/* 提示字用 --idle（4.80:1），看得清楚但不會被當成已輸入的字 */
+.search input::placeholder {
+  color: var(--idle);
+  opacity: 1;
+}
+
+.search input:focus {
+  border-color: var(--primary-deep);
+}
+
+.search input:focus-visible {
+  outline-offset: 0;
+  border-radius: var(--r-pill);
+}
+
+.search-clear {
+  position: absolute;
+  right: 4px;
+  top: 50%;
+  transform: translateY(-50%);
+  display: grid;
+  place-items: center;
+  width: var(--tap);
+  height: var(--tap);
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  color: var(--fg-muted);
+}
+
+.search-clear .icon {
+  width: 20px;
+  height: 20px;
+}
+
+/* ═══ 時間篩選（單選，選到的有勾勾） ═════════════════════════ */
+
+.phase-pick {
+  position: relative;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  min-width: 0;
+}
+
+.chips {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: var(--sp-2);
+}
+
+.chip {
+  position: relative;
+  display: block;
+  cursor: pointer;
+}
+
+.chip input {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  opacity: 0;
+  cursor: pointer;
+}
+
+.chip-face {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  min-height: var(--tap);
+  padding-inline: var(--sp-1);
+  border-radius: var(--r-pill);
+  background: var(--card);
+  border: var(--line-w) solid var(--line);
+  color: var(--fg-muted);
+  font-size: .95rem;
+  font-weight: 700;
+  white-space: nowrap;
+  transition: background-color var(--t-fast) var(--ease),
+    border-color var(--t-fast) var(--ease),
+    color var(--t-fast) var(--ease);
+}
+
+.chip-check {
+  width: 0;
+  height: 16px;
+  opacity: 0;
+  stroke-width: 2.6;
+  transition: width var(--t-fast) var(--ease), opacity var(--t-fast) var(--ease);
+}
+
+.chip input:checked+.chip-face {
+  background: var(--primary-wash);
+  border-color: var(--primary-deep);
+  color: var(--primary-deep);
+  box-shadow: inset 0 0 0 var(--line-w) var(--primary-deep);
+}
+
+.chip input:checked+.chip-face .chip-check {
+  width: 16px;
+  opacity: 1;
+}
+
+.chip input:focus-visible+.chip-face {
+  outline: 3px solid var(--primary-deep);
+  outline-offset: 3px;
+}
+
+/* ═══ 狀態列：共幾題 ＋ 全部展開 ═════════════════════════════ */
+
+.faq-status {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--sp-3);
+  min-height: var(--tap);
+}
+
+.faq-count {
+  font-size: .9rem;
+  line-height: 1.5;
+  color: var(--fg-muted);
+}
+
+/* 深橘字配頁面底 4.89:1 */
+.text-btn {
+  flex: none;
+  min-height: var(--tap);
+  margin-inline-end: calc(var(--sp-3) * -1);
+  padding-inline: var(--sp-3);
+  border: 0;
+  border-radius: var(--r-sm);
+  background: none;
+  color: var(--primary-deep);
+  font-size: .92rem;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+/* 篩選把前一段整段藏起來時，下一段不要再留段落間距 */
+.part[hidden]+.part {
+  margin-top: 0;
+}
+
+/* 段落標題旁的題數 */
+.part-count {
+  display: inline-grid;
+  place-items: center;
+  min-width: 28px;
+  height: 24px;
+  padding-inline: var(--sp-2);
+  border-radius: var(--r-pill);
+  background: var(--bg-sunk);
+  color: var(--fg-muted);
+  font-size: .82rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+/* ═══ 答案內容 ═══════════════════════════════════════════════ */
+
+/* 第一句是重點 */
+.answer-lead {
+  font-weight: 700;
+}
 
 .know {
   display: grid;
@@ -22,7 +236,7 @@
   height: 18px;
 }
 
-/* 小提醒是家長能做的事：淡橘底框起來，和上面的知識分開 */
+/* 小提醒是家長能做的事：淡橘底框起來，和上面的知識分開（深橘小標 4.52:1） */
 .know.is-tip {
   padding: var(--sp-3);
   border-radius: var(--r-md);
@@ -31,4 +245,103 @@
 
 .know.is-tip .know-label {
   color: var(--primary-deep);
+}
+
+/* ═══ 找不到 ═════════════════════════════════════════════════ */
+
+.faq-empty .suggest {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: var(--sp-2);
+  margin-top: var(--sp-1);
+}
+
+.suggest-chip {
+  min-height: var(--tap);
+  padding-inline: var(--sp-4);
+  border-radius: var(--r-pill);
+  border: var(--line-w) solid var(--line);
+  background: var(--card);
+  color: var(--fg);
+  font-weight: 700;
+}
+
+/* ═══ 還有疑問嗎？ ═══════════════════════════════════════════ */
+
+.help-card {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: var(--sp-1) var(--sp-3);
+  margin-top: var(--sp-7);
+  padding: var(--sp-5) var(--sp-4);
+  border-radius: var(--r-xl);
+  background: var(--primary-wash);
+}
+
+.help-icon {
+  grid-row: span 3;
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: var(--card);
+  color: var(--primary-deep);
+}
+
+.help-title {
+  font-size: 1.1rem;
+  font-weight: 700;
+  line-height: 1.5;
+}
+
+.help-card p {
+  font-size: .95rem;
+  line-height: 1.65;
+}
+
+.help-link {
+  justify-self: start;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-1);
+  min-height: var(--tap);
+  margin-top: var(--sp-2);
+  padding-inline: var(--sp-4) var(--sp-3);
+  border-radius: var(--r-pill);
+  border: 2px solid var(--primary-deep);
+  background: var(--card);
+  color: var(--primary-deep);
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.help-link .icon {
+  width: 18px;
+  height: 18px;
+}
+
+@media (hover: hover) and (pointer: fine) {
+
+  .search input:hover {
+    border-color: var(--primary-deep);
+  }
+
+  .chip input:not(:checked)+.chip-face:hover,
+  .suggest-chip:hover {
+    background: var(--primary-wash);
+    border-color: var(--primary-deep);
+    color: var(--primary-deep);
+  }
+
+  .search-clear:hover,
+  .text-btn:hover {
+    background: var(--primary-wash);
+    color: var(--primary-deep);
+  }
+
+  .help-link:hover {
+    box-shadow: var(--sh-md);
+  }
 }

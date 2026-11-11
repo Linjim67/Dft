@@ -155,31 +155,49 @@
   }
 
   /* ─────────────────────────────────────────────────────────────
-     可展開的主題卡（原生 <details>）：指南、鼓勵頁共用，樣式在 /shared/page.css
-     回傳 { root, body }：內容自己 append 到 body。
+     可展開的主題（原生 <details>）：指南、鼓勵頁共用，樣式在 /shared/page.css
+     同一組主題放進 .topic-list，會排成一張用細線分隔的卡片。
+     opts: { open, id, icon（SVG path 字串，自家常數，不放使用者輸入）, meta（標題下的小字） }
+     回傳 { root, title, body }：內容自己 append 到 body。
      ───────────────────────────────────────────────────────────── */
 
-  var CHEVRON_DOWN = '<svg viewBox="0 0 24 24" class="icon topic-chev" aria-hidden="true">' +
-    '<path d="m6 9 6 6 6-6"/></svg>';
+  var TOPIC_TOGGLE = '<span class="topic-toggle" aria-hidden="true">' +
+    '<svg viewBox="0 0 24 24" class="icon"><path d="m6 9 6 6 6-6"/></svg></span>';
 
   function buildTopic(title, opts) {
     opts = opts || {};
     var doc = root.document;
     var det = doc.createElement('details');
     det.className = 'topic';
+    if (opts.id) det.id = opts.id;
     if (opts.open) det.open = true;
+
     var sum = doc.createElement('summary');
-    sum.className = 'topic-head';
+    sum.className = 'topic-head' + (opts.icon ? ' has-icon' : '');
+    if (opts.icon) {
+      sum.insertAdjacentHTML('beforeend', '<span class="topic-icon" aria-hidden="true">' +
+        '<svg viewBox="0 0 24 24" class="icon">' + opts.icon + '</svg></span>');
+    }
+    var text = doc.createElement('span');
+    text.className = 'topic-text';
     var t = doc.createElement('span');
     t.className = 'topic-title';
     t.textContent = title;
-    sum.appendChild(t);
-    sum.insertAdjacentHTML('beforeend', CHEVRON_DOWN);
+    text.appendChild(t);
+    if (opts.meta) {
+      var m = doc.createElement('span');
+      m.className = 'topic-meta';
+      m.textContent = opts.meta;
+      text.appendChild(m);
+    }
+    sum.appendChild(text);
+    sum.insertAdjacentHTML('beforeend', TOPIC_TOGGLE);
+
     var body = doc.createElement('div');
     body.className = 'topic-body';
     det.appendChild(sum);
     det.appendChild(body);
-    return { root: det, body: body };
+    return { root: det, title: t, body: body };
   }
 
   /* ─────────────────────────────────────────────────────────────

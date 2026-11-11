@@ -8,7 +8,8 @@ Inherits MASTER. Covers `/home/` and the shell shared by every subpage (`/shared
 |---|---|---|
 | `/portal/` | no | #01 form (`/` redirects here). A valid profile redirects to `/home/` from `<head>`, so the form never flashes. |
 | `/home/` | yes | #02 hub |
-| `/guide/` `/cheer/` `/games/solo/` `/games/duo/` | yes | scaffolds — 「內容準備中」 |
+| `/guide/` `/cheer/` | yes | #05 / #06 content pages (see `05-06-guide-cheer.md`) |
+| `/games/solo/` `/games/duo/` | yes | #07 menus (see `07-games.md`) |
 | `/shot/` `/feedback/` | yes | #03 |
 | `/thanks/` | no | profile may have expired by then; personalises only if present |
 | `/discussion/` | no | #04, open to everyone (see `04-discussion.md`) |
