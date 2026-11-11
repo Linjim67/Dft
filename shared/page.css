@@ -211,36 +211,6 @@ a.btn {
   --tone-tile: var(--honey-tile);
 }
 
-/* 手機：一欄。桌機（≥ 64rem）：左邊黏住的欄（標題＋章節目錄／搜尋），右邊是內容。
-   手機上 .rail 不產生框（display: contents），裡面的段落選單才能黏住整頁 */
-.rail {
-  display: contents;
-}
-
-@media (min-width: 64rem) {
-  .booklet .wrap {
-    max-width: 68rem;
-  }
-
-  .booklet-layout {
-    display: grid;
-    grid-template-columns: 18rem minmax(0, 1fr);
-    gap: var(--sp-7);
-    align-items: start;
-  }
-
-  .rail {
-    display: block;
-    position: sticky;
-    top: var(--sp-5);
-  }
-
-  .flow {
-    max-width: 42rem;
-    padding-top: var(--sp-4);
-  }
-}
-
 /* 有黏在頂端的段落選單：跳過去時標題不要被蓋住 */
 .part {
   scroll-margin-top: 76px;

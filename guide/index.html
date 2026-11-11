@@ -38,23 +38,19 @@
     </a>
   </header>
 
-  <main id="main" class="wrap booklet-layout">
-    <!-- 桌機：左邊黏住的欄（標題＋章節目錄）；手機：照順序排在最上面，章節選單黏在頂端 -->
-    <div class="rail">
-      <div class="page-head">
-        <h1>家長安慰指南</h1>
-        <p class="page-lede">陪孩子度過打針的小方法。</p>
-      </div>
-
-      <!-- 章節選單：每章一個色點；目前所在的章節會標出來 -->
-      <nav class="jump" aria-label="本頁段落">
-        <a class="jump-link" href="#say" data-tone="apricot"><span class="jump-dot" aria-hidden="true"></span>怎麼說</a>
-        <a class="jump-link" href="#during" data-tone="sage"><span class="jump-dot" aria-hidden="true"></span>打針當下</a>
-        <a class="jump-link" href="#dont" data-tone="honey"><span class="jump-dot" aria-hidden="true"></span>不要說</a>
-      </nav>
+  <main id="main" class="wrap">
+    <div class="page-head">
+      <h1>家長安慰指南</h1>
+      <p class="page-lede">陪孩子度過打針的小方法。</p>
     </div>
 
-    <div class="flow">
+    <!-- 章節選單：捲動時黏在頂端；每章一個色點，目前所在的章節會標出來 -->
+    <nav class="jump" aria-label="本頁段落">
+      <a class="jump-link" href="#say" data-tone="apricot"><span class="jump-dot" aria-hidden="true"></span>怎麼說</a>
+      <a class="jump-link" href="#during" data-tone="sage"><span class="jump-dot" aria-hidden="true"></span>打針當下</a>
+      <a class="jump-link" href="#dont" data-tone="honey"><span class="jump-dot" aria-hidden="true"></span>不要說</a>
+    </nav>
+
     <!-- ── 1. 你可以這樣跟他說！依年紀分組（預設依小檔案的年紀選好） ── -->
     <section class="part" id="say" data-tone="apricot" aria-labelledby="sayTitle">
       <div class="part-head">
@@ -146,7 +142,6 @@
         </a>
       </div>
     </aside>
-    </div>
   </main>
 
   <!-- 醫檢師送出回饋時轉到「打針完畢」頁；載不到時頁面照常 -->

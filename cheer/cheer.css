@@ -197,22 +197,6 @@
   white-space: nowrap;
 }
 
-/* 桌機：工具列在左欄裡，篩選排成兩欄，狀態列和上面用細線分開 */
-@media (min-width: 64rem) {
-  .faq-tools {
-    margin: var(--sp-5) 0 0;
-  }
-
-  .chips {
-    grid-template-columns: repeat(2, 1fr);
-  }
-
-  .faq-status {
-    padding-top: var(--sp-2);
-    border-top: 1px solid var(--hairline);
-  }
-}
-
 /* 篩選把前一段整段藏起來時，下一段不要再留段落間距 */
 .part[hidden]+.part {
   margin-top: 0;

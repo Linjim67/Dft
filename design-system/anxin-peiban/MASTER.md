@@ -12,7 +12,7 @@
 | Audience | Parents (primary operator) + child (co-viewer), in a hospital waiting room |
 | Emotional job | Lower anxiety. Warm, never clinical. |
 | Language | zh-Hant-TW |
-| Platform | Mobile-first web (375px target) |
+| Platform | **Phone-only** web (375–390px target), except the staff page `/pro/` (desktop/tablet). No desktop layouts for parent/child pages — on a wide screen they show the phone column |
 | Theme | **Bright mode only.** No dark mode — deliberate, per product owner. |
 | Stack | Vanilla HTML/CSS/JS, no build step, static on Vercel. Cross-page logic in `/shared/app.js` (`window.Anxin`); Firestore for #01 code registry, #03 feedback + 醫護端 (`/pro/`), #04 discussion, #07 duo rooms |
 

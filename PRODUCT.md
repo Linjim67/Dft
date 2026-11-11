@@ -27,7 +27,7 @@ A one-visit companion handed over in the waiting room: no sign-up, no name or me
 
 ## Capabilities and Constraints
 
-- Mobile-first web, read on a phone in a waiting room; desktop is secondary.
+- Phone-only: every page is used on a phone in the waiting room, except the 醫護端 staff page (`/pro/`), which is used on desktop or tablet. Parent and child pages need no desktop layout; on a wide screen they simply show the phone column.
 - Language: Traditional Chinese (zh-Hant-TW).
 - Bright mode only, by product-owner decision.
 - Static site on Vercel (vanilla HTML/CSS/JS, no build step); Firestore for codes, feedback, staff feedback, discussion and two-phone game rooms.

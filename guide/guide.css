@@ -8,8 +8,7 @@ html {
   scroll-behavior: smooth;
 }
 
-/* ═══ 章節選單 ═══════════════════════════════════════════════
-   手機：三顆膠囊黏在頂端。桌機：左欄裡的直式目錄。 */
+/* ═══ 章節選單：三顆膠囊，捲動時黏在頂端 ═══════════════════════ */
 
 .jump {
   position: sticky;
@@ -61,37 +60,6 @@ html {
   background: var(--tone-soft);
   color: var(--tone);
   box-shadow: inset 0 0 0 2px var(--tone);
-}
-
-@media (min-width: 64rem) {
-  .jump {
-    position: static;
-    display: grid;
-    gap: var(--sp-1);
-    margin: var(--sp-5) 0 0;
-    padding: var(--sp-3) 0 0;
-    border-top: 1px solid var(--hairline);
-    background: none;
-  }
-
-  .jump.is-stuck {
-    box-shadow: none;
-  }
-
-  .jump-link {
-    justify-content: flex-start;
-    gap: var(--sp-3);
-    padding-inline: var(--sp-4);
-    border-radius: var(--r-md);
-    background: transparent;
-    box-shadow: none;
-    font-size: 1rem;
-  }
-
-  .jump-dot {
-    width: 10px;
-    height: 10px;
-  }
 }
 
 /* ═══ 年紀卡（單選；選到的有勾勾） ═══════════════════════════ */

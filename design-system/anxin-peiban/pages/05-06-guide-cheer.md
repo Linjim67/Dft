@@ -19,9 +19,8 @@ make it 更耐看; supporting colours allowed; parents read top to bottom). Dire
   chips, links, CTAs); sage and honey only mark chapters.
 - **Chapter heading:** a 48px tone tile with an authored SVG mark, then the `h2` (1.4rem) and a one-line
   lede. No eyebrow labels and no 01/02/03 numbering (the chapters aren't a sequence).
-- **Desktop ≥ 64rem:** `main.booklet-layout` becomes an `18rem` sticky `.rail` (title plus chapter
-  index or search) beside a `.flow` reading column (max 42rem). On mobile, `.rail` is
-  `display: contents`, so the guide's chapter pills can stick to the whole page.
+- **Phone-only** (MASTER): there is no desktop layout. A desktop rail was tried and removed on
+  2026-11-12 because these pages are only used on phones.
 
 ## Shared: one card per question (`Anxin.buildTopic` + `.topic`)
 
@@ -48,9 +47,8 @@ the cream ground was nearly invisible, which is why it is a white card.
 
 Chapters: 怎麼說 = apricot · 打針當下 = sage · 不要說 = honey.
 
-- **Chapter menu:** on mobile, three sticky pills with tone dots, `aria-current` via
-  IntersectionObserver, and a soft shadow once stuck. On desktop, a vertical index in the rail.
-  The current chapter gets its tone's soft fill, inner ring and ink.
+- **Chapter menu:** three sticky pills with tone dots, `aria-current` via IntersectionObserver,
+  and a soft shadow once stuck. The current chapter gets its tone's soft fill, inner ring and ink.
 - **Age cards** (2 歲以下 / 3–4 歲 / 5–9 歲): a radio group with icons and a check badge, selected in
   apricot. Pre-selected from the profile by whole years (2歲半 → 2 歲以下; 10+ falls back to 5–9 with
   a note). Only the selected group's panel is rendered visible.
@@ -69,8 +67,7 @@ Chapters: 醫療現場解密 = sage · 打針大小問 = honey.
 - **Search first:** a pill search field (apricot focus and caret) filters as you type. Every
   space-separated word must match, and hits are wrapped in `<mark>` (`#FED7AA` + ink). Matching
   questions open; clearing the search folds them again.
-- **Phase filter:** 全部 / 抽血前 / 抽血時 / 抽血後, combinable with search. Four across on mobile,
-  2×2 in the desktop rail.
+- **Phase filter:** 全部 / 抽血前 / 抽血時 / 抽血後, four across, combinable with search.
 - **Status row:** 「共 18 個問題」 / 「找到 3 個和「頭暈」有關的問題」 (`role=status`) + 全部展開 ⇄
   全部收合. Chapter titles carry a live count badge in the tone tile; a chapter with no matches is
   hidden.
