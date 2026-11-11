@@ -197,17 +197,28 @@ html {
 
 .tip-list {
   display: grid;
-  gap: var(--sp-2);
+  gap: 10px;
 }
 
-/* 可以直接說的話：章節色淡底的對話框，左下角收尖；一般字重，讀起來不吵 */
-.say {
-  justify-self: start;
-  max-width: 100%;
-  padding: 10px var(--sp-4);
-  background: var(--tone-soft);
-  border-radius: 18px 18px 18px 4px;
-  line-height: 1.65;
+/* 怎麼說：一句一行，前面一條章節色的短橫槓（不用對話框，整段才安靜） */
+.say,
+#say .do {
+  position: relative;
+  padding-inline-start: 28px;
+  line-height: 1.75;
+}
+
+/* 橫槓對齊第一行的中線（行高 1.75 → 0.875em） */
+.say::before,
+#say .do::before {
+  content: "";
+  position: absolute;
+  inset-inline-start: 2px;
+  top: calc(.875em - 1px);
+  width: 16px;
+  height: 2px;
+  border-radius: 1px;
+  background: var(--tone);
 }
 
 /* 家長可以做的事：章節色圓點清單 */
@@ -266,27 +277,6 @@ html {
   color: var(--tone);
 }
 
-/* 段落裡的連結（到小遊戲） */
-.inline-cta {
-  justify-self: start;
-  display: inline-flex;
-  align-items: center;
-  gap: var(--sp-1);
-  min-height: var(--tap);
-  padding-inline: var(--sp-4) var(--sp-3);
-  border-radius: var(--r-pill);
-  border: 2px solid var(--apricot);
-  background: var(--card);
-  color: var(--apricot);
-  font-weight: 700;
-  text-decoration: none;
-}
-
-.inline-cta .icon {
-  width: 18px;
-  height: 18px;
-}
-
 /* ═══ 「我要打針了」：打針當下這一章的結尾，整張卡都是連結 ══════ */
 
 .ready-card {
@@ -340,31 +330,9 @@ html {
   box-shadow: var(--sh-sm);
 }
 
-/* ═══ 避免 → 改說（攤開，不折疊）══════════════════════════════
+/* ═══ 避免 → 改說（在「不要說」的主題卡裡）══════════════════════
    避免的那句退成灰字；改說的那句就是「可以說的話」，用章節色對話框。
    標籤不加色塊，只留小圖示（叉紅、勾綠），整張卡才安靜。 */
-
-.dont-list {
-  display: grid;
-  gap: var(--sp-3);
-}
-
-.dont-card {
-  padding: var(--sp-4) var(--sp-4) var(--sp-5) 20px;
-  border-radius: var(--r-lg);
-  background: var(--card);
-  box-shadow: var(--sh-sm);
-}
-
-.dont-title {
-  margin: 0 0 var(--sp-2);
-  padding-bottom: var(--sp-3);
-  border-bottom: 1px solid var(--hairline);
-  font-size: 1.05rem;
-  font-weight: 700;
-  line-height: 1.5;
-  text-wrap: pretty;
-}
 
 .pair-list {
   display: grid;
@@ -378,6 +346,10 @@ html {
 
 .pair+.pair {
   border-top: 1px dashed var(--hairline);
+}
+
+.pair:first-child {
+  padding-top: 0;
 }
 
 .pair:last-child {
@@ -439,8 +411,7 @@ html {
 
 @media (hover: hover) and (pointer: fine) {
 
-  .riddle-ans>summary:hover,
-  .inline-cta:hover {
+  .riddle-ans>summary:hover {
     background: var(--apricot-soft);
     border-color: var(--apricot);
     color: var(--apricot);

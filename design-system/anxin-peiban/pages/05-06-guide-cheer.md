@@ -34,6 +34,8 @@ These patterns were pinned by the owner:
   alone).
 - Titles use `text-wrap: pretty` (balance wrapped CJK titles far too early on phones).
 - The body sits under a hairline. Its content rises in on open (opacity and 4px translate only).
+- Open/close motion (chevron turn, content rise, card lift) is **250ms** (`--t-open` on `.topic-list`);
+  colour-only hovers elsewhere keep the site's 140ms.
 - **No height animation.** A `::details-content` block-size transition clipped answers to zero in
   Chrome 130 when items were opened by script (search opens matches).
 
@@ -52,13 +54,15 @@ Chapters: 怎麼說 = apricot · 打針當下 = sage · 不要說 = honey.
 - **Age cards** (2 歲以下 / 3–4 歲 / 5–9 歲): a radio group with icons and a check badge, selected in
   apricot. Pre-selected from the profile by whole years (2歲半 → 2 歲以下; 10+ falls back to 5–9 with
   a note). Only the selected group's panel is rendered visible.
-- **Phrases to say** are speech bubbles in the chapter's soft tone, regular weight, tail bottom-left,
-  sized to their text. Actions are dot lists in the tone colour. Riddle answers hide behind 「看答案」.
-- 打針當下 rows carry sage icon tiles. The chapter ends in the **我要打針了** card (white, 2px apricot
-  border) → `/games/solo/`, which is distinct from the top bar's 開始打針 → `/shot/`.
-- 這些話先不要跟小孩說 is **not collapsed** (GOV.UK: don't hide content every user needs). Each pair is
-  「✕ 避免」 (grey text, red ✕ icon only) then 「✓ 改說」 in a honey speech bubble (green ✓ icon
-  only). The tags have no coloured pill, which keeps the card quiet.
+- 怎麼說 has no lede: the age cards follow the heading directly.
+- **Phrases to say** (and the baby group's actions) are one per line after a **16×2px dash** in the
+  chapter tone, in regular weight, with no bubbles. Riddle answers hide behind 「看答案」.
+- 打針當下 rows carry sage icon tiles; their action lists keep tone dots. 讓孩子分心 has no game link
+  inside it: the chapter ends in the **我要打針了** card (white, 2px apricot border) → `/games/solo/`,
+  which is distinct from the top bar's 開始打針 → `/shot/`.
+- 這些話先不要跟小孩說 uses the same topic cards as the other chapters (owner, 2026-11-12): the title
+  and 「3 句」 show first, and opening a card shows its pairs. Each pair is 「✕ 避免」 (grey text, red
+  ✕ icon only) then 「✓ 改說」 in a honey speech bubble (green ✓ icon only).
 
 ## 06 給家長的鼓勵 `/cheer/` — FAQ page
 

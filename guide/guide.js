@@ -55,7 +55,6 @@
 
   var ICON_X = '<path d="M7 7l10 10M17 7 7 17"/>';
   var ICON_CHECK = '<path d="M6 12.4 10.2 16.6 18 8.8"/>';
-  var ICON_ARROW = '<path d="M5 12h14M13 6l6 6-6 6"/>';
 
   /* ── 年紀 → 分組：看「幾歲」（2 歲半算 2 歲），10 歲以上先給最接近的 5–9 歲 ── */
   function pickAgeGroup(age) {
@@ -161,19 +160,13 @@
         topic.body.appendChild(el('p', 'topic-lead', b.lead));
       } else if (b.list) {
         topic.body.appendChild(renderItems(b.list.map(function (s) { return { do: s }; })));
-      } else if (b.games) {
-        var a = el('a', 'inline-cta');
-        a.href = '/games/solo/';
-        a.appendChild(el('span', null, '打開我們的小遊戲'));
-        a.appendChild(svg(ICON_ARROW));
-        topic.body.appendChild(a);
       }
     });
     duringList.appendChild(topic.root);
   });
 
   /* ── 3. 這些話先不要跟小孩說！避免的第 n 句 ↔ 改說的第 n 句 ───────
-     每個人都該看到，所以直接攤開，不收進折疊 */
+     和上面兩段一樣：主題卡先只列大綱（右邊「3 句」），點開才看到避免／改說 */
 
   function pairRow(kind, tag, icon, text) {
     var row = el('p', 'pair-row ' + kind);
@@ -187,8 +180,7 @@
 
   var dontList = doc.getElementById('dontList');
   C.dont.forEach(function (t) {
-    var card = el('section', 'dont-card');
-    card.appendChild(el('h3', 'dont-title', t.title));
+    var topic = Anxin.buildTopic(t.title, { meta: t.avoid.length + ' 句' });
     var ul = el('ul', 'pair-list');
     t.avoid.forEach(function (bad, i) {
       var li = el('li', 'pair');
@@ -196,8 +188,8 @@
       if (t.better[i]) li.appendChild(pairRow('is-better', '改說', ICON_CHECK, t.better[i]));
       ul.appendChild(li);
     });
-    card.appendChild(ul);
-    dontList.appendChild(card);
+    topic.body.appendChild(ul);
+    dontList.appendChild(topic.root);
   });
 
   /* ── 段落選單：標出目前看到的段落（aria-current），點了平滑捲過去 ── */

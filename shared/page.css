@@ -241,6 +241,12 @@ a.btn {
   color: var(--tone, var(--apricot));
 }
 
+/* 沒有說明行的章節：只有一列，圖示和標題置中對齊 */
+.part-head:not(:has(.part-sub)) .part-mark {
+  grid-row: auto;
+  align-self: center;
+}
+
 .part-mark .icon {
   width: 26px;
   height: 26px;
@@ -268,7 +274,9 @@ a.btn {
    標題｜右邊灰字小標（前面一條細直線）｜箭頭。箭頭不加底色，打開時翻轉並換成章節色。
    不做高度動畫：Chrome 130 用程式打開（搜尋命中）時 ::details-content 會被切成 0 高 */
 
+/* 展開／收合（箭頭翻轉、內容浮上來、卡片浮起）：0.25s */
 .topic-list {
+  --t-open: 250ms;
   display: grid;
   gap: var(--sp-3);
 }
@@ -277,7 +285,7 @@ a.btn {
   background: var(--card);
   border-radius: var(--r-lg);
   box-shadow: var(--sh-sm);
-  transition: box-shadow var(--t-base) var(--ease);
+  transition: box-shadow var(--t-open) var(--ease);
 }
 
 .topic[open] {
@@ -354,8 +362,8 @@ a.btn {
   width: 24px;
   height: 24px;
   color: var(--idle);
-  transition: transform var(--t-base) var(--ease),
-    color var(--t-fast) var(--ease);
+  transition: transform var(--t-open) var(--ease),
+    color var(--t-open) var(--ease);
 }
 
 .topic-toggle .icon {
@@ -381,7 +389,7 @@ a.btn {
 
 /* 打開時內容輕輕浮上來（只動透明度和位移，不動高度） */
 .topic[open]>.topic-body {
-  animation: topic-in var(--t-base) var(--ease) both;
+  animation: topic-in var(--t-open) var(--ease) both;
 }
 
 @keyframes topic-in {
