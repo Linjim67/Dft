@@ -4,6 +4,7 @@ Firebase project `dftt-48e02` (Cloud Firestore + Anonymous Auth).
 
 - Every visitor signs in anonymously, so every `uid` below is an anonymous uid. A "staff" user is just an anonymous uid that currently has a valid `staff/{uid}` doc.
 - All reads and writes go through [shared/firebase.js](shared/firebase.js). The server-side validation is in [firestore.rules](firestore.rules). The payload builders are in [shared/app.js](shared/app.js). If a payload changes, update all three together.
+- Deploying rules: commit `firestore.rules`, then run `node functions/deploy-rules.js ./keys/dftt-admin.json --dry-run` to see the diff against what is live, and the same command without `--dry-run` to deploy. It deploys the committed `HEAD` version (never uncommitted edits), compiles on the server first, and stops without touching production if compiling fails. The service account cannot run the Rules test API, so check new rules against the emulator or with a real signed-in write.
 - Local testing: on `localhost` with `localStorage['anxin.emulator'] = '1'`, the app uses the emulator (`demo-anxin`, Firestore `127.0.0.1:8089`, Auth `127.0.0.1:9099`) instead of the real database.
 
 ## Overview
