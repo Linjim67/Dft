@@ -353,6 +353,18 @@ const playtime = {
 };
 
 /* ─────────────────────────────────────────────────────────────
+   看繪本：bookWishes/{隨機 id}，一次造訪一筆；孩子每改一次就整筆覆寫。
+   內容由 Anxin.books.build 組好（白名單 id、去暱稱）；這裡只加 uid 和伺服器時間。
+   ───────────────────────────────────────────────────────────── */
+
+const books = {
+  async save(id, payload) {
+    const u = await ensureAuth();
+    return setDoc(doc(db, 'bookWishes', id), { ...payload, uid: u.uid, updatedAt: serverTimestamp() });
+  }
+};
+
+/* ─────────────────────────────────────────────────────────────
    討論區（#04）：threads/{id}、replies/{id}、votes/{uid}、cooldowns/{uid}
    內容怎麼組、怎麼搜尋排序在 AnxinDiscuss（/discussion/discuss-core.js）；這裡只做資料進出。
    - 讀取公開，不用登入（匿名登入沒開也看得到）；寫入才登入
@@ -470,5 +482,5 @@ const discuss = {
 
 /* 給一般 <script> 用的橋：頁面邏輯維持非 module（可測試），
    gstatic 被擋或太慢時，表單照樣顯示，只是送出時會得到明確的錯誤。 */
-window.AnxinFirebase = { submitFeedback, ensureAuth, duo, codes, staff, circle, playtime, discuss };
+window.AnxinFirebase = { submitFeedback, ensureAuth, duo, codes, staff, circle, playtime, discuss, books };
 window.dispatchEvent(new Event('anxin:firebase'));

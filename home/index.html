@@ -42,78 +42,78 @@
       </div>
     </section>
 
-    <!-- ── 2–4. 等待時的功能 ── -->
-    <h2 class="section-title">等待的時候</h2>
-
-    <div class="card-list">
+    <!-- ── 2. 家長的功能：3 × 1。字越少越好，標題只留給螢幕閱讀器 ── -->
+    <h2 class="sr-only">給家長</h2>
+    <nav class="tiles tiles-3" aria-label="給家長">
       <!-- 填寫的內容（暫時代碼以外）都在這裡看、在這裡改；代碼不變。重新填寫也在那頁 -->
-      <a class="nav-card" href="/portal/?edit">
-        <span class="card-icon" aria-hidden="true">
-          <svg viewBox="0 0 24 24" class="icon">
-            <path d="M4.5 19.5h4l10-10a2.8 2.8 0 0 0-4-4l-10 10v4Z" />
-            <path d="m13 7 4 4" />
+      <a class="tile" href="/portal/?edit" data-tone="honey">
+        <span class="tile-art" aria-hidden="true">
+          <svg viewBox="0 0 32 32">
+            <rect class="f1" x="3.5" y="6.5" width="20" height="17" rx="3" />
+            <circle cx="10.5" cy="13" r="2.6" />
+            <path d="M6.5 20c.7-2.2 2.2-3.3 4-3.3s3.3 1.1 4 3.3M17 12h3.5M17 15.5h2.5" />
+            <path class="f2" d="m19.5 28 .8-3.7 7.4-7.4a2 2 0 0 1 2.9 2.9l-7.4 7.4Z" />
+            <path d="m25.8 18.8 2.9 2.9" />
           </svg>
         </span>
-        <span>
-          <span class="card-title">修改填寫內容</span>
-          <span class="card-desc" id="profileDesc">查看或修改孩子的資料</span>
-        </span>
-        <svg viewBox="0 0 24 24" class="icon card-chevron" aria-hidden="true"><path d="m9 5 7 7-7 7" /></svg>
+        <span class="tile-label">修改資料</span>
       </a>
 
-      <a class="nav-card" href="/guide/">
-        <span class="card-icon" aria-hidden="true">
-          <svg viewBox="0 0 24 24" class="icon">
-            <path d="M12 6.5C10.2 5.1 7.7 4.5 5 4.5v13c2.7 0 5.2.6 7 2 1.8-1.4 4.3-2 7-2v-13c-2.7 0-5.2.6-7 2Z" />
-            <path d="M12 6.5v13" />
+      <a class="tile" href="/guide/" data-tone="apricot">
+        <span class="tile-art" aria-hidden="true">
+          <svg viewBox="0 0 32 32">
+            <path class="f1" d="M4 8.5A3.5 3.5 0 0 1 7.5 5h12A3.5 3.5 0 0 1 23 8.5v6a3.5 3.5 0 0 1-3.5 3.5H11.5L6 22.5V18A3.5 3.5 0 0 1 4 14.5Z" />
+            <path d="M13.5 15.6s-3.7-2.1-3.7-4.7a1.95 1.95 0 0 1 3.7-.9 1.95 1.95 0 0 1 3.7.9c0 2.6-3.7 4.7-3.7 4.7Z" />
+            <path class="f2" d="M17.5 23a3 3 0 0 1 3-3h5.5a3 3 0 0 1 3 3v.5a3 3 0 0 1-3 3H25V29l-3.3-2.5h-1.2a3 3 0 0 1-3-3Z" />
+            <path d="M21.4 23.3h.01M24.6 23.3h.01" />
           </svg>
         </span>
-        <span>
-          <span class="card-title">家長安慰指南</span>
-          <span class="card-desc">陪孩子度過打針的小方法</span>
-        </span>
-        <svg viewBox="0 0 24 24" class="icon card-chevron" aria-hidden="true"><path d="m9 5 7 7-7 7" /></svg>
+        <span class="tile-label">安慰指南</span>
       </a>
 
-      <a class="nav-card" href="/cheer/">
-        <span class="card-icon" aria-hidden="true">
-          <svg viewBox="0 0 24 24" class="icon">
-            <path d="M12 20s-7-4.3-7-9.4A4 4 0 0 1 12 8a4 4 0 0 1 7 2.6C19 15.7 12 20 12 20Z" />
+      <a class="tile" href="/cheer/" data-tone="sage">
+        <span class="tile-art" aria-hidden="true">
+          <svg viewBox="0 0 32 32">
+            <circle class="f1" cx="13" cy="13.5" r="9.5" />
+            <path d="M10 11a3 3 0 1 1 4.2 2.8c-.8.4-1.2 1-1.2 1.8v.7M13 19.6h.01" />
+            <circle class="f2" cx="23.5" cy="23" r="5.5" />
+            <path d="M23.5 20.4v2.8M23.5 25.7h.01" />
           </svg>
         </span>
-        <span>
-          <span class="card-title">抽血大小問</span>
-          <span class="card-desc">看懂抽血現場，心裡更踏實</span>
+        <span class="tile-label">抽血大小問</span>
+      </a>
+    </nav>
+
+    <hr class="home-divider">
+
+    <!-- ── 3. 孩子的功能：2 × 1 ── -->
+    <h2 class="sr-only">給孩子</h2>
+    <nav class="tiles tiles-2" aria-label="給孩子">
+      <a class="tile tile-kid" href="/games/solo/" data-tone="apricot">
+        <span class="tile-art" aria-hidden="true">
+          <svg viewBox="0 0 32 32">
+            <path class="f1" d="M9.5 10.5h13a6.3 6.3 0 0 1 6.1 7.9l-1 3.9a3.5 3.5 0 0 1-6 1.4l-2.1-2.4h-7l-2.1 2.4a3.5 3.5 0 0 1-6-1.4l-1-3.9a6.3 6.3 0 0 1 6.1-7.9Z" />
+            <path d="M10 14.3v4.6M7.7 16.6h4.6" />
+            <circle class="ink" cx="20.7" cy="14.8" r="1.05" />
+            <circle class="ink" cx="24.3" cy="18.1" r="1.05" />
+            <path d="M16 3.5v3.2M14.4 5.1h3.2" />
+          </svg>
         </span>
-        <svg viewBox="0 0 24 24" class="icon card-chevron" aria-hidden="true"><path d="m9 5 7 7-7 7" /></svg>
+        <span class="tile-label">玩遊戲</span>
       </a>
 
-      <!-- 小遊戲：同一個 chunk，拆成單機／雙機兩顆按鈕 -->
-      <section class="chunk-card" aria-labelledby="gamesTitle">
-        <div class="chunk-head">
-          <span class="card-icon" aria-hidden="true">
-            <svg viewBox="0 0 24 24" class="icon">
-              <rect x="3" y="7.5" width="18" height="10" rx="5" />
-              <path d="M8 10.5v4M6 12.5h4M15.5 11.5h.01M17.5 13.5h.01" />
-            </svg>
-          </span>
-          <span>
-            <span id="gamesTitle" class="card-title">小遊戲</span>
-            <span class="card-desc">玩遊戲，放輕鬆</span>
-          </span>
-        </div>
-        <div class="card-actions">
-          <a class="btn btn-quiet game-btn" href="/games/solo/">
-            <span class="game-btn-label">單機</span>
-            <span class="game-btn-sub">一支手機</span>
-          </a>
-          <a class="btn btn-quiet game-btn" href="/games/duo/">
-            <span class="game-btn-label">雙機</span>
-            <span class="game-btn-sub">兩支手機一起玩</span>
-          </a>
-        </div>
-      </section>
-    </div>
+      <a class="tile tile-kid" href="/books/" data-tone="sage">
+        <span class="tile-art" aria-hidden="true">
+          <svg viewBox="0 0 32 32">
+            <path class="f1" d="M16 9.5C13.4 7.6 9.6 6.8 4.5 7v16.5c5.1-.2 8.9.6 11.5 2.5Z" />
+            <path class="f2" d="M16 9.5c2.6-1.9 6.4-2.7 11.5-2.5v16.5c-5.1-.2-8.9.6-11.5 2.5Z" />
+            <path d="M7.8 12.3c2 0 3.8.4 5.2 1.1M7.8 16c2 0 3.8.4 5.2 1.1" />
+            <path class="ink" d="m21.8 11.6 1 2.1 2.3.3-1.7 1.6.4 2.3-2-1.1-2 1.1.4-2.3-1.7-1.6 2.3-.3Z" />
+          </svg>
+        </span>
+        <span class="tile-label">看繪本</span>
+      </a>
+    </nav>
 
     <!-- ── 5. 開始打針（#03） ── -->
     <a class="btn btn-primary start-btn" href="/shot/">

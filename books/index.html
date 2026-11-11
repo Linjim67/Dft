@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="zh-Hant-TW">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="color-scheme" content="light">
+  <meta name="theme-color" content="#FFF7ED">
+  <title>安心陪伴 · 看繪本</title>
+  <!-- favicon：/favicon/（ver1.svg 兩支針筒組成的 N）。sizes 寫在 .ico 上，Chrome 才會選 SVG -->
+  <link rel="icon" href="/favicon/favicon.ico" sizes="32x32">
+  <link rel="icon" href="/favicon/favicon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="/favicon/apple-touch-icon.png">
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet"
+    href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&display=swap">
+  <link rel="stylesheet" href="/shared/styles.css">
+  <link rel="stylesheet" href="/shared/page.css">
+  <link rel="stylesheet" href="/books/books.css">
+  <script src="/shared/app.js"></script>
+  <script>Anxin.requireProfile();</script>
+</head>
+
+<body>
+  <a class="skip-link" href="#main">跳到主要內容</a>
+
+  <!-- 規格：任何子頁都能直接「開始打針」 -->
+  <header class="wrap topbar">
+    <a class="back-link" href="/home/">
+      <svg viewBox="0 0 24 24" class="icon" aria-hidden="true"><path d="M15 5 8 12l7 7" /></svg>
+      <span>回主頁</span>
+    </a>
+    <a class="pill-cta" href="/shot/">
+      <span>開始打針</span>
+      <svg viewBox="0 0 24 24" class="icon" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6" /></svg>
+    </a>
+  </header>
+
+  <main id="main" class="wrap">
+    <div class="page-head">
+      <h1>看繪本</h1>
+      <p class="page-lede">繪本準備中，先告訴我們你想看什麼！</p>
+    </div>
+
+    <!-- ── 1. 所有繪本（都還在準備）：點一下加入願望清單 ── -->
+    <section class="book-part" aria-labelledby="shelfTitle">
+      <h2 class="book-h2" id="shelfTitle">想看哪一本？</h2>
+      <ul class="shelf" id="shelf"></ul>
+    </section>
+
+    <!-- ── 2. 建議繪本主題 ── -->
+    <section class="book-part" aria-labelledby="themeTitle">
+      <h2 class="book-h2" id="themeTitle">還想看什麼主題？</h2>
+      <form class="idea-form" id="themeForm" autocomplete="off">
+        <label class="live-region" for="themeInput">繪本主題</label>
+        <input type="text" id="themeInput" placeholder="例如：會飛的大象" enterkeyhint="send">
+        <button class="idea-add" type="submit">送出</button>
+      </form>
+      <ul class="idea-list" id="themeIdeas" aria-label="已送出的主題"></ul>
+    </section>
+
+    <!-- ── 3. 喜歡的角色：點選（可複選），也可以自己寫 ── -->
+    <section class="book-part" aria-labelledby="charTitle">
+      <h2 class="book-h2" id="charTitle">最喜歡的角色？</h2>
+      <div class="char-chips" id="charChips" role="group" aria-labelledby="charTitle"></div>
+      <form class="idea-form" id="charForm" autocomplete="off">
+        <label class="live-region" for="charInput">其他角色</label>
+        <input type="text" id="charInput" placeholder="其他角色" enterkeyhint="send">
+        <button class="idea-add" type="submit">加入</button>
+      </form>
+      <ul class="idea-list" id="charIdeas" aria-label="自己寫的角色"></ul>
+    </section>
+
+    <!-- 存到伺服器才顯示「已記下」 -->
+    <p class="saved-toast" id="savedToast" role="status" aria-live="polite"></p>
+  </main>
+
+  <!-- 願望存在手機上，也送到 bookWishes；送不出去時畫面照常 -->
+  <script type="module" src="/shared/firebase.js"></script>
+  <script src="/books/books.js"></script>
+</body>
+
+</html>

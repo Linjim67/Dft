@@ -364,6 +364,65 @@
   }
 
   /* ─────────────────────────────────────────────────────────────
+     看繪本：繪本還沒做，先收孩子的願望（bookWishes/{隨機 id}）
+     id 清單是和 firestore.rules 的約定：改這裡也要改規則的 validBookWish。
+     名字（label）只是畫面用的。
+     ───────────────────────────────────────────────────────────── */
+
+  var BOOK_THEMES = [
+    { id: 'animals', label: '動物朋友' },
+    { id: 'dinosaurs', label: '恐龍世界' },
+    { id: 'space', label: '太空冒險' },
+    { id: 'ocean', label: '海底世界' },
+    { id: 'magic', label: '公主魔法' },
+    { id: 'hospital', label: '醫院小勇士' }
+  ];
+
+  var BOOK_CHARACTERS = [
+    { id: 'bear', label: '小熊' },
+    { id: 'bunny', label: '小兔子' },
+    { id: 'puppy', label: '小狗' },
+    { id: 'kitty', label: '小貓' },
+    { id: 'dino', label: '恐龍' },
+    { id: 'hero', label: '超級英雄' },
+    { id: 'princess', label: '公主' },
+    { id: 'robot', label: '機器人' }
+  ];
+
+  var BOOK_IDEAS_MAX = 5;      /* 自己打的主題／角色，各最多幾則 */
+  var BOOK_THEME_IDEA_LEN = 40;
+  var BOOK_CHAR_IDEA_LEN = 30;
+
+  function pickIds(list, allowed) {
+    var ok = allowed.map(function (x) { return x.id; });
+    var seen = {};
+    return (list || []).filter(function (id) {
+      if (ok.indexOf(id) === -1 || seen[id]) return false;
+      seen[id] = true;
+      return true;
+    });
+  }
+
+  function pickIdeas(list, p, max) {
+    return (list || [])
+      .map(function (t) { return freeText(t, nicknamesOf(p), max); })
+      .filter(Boolean)
+      .slice(0, BOOK_IDEAS_MAX);
+  }
+
+  /* 純函式：白名單 id、自己打的字去掉暱稱並截斷；沒有暱稱、沒有代碼 */
+  function buildBookWish(state, p) {
+    return {
+      v: 1,
+      wishlist: pickIds(state.wishlist, BOOK_THEMES),
+      themeIdeas: pickIdeas(state.themeIdeas, p, BOOK_THEME_IDEA_LEN),
+      characters: pickIds(state.characters, BOOK_CHARACTERS),
+      characterIdeas: pickIdeas(state.characterIdeas, p, BOOK_CHAR_IDEA_LEN),
+      age: typeof p.age === 'number' ? p.age : null
+    };
+  }
+
+  /* ─────────────────────────────────────────────────────────────
      暫時代碼：伺服器登記，同一時間絕不重複
      以前是把表單內容雜湊成 4 位數、只存在手機上——一萬組號碼裡，
      同一天約 118 個家庭就有一半機率撞號，而且沒有人會發現。
@@ -594,6 +653,14 @@
     wireDialog: wireDialog,
     scrubNickname: scrubNickname,
     buildFeedbackPayload: buildFeedbackPayload,
+    books: {
+      THEMES: BOOK_THEMES,
+      CHARACTERS: BOOK_CHARACTERS,
+      IDEAS_MAX: BOOK_IDEAS_MAX,
+      THEME_IDEA_LEN: BOOK_THEME_IDEA_LEN,
+      CHAR_IDEA_LEN: BOOK_CHAR_IDEA_LEN,
+      build: buildBookWish
+    },
     whenFirebase: whenFirebase,
     SCALE_VERSION: SCALE_VERSION
   };

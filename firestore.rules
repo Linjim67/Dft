@@ -274,6 +274,18 @@ service cloud.firestore {
       allow read, update, delete: if false;
     }
 
+    // 看繪本：繪本還沒做，先收孩子的願望。一次造訪一筆（id 在手機上產生），
+    // 同一支手機（uid）之後可以一直覆寫自己那筆；誰都不能讀、刪。
+    // 白名單欄位，沒有暱稱、沒有代碼；欄位必須與 shared/app.js 的 buildBookWish、
+    // shared/firebase.js 的 books.save 一致。
+    match /bookWishes/{id} {
+      allow create: if request.auth != null && validBookWish(id, request.resource.data);
+      allow update: if request.auth != null
+        && resource.data.uid == request.auth.uid
+        && validBookWish(id, request.resource.data);
+      allow read, delete: if false;
+    }
+
     // 雙機配對（#07）：房間 id = 個人資料的 4 位數暫時代碼
     // 家長的手機建立房間；孩子的手機掃 QR code 後把自己的 uid 寫進 childUid。
     // 房間只放遊戲需要的年齡，不放暱稱等個人資料（keys().hasOnly 白名單）。
@@ -580,6 +592,33 @@ service cloud.firestore {
       && isLevel(p.worryLevel)
       && p.specialNeeds is string && p.specialNeeds.size() <= 200
       && validCareTexts(p);
+  }
+
+  // 看繪本的願望：主題、角色只收清單裡的 id；自己打的字最多 5 則、每則有長度上限
+  function validBookWish(id, d) {
+    return id.matches('^[A-Za-z0-9]{20}$')
+      && d.keys().hasOnly(['v', 'uid', 'wishlist', 'themeIdeas', 'characters', 'characterIdeas', 'age', 'updatedAt'])
+      && d.keys().hasAll(['v', 'uid', 'wishlist', 'themeIdeas', 'characters', 'characterIdeas', 'age', 'updatedAt'])
+      && d.v == 1
+      && d.uid == request.auth.uid
+      && d.wishlist is list && d.wishlist.size() <= 6
+      && d.wishlist.hasOnly(['animals', 'dinosaurs', 'space', 'ocean', 'magic', 'hospital'])
+      && d.characters is list && d.characters.size() <= 8
+      && d.characters.hasOnly(['bear', 'bunny', 'puppy', 'kitty', 'dino', 'hero', 'princess', 'robot'])
+      && shortTexts(d.themeIdeas, 40)
+      && shortTexts(d.characterIdeas, 30)
+      && (d.age == null || (d.age is number && d.age >= 0 && d.age <= 18))
+      && d.updatedAt == request.time;
+  }
+
+  // 最多 5 則字串，每則 1–max 字（規則沒有迴圈，只能一格一格檢查）
+  function shortTexts(l, max) {
+    return l is list && l.size() <= 5
+      && (l.size() < 1 || (l[0] is string && l[0].size() >= 1 && l[0].size() <= max))
+      && (l.size() < 2 || (l[1] is string && l[1].size() >= 1 && l[1].size() <= max))
+      && (l.size() < 3 || (l[2] is string && l[2].size() >= 1 && l[2].size() <= max))
+      && (l.size() < 4 || (l[3] is string && l[3].size() >= 1 && l[3].size() <= max))
+      && (l.size() < 5 || (l[4] is string && l[4].size() >= 1 && l[4].size() <= max));
   }
 
   // 台灣時間（UTC+8）的今天，YYYYMMDD

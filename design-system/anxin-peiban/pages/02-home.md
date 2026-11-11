@@ -9,7 +9,8 @@ Inherits MASTER. Covers `/home/` and the shell shared by every subpage (`/shared
 | `/portal/` | no | #01 form (`/` redirects here). A valid profile redirects to `/home/` from `<head>`, so the form never flashes. |
 | `/home/` | yes | #02 hub |
 | `/guide/` `/cheer/` | yes | #05 / #06 content pages (see `05-06-guide-cheer.md`) |
-| `/games/solo/` `/games/duo/` | yes | #07 menus (see `07-games.md`) |
+| `/games/solo/` `/games/duo/` | yes | #07 menus (see `07-games.md`). `/games/solo/` is titled 玩遊戲 and lists every game, ending with 兩支手機一起玩 → `/games/duo/`. |
+| `/books/` | yes | 看繪本 (see `08-books.md`) |
 | `/shot/` `/feedback/` | yes | #03 |
 | `/thanks/` | no | profile may have expired by then; personalises only if present |
 | `/discussion/` | no | #04, open to everyone (see `04-discussion.md`) |
@@ -23,14 +24,25 @@ Protected pages guard in `<head>` with `Anxin.requireProfile()` → `location.re
 - Navigation that shouldn't be returned to uses `location.replace` — submitting #01 must not leave a
   back-button entry that bounces straight to `/home/` again.
 
-## Hub layout — the spec's five parts, in order
+## Hub layout — as few words as possible
 
-1. **Briefing**: 「{暱稱}的小檔案」, the code card (with 「打針時，請把這組代碼交給醫檢師」), summary rows,
-   quiet 重新填寫.
-2–3. 家長安慰指南 / 抽血大小問 as **whole-card links** — one large target, no second button hidden inside.
-4. 小遊戲 as one chunk holding **two** buttons, each with a subline (一支手機 / 兩支手機一起玩) because
-   「單機／雙機」 alone is jargon to a parent.
+Owner's direction (2026-11-12): a 3 × 1 grid for the parent, a grey line, a 2 × 1 grid for the child;
+one name per tile, no descriptions.
+
+1. **Code card** only (「打針時，請把這組代碼交給醫檢師」). The child's details live in 修改資料.
+2. **Parent tiles, 3 × 1** (`.tiles-3`): 修改資料 (`/portal/?edit`, honey) · 安慰指南 (`/guide/`, apricot) ·
+   抽血大小問 (`/cheer/`, sage). Whole-tile links, 116px tall, 60px icon block.
+3. **Grey line** (`.home-divider`, `#D6D3D1`, decorative) between the parent's and the child's features.
+4. **Child tiles, 2 × 1** (`.tiles-2` + `.tile-kid`): 玩遊戲 (`/games/solo/`, apricot) · 看繪本 (`/books/`, sage).
+   Bigger (156px, 84px icon block) so a child can hit them. No 單機／雙機 split on the hub; the 雙機 entry
+   is the last card in the games list.
 5. **開始打針** — full-width `.btn-primary`, separated by `--sp-6` so it reads as its own step.
+
+Section headings (給家長 / 給孩子) are `sr-only`: screen readers get the structure, the screen stays wordless.
+
+**Tile icons** are drawn for the hub on a 32 × 32 grid, two-tone: line in the tile's `--tone`
+(icons need 3:1, and every tone is ≥ 4.3:1 on its `--tone-tile`), fill `.f1` = `--tone-soft`, `.f2` = white,
+`.ink` = solid tone. Stroke 1.9 (1.7 on the child tiles, which render bigger).
 
 ## Subpage shell
 

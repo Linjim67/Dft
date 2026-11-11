@@ -22,6 +22,7 @@ rooms/{code}                          two-phone game room
 circleDays/{YYYYMMDD}                 (no fields: the doc is never written)
   └─ scores/{uid}                     draw-a-circle daily best score
 playtime/{randomId}                   time spent on one game screen (a level, or the game's home)
+bookWishes/{randomId}                 看繪本 wishes: wished-for books, theme ideas, favourite characters
 threads/{autoId}                      discussion post (#04)
   ├─ replies/{autoId}                 reply
   └─ votes/{uid}                      「有幫助」, one per phone
@@ -41,6 +42,7 @@ cooldowns/{uid}                       time of this phone's last post or reply (1
 | `rooms/*/state` | child | room members | 07 雙機打地鼠 |
 | `circleDays/*/scores` | each phone, its own doc only | anyone signed in | 07 畫圓圈 |
 | `playtime` | each phone, its own docs only | **nobody** (Console / Admin SDK only) | 07 every game |
+| `bookWishes` | each phone, its own docs only | **nobody** (Console / Admin SDK only) | 看繪本 |
 | `threads`, `replies` | any signed-in phone (with a cooldown stamp) | **anyone**, even signed out | 04 討論區 |
 | `threads/*/votes` | each phone, its own doc only | that uid only | 04 討論區 |
 | `cooldowns` | each phone, its own doc only | that uid only | 04 討論區 |
@@ -270,6 +272,30 @@ Rules:
 - `startAt` must be within 3 days before and 1 day after the server time. `endAt` must be ≥ `startAt` and at most 12 h after it.
 - Update: only your own rows, only while `ended == false`. Only `endAt` (never backwards), `ended` and `updatedAt` may change.
 - Nobody can read or delete rows, so analysis is done in the Console or with the Admin SDK.
+
+## `bookWishes/{randomId}`
+
+看繪本 (`/books/`). There are no picture books yet, so the page collects what children want instead. Each doc is one visit: the id is 20 random letters and digits, made on the phone and kept in `localStorage['anxin.books.v1']` together with the code it belongs to (a new code starts a new doc). Every change on the page rewrites the whole doc (after a 0.7 s pause, so a burst of taps is one write). The page shows 「已記下」 only after the server accepts a write.
+
+Payload: [shared/app.js](shared/app.js) `Anxin.books.build` (whitelists ids, removes the nickname from typed text, trims to length). Write: [shared/firebase.js](shared/firebase.js) `books.save`.
+
+| Field | Type | Value |
+|---|---|---|
+| `v` | number | `1` |
+| `uid` | string | the phone's anonymous uid (who may rewrite the doc) |
+| `wishlist` | string[] ≤ 6 | books added to the wishlist: `'animals'` 動物朋友 · `'dinosaurs'` 恐龍世界 · `'space'` 太空冒險 · `'ocean'` 海底世界 · `'magic'` 公主魔法 · `'hospital'` 醫院小勇士 |
+| `themeIdeas` | string[] ≤ 5 | 「還想看什麼主題？」, typed. Each 1–40 characters, nickname replaced with `孩子`. |
+| `characters` | string[] ≤ 8 | favourite characters, tapped: `'bear'` 小熊 · `'bunny'` 小兔子 · `'puppy'` 小狗 · `'kitty'` 小貓 · `'dino'` 恐龍 · `'hero'` 超級英雄 · `'princess'` 公主 · `'robot'` 機器人 |
+| `characterIdeas` | string[] ≤ 5 | 「其他角色」, typed. Each 1–30 characters, nickname replaced with `孩子`. |
+| `age` | number \| null | from the profile. No nickname, no code. |
+| `updatedAt` | Timestamp | server time of the last write |
+
+Lists can shrink: un-tapping a book or a character, or deleting a typed idea, removes it on the next write. The final state of a visit is what the doc holds.
+
+Rules:
+- Create: only with your own `uid`. Every field is whitelisted; `wishlist` and `characters` accept only the ids above; typed lists are checked item by item; `updatedAt == request.time`.
+- Update: only your own doc, with the same checks.
+- Nobody can read or delete docs, so analysis is done in the Console or with the Admin SDK.
 
 ## `threads/{autoId}` (#04 討論區)
 
