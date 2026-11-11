@@ -23,7 +23,7 @@
   <script>Anxin.requireProfile();</script>
 </head>
 
-<body>
+<body class="booklet">
   <a class="skip-link" href="#main">跳到主要內容</a>
 
   <!-- 規格：任何子頁都能直接「開始打針」 -->
@@ -38,7 +38,9 @@
     </a>
   </header>
 
-  <main id="main" class="wrap">
+  <main id="main" class="wrap booklet-layout">
+    <!-- 桌機：左邊黏住的欄（標題＋搜尋＋篩選），往下讀時隨時可以找；手機：照順序排在最上面 -->
+    <div class="rail">
     <div class="page-head">
       <h1>給家長的鼓勵</h1>
       <p class="page-lede">您也辛苦了。先弄懂抽血現場在做什麼，心裡會踏實一點。</p>
@@ -69,10 +71,20 @@
         <button class="text-btn" type="button" id="expandAll">全部展開</button>
       </div>
     </div>
+    </div>
 
-    <!-- ── 對家長的衛教 part 1：醫療現場解密 ── -->
-    <section class="part" id="why" aria-labelledby="whyTitle">
+    <div class="flow">
+    <!-- ── 對家長的衛教 part 1：醫療現場解密（鼠尾草綠） ── -->
+    <section class="part" id="why" data-tone="sage" aria-labelledby="whyTitle">
       <div class="part-head">
+        <!-- 聽診器 -->
+        <span class="part-mark" aria-hidden="true">
+          <svg viewBox="0 0 24 24" class="icon">
+            <path d="M6 3.5H4.8v5.2a4.2 4.2 0 0 0 8.4 0V3.5H12" />
+            <path d="M9 12.9v1.9a4.7 4.7 0 0 0 9.4 0v-2.3" />
+            <circle cx="18.4" cy="10.4" r="2.1" />
+          </svg>
+        </span>
         <h2 class="part-title" id="whyTitle">醫療現場解密 <span class="part-count" id="whyCount"></span></h2>
         <p class="part-sub">醫護人員為什麼這樣做？</p>
       </div>
@@ -80,8 +92,15 @@
     </section>
 
     <!-- ── 對家長的衛教 part 2：打針大小問 ── -->
-    <section class="part" id="faq" aria-labelledby="faqTitle">
+    <section class="part" id="faq" data-tone="honey" aria-labelledby="faqTitle">
       <div class="part-head">
+        <!-- 對話框裡一個問號 -->
+        <span class="part-mark" aria-hidden="true">
+          <svg viewBox="0 0 24 24" class="icon">
+            <path d="M20 15a2 2 0 0 1-2 2H8l-4 4V5a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2Z" />
+            <path d="M10 8.2a2.2 2.2 0 1 1 3 2c-.6.3-1 .8-1 1.4v.4M12 14.5h.01" />
+          </svg>
+        </span>
         <h2 class="part-title" id="faqTitle">打針大小問 <span class="part-count" id="faqListCount"></span></h2>
         <p class="part-sub">家長常見的疑問</p>
       </div>
@@ -114,6 +133,7 @@
         <svg viewBox="0 0 24 24" class="icon" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6" /></svg>
       </a>
     </aside>
+    </div>
   </main>
 
   <!-- 醫檢師送出回饋時轉到「打針完畢」頁；載不到時頁面照常 -->

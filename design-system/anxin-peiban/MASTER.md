@@ -50,6 +50,21 @@ it does more work than the orange does.
 The `#2563EB` "trust blue" accent. A third hue had nowhere to go in this UI and added noise.
 Confirmation uses `--success` green; everything else is orange + warm neutrals.
 
+### Chapter tones (reading pages only)
+The guide and cheer pages read top to bottom in chapters, and the owner asked for supporting colours
+there (2026-11-12). Each chapter takes one warm, earthy tone. Apricot remains the only *interactive*
+colour; sage and honey never style a control.
+
+| Token | Value | Measured / use |
+|---|---|---|
+| `--apricot` / `-soft` / `-tile` | `#C2410C` / `#FFF4EB` / `#FFE6D2` | 4.78:1 on soft |
+| `--sage` / `-soft` / `-tile` | `#2E6B57` / `#EDF5F0` / `#D9ECE2` | 6.26:1 card · 5.64:1 soft · 5.08:1 tile |
+| `--honey` / `-soft` / `-tile` | `#8A5A06` / `#FDF5E2` / `#F8E7BC` | 5.92:1 card · 5.45:1 soft · 4.84:1 tile |
+
+*ink* = icons and short labels · *soft* = large washes (bubbles, tip boxes) · *tile* = icon tiles,
+count badges. Those pages also set the ink to chocolate `#4A2A1C` (`.booklet`), so the orange reads as
+an accent. See `pages/05-06-guide-cheer.md`.
+
 ## Style — warm soft, low-chrome
 
 Claymorphism geometry **without** the hard flat edge shadows, which read as cheap plastic.

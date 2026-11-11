@@ -178,9 +178,70 @@ a.btn {
   font-size: 1rem;
 }
 
-/* ═══ 內容頁的段落（指南、鼓勵頁） ═══════════════════════════ */
+/* ═══ 內容頁（指南、鼓勵頁）：讀起來像一本分章節的小冊子 ════════
+   <body class="booklet">：字色換成深可可色，橘色只留給可以按的東西和章節色，
+   整頁才不會糊成一片咖啡橘。每一章用 data-tone 帶一個色調（apricot／sage／honey），
+   底下的元件都讀 --tone／--tone-soft／--tone-tile。 */
 
-/* 指南頁有黏在頂端的段落選單：跳過去時標題不要被蓋住 */
+.booklet {
+  --fg: #4A2A1C;
+  /* 12.8:1 on card · 12.1:1 on bg */
+}
+
+.booklet ::selection {
+  background: var(--apricot-tile);
+  color: var(--fg);
+}
+
+[data-tone="apricot"] {
+  --tone: var(--apricot);
+  --tone-soft: var(--apricot-soft);
+  --tone-tile: var(--apricot-tile);
+}
+
+[data-tone="sage"] {
+  --tone: var(--sage);
+  --tone-soft: var(--sage-soft);
+  --tone-tile: var(--sage-tile);
+}
+
+[data-tone="honey"] {
+  --tone: var(--honey);
+  --tone-soft: var(--honey-soft);
+  --tone-tile: var(--honey-tile);
+}
+
+/* 手機：一欄。桌機（≥ 64rem）：左邊黏住的欄（標題＋章節目錄／搜尋），右邊是內容。
+   手機上 .rail 不產生框（display: contents），裡面的段落選單才能黏住整頁 */
+.rail {
+  display: contents;
+}
+
+@media (min-width: 64rem) {
+  .booklet .wrap {
+    max-width: 68rem;
+  }
+
+  .booklet-layout {
+    display: grid;
+    grid-template-columns: 18rem minmax(0, 1fr);
+    gap: var(--sp-7);
+    align-items: start;
+  }
+
+  .rail {
+    display: block;
+    position: sticky;
+    top: var(--sp-5);
+  }
+
+  .flow {
+    max-width: 42rem;
+    padding-top: var(--sp-4);
+  }
+}
+
+/* 有黏在頂端的段落選單：跳過去時標題不要被蓋住 */
 .part {
   scroll-margin-top: 76px;
 }
@@ -189,65 +250,94 @@ a.btn {
   margin-top: var(--sp-7);
 }
 
+/* 章節標題：左邊一塊章節色的圖示，右邊標題＋一行說明 */
 .part-head {
-  margin-bottom: var(--sp-4);
+  display: grid;
+  grid-template-columns: 48px minmax(0, 1fr);
+  align-items: center;
+  gap: 2px var(--sp-3);
+  margin-bottom: var(--sp-5);
+}
+
+.part-mark {
+  grid-row: span 2;
+  align-self: start;
+  display: grid;
+  place-items: center;
+  width: 48px;
+  height: 48px;
+  border-radius: var(--r-md);
+  background: var(--tone-tile, var(--apricot-tile));
+  color: var(--tone, var(--apricot));
+}
+
+.part-mark .icon {
+  width: 26px;
+  height: 26px;
 }
 
 .part-title {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
-  gap: var(--sp-2);
-  font-size: 1.3rem;
+  gap: var(--sp-1) var(--sp-2);
+  font-size: 1.4rem;
   font-weight: 700;
-  line-height: 1.4;
+  line-height: 1.35;
+  letter-spacing: -.01em;
   text-wrap: balance;
 }
 
 .part-sub {
-  margin-top: var(--sp-1);
   font-size: .95rem;
+  line-height: 1.6;
   color: var(--fg-muted);
 }
 
-/* ═══ 可展開的主題（Anxin.buildTopic → 原生 <details>） ═══════
-   同一組放在同一張卡片裡、用細線分隔（像設定頁／說明中心），
-   不再一題一張浮起的卡片：十幾道陰影疊在一起太吵。 */
+/* ═══ 可展開的主題（Anxin.buildTopic → 原生 <details>）：一題一張卡 ═══
+   標題｜右邊灰字小標（前面一條細直線）｜箭頭。箭頭不加底色，打開時翻轉並換成章節色。
+   不做高度動畫：Chrome 130 用程式打開（搜尋命中）時 ::details-content 會被切成 0 高 */
 
 .topic-list {
-  background: var(--card);
-  border-radius: var(--r-lg);
-  box-shadow: var(--sh-md);
-  overflow: hidden;
+  display: grid;
+  gap: var(--sp-3);
 }
 
-/* 篩選時會藏掉部分題目：分隔線只畫在「前面還有可見題目」的那幾題上 */
-.topic:not([hidden])~.topic:not([hidden]) {
-  border-top: 1px solid var(--hairline);
+.topic {
+  background: var(--card);
+  border-radius: var(--r-lg);
+  box-shadow: var(--sh-sm);
+  transition: box-shadow var(--t-base) var(--ease);
+}
+
+.topic[open] {
+  box-shadow: var(--sh-md);
 }
 
 .topic-head {
   display: grid;
-  grid-template-columns: 1fr auto;
+  grid-template-columns: minmax(0, 1fr) auto;
   align-items: center;
   gap: var(--sp-3);
   min-height: 64px;
-  padding: var(--sp-3) var(--sp-4);
+  padding: var(--sp-3) var(--sp-4) var(--sp-3) 20px;
+  border-radius: var(--r-lg);
   list-style: none;
   cursor: pointer;
   -webkit-tap-highlight-color: transparent;
 }
 
 .topic-head.has-icon {
-  grid-template-columns: auto 1fr auto;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  padding-left: var(--sp-3);
 }
 
 .topic-head::-webkit-details-marker {
   display: none;
 }
 
-/* 卡片 overflow:hidden 會切掉外圈焦點框：改畫在內側 */
 .topic-head:focus-visible {
-  outline-offset: -3px;
+  outline-offset: 2px;
   border-radius: var(--r-lg);
 }
 
@@ -257,61 +347,146 @@ a.btn {
   width: 40px;
   height: 40px;
   border-radius: var(--r-md);
-  background: var(--primary-wash);
-  color: var(--primary-deep);
+  background: var(--tone-tile, var(--apricot-tile));
+  color: var(--tone, var(--apricot));
 }
 
+/* 標題在左，小標在右（「｜抽血時」「｜5 句」） */
 .topic-text {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: var(--sp-3);
   min-width: 0;
 }
 
+/* 換行時避免最後一行只剩一個字（pretty 會盡量填滿第一行，balance 會讓兩行都太短） */
 .topic-title {
-  display: block;
+  font-size: 1.02rem;
   font-weight: 700;
   line-height: 1.5;
+  text-wrap: pretty;
 }
 
+/* 細直線是裝飾（不是控制項邊界），灰字 7.63:1 */
 .topic-meta {
-  display: block;
-  margin-top: 2px;
-  font-size: .82rem;
-  line-height: 1.5;
+  padding-left: var(--sp-3);
+  border-left: 1px solid #DCCAB9;
+  font-size: .85rem;
+  line-height: 1.4;
   color: var(--fg-muted);
+  white-space: nowrap;
 }
 
 .topic-toggle {
   display: grid;
   place-items: center;
-  width: 32px;
-  height: 32px;
-  border-radius: 50%;
-  background: var(--bg-sunk);
-  color: var(--fg-muted);
+  width: 24px;
+  height: 24px;
+  color: var(--idle);
   transition: transform var(--t-base) var(--ease),
-    background-color var(--t-fast) var(--ease),
     color var(--t-fast) var(--ease);
 }
 
 .topic-toggle .icon {
-  width: 18px;
-  height: 18px;
+  width: 20px;
+  height: 20px;
+  stroke-width: 2.2;
 }
 
-/* 打開：標題轉深橘（5.18:1）＋ 圓鈕翻轉，不只靠顏色 */
-.topic[open]>.topic-head .topic-title {
-  color: var(--primary-deep);
-}
-
+/* 打開：箭頭翻轉＋換成章節色（不只靠顏色），卡片浮起一點 */
 .topic[open]>.topic-head .topic-toggle {
   transform: rotate(180deg);
-  background: var(--primary-wash);
-  color: var(--primary-deep);
+  color: var(--tone, var(--apricot));
 }
 
 .topic-body {
   display: grid;
   gap: var(--sp-3);
-  padding: 0 var(--sp-4) var(--sp-5);
+  margin: 0 var(--sp-4);
+  padding: var(--sp-4) 0 var(--sp-5);
+  border-top: 1px solid var(--hairline);
+  line-height: 1.75;
+}
+
+/* 打開時內容輕輕浮上來（只動透明度和位移，不動高度） */
+.topic[open]>.topic-body {
+  animation: topic-in var(--t-base) var(--ease) both;
+}
+
+@keyframes topic-in {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+}
+
+/* ═══ 讀完之後：下一步（兩頁的最後一張卡） ═══════════════════
+   白卡浮在奶油底上（看得出是一張卡），杏橘只用在圖示方塊和連結 */
+
+.help-card {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: var(--sp-1) var(--sp-4);
+  margin-top: var(--sp-7);
+  padding: var(--sp-5);
+  border-radius: var(--r-xl);
+  background: var(--card);
+  box-shadow: var(--sh-md);
+}
+
+.help-icon {
+  grid-row: span 3;
+  display: grid;
+  place-items: center;
+  width: 48px;
+  height: 48px;
+  border-radius: var(--r-md);
+  background: var(--apricot-tile);
+  color: var(--apricot);
+}
+
+.help-title {
+  font-size: 1.15rem;
+  font-weight: 700;
+  line-height: 1.5;
+}
+
+.help-card p {
+  font-size: .95rem;
+  line-height: 1.7;
+  color: var(--fg-muted);
+}
+
+.help-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--sp-2) var(--sp-3);
+  margin-top: var(--sp-3);
+}
+
+.help-link {
+  justify-self: start;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-1);
+  min-height: var(--tap);
+  padding-inline: var(--sp-4) var(--sp-3);
+  border-radius: var(--r-pill);
+  border: 2px solid var(--apricot);
+  background: var(--card);
+  color: var(--apricot);
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.help-card>.help-link {
+  margin-top: var(--sp-3);
+}
+
+.help-link .icon {
+  width: 18px;
+  height: 18px;
 }
 
 /* 搜尋命中的字：深字配淺橘底 6.92:1；打開的深橘標題裡也維持深字 */
@@ -430,14 +605,21 @@ mark {
   }
 
   .back-link:hover,
-  .quiet-link:hover,
-  .topic-head:hover .topic-title {
+  .quiet-link:hover {
     color: var(--primary-deep);
   }
 
+  .topic:hover {
+    box-shadow: var(--sh-md);
+  }
+
   .topic-head:hover .topic-toggle {
-    background: var(--primary-wash);
-    color: var(--primary-deep);
+    color: var(--tone, var(--apricot));
+  }
+
+  .help-link:hover {
+    background: var(--apricot-soft);
+    box-shadow: var(--sh-sm);
   }
 
   .btn-danger:hover {

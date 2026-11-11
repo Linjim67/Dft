@@ -23,7 +23,7 @@
   <script>Anxin.requireProfile();</script>
 </head>
 
-<body>
+<body class="booklet">
   <a class="skip-link" href="#main">跳到主要內容</a>
 
   <!-- 規格：任何子頁都能直接「開始打針」 -->
@@ -38,22 +38,32 @@
     </a>
   </header>
 
-  <main id="main" class="wrap">
-    <div class="page-head">
-      <h1>家長安慰指南</h1>
-      <p class="page-lede">陪孩子度過打針的小方法。</p>
+  <main id="main" class="wrap booklet-layout">
+    <!-- 桌機：左邊黏住的欄（標題＋章節目錄）；手機：照順序排在最上面，章節選單黏在頂端 -->
+    <div class="rail">
+      <div class="page-head">
+        <h1>家長安慰指南</h1>
+        <p class="page-lede">陪孩子度過打針的小方法。</p>
+      </div>
+
+      <!-- 章節選單：每章一個色點；目前所在的章節會標出來 -->
+      <nav class="jump" aria-label="本頁段落">
+        <a class="jump-link" href="#say" data-tone="apricot"><span class="jump-dot" aria-hidden="true"></span>怎麼說</a>
+        <a class="jump-link" href="#during" data-tone="sage"><span class="jump-dot" aria-hidden="true"></span>打針當下</a>
+        <a class="jump-link" href="#dont" data-tone="honey"><span class="jump-dot" aria-hidden="true"></span>不要說</a>
+      </nav>
     </div>
 
-    <!-- 段落選單：捲動時黏在頂端，目前所在的段落會標出來 -->
-    <nav class="jump" aria-label="本頁段落">
-      <a class="jump-link" href="#say">怎麼說</a>
-      <a class="jump-link" href="#during">打針當下</a>
-      <a class="jump-link" href="#dont">不要說</a>
-    </nav>
-
+    <div class="flow">
     <!-- ── 1. 你可以這樣跟他說！依年紀分組（預設依小檔案的年紀選好） ── -->
-    <section class="part" id="say" aria-labelledby="sayTitle">
+    <section class="part" id="say" data-tone="apricot" aria-labelledby="sayTitle">
       <div class="part-head">
+        <span class="part-mark" aria-hidden="true">
+          <svg viewBox="0 0 24 24" class="icon">
+            <path d="M20 15a2 2 0 0 1-2 2H8l-4 4V5a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2Z" />
+            <path d="M12 13.4s-2.8-1.6-2.8-3.5a1.5 1.5 0 0 1 2.8-.8 1.5 1.5 0 0 1 2.8.8c0 1.9-2.8 3.5-2.8 3.5Z" />
+          </svg>
+        </span>
         <h2 class="part-title" id="sayTitle">你可以這樣跟他說！</h2>
         <p class="part-sub">先選孩子的年紀，點開主題就能看到可以說的話。</p>
       </div>
@@ -68,8 +78,17 @@
     </section>
 
     <!-- ── 2. 打針當下，家長可以這樣做！（全年齡） ── -->
-    <section class="part" id="during" aria-labelledby="duringTitle">
+    <section class="part" id="during" data-tone="sage" aria-labelledby="duringTitle">
       <div class="part-head">
+        <!-- 大人牽著小孩 -->
+        <span class="part-mark" aria-hidden="true">
+          <svg viewBox="0 0 24 24" class="icon">
+            <circle cx="8.5" cy="5.8" r="2.4" />
+            <circle cx="16.8" cy="9.6" r="1.9" />
+            <path d="M8.5 9.6v5.2M8.5 14.8 6.4 20.5M8.5 14.8l2.1 5.7M5.2 11.8l3.3-1.4 3.6 2.4 2.8-.6" />
+            <path d="M16.8 12.6v3.8M16.8 16.4l-1.4 4.1M16.8 16.4l1.4 4.1" />
+          </svg>
+        </span>
         <h2 class="part-title" id="duringTitle">打針當下，家長可以這樣做！</h2>
         <p class="part-sub"><span class="all-ages">全年齡適用</span>你的陪伴很重要，你的配合更是孩子安全完成抽血的重要關鍵。</p>
       </div>
@@ -92,13 +111,42 @@
     </section>
 
     <!-- ── 3. 這些話先不要跟小孩說！（全年齡）：每個人都該看到，不收進折疊 ── -->
-    <section class="part" id="dont" aria-labelledby="dontTitle">
+    <section class="part" id="dont" data-tone="honey" aria-labelledby="dontTitle">
       <div class="part-head">
+        <!-- 對話框裡一個叉：這些話先別說 -->
+        <span class="part-mark" aria-hidden="true">
+          <svg viewBox="0 0 24 24" class="icon">
+            <path d="M20 15a2 2 0 0 1-2 2H8l-4 4V5a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2Z" />
+            <path d="m9.6 7.6 4.8 4.8M14.4 7.6l-4.8 4.8" />
+          </svg>
+        </span>
         <h2 class="part-title" id="dontTitle">這些話先不要跟小孩說！</h2>
         <p class="part-sub"><span class="all-ages">全年齡適用</span>每一句都附上可以換成的說法。</p>
       </div>
       <div class="dont-list" id="dontList"></div>
     </section>
+
+    <!-- 讀完之後的下一步：陪孩子玩小遊戲，或去「給家長的鼓勵」 -->
+    <aside class="help-card" aria-labelledby="nextTitle">
+      <span class="help-icon" aria-hidden="true">
+        <svg viewBox="0 0 24 24" class="icon">
+          <path d="M12 20s-7-4.3-7-9.4A4 4 0 0 1 12 8a4 4 0 0 1 7 2.6C19 15.7 12 20 12 20Z" />
+        </svg>
+      </span>
+      <h2 class="help-title" id="nextTitle">都讀完了嗎？</h2>
+      <p>等待的時候，可以陪孩子玩個小遊戲；也可以看看抽血現場在做什麼。</p>
+      <div class="help-links">
+        <a class="help-link" href="/games/solo/">
+          <span>陪孩子玩小遊戲</span>
+          <svg viewBox="0 0 24 24" class="icon" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6" /></svg>
+        </a>
+        <a class="help-link" href="/cheer/">
+          <span>給家長的鼓勵</span>
+          <svg viewBox="0 0 24 24" class="icon" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6" /></svg>
+        </a>
+      </div>
+    </aside>
+    </div>
   </main>
 
   <!-- 醫檢師送出回饋時轉到「打針完畢」頁；載不到時頁面照常 -->

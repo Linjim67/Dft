@@ -1,13 +1,15 @@
 /* ═══ 家長安慰指南 ═══════════════════════════════════════════════
-   段落標題與展開主題沿用 /shared/page.css（.part、.topic-list、.topic）。
-   這裡放本頁的：段落選單、年紀卡、對話框、清單、猜謎、「我要打針了」、避免／改說。
+   小冊子外框、章節標題、一題一張卡沿用 /shared/page.css（.booklet、.part、.topic）。
+   章節色：怎麼說＝杏橘（apricot）、打針當下＝鼠尾草綠（sage）、不要說＝蜂蜜黃（honey）。
+   這裡放本頁的：章節選單、年紀卡、對話框、清單、猜謎、「我要打針了」、避免／改說。
    ═══════════════════════════════════════════════════════════════ */
 
 html {
   scroll-behavior: smooth;
 }
 
-/* ═══ 段落選單（黏在頂端） ═══════════════════════════════════ */
+/* ═══ 章節選單 ═══════════════════════════════════════════════
+   手機：三顆膠囊黏在頂端。桌機：左欄裡的直式目錄。 */
 
 .jump {
   position: sticky;
@@ -15,7 +17,7 @@ html {
   z-index: 5;
   display: flex;
   gap: var(--sp-2);
-  margin: 0 calc(var(--sp-5) * -1) var(--sp-5);
+  margin: 0 calc(var(--sp-5) * -1) var(--sp-6);
   padding: var(--sp-2) var(--sp-5);
   background: var(--bg);
   transition: box-shadow var(--t-base) var(--ease);
@@ -27,8 +29,10 @@ html {
 
 .jump-link {
   flex: 1 1 0;
-  display: grid;
-  place-items: center;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
   min-height: var(--tap);
   padding-inline: var(--sp-2);
   border-radius: var(--r-pill);
@@ -44,11 +48,50 @@ html {
     box-shadow var(--t-fast) var(--ease);
 }
 
-/* 目前段落：淡橘底＋深橘內框（形狀也變，不只靠顏色） */
+.jump-dot {
+  flex: none;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--tone);
+}
+
+/* 目前章節：章節色淡底＋內框＋章節色字（形狀也變，不只靠顏色） */
 .jump-link[aria-current="true"] {
-  background: var(--primary-wash);
-  color: var(--primary-deep);
-  box-shadow: inset 0 0 0 2px var(--primary-deep);
+  background: var(--tone-soft);
+  color: var(--tone);
+  box-shadow: inset 0 0 0 2px var(--tone);
+}
+
+@media (min-width: 64rem) {
+  .jump {
+    position: static;
+    display: grid;
+    gap: var(--sp-1);
+    margin: var(--sp-5) 0 0;
+    padding: var(--sp-3) 0 0;
+    border-top: 1px solid var(--hairline);
+    background: none;
+  }
+
+  .jump.is-stuck {
+    box-shadow: none;
+  }
+
+  .jump-link {
+    justify-content: flex-start;
+    gap: var(--sp-3);
+    padding-inline: var(--sp-4);
+    border-radius: var(--r-md);
+    background: transparent;
+    box-shadow: none;
+    font-size: 1rem;
+  }
+
+  .jump-dot {
+    width: 10px;
+    height: 10px;
+  }
 }
 
 /* ═══ 年紀卡（單選；選到的有勾勾） ═══════════════════════════ */
@@ -88,7 +131,7 @@ html {
   display: grid;
   justify-items: center;
   gap: var(--sp-1);
-  min-height: 84px;
+  min-height: 88px;
   padding: var(--sp-3) var(--sp-1) var(--sp-2);
   border-radius: var(--r-md);
   background: var(--card);
@@ -114,7 +157,7 @@ html {
   white-space: nowrap;
 }
 
-/* 白勾配深橘底 5.18:1 */
+/* 白勾配杏橘底 5.18:1 */
 .age-check {
   position: absolute;
   top: 6px;
@@ -123,7 +166,7 @@ html {
   height: 20px;
   padding: 3px;
   border-radius: 50%;
-  background: var(--primary-deep);
+  background: var(--apricot);
   color: #FFFFFF;
   stroke-width: 3;
   opacity: 0;
@@ -131,15 +174,16 @@ html {
   transition: opacity var(--t-fast) var(--ease), transform var(--t-fast) var(--ease);
 }
 
+/* 杏橘字配杏橘淡底 4.78:1 */
 .age-opt input:checked+.age-face {
-  background: var(--primary-wash);
-  color: var(--primary-deep);
-  border-color: var(--primary-deep);
-  box-shadow: var(--sh-md), inset 0 0 0 var(--line-w) var(--primary-deep);
+  background: var(--apricot-soft);
+  color: var(--apricot);
+  border-color: var(--apricot);
+  box-shadow: var(--sh-md), inset 0 0 0 var(--line-w) var(--apricot);
 }
 
 .age-opt input:checked+.age-face .age-icon {
-  color: var(--primary-deep);
+  color: var(--apricot);
 }
 
 .age-opt input:checked+.age-face .age-check {
@@ -164,17 +208,17 @@ html {
 }
 
 .age-panel {
-  margin-top: var(--sp-4);
+  margin-top: var(--sp-5);
 }
 
-/* 「全年齡適用」小標籤（深橘配淡橘 4.52:1） */
+/* 「全年齡適用」：章節色小標（綠 5.08:1、黃 4.84:1 on tile） */
 .all-ages {
   display: inline-block;
   margin-inline-end: var(--sp-2);
   padding: 0 var(--sp-2);
   border-radius: var(--r-pill);
-  background: var(--primary-wash);
-  color: var(--primary-deep);
+  background: var(--tone-tile);
+  color: var(--tone);
   font-size: .8rem;
   font-weight: 700;
   line-height: 1.8;
@@ -188,30 +232,32 @@ html {
   gap: var(--sp-2);
 }
 
-/* 可以直接說的話：對話框，左下角收尖 */
+/* 可以直接說的話：章節色淡底的對話框，左下角收尖；一般字重，讀起來不吵 */
 .say {
-  padding: var(--sp-2) var(--sp-3);
-  background: var(--bg-sunk);
-  border-radius: var(--r-md) var(--r-md) var(--r-md) 4px;
-  line-height: 1.6;
+  justify-self: start;
+  max-width: 100%;
+  padding: 10px var(--sp-4);
+  background: var(--tone-soft);
+  border-radius: 18px 18px 18px 4px;
+  line-height: 1.65;
 }
 
-/* 家長可以做的事：圓點清單 */
+/* 家長可以做的事：章節色圓點清單 */
 .do {
   position: relative;
   padding-inline-start: var(--sp-5);
-  line-height: 1.65;
+  line-height: 1.75;
 }
 
 .do::before {
   content: "";
   position: absolute;
   inset-inline-start: 6px;
-  top: .68em;
+  top: .72em;
   width: 7px;
   height: 7px;
   border-radius: 50%;
-  background: var(--primary-fill);
+  background: var(--tone);
 }
 
 .topic-lead {
@@ -221,13 +267,13 @@ html {
 /* 猜謎：答案藏在「看答案」裡，讓家長可以先問孩子 */
 .riddle {
   display: grid;
-  gap: var(--sp-1);
+  gap: var(--sp-2);
 }
 
 .riddle-ans>summary {
   display: inline-flex;
   align-items: center;
-  min-height: 32px;
+  min-height: 36px;
   padding-inline: var(--sp-3);
   border-radius: var(--r-pill);
   border: var(--line-w) solid var(--line);
@@ -249,7 +295,7 @@ html {
 
 .riddle-ans p {
   font-weight: 700;
-  color: var(--primary-deep);
+  color: var(--tone);
 }
 
 /* 段落裡的連結（到小遊戲） */
@@ -261,9 +307,9 @@ html {
   min-height: var(--tap);
   padding-inline: var(--sp-4) var(--sp-3);
   border-radius: var(--r-pill);
-  border: 2px solid var(--primary-deep);
+  border: 2px solid var(--apricot);
   background: var(--card);
-  color: var(--primary-deep);
+  color: var(--apricot);
   font-weight: 700;
   text-decoration: none;
 }
@@ -273,19 +319,19 @@ html {
   height: 18px;
 }
 
-/* ═══ 「我要打針了」：這一段的結尾，整張卡都是連結 ════════════ */
+/* ═══ 「我要打針了」：打針當下這一章的結尾，整張卡都是連結 ══════ */
 
 .ready-card {
   display: grid;
   grid-template-columns: auto 1fr auto;
   align-items: center;
   gap: var(--sp-3) var(--sp-4);
-  min-height: 76px;
-  margin-top: var(--sp-4);
-  padding: var(--sp-4);
+  min-height: 80px;
+  margin-top: var(--sp-5);
+  padding: var(--sp-4) var(--sp-5) var(--sp-4) var(--sp-4);
   border-radius: var(--r-lg);
-  background: var(--primary-wash);
-  border: 2px solid var(--primary-deep);
+  background: var(--card);
+  border: 2px solid var(--apricot);
   box-shadow: var(--sh-md);
   color: var(--fg);
   text-decoration: none;
@@ -296,30 +342,29 @@ html {
 .ready-icon {
   display: grid;
   place-items: center;
-  width: 46px;
-  height: 46px;
+  width: 48px;
+  height: 48px;
   border-radius: var(--r-md);
-  background: var(--card);
-  color: var(--primary-deep);
+  background: var(--apricot-tile);
+  color: var(--apricot);
 }
 
-/* 1.1rem 粗體屬大字級：深橘配淡橘 4.52:1 */
 .ready-label {
   display: block;
   font-size: 1.1rem;
   font-weight: 700;
   line-height: 1.4;
-  color: var(--primary-deep);
 }
 
 .ready-sub {
   display: block;
   font-size: .88rem;
   line-height: 1.55;
+  color: var(--fg-muted);
 }
 
 .ready-arrow {
-  color: var(--primary-deep);
+  color: var(--apricot);
 }
 
 .ready-card:active {
@@ -327,7 +372,9 @@ html {
   box-shadow: var(--sh-sm);
 }
 
-/* ═══ 避免 → 改說（攤開，不折疊） ═══════════════════════════ */
+/* ═══ 避免 → 改說（攤開，不折疊）══════════════════════════════
+   避免的那句退成灰字；改說的那句就是「可以說的話」，用章節色對話框。
+   標籤不加色塊，只留小圖示（叉紅、勾綠），整張卡才安靜。 */
 
 .dont-list {
   display: grid;
@@ -335,17 +382,20 @@ html {
 }
 
 .dont-card {
-  padding: var(--sp-4);
+  padding: var(--sp-4) var(--sp-4) var(--sp-5) 20px;
   border-radius: var(--r-lg);
   background: var(--card);
-  box-shadow: var(--sh-md);
+  box-shadow: var(--sh-sm);
 }
 
 .dont-title {
-  margin: 0 0 var(--sp-3);
-  font-size: 1.02rem;
+  margin: 0 0 var(--sp-2);
+  padding-bottom: var(--sp-3);
+  border-bottom: 1px solid var(--hairline);
+  font-size: 1.05rem;
   font-weight: 700;
   line-height: 1.5;
+  text-wrap: pretty;
 }
 
 .pair-list {
@@ -354,16 +404,12 @@ html {
 
 .pair {
   display: grid;
-  gap: var(--sp-2);
+  gap: 6px;
   padding-block: var(--sp-3);
 }
 
 .pair+.pair {
-  border-top: 1px solid var(--hairline);
-}
-
-.pair:first-child {
-  padding-top: 0;
+  border-top: 1px dashed var(--hairline);
 }
 
 .pair:last-child {
@@ -375,38 +421,39 @@ html {
   grid-template-columns: auto 1fr;
   align-items: start;
   gap: var(--sp-2);
-  padding-inline: var(--sp-3);
-  line-height: 1.6;
+  line-height: 1.65;
 }
 
-/* 改說的那句就是「可以說的話」：和上面的對話框同一個樣子 */
 .pair-row.is-better {
-  padding-block: var(--sp-2);
-  background: var(--bg-sunk);
-  border-radius: var(--r-md) var(--r-md) var(--r-md) 4px;
+  justify-self: start;
+  padding: 8px var(--sp-4) 8px var(--sp-3);
+  background: var(--tone-soft);
+  border-radius: 18px 18px 18px 4px;
+}
+
+.is-avoid {
+  padding-inline-start: var(--sp-3);
 }
 
 .pair-tag {
   display: inline-flex;
   align-items: center;
   gap: 2px;
-  margin-top: 2px;
-  padding: 0 var(--sp-2) 0 6px;
-  border-radius: var(--r-pill);
+  margin-top: 1px;
   font-size: .8rem;
   font-weight: 700;
   line-height: 1.75;
+  color: var(--fg-muted);
   white-space: nowrap;
 }
 
 .pair-tag .icon {
-  width: 14px;
-  height: 14px;
-  stroke-width: 2.4;
+  width: 15px;
+  height: 15px;
+  stroke-width: 2.6;
 }
 
-.is-avoid .pair-tag {
-  background: var(--danger-wash);
+.is-avoid .pair-tag .icon {
   color: var(--danger);
 }
 
@@ -414,8 +461,7 @@ html {
   color: var(--fg-muted);
 }
 
-.is-better .pair-tag {
-  background: var(--success-wash);
+.is-better .pair-tag .icon {
   color: var(--success);
 }
 
@@ -427,19 +473,19 @@ html {
 
   .riddle-ans>summary:hover,
   .inline-cta:hover {
-    background: var(--primary-wash);
-    border-color: var(--primary-deep);
-    color: var(--primary-deep);
+    background: var(--apricot-soft);
+    border-color: var(--apricot);
+    color: var(--apricot);
   }
 
   .jump-link:not([aria-current="true"]):hover {
-    color: var(--primary-deep);
-    background: var(--primary-wash);
+    color: var(--tone);
+    background: var(--tone-soft);
   }
 
   .age-opt input:not(:checked)+.age-face:hover {
-    background: var(--primary-wash);
-    border-color: var(--primary-deep);
+    background: var(--apricot-soft);
+    border-color: var(--apricot);
   }
 
   .ready-card:hover {

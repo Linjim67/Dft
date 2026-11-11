@@ -87,12 +87,12 @@
     return ul;
   }
 
-  /* 標題下的小字：「5 句」或「4 個做法」，讓人不用點開就知道裡面有什麼 */
+  /* 標題右邊的灰字：「5 句」或「4 個做法」，讓人不用點開就知道裡面有什麼 */
   function countLabel(items) {
     var says = items.filter(function (it) { return !it.do; }).length;
     var dos = items.length - says;
     var parts = [];
-    if (says) parts.push(says + ' 句可以說的話');
+    if (says) parts.push(says + ' 句');
     if (dos) parts.push(dos + ' 個做法');
     return parts.join('・');
   }

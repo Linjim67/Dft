@@ -31,6 +31,21 @@
   /* 3.21:1 vs 未填色軌道 — 滑桿已選區段 */
   --primary-wash: #FFEDD5;
 
+  /* — 章節色（指南、鼓勵頁）：每一段一個色調，用在圖示方塊、淡底對話框／提醒框、打開的箭頭。
+       ink 是字與圖示（皆量過），soft 是大面積淡底，tile 只放圖示（≥ 3:1） — */
+  --apricot: var(--primary-deep);
+  /* 4.78:1 on apricot-soft */
+  --apricot-soft: #FFF4EB;
+  --apricot-tile: #FFE6D2;
+  --sage: #2E6B57;
+  /* 6.26:1 on card · 5.64:1 on sage-soft · 5.08:1 on sage-tile */
+  --sage-soft: #EDF5F0;
+  --sage-tile: #D9ECE2;
+  --honey: #8A5A06;
+  /* 5.92:1 on card · 5.45:1 on honey-soft · 4.84:1 on honey-tile */
+  --honey-soft: #FDF5E2;
+  --honey-tile: #F8E7BC;
+
   /* — 語意 — */
   --success: #15803D;
   /* 5.02:1 on card */

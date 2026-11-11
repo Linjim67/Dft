@@ -1,5 +1,6 @@
 /* ═══ 給家長的鼓勵（常見問題） ═══════════════════════════════════
-   段落標題與展開主題沿用 /shared/page.css（.part、.topic-list、.topic）。
+   小冊子外框、章節標題、一題一張卡沿用 /shared/page.css（.booklet、.part、.topic）。
+   章節色：醫療現場解密＝鼠尾草綠（sage）、打針大小問＝蜂蜜黃（honey）；可以按的東西用杏橘。
    這裡放：搜尋框、時間篩選、狀態列、答案內容、找不到時、還有疑問嗎。
    ═══════════════════════════════════════════════════════════════ */
 
@@ -8,7 +9,7 @@
 .faq-tools {
   display: grid;
   gap: var(--sp-3);
-  margin-bottom: var(--sp-5);
+  margin-bottom: var(--sp-6);
 }
 
 .search {
@@ -24,7 +25,7 @@
   pointer-events: none;
 }
 
-/* 框線 3.48:1（控制項邊界）；焦點時換深橘，和其他輸入框一致 */
+/* 框線 3.48:1（控制項邊界）；焦點時換杏橘，和其他輸入框一致 */
 .search input {
   display: block;
   width: 100%;
@@ -34,6 +35,8 @@
   background: var(--card);
   border: var(--line-w) solid var(--line);
   box-shadow: var(--sh-sm);
+  color: var(--fg);
+  caret-color: var(--apricot);
   font-size: 1rem;
   -webkit-appearance: none;
   appearance: none;
@@ -54,7 +57,7 @@
 }
 
 .search input:focus {
-  border-color: var(--primary-deep);
+  border-color: var(--apricot);
 }
 
 .search input:focus-visible {
@@ -144,11 +147,12 @@
   transition: opacity var(--t-fast) var(--ease), transform var(--t-fast) var(--ease);
 }
 
+/* 杏橘字配杏橘淡底 4.78:1 */
 .chip input:checked+.chip-face {
-  background: var(--primary-wash);
-  border-color: var(--primary-deep);
-  color: var(--primary-deep);
-  box-shadow: inset 0 0 0 var(--line-w) var(--primary-deep);
+  background: var(--apricot-soft);
+  border-color: var(--apricot);
+  color: var(--apricot);
+  box-shadow: inset 0 0 0 var(--line-w) var(--apricot);
 }
 
 .chip input:checked+.chip-face .chip-check {
@@ -178,7 +182,7 @@
   color: var(--fg-muted);
 }
 
-/* 深橘字配頁面底 4.89:1 */
+/* 杏橘字配頁面底 4.89:1 */
 .text-btn {
   flex: none;
   min-height: var(--tap);
@@ -187,10 +191,26 @@
   border: 0;
   border-radius: var(--r-sm);
   background: none;
-  color: var(--primary-deep);
+  color: var(--apricot);
   font-size: .92rem;
   font-weight: 700;
   white-space: nowrap;
+}
+
+/* 桌機：工具列在左欄裡，篩選排成兩欄，狀態列和上面用細線分開 */
+@media (min-width: 64rem) {
+  .faq-tools {
+    margin: var(--sp-5) 0 0;
+  }
+
+  .chips {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .faq-status {
+    padding-top: var(--sp-2);
+    border-top: 1px solid var(--hairline);
+  }
 }
 
 /* 篩選把前一段整段藏起來時，下一段不要再留段落間距 */
@@ -198,7 +218,7 @@
   margin-top: 0;
 }
 
-/* 段落標題旁的題數 */
+/* 章節標題旁的題數：章節色（綠 5.08:1、黃 4.84:1 on tile） */
 .part-count {
   display: inline-grid;
   place-items: center;
@@ -206,10 +226,11 @@
   height: 24px;
   padding-inline: var(--sp-2);
   border-radius: var(--r-pill);
-  background: var(--bg-sunk);
-  color: var(--fg-muted);
+  background: var(--tone-tile);
+  color: var(--tone);
   font-size: .82rem;
   font-weight: 700;
+  letter-spacing: 0;
   font-variant-numeric: tabular-nums;
 }
 
@@ -228,10 +249,10 @@
 .know-label {
   display: inline-flex;
   align-items: center;
-  gap: var(--sp-1);
+  gap: 6px;
   font-size: .88rem;
   font-weight: 700;
-  color: var(--fg-muted);
+  color: var(--tone);
 }
 
 .know-label .icon {
@@ -239,15 +260,12 @@
   height: 18px;
 }
 
-/* 小提醒是家長能做的事：淡橘底框起來，和上面的知識分開（深橘小標 4.52:1） */
+/* 小提醒是家長能做的事：章節色淡底框起來，和上面的知識分開（綠 5.64:1 on sage-soft） */
 .know.is-tip {
-  padding: var(--sp-3);
+  margin-top: var(--sp-1);
+  padding: var(--sp-3) var(--sp-4);
   border-radius: var(--r-md);
-  background: var(--primary-wash);
-}
-
-.know.is-tip .know-label {
-  color: var(--primary-deep);
+  background: var(--tone-soft);
 }
 
 /* ═══ 找不到 ═════════════════════════════════════════════════ */
@@ -270,81 +288,23 @@
   font-weight: 700;
 }
 
-/* ═══ 還有疑問嗎？ ═══════════════════════════════════════════ */
-
-.help-card {
-  display: grid;
-  grid-template-columns: auto 1fr;
-  gap: var(--sp-1) var(--sp-3);
-  margin-top: var(--sp-7);
-  padding: var(--sp-5) var(--sp-4);
-  border-radius: var(--r-xl);
-  background: var(--primary-wash);
-}
-
-.help-icon {
-  grid-row: span 3;
-  display: grid;
-  place-items: center;
-  width: 44px;
-  height: 44px;
-  border-radius: 50%;
-  background: var(--card);
-  color: var(--primary-deep);
-}
-
-.help-title {
-  font-size: 1.1rem;
-  font-weight: 700;
-  line-height: 1.5;
-}
-
-.help-card p {
-  font-size: .95rem;
-  line-height: 1.65;
-}
-
-.help-link {
-  justify-self: start;
-  display: inline-flex;
-  align-items: center;
-  gap: var(--sp-1);
-  min-height: var(--tap);
-  margin-top: var(--sp-2);
-  padding-inline: var(--sp-4) var(--sp-3);
-  border-radius: var(--r-pill);
-  border: 2px solid var(--primary-deep);
-  background: var(--card);
-  color: var(--primary-deep);
-  font-weight: 700;
-  text-decoration: none;
-}
-
-.help-link .icon {
-  width: 18px;
-  height: 18px;
-}
-
 @media (hover: hover) and (pointer: fine) {
 
   .search input:hover {
-    border-color: var(--primary-deep);
+    border-color: var(--apricot);
   }
 
   .chip input:not(:checked)+.chip-face:hover,
   .suggest-chip:hover {
-    background: var(--primary-wash);
-    border-color: var(--primary-deep);
-    color: var(--primary-deep);
+    background: var(--apricot-soft);
+    border-color: var(--apricot);
+    color: var(--apricot);
   }
 
   .search-clear:hover,
   .text-btn:hover {
-    background: var(--primary-wash);
-    color: var(--primary-deep);
+    background: var(--apricot-soft);
+    color: var(--apricot);
   }
 
-  .help-link:hover {
-    box-shadow: var(--sh-md);
-  }
 }
