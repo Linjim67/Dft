@@ -92,7 +92,7 @@
     });
   });
 
-  /* ── part 2 打針大小問 ── */
+  /* ── part 2 抽血大小問 ── */
   var faqList = doc.getElementById('faqList');
   C.faqs.forEach(function (f, i) {
     addItem('faq', faqList, 'faq', i, f.q, f.when, function (body, item) {

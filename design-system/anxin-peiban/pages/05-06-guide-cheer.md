@@ -66,7 +66,7 @@ Chapters: 怎麼說 = apricot · 打針當下 = sage · 不要說 = honey.
 
 ## 06 抽血大小問 `/cheer/` — FAQ page
 
-Chapters: 醫療現場解密 = sage · 打針大小問 = honey.
+Chapters: 醫療現場解密 = sage · 抽血大小問 = honey.
 
 - **Search first:** a pill search field (apricot focus and caret) filters as you type. Every
   space-separated word must match, and hits are wrapped in `<mark>` (`#FED7AA` + ink). Matching
@@ -75,7 +75,7 @@ Chapters: 醫療現場解密 = sage · 打針大小問 = honey.
 - **Status row:** 「共 18 個問題」 / 「找到 3 個和「頭暈」有關的問題」 (`role=status`) + 全部展開 ⇄
   全部收合. Chapter titles carry a live count badge in the tone tile; a chapter with no matches is
   hidden.
-- **Answers:** in 打針大小問, the first sentence is bold (the short answer). 醫療現場解密 keeps the
+- **Answers:** in 抽血大小問, the first sentence is bold (the short answer). 醫療現場解密 keeps the
   authors' two blocks: 醫療小知識 (tone label) and 給家長的小提醒, a box in the chapter's soft tone.
 - **Deep links:** `#why-1…7` and `#faq-1…11` open and scroll to that question.
 - **Empty state:** reuses `.empty-state`, with tappable suggestions (頭暈 / 瘀青 / 空腹 / 血管).
