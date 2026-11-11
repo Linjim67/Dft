@@ -759,10 +759,37 @@ form .btn-primary {
   box-shadow: none;
 }
 
-/* 修改填寫內容：送出鈕下面的「取消」，次要但一樣好按 */
+/* ═══ 修改填寫內容（/portal/?edit）════════════════════════════
+   <html class="is-editing"> 由 <head> 的守衛加上：版面在畫面出來前就換好 */
+
+:root:not(.is-editing) .edit-only,
+.is-editing .new-only {
+  display: none;
+}
+
+/* 有頂列時，頂列已經讓開瀏海；表單不用再空一次 */
+.is-editing .site-top {
+  padding-top: 0;
+}
+
+/* 送出鈕下面的「取消」，次要但一樣好按 */
 .edit-cancel {
   margin-top: var(--sp-3);
   text-decoration: none;
+}
+
+/* 重新填寫（清掉資料與代碼）：放最下面、和表單拉開，不會跟「儲存修改」搞混 */
+.restart-row {
+  margin-top: var(--sp-6);
+  text-align: center;
+}
+
+.restart-link {
+  background: none;
+  border: 0;
+  font-size: .95rem;
+  text-decoration: underline;
+  text-underline-offset: 3px;
 }
 
 /* 是 <a>（block 的 flex）：大螢幕要像 <button> 一樣縮到內容寬，置中才有作用 */

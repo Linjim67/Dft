@@ -28,10 +28,11 @@
 
   <main id="main" class="wrap site-top">
 
-    <!-- ── 1. 個人資訊簡介 ── -->
-    <section class="brief" aria-labelledby="briefTitle">
-      <h1 id="briefTitle" class="brief-title">小檔案</h1>
+    <!-- 畫面上不放大標題（最上面就是代碼），標題留給螢幕閱讀器 -->
+    <h1 class="sr-only">安心陪伴主頁面</h1>
 
+    <!-- ── 1. 暫時代碼：主頁面只留這個，其他填寫內容在「修改填寫內容」 ── -->
+    <section class="brief" aria-label="暫時代碼">
       <div class="code-card" id="codeCard">
         <p class="code-label">暫時代碼</p>
         <p class="code-digits" id="codeDigits">----</p>
@@ -39,29 +40,27 @@
         <!-- 醫檢師送出回饋後，代碼就失效了：這一行會換成「已完成」 -->
         <p class="code-note" id="codeNote" role="status">打針時，請把這組代碼交給醫檢師</p>
       </div>
-
-      <!-- 填寫內容（暫時代碼以外的全部）＋ 修改入口：代碼不變，只改內容 -->
-      <div class="summary-card">
-        <dl id="summaryList"></dl>
-        <a class="summary-edit" href="/portal/?edit" id="editLink">
-          <svg viewBox="0 0 24 24" class="icon" aria-hidden="true">
-            <path d="M4.5 19.5h4l10-10a2.8 2.8 0 0 0-4-4l-10 10v4Z" />
-            <path d="m13 7 4 4" />
-          </svg>
-          <span>修改填寫內容</span>
-          <svg viewBox="0 0 24 24" class="icon card-chevron" aria-hidden="true"><path d="m9 5 7 7-7 7" /></svg>
-        </a>
-      </div>
-
-      <p class="center">
-        <button class="quiet-link" type="button" id="restartBtn">重新填寫</button>
-      </p>
     </section>
 
     <!-- ── 2–4. 等待時的功能 ── -->
     <h2 class="section-title">等待的時候</h2>
 
     <div class="card-list">
+      <!-- 填寫的內容（暫時代碼以外）都在這裡看、在這裡改；代碼不變。重新填寫也在那頁 -->
+      <a class="nav-card" href="/portal/?edit">
+        <span class="card-icon" aria-hidden="true">
+          <svg viewBox="0 0 24 24" class="icon">
+            <path d="M4.5 19.5h4l10-10a2.8 2.8 0 0 0-4-4l-10 10v4Z" />
+            <path d="m13 7 4 4" />
+          </svg>
+        </span>
+        <span>
+          <span class="card-title">修改填寫內容</span>
+          <span class="card-desc" id="profileDesc">查看或修改孩子的資料</span>
+        </span>
+        <svg viewBox="0 0 24 24" class="icon card-chevron" aria-hidden="true"><path d="m9 5 7 7-7 7" /></svg>
+      </a>
+
       <a class="nav-card" href="/guide/">
         <span class="card-icon" aria-hidden="true">
           <svg viewBox="0 0 24 24" class="icon">
@@ -122,16 +121,6 @@
       <svg viewBox="0 0 24 24" class="icon" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6" /></svg>
     </a>
   </main>
-
-  <!-- 重新填寫會清掉資料與代碼，先確認；預設焦點在「取消」 -->
-  <dialog class="dlg" id="restartDlg" aria-labelledby="restartTitle" aria-describedby="restartBody">
-    <h2 class="dlg-title" id="restartTitle">要重新填寫嗎？</h2>
-    <p class="dlg-body" id="restartBody">目前的資料和暫時代碼都會被清除，需要再填一次。</p>
-    <div class="dlg-actions">
-      <button class="btn btn-danger" type="button" id="restartConfirm">清除並重新填寫</button>
-      <button class="btn btn-quiet" type="button" data-close autofocus>取消</button>
-    </div>
-  </dialog>
 
   <!-- 只用來確認代碼是否已由醫檢師完成；載不到時代碼卡維持原樣 -->
   <script type="module" src="/shared/firebase.js"></script>

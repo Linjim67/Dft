@@ -19,6 +19,8 @@
   <link rel="stylesheet"
     href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&display=swap">
   <link rel="stylesheet" href="/shared/styles.css">
+  <!-- 修改模式要用到頂列、對話框（重新填寫）的樣式 -->
+  <link rel="stylesheet" href="/shared/page.css">
   <script src="/shared/app.js"></script>
   <script>
     /* 24 小時內已填過：直接進主頁面，表單不會先閃出來。
@@ -28,12 +30,26 @@
       var p = Anxin.profile.load();
       if (p && !editing) window.location.replace('/home/');
       else if (!p && editing) window.location.replace('/portal/');
+      /* 修改模式：在畫面出來之前就換掉版面（.edit-only 出現、.new-only 藏起來），不會閃 */
+      else if (editing) document.documentElement.classList.add('is-editing');
     })();
   </script>
 </head>
 
 <body>
   <a class="skip-link" href="#main">跳到主要內容</a>
+
+  <!-- 修改模式（從主頁面的卡片進來）：和其他子頁一樣的頂列 -->
+  <header class="wrap topbar edit-only">
+    <a class="back-link" href="/home/">
+      <svg viewBox="0 0 24 24" class="icon" aria-hidden="true"><path d="M15 5 8 12l7 7" /></svg>
+      <span>回主頁</span>
+    </a>
+    <a class="pill-cta" href="/shot/">
+      <span>開始打針</span>
+      <svg viewBox="0 0 24 24" class="icon" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6" /></svg>
+    </a>
+  </header>
 
   <main id="main" class="wrap site-top">
 
@@ -45,7 +61,7 @@
         <p class="welcome-lede" id="welcomeLede">
           等待很煎熬。簡單填寫個資，我們就能為您和孩子準備<strong>合適</strong>的安撫方式。
         </p>
-        <ul class="assurance-list" id="assuranceList">
+        <ul class="assurance-list new-only">
           <li>
             <svg viewBox="0 0 24 24" class="icon" aria-hidden="true">
               <path d="M12 3.5 5 6.2v5c0 4.2 2.9 7.6 7 8.8 4.1-1.2 7-4.6 7-8.8v-5L12 3.5Z" />
@@ -155,12 +171,27 @@
         </button>
         <p class="field-error" id="storage-error" role="alert" hidden></p>
         <!-- 只在修改模式出現 -->
-        <a class="btn btn-quiet edit-cancel" href="/home/" id="editCancel" hidden>取消，不修改</a>
+        <a class="btn btn-quiet edit-cancel edit-only" href="/home/" id="editCancel">取消，不修改</a>
       </form>
+
+      <!-- 換一位孩子：清掉資料與代碼，從頭填（原本在主頁面） -->
+      <p class="restart-row edit-only">
+        <button class="quiet-link restart-link" type="button" id="restartBtn">重新填寫</button>
+      </p>
     </div>
 
 
-  </main> 
+  </main>
+
+  <!-- 重新填寫會清掉資料與代碼，先確認；預設焦點在「取消」 -->
+  <dialog class="dlg" id="restartDlg" aria-labelledby="restartTitle" aria-describedby="restartBody">
+    <h2 class="dlg-title" id="restartTitle">要重新填寫嗎？</h2>
+    <p class="dlg-body" id="restartBody">目前的資料和暫時代碼都會被清除，需要再填一次。</p>
+    <div class="dlg-actions">
+      <button class="btn btn-danger" type="button" id="restartConfirm">清除並重新填寫</button>
+      <button class="btn btn-quiet" type="button" data-close autofocus>取消</button>
+    </div>
+  </dialog>
 
   <div class="live-region" id="liveRegion" role="status" aria-live="polite"></div>
   <!-- 暫時代碼要向伺服器登記（不重複）；script.js 透過 Anxin.whenFirebase() 等它 -->

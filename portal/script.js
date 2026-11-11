@@ -352,9 +352,15 @@
     $('welcomeTitle').textContent = '修改填寫內容';
     $('welcomeLede').innerHTML = '暫時代碼 <strong>' + Anxin.escapeHtml(original.code) +
       '</strong> 不會改變，改好後按「儲存修改」。';
-    $('assuranceList').hidden = true;
-    $('editCancel').hidden = false;
     submitLabel.textContent = IDLE_LABEL;
     prefill(original);
+
+    /* 重新填寫（原本在主頁面）：清掉資料與代碼，先確認 */
+    var restart = Anxin.wireDialog($('restartDlg'));
+    $('restartBtn').addEventListener('click', restart.open);
+    $('restartConfirm').addEventListener('click', function () {
+      Anxin.profile.clear();
+      window.location.replace('/portal/');
+    });
   }
 })();

@@ -1,5 +1,6 @@
 /* ═══════════════════════════════════════════════════════════════
    安心陪伴 — 02 主頁面
+   最上面只放暫時代碼；其他填寫內容在「修改填寫內容」（/portal/?edit）看、改、重新填寫。
    ═══════════════════════════════════════════════════════════════ */
 (function () {
   'use strict';
@@ -8,28 +9,16 @@
   if (!p) return; /* <head> 裡的守衛已經導回 / */
 
   var $ = function (id) { return document.getElementById(id); };
-  var esc = Anxin.escapeHtml;
-  var LEVEL = Anxin.LEVEL_TEXT;
 
-  /* ── 1. 個人資訊簡介 ── */
+  /* ── 1. 暫時代碼 ── */
 
-  $('briefTitle').textContent = p.nickname + '的小檔案';
   $('codeDigits').textContent = p.code;
   $('codeExpiry').textContent = Anxin.formatExpiry(p.expiresAt);
 
-  function row(term, detail, stacked) {
-    return '<div class="summary-row' + (stacked ? ' is-stacked' : '') + '">' +
-      '<dt>' + term + '</dt><dd>' + esc(detail) + '</dd></div>';
-  }
-
-  var html =
-    row('暱稱', p.nickname) +
-    row('年紀', Anxin.ageLabel(p.age)) +
-    row('性別', p.gender === '男' ? '男孩' : '女孩') +
-    row('對抽血的害怕', LEVEL[p.fearLevel] + '（' + p.fearLevel + ' / 5）') +
-    row('家長的擔心', LEVEL[p.worryLevel] + '（' + p.worryLevel + ' / 5）');
-  if (p.specialNeeds) html += row('特別注意', p.specialNeeds, true);
-  $('summaryList').innerHTML = html;
+  /* 「修改填寫內容」卡片的說明：一眼看出是哪個孩子的資料 */
+  $('profileDesc').textContent = [
+    p.nickname, Anxin.ageLabel(p.age), p.gender === '男' ? '男孩' : '女孩'
+  ].join('・');
 
   /* ── 代碼失效：醫檢師送出回饋後，這組代碼就查不到了 ──
      讀不到（離線、Firebase 載不到）就維持原樣；代碼卡只是提示，不擋任何功能。
@@ -43,20 +32,9 @@
     $('codeCard').classList.add('is-done');
     $('codeExpiry').hidden = true;
     $('codeNote').textContent = '醫檢師已完成紀錄，這組代碼已經失效';
-    /* 醫檢師那份資料已經刪掉，再改也只改得到這支手機，不再提供修改 */
-    $('editLink').hidden = true;
   }).catch(function () { /* 維持原樣 */ });
 
   /* ── 醫檢師送出回饋 → 轉到「打針完畢」頁（每組代碼一次） ── */
 
   Anxin.shotFinished.redirectWhenDone(p);
-
-  /* ── 重新填寫：先確認 ── */
-
-  var restart = Anxin.wireDialog($('restartDlg'));
-  $('restartBtn').addEventListener('click', restart.open);
-  $('restartConfirm').addEventListener('click', function () {
-    Anxin.profile.clear();
-    window.location.replace('/portal/');
-  });
 })();
