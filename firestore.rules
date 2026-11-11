@@ -112,12 +112,15 @@ service cloud.firestore {
       allow delete: if false;
 
       // 給醫檢師看的個人資料（不含暱稱）。
-      // 只能在領取代碼的同一筆交易裡寫入；只有醫檢師、而且代碼還有效時才讀得到；
-      // 醫檢師送出回饋（代碼變 done）的同一批寫入裡刪除。
+      // 在領取代碼的同一筆交易裡寫入；之後領代碼的那支手機可以「修改填寫內容」，
+      // 但只限代碼還有效（醫檢師還沒完成）時，期限也必須和鎖一樣（validCodeProfile）。
+      // 只有醫檢師、而且代碼還有效時才讀得到；醫檢師送出回饋（代碼變 done）的同一批寫入裡刪除。
       match /private/{docId} {
         allow get: if docId == 'profile' && isStaff() && codeLive(code);
         allow list: if false;
-        allow create, update: if docId == 'profile' && claimedNow(code)
+        allow create: if docId == 'profile' && claimedNow(code)
+          && validCodeProfile(request.resource.data, getAfter(lockPath(code)).data);
+        allow update: if docId == 'profile' && (claimedNow(code) || holderEditing(code))
           && validCodeProfile(request.resource.data, getAfter(lockPath(code)).data);
         allow delete: if docId == 'profile' && finishing(code);
       }
@@ -166,6 +169,12 @@ service cloud.firestore {
     // 這一批寫入由醫檢師把代碼從 active 變成 done
     function finishing(code) {
       return isStaff() && codeLive(code) && getAfter(lockPath(code)).data.status == 'done';
+    }
+
+    // 家長修改填寫內容：這組代碼是自己領的，而且還有效（醫檢師還沒完成、24 小時還沒到）
+    function holderEditing(code) {
+      return request.auth != null && get(lockPath(code)).data.holderUid == request.auth.uid
+        && codeLive(code);
     }
 
     // 這一筆交易剛由自己領取這組代碼（鎖的 createdAt 就是這次寫入的時間）

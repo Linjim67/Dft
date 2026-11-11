@@ -23,12 +23,13 @@
   }
 
   var html =
+    row('暱稱', p.nickname) +
     row('年紀', Anxin.ageLabel(p.age)) +
     row('性別', p.gender === '男' ? '男孩' : '女孩') +
     row('對抽血的害怕', LEVEL[p.fearLevel] + '（' + p.fearLevel + ' / 5）') +
     row('家長的擔心', LEVEL[p.worryLevel] + '（' + p.worryLevel + ' / 5）');
   if (p.specialNeeds) html += row('特別注意', p.specialNeeds, true);
-  $('summaryCard').innerHTML = html;
+  $('summaryList').innerHTML = html;
 
   /* ── 代碼失效：醫檢師送出回饋後，這組代碼就查不到了 ──
      讀不到（離線、Firebase 載不到）就維持原樣；代碼卡只是提示，不擋任何功能。
@@ -42,6 +43,8 @@
     $('codeCard').classList.add('is-done');
     $('codeExpiry').hidden = true;
     $('codeNote').textContent = '醫檢師已完成紀錄，這組代碼已經失效';
+    /* 醫檢師那份資料已經刪掉，再改也只改得到這支手機，不再提供修改 */
+    $('editLink').hidden = true;
   }).catch(function () { /* 維持原樣 */ });
 
   /* ── 醫檢師送出回饋 → 轉到「打針完畢」頁（每組代碼一次） ── */

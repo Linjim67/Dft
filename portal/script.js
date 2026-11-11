@@ -11,6 +11,12 @@
   var form = $('infoForm');
   var live = $('liveRegion');
 
+  /* 修改模式（主頁面的「修改填寫內容」→ /portal/?edit）：帶入原本的答案，
+     送出時不領新代碼，只更新本機與醫檢師看的那份資料 */
+  var editing = /[?&]edit(?:[=&]|$)/.test(window.location.search);
+  var original = editing ? Anxin.profile.load() : null;
+  if (editing && !original) return; /* <head> 裡的守衛已經導回一般填寫 */
+
   /* ─────────────────────────────────────────────────────────────
      驗證：行內錯誤 + 可聚焦的錯誤總覽（兩者並存）
      ───────────────────────────────────────────────────────────── */
@@ -168,12 +174,14 @@
   var submitLabel = submitBtn.querySelector('.btn-label');
   var submitError = $('storage-error');
   var claiming = false;
+  var IDLE_LABEL = editing ? '儲存修改' : '完成，開始陪伴';
+  var BUSY_LABEL = editing ? '正在儲存…' : '正在產生代碼…';
 
   function setClaiming(on) {
     claiming = on;
     submitBtn.disabled = on;
     submitBtn.setAttribute('aria-busy', on ? 'true' : 'false');
-    submitLabel.textContent = on ? '正在產生代碼…' : '完成，開始陪伴';
+    submitLabel.textContent = on ? BUSY_LABEL : IDLE_LABEL;
   }
 
   function showSubmitError(msg) {
@@ -190,6 +198,50 @@
       return '暫時代碼服務還沒準備好（是網站設定的問題，不是您的網路）。您填的內容都還在，請告訴現場的醫護人員。';
     }
     return '目前連不上伺服器，拿不到暫時代碼。您填的內容都還在，請確認網路後再按一次「完成，開始陪伴」。';
+  }
+
+  function editErrorText(err) {
+    if (Anxin.isSetupError(err)) {
+      return '暫時無法儲存修改（是網站設定的問題，不是您的網路）。您改的內容都還在，請告訴現場的醫護人員。';
+    }
+    return '目前連不上伺服器，修改還沒儲存。您改的內容都還在，請確認網路後再按一次「儲存修改」。';
+  }
+
+  /* 儲存修改：代碼、領取時間、期限都沿用，只換答案。
+     先更新醫檢師看的那份（codes/{代碼}/private/profile），成功了才存到本機，
+     兩邊才不會一份新、一份舊。 */
+  function saveEdit(answers) {
+    /* 改到一半剛好滿 24 小時：代碼已失效，只能重新填寫 */
+    var cur = Anxin.profile.load();
+    if (!cur) { window.location.replace('/portal/'); return; }
+    var profile = Object.assign({}, cur, answers);
+    /* 改了暱稱：舊的記在本機，之後上傳的文字（特殊需求、回饋）連舊暱稱一起換成「孩子」 */
+    if (answers.nickname !== cur.nickname) {
+      profile.formerNicknames = (cur.formerNicknames || []).concat(cur.nickname)
+        .filter(function (n, i, all) { return n !== answers.nickname && all.indexOf(n) === i; });
+    }
+    var shared = Anxin.codes.buildProfile(profile);
+
+    setClaiming(true);
+
+    Anxin.withTimeout(
+      Anxin.whenFirebase(10000).then(function (fb) {
+        return Promise.all([fb.codes.getLock(cur.code), fb.ensureAuth()]).then(function (r) {
+          var lock = r[0];
+          /* 醫檢師已完成（資料已刪）或代碼已不在這支手機名下：伺服器上沒有可改的，只改本機 */
+          if (Anxin.codes.state(lock, Date.now()) !== 'active' || lock.holderUid !== r[1].uid) return null;
+          return fb.codes.updateProfile(cur.code, shared);
+        });
+      }),
+      CLAIM_TIMEOUT_MS
+    ).then(function () {
+      Anxin.profile.save(profile);
+      window.location.replace('/home/');
+    }, function (err) {
+      window.console.error('儲存修改失敗：', err);
+      setClaiming(false);
+      showSubmitError(editErrorText(err));
+    });
   }
 
   form.addEventListener('submit', function (ev) {
@@ -213,17 +265,25 @@
       return;
     }
 
-    var now = Date.now();
-    var profile = {
+    var answers = {
       nickname: $('nickname').value.trim(),
       age: indexToAge(ageIdx),
       gender: form.querySelector('[name="gender"]:checked').value,
       fearLevel: Number(form.querySelector('[name="fearLevel"]:checked').value),
       worryLevel: Number(form.querySelector('[name="worryLevel"]:checked').value),
-      specialNeeds: needs.value.trim(),
+      specialNeeds: needs.value.trim()
+    };
+
+    if (editing) {
+      saveEdit(answers);
+      return;
+    }
+
+    var now = Date.now();
+    var profile = Object.assign(answers, {
       createdAt: now,
       expiresAt: now + Anxin.profile.TTL_MS
-    };
+    });
     /* 給醫檢師看的那份：沒有暱稱，特殊需求裡的暱稱也換成「孩子」 */
     var shared = Anxin.codes.buildProfile(profile);
 
@@ -259,4 +319,42 @@
 
   ageOut.setAttribute('data-empty', 'true');
   paintFill();
+
+  /* 修改模式：換標題與按鈕，帶入原本的答案（暫時代碼不在表單裡，也不會變） */
+  function prefill(p) {
+    $('nickname').value = p.nickname;
+    Anxin.setAnswered($('nickname'), true);
+
+    ageIdx = Math.round(p.age * 2);
+    ageInput.value = ageIdx;
+    updateAge();
+
+    var g = form.querySelector('[name="gender"][value="' + p.gender + '"]');
+    if (g) {
+      g.checked = true;
+      Anxin.setAnswered(g, true);
+    }
+
+    [['fearScale', 'fearLevel'], ['worryScale', 'worryLevel']].forEach(function (s) {
+      var r = form.querySelector('[name="' + s[1] + '"][value="' + p[s[1]] + '"]');
+      if (r) {
+        r.checked = true;
+        Anxin.setAnswered($(s[0]), true);
+      }
+    });
+
+    needs.value = p.specialNeeds || '';
+    needs.dispatchEvent(new Event('input')); /* 字數提示與作答狀態 */
+  }
+
+  if (editing) {
+    document.title = '安心陪伴 · 修改填寫內容';
+    $('welcomeTitle').textContent = '修改填寫內容';
+    $('welcomeLede').innerHTML = '暫時代碼 <strong>' + Anxin.escapeHtml(original.code) +
+      '</strong> 不會改變，改好後按「儲存修改」。';
+    $('assuranceList').hidden = true;
+    $('editCancel').hidden = false;
+    submitLabel.textContent = IDLE_LABEL;
+    prefill(original);
+  }
 })();

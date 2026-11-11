@@ -221,6 +221,13 @@ const codes = {
     return lockFrom(await getDoc(lockRef(code)));
   },
 
+  /* 家長「修改填寫內容」：代碼不變，只換給醫檢師看的那份資料（Anxin.codes.buildProfile 產生）。
+     規則只讓領這組代碼的手機在代碼還有效時改，期限必須和鎖一樣（不能藉機延長）。 */
+  async updateProfile(code, profile) {
+    await ensureAuth();
+    return setDoc(codeProfileRef(code), { ...profile, expiresAt: Timestamp.fromMillis(profile.expiresAt) });
+  },
+
   watchLock(code, cb, onError) {
     const start = () => onSnapshot(lockRef(code), (s) => cb(lockFrom(s)), onError);
     start.onError = onError;

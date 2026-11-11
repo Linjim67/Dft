@@ -21,8 +21,14 @@
   <link rel="stylesheet" href="/shared/styles.css">
   <script src="/shared/app.js"></script>
   <script>
-    /* 24 小時內已填過：直接進主頁面，表單不會先閃出來 */
-    if (Anxin.profile.load()) window.location.replace('/home/');
+    /* 24 小時內已填過：直接進主頁面，表單不會先閃出來。
+       ?edit（主頁面的「修改填寫內容」）例外：帶入原本的答案，代碼不變；沒有資料可改就當一般填寫 */
+    (function () {
+      var editing = /[?&]edit(?:[=&]|$)/.test(window.location.search);
+      var p = Anxin.profile.load();
+      if (p && !editing) window.location.replace('/home/');
+      else if (!p && editing) window.location.replace('/portal/');
+    })();
   </script>
 </head>
 
@@ -36,10 +42,10 @@
 
       <section class="welcome" aria-labelledby="welcomeTitle">
         <h1 id="welcomeTitle">先讓我們認識您的孩子</h1>
-        <p class="welcome-lede">
+        <p class="welcome-lede" id="welcomeLede">
           等待很煎熬。簡單填寫個資，我們就能為您和孩子準備<strong>合適</strong>的安撫方式。
         </p>
-        <ul class="assurance-list">
+        <ul class="assurance-list" id="assuranceList">
           <li>
             <svg viewBox="0 0 24 24" class="icon" aria-hidden="true">
               <path d="M12 3.5 5 6.2v5c0 4.2 2.9 7.6 7 8.8 4.1-1.2 7-4.6 7-8.8v-5L12 3.5Z" />
@@ -148,6 +154,8 @@
           <span class="btn-label">完成，開始陪伴</span>
         </button>
         <p class="field-error" id="storage-error" role="alert" hidden></p>
+        <!-- 只在修改模式出現 -->
+        <a class="btn btn-quiet edit-cancel" href="/home/" id="editCancel" hidden>取消，不修改</a>
       </form>
     </div>
 

@@ -40,7 +40,18 @@
         <p class="code-note" id="codeNote" role="status">打針時，請把這組代碼交給醫檢師</p>
       </div>
 
-      <dl class="summary-card" id="summaryCard"></dl>
+      <!-- 填寫內容（暫時代碼以外的全部）＋ 修改入口：代碼不變，只改內容 -->
+      <div class="summary-card">
+        <dl id="summaryList"></dl>
+        <a class="summary-edit" href="/portal/?edit" id="editLink">
+          <svg viewBox="0 0 24 24" class="icon" aria-hidden="true">
+            <path d="M4.5 19.5h4l10-10a2.8 2.8 0 0 0-4-4l-10 10v4Z" />
+            <path d="m13 7 4 4" />
+          </svg>
+          <span>修改填寫內容</span>
+          <svg viewBox="0 0 24 24" class="icon card-chevron" aria-hidden="true"><path d="m9 5 7 7-7 7" /></svg>
+        </a>
+      </div>
 
       <p class="center">
         <button class="quiet-link" type="button" id="restartBtn">重新填寫</button>

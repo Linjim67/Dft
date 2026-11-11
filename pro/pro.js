@@ -628,10 +628,16 @@
     var c = current;
     var pick = picked();
     if (!c || !pick) return;
-    var payload = Anxin.buildStaffFeedback(c.profile, { staffFear: pick.value, note: $('staffNote').value });
+    var answers = { staffFear: pick.value, note: $('staffNote').value };
+    var payload;
 
     setFinishing(true);
-    net(fb.codes.finish(c.code, c.lock, payload)).then(function () {
+    /* 家長可能在查詢之後才「修改填寫內容」：送出前重讀一次，
+       回饋裡的家長資料才會和伺服器上的一致（規則會比對，不一致就整批被拒） */
+    net(fb.codes.getProfile(c.code)).then(function (fresh) {
+      payload = Anxin.buildStaffFeedback(fresh || c.profile, answers);
+      return net(fb.codes.finish(c.code, c.lock, payload));
+    }).then(function () {
       addRecent({ code: c.code, staffFear: payload.staffFear, at: Date.now() });
       current = null;
       markWaiting();

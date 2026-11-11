@@ -287,11 +287,21 @@
 
   var SCALE_VERSION = 'balanced-v1';
 
+  /* nickname 可以是一個或一串（改過暱稱時連舊的一起）；長的先換，
+     「小恩恩」才不會只被換到「小恩」那一段 */
   function scrubNickname(text, nickname) {
     var t = String(text == null ? '' : text);
-    var nick = String(nickname == null ? '' : nickname).trim();
-    if (!nick) return t;
-    return t.split(nick).join('孩子');
+    [].concat(nickname)
+      .map(function (n) { return String(n == null ? '' : n).trim(); })
+      .filter(Boolean)
+      .sort(function (a, b) { return b.length - a.length; })
+      .forEach(function (nick) { t = t.split(nick).join('孩子'); });
+    return t;
+  }
+
+  /* 這份資料用過的所有暱稱：現在的 + 「修改填寫內容」前的（formerNicknames，只存在本機） */
+  function nicknamesOf(p) {
+    return [p.nickname].concat(p.formerNicknames || []);
   }
 
   function level(v, name) {
@@ -308,16 +318,16 @@
   function buildFeedbackPayload(p, a) {
     return {
       satisfaction: level(a.satisfaction, 'satisfaction'),
-      satisfactionReason: freeText(a.satisfactionReason, p.nickname, 500),
+      satisfactionReason: freeText(a.satisfactionReason, nicknamesOf(p), 500),
       cryLevel: level(a.cryLevel, 'cryLevel'),
       effectiveness: level(a.effectiveness, 'effectiveness'),
-      suggestion: freeText(a.suggestion, p.nickname, 1000),
+      suggestion: freeText(a.suggestion, nicknamesOf(p), 1000),
       profile: {
         age: Number(p.age),
         gender: p.gender,
         fearLevel: level(p.fearLevel, 'fearLevel'),
         worryLevel: level(p.worryLevel, 'worryLevel'),
-        specialNeeds: freeText(p.specialNeeds, p.nickname, 200)
+        specialNeeds: freeText(p.specialNeeds, nicknamesOf(p), 200)
       },
       scaleVersion: SCALE_VERSION
     };
@@ -395,7 +405,7 @@
       gender: p.gender,
       fearLevel: level(p.fearLevel, 'fearLevel'),
       worryLevel: level(p.worryLevel, 'worryLevel'),
-      specialNeeds: freeText(p.specialNeeds, p.nickname, 200),
+      specialNeeds: freeText(p.specialNeeds, nicknamesOf(p), 200),
       expiresAt: Number(p.expiresAt)
     };
   }

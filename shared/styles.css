@@ -759,6 +759,19 @@ form .btn-primary {
   box-shadow: none;
 }
 
+/* 修改填寫內容：送出鈕下面的「取消」，次要但一樣好按 */
+.edit-cancel {
+  margin-top: var(--sp-3);
+  text-decoration: none;
+}
+
+/* 是 <a>（block 的 flex）：大螢幕要像 <button> 一樣縮到內容寬，置中才有作用 */
+@media (min-width: 40rem) {
+  .btn.edit-cancel {
+    width: fit-content;
+  }
+}
+
 .form-foot {
   margin-top: var(--sp-3);
   font-size: .86rem;

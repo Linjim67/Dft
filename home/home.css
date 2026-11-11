@@ -52,6 +52,37 @@
   margin-bottom: var(--sp-2);
 }
 
+/* 卡片最下面一整列都能點：和上面的資料用細線隔開，讀成同一張卡的動作 */
+.summary-edit {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: var(--sp-3);
+  min-height: 56px;
+  padding: var(--sp-3) var(--sp-4);
+  border-top: 1px solid var(--hairline);
+  color: var(--primary-deep);
+  font-weight: 700;
+  text-decoration: none;
+  transition: background-color var(--t-fast) var(--ease);
+}
+
+.summary-edit:active {
+  background: var(--primary-wash);
+}
+
+/* 卡片 overflow:hidden，外框往內畫才不會被裁掉 */
+.summary-edit:focus-visible {
+  outline-offset: -3px;
+  border-radius: 0 0 var(--r-lg) var(--r-lg);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .summary-edit:hover {
+    background: var(--primary-wash);
+  }
+}
+
 .brief .quiet-link {
   background: none;
   border: 0;
