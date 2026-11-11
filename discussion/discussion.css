@@ -134,7 +134,7 @@ html:not([data-discuss="clinic"]) .only-clinic {
 .filter-toggle[aria-expanded="true"] {
   background: var(--primary-wash);
   border-color: var(--primary-deep);
-  color: var(--primary-deep);
+  color: var(--fg-accent);
 }
 
 /* 白字在深橘上 5.18:1 */
@@ -181,7 +181,7 @@ html:not([data-discuss="clinic"]) .only-clinic {
 }
 
 .filter-out {
-  color: var(--primary-deep);
+  color: var(--fg-accent);
   font-variant-numeric: tabular-nums;
 }
 
@@ -230,7 +230,7 @@ html:not([data-discuss="clinic"]) .only-clinic {
 .chip[aria-pressed="true"],
 .chip-radio input:checked+.chip {
   background: var(--primary-wash);
-  color: var(--primary-deep);
+  color: var(--fg-accent);
   border-color: var(--primary-deep);
   box-shadow: var(--sh-sm), inset 0 0 0 var(--line-w) var(--primary-deep);
 }
@@ -264,7 +264,7 @@ html:not([data-discuss="clinic"]) .only-clinic {
 .chip-picked {
   padding-inline: var(--sp-4) var(--sp-3);
   background: var(--primary-wash);
-  color: var(--primary-deep);
+  color: var(--fg-accent);
   border-color: var(--primary-deep);
   box-shadow: none;
 }
@@ -406,10 +406,10 @@ html:not([data-discuss="clinic"]) .only-clinic {
     box-shadow var(--t-fast) var(--ease);
 }
 
-/* 選取：浮起的白底（形狀）＋深橘字（顏色），兩個線索 */
+/* 選取：浮起的白底（形狀）＋粗黑字，兩個線索 */
 .sort input:checked+span {
   background: var(--card);
-  color: var(--primary-deep);
+  color: var(--fg-accent);
   box-shadow: var(--sh-sm);
 }
 
@@ -511,7 +511,7 @@ html:not([data-discuss="clinic"]) .only-clinic {
 
 .source-tag {
   font-size: .8rem;
-  color: var(--success);
+  color: var(--fg-accent);
   font-weight: 700;
 }
 
@@ -589,7 +589,7 @@ html:not([data-discuss="clinic"]) .only-clinic {
 
 /* 按過：愛心填滿（形狀改變，不只是變色） */
 .like-btn[aria-pressed="true"] {
-  color: var(--primary-deep);
+  color: var(--fg-accent);
   font-weight: 700;
 }
 
@@ -977,7 +977,7 @@ html[data-discuss="clinic"] .reply-identity {
 .member-out {
   font-size: 1.15rem;
   font-weight: 700;
-  color: var(--primary-deep);
+  color: var(--fg-accent);
   font-variant-numeric: tabular-nums;
 }
 
@@ -1094,7 +1094,7 @@ html[data-discuss="clinic"] .reply-identity {
   }
 
   .clear-filters:hover {
-    color: var(--primary-deep);
+    color: var(--fg-accent);
   }
 }
 

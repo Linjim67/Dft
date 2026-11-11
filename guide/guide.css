@@ -47,7 +47,7 @@ html {
 /* 目前段落：淡橘底＋深橘內框（形狀也變，不只靠顏色） */
 .jump-link[aria-current="true"] {
   background: var(--primary-wash);
-  color: var(--primary-deep);
+  color: var(--fg-accent);
   box-shadow: inset 0 0 0 2px var(--primary-deep);
 }
 
@@ -133,7 +133,7 @@ html {
 
 .age-opt input:checked+.age-face {
   background: var(--primary-wash);
-  color: var(--primary-deep);
+  color: var(--fg-accent);
   border-color: var(--primary-deep);
   box-shadow: var(--sh-md), inset 0 0 0 var(--line-w) var(--primary-deep);
 }
@@ -167,14 +167,14 @@ html {
   margin-top: var(--sp-4);
 }
 
-/* 「全年齡適用」小標籤（深橘配淡橘 4.52:1） */
+/* 「全年齡適用」小標籤（黑字配淡橘 15.6:1） */
 .all-ages {
   display: inline-block;
   margin-inline-end: var(--sp-2);
   padding: 0 var(--sp-2);
   border-radius: var(--r-pill);
   background: var(--primary-wash);
-  color: var(--primary-deep);
+  color: var(--fg-accent);
   font-size: .8rem;
   font-weight: 700;
   line-height: 1.8;
@@ -249,7 +249,7 @@ html {
 
 .riddle-ans p {
   font-weight: 700;
-  color: var(--primary-deep);
+  color: var(--fg-accent);
 }
 
 /* 段落裡的連結（到小遊戲） */
@@ -263,7 +263,7 @@ html {
   border-radius: var(--r-pill);
   border: 2px solid var(--primary-deep);
   background: var(--card);
-  color: var(--primary-deep);
+  color: var(--fg-accent);
   font-weight: 700;
   text-decoration: none;
 }
@@ -303,13 +303,13 @@ html {
   color: var(--primary-deep);
 }
 
-/* 1.1rem 粗體屬大字級：深橘配淡橘 4.52:1 */
+/* 1.1rem 粗體，黑字配淡橘 15.6:1 */
 .ready-label {
   display: block;
   font-size: 1.1rem;
   font-weight: 700;
   line-height: 1.4;
-  color: var(--primary-deep);
+  color: var(--fg-accent);
 }
 
 .ready-sub {
@@ -405,8 +405,13 @@ html {
   stroke-width: 2.4;
 }
 
+/* 避免／改說：文字黑白灰，紅／綠只留在底色和圖示 */
 .is-avoid .pair-tag {
   background: var(--danger-wash);
+  color: var(--fg-accent);
+}
+
+.is-avoid .pair-tag .icon {
   color: var(--danger);
 }
 
@@ -416,6 +421,10 @@ html {
 
 .is-better .pair-tag {
   background: var(--success-wash);
+  color: var(--fg-accent);
+}
+
+.is-better .pair-tag .icon {
   color: var(--success);
 }
 
@@ -429,11 +438,11 @@ html {
   .inline-cta:hover {
     background: var(--primary-wash);
     border-color: var(--primary-deep);
-    color: var(--primary-deep);
+    color: var(--fg-accent);
   }
 
   .jump-link:not([aria-current="true"]):hover {
-    color: var(--primary-deep);
+    color: var(--fg-accent);
     background: var(--primary-wash);
   }
 

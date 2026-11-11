@@ -14,11 +14,14 @@
   /* 凹陷軌道／輸入底 */
   --card: #FFFFFF;
 
-  /* — 文字 — */
-  --fg: #7C2D12;
-  /* 8.83:1 on bg · 9.37:1 on card */
-  --fg-muted: #57534E;
-  /* 7.19:1 on bg · 7.63:1 on card */
+  /* — 文字：黑白灰（遊戲頁維持暖色，見本區塊下面的覆寫） — */
+  --fg: #171717;
+  /* 16.9:1 on bg · 17.9:1 on card */
+  --fg-muted: #525252;
+  /* 7.37:1 on bg · 7.81:1 on card · 6.82:1 on primary-wash */
+  --fg-accent: var(--fg);
+  /* 強調文字（已選的選項、代碼數字、按鈕字、連結）。以前用深橘，現在和內文一樣黑；
+     要換回橘色，改這一行就好。框線、圖示、底色仍用橘色 token */
 
   /* — 品牌橘 — */
   --primary: #F97316;
@@ -26,7 +29,7 @@
   --primary-ink: #1C1917;
   /* 橘底上的字 */
   --primary-deep: #C2410C;
-  /* 5.18:1 on card — 邊界／選取／連結 */
+  /* 5.18:1 on card — 邊界／選取（文字改用 --fg-accent） */
   --primary-fill: #EA580C;
   /* 3.21:1 vs 未填色軌道 — 滑桿已選區段 */
   --primary-wash: #FFEDD5;
@@ -48,8 +51,8 @@
   /* 裝飾用，不作控制項邊界 */
   --rule: #C09A72;
   /* 題目之間的分隔線 — 2.44:1，看得見但比輸入框邊界(3.27:1)輕 */
-  --idle: #78716C;
-  /* 未作答的表情／說明灰 — 4.80:1 on card */
+  --idle: #6B6B6B;
+  /* 未作答的表情／說明灰 — 5.33:1 on card · 5.03:1 on bg · 4.65:1 on primary-wash */
 
   /* — 暖色陰影（取代硬邊，質感較軟） — */
   --sh-sm: 0 1px 2px rgba(124, 45, 18, .05), 0 2px 8px -2px rgba(124, 45, 18, .08);
@@ -83,6 +86,15 @@
 
   --font: "Atkinson Hyperlegible", "PingFang TC", "Noto Sans TC",
     "Microsoft JhengHei", system-ui, sans-serif;
+}
+
+/* 遊戲（/games/）維持原本的暖色文字。遊戲頁都會載入 /games/ 底下的樣式表，
+   用它來認頁面，遊戲的檔案不用動；不支援 :has() 的舊瀏覽器就是黑白灰，不影響使用 */
+:root:has(link[rel="stylesheet"][href^="/games/"]) {
+  --fg: #7C2D12;
+  --fg-muted: #57534E;
+  --fg-accent: var(--primary-deep);
+  --idle: #78716C;
 }
 
 /* ═══ Reset & base ═══════════════════════════════════════════ */
@@ -223,7 +235,7 @@ button {
 }
 
 .welcome-lede strong {
-  color: var(--primary-deep);
+  color: var(--fg-accent);
   font-weight: 700;
 }
 
@@ -320,7 +332,7 @@ button {
 }
 
 .req {
-  color: var(--primary-deep);
+  color: var(--fg-accent);
   background: var(--primary-wash);
 }
 
@@ -455,7 +467,7 @@ textarea:focus-visible {
   font-weight: 700;
   line-height: 1.4;
   letter-spacing: -.01em;
-  color: var(--primary-deep);
+  color: var(--fg-accent);
   font-variant-numeric: tabular-nums;
 }
 
@@ -606,7 +618,7 @@ input[type="range"]:active::-webkit-slider-thumb {
 /* 與表情卡的選取樣式一致：淡橘底＋深橘框，不用飽和橘填滿 */
 .segmented-option input:checked+.segmented-face {
   background: var(--primary-wash);
-  color: var(--primary-deep);
+  color: var(--fg-accent);
   border-color: var(--primary-deep);
   box-shadow: var(--sh-md), inset 0 0 0 var(--line-w) var(--primary-deep);
 }
@@ -696,7 +708,7 @@ input[type="range"]:active::-webkit-slider-thumb {
 }
 
 .face-option input:checked+.face-body .face-caption {
-  color: var(--primary-deep);
+  color: var(--fg-accent);
 }
 
 .face-option input:focus-visible+.face-body {
@@ -732,7 +744,7 @@ input[type="range"]:active::-webkit-slider-thumb {
    因此保留 2px 深橘外框來界定形狀（對頁面 4.88:1）。 */
 .btn-primary {
   background: var(--primary-wash);
-  color: var(--primary-deep);
+  color: var(--fg-accent);
   border-color: var(--primary-deep);
   box-shadow: var(--sh-md);
 }
@@ -871,7 +883,7 @@ form .btn-primary {
   line-height: 1.2;
   letter-spacing: .2em;
   text-indent: .2em;
-  color: var(--primary-deep);
+  color: var(--fg-accent);
   font-variant-numeric: tabular-nums;
 }
 
