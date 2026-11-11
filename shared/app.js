@@ -155,6 +155,34 @@
   }
 
   /* ─────────────────────────────────────────────────────────────
+     可展開的主題卡（原生 <details>）：指南、鼓勵頁共用，樣式在 /shared/page.css
+     回傳 { root, body }：內容自己 append 到 body。
+     ───────────────────────────────────────────────────────────── */
+
+  var CHEVRON_DOWN = '<svg viewBox="0 0 24 24" class="icon topic-chev" aria-hidden="true">' +
+    '<path d="m6 9 6 6 6-6"/></svg>';
+
+  function buildTopic(title, opts) {
+    opts = opts || {};
+    var doc = root.document;
+    var det = doc.createElement('details');
+    det.className = 'topic';
+    if (opts.open) det.open = true;
+    var sum = doc.createElement('summary');
+    sum.className = 'topic-head';
+    var t = doc.createElement('span');
+    t.className = 'topic-title';
+    t.textContent = title;
+    sum.appendChild(t);
+    sum.insertAdjacentHTML('beforeend', CHEVRON_DOWN);
+    var body = doc.createElement('div');
+    body.className = 'topic-body';
+    det.appendChild(sum);
+    det.appendChild(body);
+    return { root: det, body: body };
+  }
+
+  /* ─────────────────────────────────────────────────────────────
      表單回饋：行內錯誤 + 可聚焦的錯誤總覽（兩者並存）
      fields: { key: { label, focus?, invalid? } }
        focus   → 點總覽時要聚焦的元素 id；沒有就聚焦 name=key 的第一個控制項
@@ -519,6 +547,7 @@
     formatExpiry: formatExpiry,
     escapeHtml: escapeHtml,
     buildFaceScale: buildFaceScale,
+    buildTopic: buildTopic,
     createFormErrors: createFormErrors,
     setAnswered: setAnswered,
     announce: announce,

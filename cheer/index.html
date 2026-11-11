@@ -41,21 +41,27 @@
   <main id="main" class="wrap">
     <div class="page-head">
       <h1>給家長的鼓勵</h1>
-      <p class="page-lede">您也辛苦了，這裡是留給您的喘息時間。</p>
+      <p class="page-lede">您也辛苦了。先弄懂抽血現場在做什麼，心裡會踏實一點。</p>
     </div>
 
-    <!-- 內容準備中：之後直接替換這一塊 -->
-    <div class="empty-state">
-      <svg viewBox="0 0 24 24" class="icon" aria-hidden="true">
-        <path d="M12 3v3M12 18v3M3 12h3M18 12h3M5.6 5.6l2.1 2.1M16.3 16.3l2.1 2.1M5.6 18.4l2.1-2.1M16.3 7.7l2.1-2.1" />
-      </svg>
-      <strong>內容準備中</strong>
-      <span>我們正在整理，很快就會放上來。</span>
-    </div>
+    <!-- ── 對家長的衛教 part 1：醫療現場解密 ── -->
+    <section class="part" aria-labelledby="whyTitle">
+      <h2 class="part-title" id="whyTitle">醫療現場解密</h2>
+      <p class="part-sub">醫護人員為什麼這樣做？</p>
+      <div class="topic-list" id="whyList"></div>
+    </section>
+
+    <!-- ── 對家長的衛教 part 2：打針大小問 ── -->
+    <section class="part" aria-labelledby="faqTitle">
+      <h2 class="part-title" id="faqTitle">打針大小問</h2>
+      <p class="part-sub">家長常見的疑問</p>
+      <div class="topic-list" id="faqList"></div>
+    </section>
   </main>
 
   <!-- 醫檢師送出回饋時轉到「打針完畢」頁；載不到時頁面照常 -->
   <script type="module" src="/shared/firebase.js"></script>
+  <script src="/cheer/content.js"></script>
   <script src="/cheer/cheer.js"></script>
 </body>
 

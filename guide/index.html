@@ -44,18 +44,43 @@
       <p class="page-lede">陪孩子度過打針的小方法。</p>
     </div>
 
-    <!-- 內容準備中：之後直接替換這一塊 -->
-    <div class="empty-state">
-      <svg viewBox="0 0 24 24" class="icon" aria-hidden="true">
-        <path d="M12 3v3M12 18v3M3 12h3M18 12h3M5.6 5.6l2.1 2.1M16.3 16.3l2.1 2.1M5.6 18.4l2.1-2.1M16.3 7.7l2.1-2.1" />
-      </svg>
-      <strong>內容準備中</strong>
-      <span>我們正在整理，很快就會放上來。</span>
-    </div>
+    <!-- ── 1. 你可以這樣跟他說！依年紀分組（預設依小檔案的年紀選好） ── -->
+    <section class="part" aria-labelledby="sayTitle">
+      <h2 class="part-title" id="sayTitle">你可以這樣跟他說！</h2>
+
+      <fieldset class="age-pick">
+        <legend class="age-pick-legend">孩子的年紀</legend>
+        <div class="segmented age-seg" id="ageSeg"></div>
+      </fieldset>
+      <p class="age-hint" id="ageHint" hidden></p>
+
+      <div id="agePanels"></div>
+    </section>
+
+    <!-- ── 2. 打針當下，家長可以這樣做！（全年齡） ── -->
+    <section class="part" aria-labelledby="duringTitle">
+      <h2 class="part-title" id="duringTitle">打針當下，家長可以這樣做！</h2>
+      <p class="part-sub"><span class="all-ages">全年齡適用</span>你的陪伴很重要，你的配合更是孩子安全完成抽血的重要關鍵。</p>
+      <div class="topic-list" id="duringList"></div>
+
+      <!-- 規格：這一塊最下方放「我要打針了」，直接連到轉移注意力的小遊戲 -->
+      <a class="btn btn-primary ready-btn" href="/games/solo/">
+        <span class="ready-label">我要打針了</span>
+        <span class="ready-sub">打開小遊戲，讓孩子專心玩</span>
+      </a>
+    </section>
+
+    <!-- ── 3. 這些話先不要跟小孩說！（全年齡）：避免的第 n 句對應改說的第 n 句 ── -->
+    <section class="part" aria-labelledby="dontTitle">
+      <h2 class="part-title" id="dontTitle">這些話先不要跟小孩說！</h2>
+      <p class="part-sub"><span class="all-ages">全年齡適用</span>每一句都附上可以換成的說法。</p>
+      <div class="topic-list" id="dontList"></div>
+    </section>
   </main>
 
   <!-- 醫檢師送出回饋時轉到「打針完畢」頁；載不到時頁面照常 -->
   <script type="module" src="/shared/firebase.js"></script>
+  <script src="/guide/content.js"></script>
   <script src="/guide/guide.js"></script>
 </body>
 

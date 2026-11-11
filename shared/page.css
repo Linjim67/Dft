@@ -178,6 +178,84 @@ a.btn {
   font-size: 1rem;
 }
 
+/* ═══ 內容頁的段落（指南、鼓勵頁） ═══════════════════════════ */
+
+.part+.part {
+  margin-top: var(--sp-7);
+}
+
+.part-title {
+  font-size: 1.3rem;
+  font-weight: 700;
+  line-height: 1.4;
+  text-wrap: balance;
+}
+
+.part-sub {
+  margin-top: var(--sp-1);
+  font-size: .95rem;
+  color: var(--fg-muted);
+}
+
+.part-title+.topic-list,
+.part-sub+.topic-list {
+  margin-top: var(--sp-4);
+}
+
+/* ═══ 可展開的主題卡（Anxin.buildTopic → 原生 <details>） ═══ */
+
+.topic-list {
+  display: grid;
+  gap: var(--sp-3);
+}
+
+.topic {
+  background: var(--card);
+  border-radius: var(--r-lg);
+  box-shadow: var(--sh-sm);
+}
+
+.topic-head {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: center;
+  gap: var(--sp-3);
+  min-height: 60px;
+  padding: var(--sp-3) var(--sp-4);
+  font-weight: 700;
+  line-height: 1.5;
+  list-style: none;
+  cursor: pointer;
+  border-radius: var(--r-lg);
+}
+
+.topic-head::-webkit-details-marker {
+  display: none;
+}
+
+.topic-chev {
+  width: 20px;
+  height: 20px;
+  color: var(--idle);
+  transition: transform var(--t-base) var(--ease);
+}
+
+/* 打開的標題轉深橘（5.18:1），箭頭翻轉：不只靠顏色 */
+.topic[open]>.topic-head {
+  color: var(--primary-deep);
+}
+
+.topic[open]>.topic-head .topic-chev {
+  transform: rotate(180deg);
+  color: var(--primary-deep);
+}
+
+.topic-body {
+  display: grid;
+  gap: var(--sp-3);
+  padding: 0 var(--sp-4) var(--sp-4);
+}
+
 /* ═══ 開發中的空狀態 ══════════════════════════════════════════ */
 
 .empty-state {
@@ -286,7 +364,8 @@ a.btn {
   }
 
   .back-link:hover,
-  .quiet-link:hover {
+  .quiet-link:hover,
+  .topic-head:hover {
     color: var(--primary-deep);
   }
 

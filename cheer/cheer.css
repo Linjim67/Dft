@@ -1,3 +1,34 @@
 /* ═══ 給家長的鼓勵 ═══════════════════════════════════════════════
-   頁面專用樣式。內容準備中，版面目前完全沿用 /shared/page.css。
+   段落標題與展開卡片沿用 /shared/page.css（.part、.topic）。
+   這裡只放「醫療小知識／給家長的小提醒」兩個小區塊。
    ═══════════════════════════════════════════════════════════════ */
+
+.know {
+  display: grid;
+  gap: var(--sp-1);
+}
+
+.know-label {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-1);
+  font-size: .88rem;
+  font-weight: 700;
+  color: var(--fg-muted);
+}
+
+.know-label .icon {
+  width: 18px;
+  height: 18px;
+}
+
+/* 小提醒是家長能做的事：淡橘底框起來，和上面的知識分開 */
+.know.is-tip {
+  padding: var(--sp-3);
+  border-radius: var(--r-md);
+  background: var(--primary-wash);
+}
+
+.know.is-tip .know-label {
+  color: var(--primary-deep);
+}

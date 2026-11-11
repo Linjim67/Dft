@@ -1,3 +1,245 @@
 /* ═══ 家長安慰指南 ═══════════════════════════════════════════════
-   頁面專用樣式。內容準備中，版面目前完全沿用 /shared/page.css。
+   段落標題與展開卡片沿用 /shared/page.css（.part、.topic）。
+   這裡只放本頁的：年紀切換、對話框、清單、猜謎、避免／改說。
    ═══════════════════════════════════════════════════════════════ */
+
+/* ═══ 年紀切換（沿用 .segmented 的選取樣式，改成三欄） ═══════ */
+
+.age-pick {
+  margin: var(--sp-4) 0 0;
+  padding: 0;
+  border: 0;
+  min-width: 0;
+}
+
+.age-pick-legend {
+  padding: 0;
+  margin-bottom: var(--sp-2);
+  font-size: .92rem;
+  font-weight: 700;
+  color: var(--fg-muted);
+}
+
+.age-seg {
+  grid-template-columns: repeat(3, 1fr);
+}
+
+.age-seg .segmented-face {
+  font-size: 1rem;
+  white-space: nowrap;
+}
+
+.age-hint {
+  margin-top: var(--sp-2);
+  font-size: .88rem;
+  line-height: 1.6;
+  color: var(--fg-muted);
+}
+
+.age-panel {
+  margin-top: var(--sp-4);
+}
+
+/* 「全年齡適用」小標籤 */
+.all-ages {
+  display: inline-block;
+  margin-inline-end: var(--sp-2);
+  padding: 0 var(--sp-2);
+  border-radius: var(--r-pill);
+  background: var(--primary-wash);
+  color: var(--primary-deep);
+  font-size: .8rem;
+  font-weight: 700;
+  line-height: 1.8;
+  vertical-align: 1px;
+}
+
+/* ═══ 主題裡的內容 ═══════════════════════════════════════════ */
+
+.tip-list {
+  display: grid;
+  gap: var(--sp-2);
+}
+
+/* 可以直接說的話：對話框，左下角收尖 */
+.say {
+  padding: var(--sp-2) var(--sp-3);
+  background: var(--bg-sunk);
+  border-radius: var(--r-md) var(--r-md) var(--r-md) 4px;
+  line-height: 1.6;
+}
+
+/* 家長可以做的事：圓點清單 */
+.do {
+  position: relative;
+  padding-inline-start: var(--sp-5);
+  line-height: 1.65;
+}
+
+.do::before {
+  content: "";
+  position: absolute;
+  inset-inline-start: 6px;
+  top: .68em;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--primary-fill);
+}
+
+.topic-lead {
+  font-weight: 700;
+}
+
+/* 猜謎：答案藏在「看答案」裡，讓家長可以先問孩子 */
+.riddle {
+  display: grid;
+  gap: var(--sp-1);
+}
+
+.riddle-ans>summary {
+  display: inline-flex;
+  align-items: center;
+  min-height: 32px;
+  padding-inline: var(--sp-3);
+  border-radius: var(--r-pill);
+  border: var(--line-w) solid var(--line);
+  background: var(--card);
+  font-size: .85rem;
+  font-weight: 700;
+  color: var(--fg-muted);
+  list-style: none;
+  cursor: pointer;
+}
+
+.riddle-ans>summary::-webkit-details-marker {
+  display: none;
+}
+
+.riddle-ans[open]>summary {
+  display: none;
+}
+
+.riddle-ans p {
+  font-weight: 700;
+  color: var(--primary-deep);
+}
+
+/* 段落裡的連結（到小遊戲） */
+.inline-cta {
+  justify-self: start;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-1);
+  min-height: var(--tap);
+  padding-inline: var(--sp-4) var(--sp-3);
+  border-radius: var(--r-pill);
+  border: 2px solid var(--primary-deep);
+  background: var(--card);
+  color: var(--primary-deep);
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.inline-cta .icon {
+  width: 18px;
+  height: 18px;
+}
+
+/* ═══ 「我要打針了」：這一段的結尾 ════════════════════════════ */
+
+.ready-btn {
+  flex-direction: column;
+  gap: 0;
+  margin-top: var(--sp-5);
+  line-height: 1.4;
+}
+
+.ready-label {
+  font-size: 1.15rem;
+}
+
+.ready-sub {
+  font-size: .86rem;
+  font-weight: 400;
+  color: var(--fg);
+}
+
+/* ═══ 避免 → 改說 ═══════════════════════════════════════════ */
+
+.pair-list {
+  display: grid;
+}
+
+.pair {
+  display: grid;
+  gap: var(--sp-2);
+  padding-block: var(--sp-3);
+}
+
+.pair+.pair {
+  border-top: 1px solid var(--hairline);
+}
+
+.pair:first-child {
+  padding-top: 0;
+}
+
+.pair:last-child {
+  padding-bottom: 0;
+}
+
+.pair-row {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  align-items: start;
+  gap: var(--sp-2);
+  line-height: 1.6;
+}
+
+.pair-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  margin-top: 2px;
+  padding: 0 var(--sp-2) 0 6px;
+  border-radius: var(--r-pill);
+  font-size: .8rem;
+  font-weight: 700;
+  line-height: 1.75;
+  white-space: nowrap;
+}
+
+.pair-tag .icon {
+  width: 14px;
+  height: 14px;
+  stroke-width: 2.4;
+}
+
+.is-avoid .pair-tag {
+  background: var(--danger-wash);
+  color: var(--danger);
+}
+
+.is-avoid .pair-text {
+  color: var(--fg-muted);
+}
+
+.is-better .pair-tag {
+  background: var(--success-wash);
+  color: var(--success);
+}
+
+.is-better .pair-text {
+  font-weight: 700;
+}
+
+@media (hover: hover) and (pointer: fine) {
+
+  .riddle-ans>summary:hover,
+  .inline-cta:hover {
+    background: var(--primary-wash);
+    border-color: var(--primary-deep);
+    color: var(--primary-deep);
+  }
+}
