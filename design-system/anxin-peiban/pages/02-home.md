@@ -27,7 +27,7 @@ Protected pages guard in `<head>` with `Anxin.requireProfile()` → `location.re
 
 1. **Briefing**: 「{暱稱}的小檔案」, the code card (with 「打針時，請把這組代碼交給醫檢師」), summary rows,
    quiet 重新填寫.
-2–3. 家長安慰指南 / 給家長的鼓勵 as **whole-card links** — one large target, no second button hidden inside.
+2–3. 家長安慰指南 / 抽血大小問 as **whole-card links** — one large target, no second button hidden inside.
 4. 小遊戲 as one chunk holding **two** buttons, each with a subline (一支手機 / 兩支手機一起玩) because
    「單機／雙機」 alone is jargon to a parent.
 5. **開始打針** — full-width `.btn-primary`, separated by `--sp-6` so it reads as its own step.

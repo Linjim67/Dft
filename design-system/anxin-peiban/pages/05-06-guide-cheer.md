@@ -1,4 +1,4 @@
-# 05 家長安慰指南 + 06 給家長的鼓勵 — page overrides
+# 05 家長安慰指南 + 06 抽血大小問 — page overrides
 
 Inherits MASTER and the subpage shell in `02-home.md`. Content lives in data files
 (`/guide/content.js`, `/cheer/content.js`, source: `cheer/text.md`); the page scripts only lay it out,
@@ -42,7 +42,7 @@ These patterns were pinned by the owner:
 ## Shared: the closing card (`.help-card`)
 
 Both pages end on a white card with an apricot icon tile and pill links: the guide's 都讀完了嗎？
-(→ 小遊戲, → 給家長的鼓勵), and cheer's 還有其他疑問嗎？ (→ other parents' stories). A wash on
+(→ 小遊戲, → 抽血大小問), and cheer's 還有其他疑問嗎？ (→ other parents' stories). A wash on
 the cream ground was nearly invisible, which is why it is a white card.
 
 ## 05 家長安慰指南 `/guide/`
@@ -64,7 +64,7 @@ Chapters: 怎麼說 = apricot · 打針當下 = sage · 不要說 = honey.
   and 「3 句」 show first, and opening a card shows its pairs. Each pair is 「✕ 避免」 (grey text, red
   ✕ icon only) then 「✓ 改說」 in a honey speech bubble (green ✓ icon only).
 
-## 06 給家長的鼓勵 `/cheer/` — FAQ page
+## 06 抽血大小問 `/cheer/` — FAQ page
 
 Chapters: 醫療現場解密 = sage · 打針大小問 = honey.
 

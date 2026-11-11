@@ -20,7 +20,7 @@ A one-visit companion handed over in the waiting room: no sign-up, no name or me
 
 ## Operating Context
 
-- Flow: the parent fills a short profile (child's nickname, age, gender, how afraid the child is, how worried the parent is, optional notes for the staff), gets a temporary code, then waits on the home page with: 家長安慰指南 (what to say to the child), 給家長的鼓勵 (what is happening in the blood-draw room, FAQs), mini games (one phone or two paired phones), and 開始打針.
+- Flow: the parent fills a short profile (child's nickname, age, gender, how afraid the child is, how worried the parent is, optional notes for the staff), gets a temporary code, then waits on the home page with: 家長安慰指南 (what to say to the child), 抽血大小問 (what is happening in the blood-draw room, FAQs), mini games (one phone or two paired phones), and 開始打針.
 - The 醫檢師 looks up the code on a separate staff page (`/pro/`) to see the profile before the procedure and rates the child's actual fear afterwards.
 - After the procedure, the parent can leave feedback and join a public discussion board about comforting children.
 - Parents tend to read the guide and encouragement pages from top to bottom while waiting.
