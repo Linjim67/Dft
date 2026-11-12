@@ -1,0 +1,1113 @@
+/* ═══════════════════════════════════════════════════════════════
+   安心陪伴 — 機器人農場（單機）
+   只用手機直式：一欄，最寬 30rem。農場本身是像素畫（canvas），外面的按鈕照 MASTER 的暖色、圓角。
+   ═══════════════════════════════════════════════════════════════ */
+
+.farm-page {
+  --font-num: ui-rounded, "SF Pro Rounded", "Arial Rounded MT Bold", "PingFang TC", "Noto Sans TC", system-ui, sans-serif;
+  --col: 30rem;
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+/* 像素圖示：放大時不要糊 */
+.px,
+.px-slot img,
+.step-pic img {
+  image-rendering: pixelated;
+  image-rendering: crisp-edges;
+}
+
+.px-slot,
+.step-pic {
+  display: inline-grid;
+  place-items: center;
+  flex: none;
+}
+
+.px-slot img,
+.step-pic img {
+  width: 100%;
+  height: 100%;
+}
+
+/* ═══ 封面 ═══════════════════════════════════════════════════ */
+
+.farm-cover {
+  max-width: var(--col);
+}
+
+.cover-art {
+  display: grid;
+  place-items: center;
+  margin-bottom: var(--sp-5);
+}
+
+.cover-art canvas {
+  width: min(100%, 320px);
+  aspect-ratio: 1;
+  border-radius: var(--r-md);
+  box-shadow: var(--sh-md);
+  image-rendering: pixelated;
+}
+
+.cover-steps {
+  display: grid;
+  gap: var(--sp-3);
+  margin: 0 0 var(--sp-4);
+  padding: 0;
+  list-style: none;
+}
+
+.cover-steps li {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+  font-weight: 700;
+}
+
+.step-pic {
+  width: 40px;
+  height: 40px;
+  padding: 6px;
+  border-radius: var(--r-sm);
+  background: var(--card);
+  box-shadow: var(--sh-sm);
+}
+
+.cover-save {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--sp-1) var(--sp-2);
+  margin-bottom: var(--sp-3);
+  color: var(--fg-muted);
+  font-family: var(--font-num);
+  font-weight: 700;
+}
+
+.cover-save img {
+  width: 20px;
+  height: 20px;
+}
+
+.cover-save .dot {
+  color: var(--line);
+}
+
+/* 開始鈕黏在最下面：直式手機第一個畫面就看得到 */
+.cta-bar {
+  position: sticky;
+  bottom: 0;
+  padding: var(--sp-3) 0 calc(var(--sp-3) + env(safe-area-inset-bottom));
+  background: linear-gradient(rgba(255, 247, 240, 0), var(--bg) 30%);
+}
+
+/* ═══ 農場畫面：一整個螢幕，不能捲動 ═══════════════════════════ */
+
+body.is-playing {
+  padding-bottom: 0;
+  overflow: hidden;
+  overscroll-behavior: none;
+}
+
+body.is-playing .topbar {
+  display: none;
+}
+
+.farm-play {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  height: 100vh;
+  height: 100dvh;
+  max-width: var(--col);
+  margin: 0 auto;
+  padding: calc(6px + env(safe-area-inset-top)) 8px calc(4px + env(safe-area-inset-bottom));
+  font-family: var(--font);
+}
+
+/* 頂列：選單鈕 · 金幣（大）· 材料 */
+.farm-hud {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  min-height: 48px;
+}
+
+.hud-btn {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 48px;
+  height: 48px;
+  padding: 0;
+  border: var(--line-w) solid var(--line);
+  border-radius: 50%;
+  background: var(--card);
+  color: var(--fg);
+  box-shadow: var(--sh-sm);
+  transition: transform var(--t-fast) var(--ease);
+}
+
+.hud-btn svg {
+  width: 22px;
+  height: 22px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2.2;
+  stroke-linecap: round;
+}
+
+.hud-btn:active {
+  transform: translateY(2px);
+}
+
+.hud-coins {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+  flex: 1;
+  font-family: var(--font-num);
+}
+
+.hud-coin-img,
+.hud-coin-img img {
+  width: 28px;
+  height: 28px;
+}
+
+/* 金幣數字在上、每分鐘收入在下：數字變長也不會換行擠扁圖示 */
+.coin-stack {
+  display: grid;
+  min-width: 0;
+  line-height: 1;
+}
+
+.coin-num {
+  white-space: nowrap;
+  font-size: 1.4rem;
+  font-weight: 800;
+  line-height: 1;
+  color: var(--fg);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -.01em;
+}
+
+.coin-rate {
+  margin-top: 2px;
+  color: var(--success);
+  font-size: .76rem;
+  font-weight: 800;
+  white-space: nowrap;
+}
+
+.hud-res {
+  display: flex;
+  flex: none;
+  align-items: center;
+  gap: 8px;
+  white-space: nowrap;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  font-family: var(--font-num);
+  font-weight: 800;
+  font-size: .95rem;
+  color: var(--fg);
+}
+
+.hud-res li {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+}
+
+.hud-res .px-slot {
+  width: 20px;
+  height: 20px;
+}
+
+/* 目標列 */
+.farm-goal {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  min-height: 48px;
+  padding: 4px 6px 4px 6px;
+  border-radius: var(--r-md);
+  background: var(--card);
+  box-shadow: var(--sh-sm);
+  transition: background-color var(--t-base) var(--ease);
+}
+
+.goal-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  flex: none;
+  padding: 2px 8px;
+  border-radius: var(--r-pill);
+  background: var(--primary-wash);
+  color: var(--primary-deep);
+  font-size: .78rem;
+  font-weight: 800;
+  white-space: nowrap;
+}
+
+.goal-chip.is-tool {
+  background: var(--honey-tile);
+  color: var(--honey);
+}
+
+.goal-chip.is-done {
+  background: var(--success);
+  color: #FFFFFF;
+}
+
+.goal-chip .icon {
+  width: 14px;
+  height: 14px;
+  stroke-width: 3;
+}
+
+.goal-text {
+  flex: 1;
+  min-width: 0;
+  font-size: .9rem;
+  font-weight: 700;
+  line-height: 1.3;
+  color: var(--fg);
+}
+
+.goal-ready {
+  display: inline-block;
+  margin-left: 6px;
+  color: var(--success);
+}
+
+.goal-meter {
+  flex: none;
+  width: 60px;
+  height: 8px;
+  overflow: hidden;
+  border-radius: var(--r-pill);
+  background: var(--bg-sunk);
+  box-shadow: var(--sh-inset);
+}
+
+.goal-fill {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: var(--primary-fill);
+  transition: width var(--t-base) var(--ease);
+}
+
+.goal-x {
+  flex: none;
+  min-height: 40px;
+  padding: 0 14px;
+  border: 2px solid var(--primary-deep);
+  border-radius: var(--r-pill);
+  background: var(--primary-wash);
+  color: var(--primary-deep);
+  font-weight: 800;
+  font-size: .9rem;
+}
+
+.farm-goal.is-tool {
+  background: var(--honey-soft);
+}
+
+.farm-goal.is-done {
+  background: var(--success-wash);
+}
+
+/* 農場：正方形，塞滿中間 */
+.board-wrap {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+  display: grid;
+  place-items: center;
+}
+
+.board {
+  display: block;
+  border-radius: var(--r-sm);
+  box-shadow: var(--sh-md);
+  image-rendering: pixelated;
+  touch-action: none;
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.board:focus-visible {
+  outline-offset: 2px;
+}
+
+/* 農場下面的小提示泡泡 */
+.farm-hint {
+  position: absolute;
+  left: 50%;
+  bottom: 10px;
+  z-index: 2;
+  max-width: calc(100% - 24px);
+  padding: 8px 14px;
+  border-radius: var(--r-pill);
+  background: rgba(43, 27, 23, .9);
+  color: #FFFFFF;
+  font-size: .9rem;
+  font-weight: 700;
+  line-height: 1.35;
+  text-align: center;
+  pointer-events: none;
+  transform: translateX(-50%);
+  animation: hint-in var(--t-base) var(--ease);
+}
+
+.farm-hint.is-out {
+  opacity: 0;
+  transform: translate(-50%, 6px);
+  transition: opacity var(--t-base) var(--ease), transform var(--t-base) var(--ease);
+}
+
+@keyframes hint-in {
+  from {
+    opacity: 0;
+    transform: translate(-50%, 8px);
+  }
+}
+
+/* 工具列：橫的，可以左右滑 */
+.farm-tools {
+  display: flex;
+  gap: 6px;
+  flex: none;
+  margin: 0 -8px;
+  padding: 4px 8px 6px;
+  overflow-x: auto;
+  scroll-snap-type: x proximity;
+  scrollbar-width: none;
+  overscroll-behavior-x: contain;
+}
+
+.farm-tools::-webkit-scrollbar {
+  display: none;
+}
+
+.tool {
+  position: relative;
+  display: grid;
+  justify-items: center;
+  align-content: start;
+  gap: 1px;
+  flex: 0 0 66px;
+  min-height: 86px;
+  padding: 6px 2px 5px;
+  border: var(--line-w) solid var(--line);
+  border-radius: var(--r-sm);
+  background: var(--card);
+  color: var(--fg);
+  box-shadow: var(--sh-sm);
+  scroll-snap-align: start;
+  transition: transform var(--t-fast) var(--ease), background-color var(--t-fast) var(--ease);
+}
+
+.tool:active {
+  transform: translateY(2px);
+  box-shadow: none;
+}
+
+.tool.is-on {
+  border: 2px solid var(--primary-deep);
+  padding: 5px 1px 4px;
+  background: var(--primary-wash);
+}
+
+.tool-pic {
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+}
+
+.tool-img {
+  width: 34px;
+  height: 34px;
+  image-rendering: pixelated;
+}
+
+.tool-name {
+  font-size: .8rem;
+  font-weight: 800;
+  line-height: 1.25;
+  white-space: nowrap;
+}
+
+.tool-price {
+  font-family: var(--font-num);
+  font-size: .72rem;
+  font-weight: 700;
+  line-height: 1.2;
+  color: var(--fg-muted);
+}
+
+.tool-price .cost {
+  flex-direction: column;
+  gap: 0;
+}
+
+.tool-note {
+  color: var(--fg-muted);
+  font-weight: 700;
+}
+
+.tool-new,
+.tool-count,
+.tool-check {
+  position: absolute;
+  top: -5px;
+  display: grid;
+  place-items: center;
+  min-width: 20px;
+  height: 20px;
+  padding: 0 5px;
+  border-radius: var(--r-pill);
+  font-family: var(--font-num);
+  font-size: .72rem;
+  font-weight: 800;
+  line-height: 1;
+}
+
+.tool-new {
+  left: -3px;
+  background: var(--danger);
+  color: #FFFFFF;
+}
+
+.tool-count {
+  right: -3px;
+  background: var(--fg);
+  color: #FFFFFF;
+}
+
+.tool-check {
+  right: -3px;
+  padding: 0;
+  background: var(--primary-deep);
+  color: #FFFFFF;
+}
+
+.tool-check svg {
+  width: 13px;
+  height: 13px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 3.4;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+/* 價錢：小圖示 + 數字；不夠的那一項深紅色、粗體（不只靠顏色：報讀會念「不夠」） */
+.cost {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 2px 8px;
+  font-family: var(--font-num);
+}
+
+.cost-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  white-space: nowrap;
+}
+
+.cost-item img {
+  width: 14px;
+  height: 14px;
+  image-rendering: pixelated;
+}
+
+.cost-item.is-lack {
+  color: var(--danger);
+  font-weight: 800;
+  text-decoration: underline dotted;
+  text-underline-offset: 2px;
+}
+
+/* ═══ 飛到頂列的東西 ═════════════════════════════════════════ */
+
+.fly-layer {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.flyer {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 24px;
+  height: 24px;
+  image-rendering: pixelated;
+  will-change: transform, opacity;
+}
+
+/* ═══ 通知卡片：新稱號、打造好了 ═══════════════════════════════ */
+
+.farm-toast {
+  position: absolute;
+  top: 8px;
+  left: 50%;
+  z-index: 60;
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+  width: min(22rem, calc(100% - 20px));
+  padding: 12px 16px 12px 12px;
+  border-radius: var(--r-lg);
+  background: var(--card);
+  box-shadow: var(--sh-lg);
+  transform: translateX(-50%);
+  animation: toast-in 320ms var(--ease);
+  pointer-events: none;
+}
+
+.farm-toast.is-out {
+  opacity: 0;
+  transform: translate(-50%, -12px);
+  transition: opacity 240ms var(--ease), transform 240ms var(--ease);
+}
+
+@keyframes toast-in {
+  from {
+    opacity: 0;
+    transform: translate(-50%, -16px) scale(.96);
+  }
+}
+
+.toast-pic {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 52px;
+  height: 52px;
+  border-radius: var(--r-md);
+  background: var(--honey-soft);
+}
+
+.toast-img {
+  width: 36px;
+  height: 36px;
+  image-rendering: pixelated;
+}
+
+.toast-medal,
+.ach-medal {
+  width: 44px;
+  height: 44px;
+}
+
+.tm-ribbon {
+  fill: var(--primary);
+}
+
+.tm-disc {
+  fill: #F7C531;
+  stroke: #C98D12;
+  stroke-width: 2.5;
+}
+
+.tm-star {
+  fill: #FFF0A8;
+  stroke: #C98D12;
+  stroke-width: 1.2;
+  stroke-linejoin: round;
+}
+
+.toast-text {
+  display: grid;
+  min-width: 0;
+}
+
+.toast-kind {
+  color: var(--honey);
+  font-size: .8rem;
+  font-weight: 800;
+}
+
+.toast-title {
+  font-size: 1.15rem;
+  line-height: 1.3;
+  color: var(--fg);
+}
+
+.toast-sub {
+  color: var(--fg-muted);
+  font-size: .85rem;
+  line-height: 1.4;
+}
+
+/* ═══ 小視窗：點房子、點雲朵（從下面滑上來） ═══════════════════ */
+
+.farm-sheet {
+  width: 100%;
+  max-width: var(--col);
+  max-height: 86dvh;
+  margin: auto auto 0;
+  padding: var(--sp-4) var(--sp-4) calc(var(--sp-4) + env(safe-area-inset-bottom));
+  border-radius: var(--r-xl) var(--r-xl) 0 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+.farm-sheet[open] {
+  animation: sheet-in var(--t-base) var(--ease);
+}
+
+@keyframes sheet-in {
+  from {
+    transform: translateY(24px);
+    opacity: 0;
+  }
+}
+
+.sh-head {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+}
+
+.sh-icon {
+  flex: none;
+  width: 44px;
+  height: 44px;
+  padding: 4px;
+  border-radius: var(--r-sm);
+  background: var(--bg-sunk);
+  image-rendering: pixelated;
+}
+
+.sh-head .dlg-title {
+  flex: 1;
+  min-width: 0;
+}
+
+.sh-head .dlg-title:focus {
+  outline: none;
+}
+
+.sh-close {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 48px;
+  height: 48px;
+  margin: -6px -8px -6px 0;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: none;
+  color: var(--fg-muted);
+}
+
+.sh-close .icon {
+  width: 22px;
+  height: 22px;
+}
+
+.sh-body {
+  margin-top: var(--sp-2);
+}
+
+.sh-lede {
+  color: var(--fg-muted);
+  font-size: .95rem;
+  line-height: 1.6;
+}
+
+.sh-note {
+  margin-top: var(--sp-2);
+  color: var(--fg-muted);
+  font-size: .85rem;
+}
+
+.sh-warn {
+  margin-top: var(--sp-3);
+  padding: var(--sp-2) var(--sp-3);
+  border-radius: var(--r-sm);
+  background: var(--danger-wash);
+  color: var(--danger);
+  font-size: .9rem;
+  font-weight: 700;
+}
+
+.sh-short {
+  color: var(--danger);
+  font-size: .9rem;
+  font-weight: 700;
+  text-align: center;
+}
+
+.sh-info {
+  display: grid;
+  margin: var(--sp-3) 0 0;
+  border-radius: var(--r-sm);
+  background: var(--bg-sunk);
+}
+
+.sh-row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--sp-3);
+  padding: 8px 12px;
+}
+
+.sh-row+.sh-row {
+  border-top: 1px solid var(--hairline);
+}
+
+.sh-row dt {
+  flex: none;
+  color: var(--fg-muted);
+  font-size: .88rem;
+}
+
+.sh-row dd {
+  margin: 0;
+  font-family: var(--font-num);
+  font-weight: 800;
+  text-align: right;
+}
+
+.sh-need {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: var(--sp-2);
+  margin: var(--sp-3) 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.sh-need li {
+  display: grid;
+  justify-items: center;
+  gap: 2px;
+  padding: var(--sp-2) var(--sp-1);
+  border: 1px dashed var(--line);
+  border-radius: var(--r-sm);
+  font-weight: 700;
+  font-size: .9rem;
+}
+
+.sh-need li.is-have {
+  border: 2px solid var(--success);
+  background: var(--success-wash);
+}
+
+.sh-need img {
+  width: 28px;
+  height: 28px;
+}
+
+.sh-mark {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  color: var(--fg-muted);
+  font-size: .78rem;
+}
+
+.is-have .sh-mark {
+  color: var(--success);
+  font-weight: 800;
+}
+
+.sh-mark .icon {
+  width: 14px;
+  height: 14px;
+  stroke-width: 3;
+}
+
+.sh-recipes {
+  display: grid;
+  gap: var(--sp-2);
+  margin: var(--sp-3) 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.recipe {
+  display: grid;
+  grid-template-columns: 40px 1fr auto;
+  align-items: center;
+  gap: var(--sp-3);
+  padding: var(--sp-2) var(--sp-3);
+  border-radius: var(--r-md);
+  background: var(--bg-sunk);
+}
+
+.recipe-img {
+  width: 40px;
+  height: 40px;
+  padding: 4px;
+  border-radius: var(--r-sm);
+  background: var(--card);
+  image-rendering: pixelated;
+}
+
+.recipe-text {
+  display: grid;
+  gap: 1px;
+  min-width: 0;
+  font-size: .85rem;
+  color: var(--fg-muted);
+  line-height: 1.35;
+}
+
+.recipe-text strong {
+  color: var(--fg);
+  font-size: 1rem;
+}
+
+.recipe-text .cost {
+  justify-content: flex-start;
+  margin-top: 2px;
+  color: var(--fg);
+  font-weight: 700;
+}
+
+.sh-done {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  color: var(--success);
+  font-weight: 800;
+  font-size: .9rem;
+  white-space: nowrap;
+}
+
+.sh-done .icon {
+  width: 16px;
+  height: 16px;
+  stroke-width: 3;
+}
+
+.sh-acts {
+  display: grid;
+  gap: var(--sp-3);
+  margin-top: var(--sp-4);
+}
+
+.sh-acts .btn,
+.recipe .btn {
+  min-height: 52px;
+  font-size: 1.02rem;
+}
+
+.btn .cost {
+  font-size: .95rem;
+}
+
+.btn .cost-item img {
+  width: 18px;
+  height: 18px;
+}
+
+.btn-sm {
+  width: auto;
+  min-height: 48px;
+  padding: 0 var(--sp-4);
+}
+
+/* 錢不夠：還是按得下去（會說還差多少），只是看起來比較淡 */
+.btn[aria-disabled="true"] {
+  background: var(--bg-sunk);
+  border-color: var(--line);
+  color: var(--fg-muted);
+  box-shadow: none;
+}
+
+.sh-tail {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(0, 1fr));
+  gap: var(--sp-2);
+}
+
+.sh-tail .btn {
+  min-height: 52px;
+  font-size: .95rem;
+}
+
+/* 拆掉：上面大字、下面小字寫退多少 */
+.btn-two {
+  flex-direction: column;
+  gap: 0;
+  padding-block: 6px;
+  line-height: 1.25;
+}
+
+.btn-two small {
+  color: var(--fg-muted);
+  font-family: var(--font-num);
+  font-size: .78rem;
+  font-weight: 700;
+}
+
+.sh-tail .sh-note {
+  grid-column: 1 / -1;
+  margin: 0;
+}
+
+/* ═══ 選單、稱號 ═════════════════════════════════════════════ */
+
+.farm-menu .dlg-title {
+  text-align: center;
+}
+
+.menu-count {
+  margin-left: var(--sp-2);
+  padding: 0 8px;
+  border-radius: var(--r-pill);
+  background: var(--honey-tile);
+  color: var(--honey);
+  font-family: var(--font-num);
+  font-size: .85rem;
+  font-weight: 800;
+}
+
+.menu-links {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--sp-3);
+}
+
+.menu-links .btn {
+  min-height: 52px;
+  font-size: 1rem;
+}
+
+.menu-reset {
+  justify-self: center;
+  border: 0;
+  background: none;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.farm-ach {
+  max-height: 88dvh;
+  overflow-y: auto;
+}
+
+.ach-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.ach-list {
+  display: grid;
+  gap: var(--sp-2);
+  margin: var(--sp-3) 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.ach {
+  display: grid;
+  grid-template-columns: 44px 1fr auto;
+  align-items: center;
+  gap: var(--sp-3);
+  padding: 6px 10px;
+  border: 1px dashed var(--line);
+  border-radius: var(--r-md);
+}
+
+.ach.is-got {
+  border: 0;
+  background: var(--honey-soft);
+}
+
+.ach:not(.is-got) .tm-ribbon,
+.ach:not(.is-got) .tm-disc,
+.ach:not(.is-got) .tm-star {
+  fill: #E7E5E4;
+  stroke: #A8A29E;
+}
+
+.ach-text {
+  display: grid;
+  min-width: 0;
+  line-height: 1.35;
+}
+
+.ach-text strong {
+  font-size: 1rem;
+}
+
+.ach-text span {
+  color: var(--fg-muted);
+  font-size: .82rem;
+}
+
+.ach-state {
+  color: var(--fg-muted);
+  font-size: .8rem;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.is-got .ach-state {
+  color: var(--honey);
+}
+
+/* ═══ 矮的手機（iPhone SE 的 Safari 只剩 548px 高） ═══════════ */
+
+@media (max-height: 600px) {
+  .farm-play {
+    gap: 4px;
+  }
+
+  .tool {
+    min-height: 78px;
+    padding-top: 4px;
+  }
+
+  .tool-pic,
+  .tool-img {
+    width: 30px;
+    height: 30px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+
+  .farm-hint,
+  .farm-toast,
+  .farm-sheet[open] {
+    animation: none;
+  }
+
+  .tool:active,
+  .hud-btn:active {
+    transform: none;
+  }
+}

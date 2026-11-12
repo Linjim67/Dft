@@ -945,3 +945,88 @@ round, up to ×1.3.
   - the rotate panel: blocks the start, 直的也可以玩 is remembered, never shown in landscape.
 - **Real Chromium:** touch taps, ship hold over CDP touch, landscape, and an AA contrast audit
   (124 text elements).
+
+# (S) 機器人農場 — `/games/farm/` (spec: automation farm, 8 × 8, pixel art)
+
+An idle/automation farm for the whole wait: no reflexes, no fail state, progress that keeps growing
+while the child watches robots work. Built from five asks (2026-11-12): visible harvest loop with
+robots and an exponential coin counter · placement puzzles (range buffs, quarry geometry) ·
+biomes with their own terrain and resources, routed to a volcano forge · processing (soup, an altar
+that turns surplus into permanent boosts) · milestones and titles tied to farm expansion.
+
+## Files
+
+| File | Role |
+|---|---|
+| `engine.js` | `window.FarmEngine` — **pure** rules, no DOM (node-testable). Every tunable number is in `CONFIG`. Map, prices, robots, goals, titles, save/load |
+| `art.js` | `window.FarmArt` — every sprite as a character grid (16 × 16 tiles, 8 × 8 icons), procedural ground, water and lava frames, `iconUrl` for `<img>` |
+| `farm.js` | Canvas board, pointer/keyboard input, HUD, tool bar, sheets, flying coins, autosave |
+
+## Names
+
+Original names only: 彩虹神鋤 (not any game's "Infinity Blade"), 月光祭壇 (the brief's 黑暗祭壇 —
+"dark" is the wrong word in a children's waiting room), 精靈寶珠, 機器人農場. The brief's three titles
+are kept as written: 硬幣收藏家, 好鄰居, 無限力量.
+
+## Map and biomes
+
+8 × 8, four regions; only 草原 is open at the start, the rest sit under cream fog + clouds with a
+price tag (the terrain shows faintly through, so the volcano is a visible promise).
+
+| Region | Tiles | Terrain rule | Unlock |
+|---|---|---|---|
+| 草原 | cols 0–4, rows 4–7 | grass: crops, pots, anything | start |
+| 小河邊 | cols 5–7, rows 4–7 | a stream in col 6; every plot beside it grows ×1.5 (darker wet soil) · corn | 150 |
+| 礦山 | cols 0–3, rows 0–3 | 6 boulders; 採石場 only on gravel next to ≥ 1 boulder, speed ∝ boulders around it (best spot touches 4) · tomato | 600 |
+| 火山 | cols 4–7, rows 0–3 | 7 lava tiles; 鍛造爐 only on basalt next to lava, speed ∝ lava around it (max 4) | 3,000 + 40 stone |
+
+## Loop
+
+- Crops ripen and **wait**; a tap (or a finger dragged across the field) harvests, and coins fly to
+  the counter. Robots (bought from the tool bar, ×1.55 price each, max 12) do the same automatically:
+  pick the best value ÷ round-trip, chain pickups on the way, deliver to the nearest 倉庫.
+- 燈塔: every lighthouse adds ×1 to the crops and quarries in its 3 × 3 (additive: two = ×3). A small
+  `×N` pill sits on every boosted tile, so moving a lighthouse shows its effect at once.
+- 湯鍋: pulls ripe 蘿蔔 + 玉米 + 番茄 from its 8 neighbours (before robots can), cooks 彩虹湯 worth 2 ×
+  their boosted value. Three lights on the pot show which crops have arrived; the sheet says which crop
+  is missing from the neighbourhood.
+- 月光祭壇: surplus stone + ore → 精靈寶珠, +10 % speed for the whole farm each (price ×1.6).
+- 小豬銀行: interest every 5 s, 1 %–5 % with a per-tick cap per level — the exponential part.
+- 鍛造爐 (one job at a time): 火箭鞋 (robots ×1.5 speed) · 大籃子 (carry ×2) · 金鏟子 (quarries ×2) ·
+  彩虹神鋤 (crops and soup ×3; needs the other three + 3 寶珠).
+- Buildings and different seeds go **straight onto planted plots** (the crop is harvested and its seed
+  refunded): a full field must never force a 拆掉 step. Everything but crops can 搬家; 拆掉 refunds 100 %.
+
+## Goals, titles, pacing
+
+- A goal strip under the HUD always names the next step (19 fixed goals, then 「總共賺到 N 金幣」).
+  Buy-goals show **coins saved ÷ price**, so the wait has a visible end; they complete on purchase, not
+  when affordable (「可以買了！」 appears instead).
+- 13 titles; each new one is a card over the top of the board (not over the coin counter, so coins
+  are seen landing).
+- Paced with a greedy bot that taps once per 0.8 s until it has 4 robots: robot 0.1 min · lighthouse
+  0.6 · 小河邊 1.2 · 礦山 2.3 · first soup 3.5 · all regions 4.2 · first forge 5.2 · 彩虹神鋤 12.4 ·
+  10 萬 coins 16. A real child is roughly half as fast, so a 10–30 min wait always has a next unlock.
+
+## Screen
+
+- Phone column only (max 30rem). Play view is 100dvh: HUD (menu · coins with 「+N/分」 under them ·
+  stone / ore / orbs) → goal strip → square board → horizontally scrolling tool bar. Top bar hidden
+  while playing; 小遊戲選單 / 去打針 / 重新開始 are in the menu, which pauses the farm.
+- Board tiles are ~45 px on a 375 px phone (8 columns can't reach 48 px); the brush-style drag and the
+  sheets' 48 px+ buttons carry the precise actions.
+- Selecting a tool frames every legal tile in green and darkens illegal ones, so terrain rules are
+  seen, not read; the lighthouse tool also tints coverage.
+- Sheets slide up from the bottom; focus lands on the title. A backdrop tap within 0.5 s of opening is
+  ignored (a phone's synthetic `click` after the opening tap would otherwise close sheets opened from
+  the top half of the board).
+- Pixel icons are inserted by JS into empty `<span data-icon>` slots — no `src`-less `<img>`.
+- Reduced motion: no particles, bobbing, sparkles or flying coins (the counter just pops).
+- Save `anxin.farm.v1` keyed to the profile code, every 4 s and on hide; robots respawn at the barn
+  on load. Playtime: cover = `home`, farm = `play`.
+
+## Verified
+
+- Engine: 30-minute bot run, save → load round-trip.
+- Real Chromium at 375 × 667 and 375 × 548 over CDP touch: drag-harvest, robot purchase, forge,
+  altar, 搬家, unlock sheet from the top row, backdrop close, reset, reduced motion; no console errors.

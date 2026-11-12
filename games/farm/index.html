@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="zh-Hant-TW">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="color-scheme" content="light">
+  <meta name="theme-color" content="#FFF7ED">
+  <title>安心陪伴 · 機器人農場</title>
+  <!-- favicon：/favicon/（ver1.svg 兩支針筒組成的 N）。sizes 寫在 .ico 上，Chrome 才會選 SVG -->
+  <link rel="icon" href="/favicon/favicon.ico" sizes="32x32">
+  <link rel="icon" href="/favicon/favicon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="/favicon/apple-touch-icon.png">
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet"
+    href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&display=swap">
+  <link rel="stylesheet" href="/shared/styles.css">
+  <link rel="stylesheet" href="/shared/page.css">
+  <link rel="stylesheet" href="/games/farm/farm.css">
+  <script src="/shared/app.js"></script>
+  <script>Anxin.requireProfile();</script>
+  <script src="/shared/playtime.js"></script>
+</head>
+
+<body class="farm-page">
+  <a class="skip-link" href="#main">跳到主要內容</a>
+
+  <header class="wrap topbar">
+    <a class="back-link" href="/games/solo/">
+      <svg viewBox="0 0 24 24" class="icon" aria-hidden="true"><path d="M15 5 8 12l7 7" /></svg>
+      <span>小遊戲</span>
+    </a>
+    <a class="pill-cta" href="/shot/">
+      <span>開始打針</span>
+      <svg viewBox="0 0 24 24" class="icon" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6" /></svg>
+    </a>
+  </header>
+
+  <main id="main">
+
+    <!-- ══════════ 封面 ══════════ -->
+    <section class="wrap farm-cover" id="coverView" aria-labelledby="coverTitle">
+      <div class="page-head">
+        <h1 id="coverTitle" tabindex="-1">機器人農場</h1>
+        <p class="page-lede">種菜、蓋燈塔，請機器人幫忙收成。把小農場變成大農場！</p>
+      </div>
+
+      <!-- 現在的農場（第一次玩就是一開始的樣子），farm.js 畫 -->
+      <div class="cover-art"><canvas id="coverCanvas" aria-hidden="true"></canvas></div>
+
+      <ol class="cover-steps" id="coverSteps">
+        <li><span class="step-pic" data-icon="carrot"></span><span>點熟的菜收成，換金幣</span></li>
+        <li><span class="step-pic" data-icon="robot" data-big></span><span>買機器人，自動幫你收</span></li>
+        <li><span class="step-pic" data-icon="lock"></span><span>打開礦山和火山，打造彩虹神鋤</span></li>
+      </ol>
+
+      <p class="cover-save" id="coverSave" hidden></p>
+
+      <div class="cta-bar">
+        <button class="btn btn-primary" type="button" id="playBtn">開始玩</button>
+      </div>
+    </section>
+
+    <!-- ══════════ 農場 ══════════ -->
+    <section class="farm-play" id="playView" hidden aria-label="機器人農場">
+      <div class="farm-hud">
+        <button class="hud-btn" type="button" id="menuBtn" aria-label="選單（暫停）">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16" /></svg>
+        </button>
+        <p class="hud-coins" id="hudCoins">
+          <span class="px-slot hud-coin-img" id="hudCoinIcon" data-icon="coin"></span>
+          <span class="sr-only">金幣</span>
+          <span class="coin-stack">
+            <strong class="coin-num" id="coinNum">0</strong>
+            <span class="coin-rate" id="coinRate"></span>
+          </span>
+        </p>
+        <ul class="hud-res" aria-label="材料">
+          <li id="resStone" hidden><span class="px-slot" id="resStoneImg" data-icon="stone" data-alt="石頭"></span><span id="resStoneNum">0</span></li>
+          <li id="resOre" hidden><span class="px-slot" id="resOreImg" data-icon="ore" data-alt="金礦"></span><span id="resOreNum">0</span></li>
+          <li id="resOrb" hidden><span class="px-slot" id="resOrbImg" data-icon="orb" data-alt="精靈寶珠"></span><span id="resOrbNum">0</span></li>
+        </ul>
+      </div>
+
+      <!-- 目標：下一步做什麼、還差多少；選了工具時換成工具說明 -->
+      <div class="farm-goal" id="goalBar"></div>
+
+      <!-- 8 × 8 的農場：手指點一下 = 收成／蓋／看看，拖過去 = 一路收成或一路種。鍵盤：方向鍵移動、Enter 選 -->
+      <div class="board-wrap" id="boardWrap">
+        <canvas class="board" id="board" tabindex="0" aria-label="農場，8 乘 8 格。方向鍵移動，Enter 收成或蓋東西，Esc 換回收成"></canvas>
+        <p class="farm-hint" id="hint" role="status" hidden></p>
+        <!-- 新稱號、打造好了、打開新地方：蓋在農場上面（點得穿），不擋住頂列的金幣 -->
+        <div class="farm-toast" id="toast" hidden></div>
+      </div>
+
+      <div class="farm-tools" id="tools" role="toolbar" aria-label="工具"></div>
+    </section>
+  </main>
+
+  <!-- 飛到頂列的金幣、石頭 -->
+  <div class="fly-layer" id="flyLayer" aria-hidden="true"></div>
+
+  <!-- ══════════ 對話框 ══════════ -->
+  <!-- 點房子、點雲朵：內容由 farm.js 放進來，每 0.3 秒更新數字 -->
+  <dialog class="dlg farm-sheet" id="sheet" aria-labelledby="sheetTitle">
+    <div id="sheetBody"></div>
+  </dialog>
+
+  <!-- 選單：農場會暫停。離開的路都在這裡（遊戲中頂列收起來） -->
+  <dialog class="dlg farm-menu" id="menuDlg" aria-labelledby="menuTitle">
+    <h2 class="dlg-title" id="menuTitle">農場暫停中</h2>
+    <div class="dlg-actions">
+      <button class="btn btn-primary" type="button" data-close autofocus>繼續玩</button>
+      <button class="btn btn-quiet" type="button" id="achBtn">
+        <span>我的稱號</span><span class="menu-count" id="menuBadges">0 / 13</span>
+      </button>
+      <div class="menu-links">
+        <a class="btn btn-quiet" href="/games/solo/">小遊戲選單</a>
+        <a class="btn btn-quiet" href="/shot/">去打針</a>
+      </div>
+      <button class="quiet-link menu-reset" type="button" id="resetBtn">重新開始一個農場</button>
+    </div>
+  </dialog>
+
+  <dialog class="dlg farm-ach" id="achDlg" aria-labelledby="achTitle">
+    <div class="ach-head">
+      <h2 class="dlg-title" id="achTitle">我的稱號</h2>
+      <span class="menu-count" id="achCount">0 / 13</span>
+    </div>
+    <ul class="ach-list" id="achList"></ul>
+    <div class="dlg-actions">
+      <button class="btn btn-primary" type="button" data-close>好</button>
+    </div>
+  </dialog>
+
+  <dialog class="dlg" id="resetDlg" aria-labelledby="resetTitle">
+    <form method="dialog">
+      <h2 class="dlg-title" id="resetTitle">重新開始一個農場？</h2>
+      <p class="dlg-body">現在的田、機器人、金幣和稱號都會不見，回到四塊蘿蔔田。</p>
+      <div class="dlg-actions">
+        <button class="btn btn-quiet" type="submit" value="no" autofocus>不要，繼續玩</button>
+        <button class="btn btn-danger" type="submit" value="yes">重新開始</button>
+      </div>
+    </form>
+  </dialog>
+
+  <div class="live-region" id="liveRegion" role="status" aria-live="polite"></div>
+
+  <script src="/games/farm/engine.js"></script>
+  <script src="/games/farm/art.js"></script>
+  <script src="/games/farm/farm.js"></script>
+</body>
+
+</html>
