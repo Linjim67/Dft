@@ -51,7 +51,7 @@ Chapters: 怎麼說 = cocoa · 打針當下 = leaf · 不要說 = honey.
 - **Chapter tabs** (owner's reference screenshot, 2026-11-12): three centred pills, sticky. They are
   real WAI-ARIA tabs that show **one chapter at a time**: ←/→/Home/End move between them, and
   `#say` / `#during` / `#dont` open that chapter. The selected tab is solid leaf-deep (`--pick`) with
-  white text (6.63:1); the others are paper with cocoa text. Switching tabs while scrolled down rewinds to the
+  white text (5.99:1); the others are paper with cocoa text. Switching tabs while scrolled down rewinds to the
   tab bar, so the new chapter starts at its top.
 - **Topic rows, not cards** (same screenshot; guide only, so cheer keeps its card list):
   `.topic-list.is-plain` drops the white card and shadow. Each row is a 22px icon in the chapter tone,

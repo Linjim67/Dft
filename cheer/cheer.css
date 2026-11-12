@@ -147,7 +147,7 @@
   transition: opacity var(--t-fast) var(--ease), transform var(--t-fast) var(--ease);
 }
 
-/* 選到：葉綠深字配葉綠淡 5.63:1 */
+/* 選到：葉綠深字配葉綠淡 5.09:1 */
 .chip input:checked+.chip-face {
   background: var(--pick-wash);
   border-color: var(--pick);
@@ -244,7 +244,7 @@
   height: 18px;
 }
 
-/* 小提醒是家長能做的事：章節色淡底框起來，和上面的知識分開（葉綠深 5.63:1 on leaf-soft） */
+/* 小提醒是家長能做的事：章節色淡底框起來，和上面的知識分開（葉綠深 5.09:1 on leaf-soft） */
 .know.is-tip {
   margin-top: var(--sp-1);
   padding: var(--sp-3) var(--sp-4);

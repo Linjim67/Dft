@@ -36,8 +36,8 @@ only the values did. Game screens keep the old orange values (see *Games keep th
 | `--primary-fill` | `#6B5A4C` | slider fill, 4.45:1 vs track (leaf green would be 1.71:1) |
 | `--primary` | `#87AE73` leaf | solid fill (staff brand mark); cocoa text on it 4.87:1 |
 | `--primary-ink` | `#3E3329` | dark ink used as body text on some pages |
-| `--leaf` / `-deep` / `-soft` / `-tile` | `#87AE73` / `#456535` / `#E7EFE0` / `#D5E4CB` | leaf is fill-only (white on it 2.52:1 ✗); deep 5.13:1 bg · 4.99:1 tile |
-| `--success` / `-wash` | `#456535` / `#E7EFE0` | completion = leaf deep |
+| `--leaf` / `-deep` / `-soft` / `-tile` | `#87AE73` / `#476D33` / `#E7EFE0` / `#D5E4CB` | leaf is fill-only (white on it 2.52:1 ✗); deep 4.63:1 bg · 5.75:1 card · 4.51:1 tile (brightened 2026-11-13 from `#456535`, the brightest deep green that keeps 4.5:1 on bg) |
+| `--success` / `-wash` | = `--leaf-deep` / `#E7EFE0` | completion = leaf deep |
 | `--danger` / `-wash` | `#A83420` / `#F5E0DA` | brick red: 5.11:1 bg · 6.34:1 card · 5.21:1 wash |
 | `--line` | `#8A7362` | control boundaries: 3.45:1 bg · 4.28:1 card |
 | `--hairline` / `--rule` | `#E4DACF` / `#C6B6A5` | decorative dividers only |
@@ -53,7 +53,7 @@ only the values did. Game screens keep the old orange values (see *Games keep th
 - **Cocoa = actions:** buttons, links, focus rings, body text, the 開始打針 button.
 - **Leaf = the child's data and "chosen":** the temporary code (home, 打針 page, staff page:
   `--code`), its dashed frame, the age readout and slider fill, every selected option (faces,
-  gender, age cards, guide's active tab as solid leaf-deep with white text 6.63:1, filter chips,
+  gender, age cards, guide's active tab as solid leaf-deep with white text 5.99:1, filter chips,
   discussion chips/sort/「有幫助」, books) via `--pick` / `--pick-wash`, home tile icons, icon tiles,
   the leaf chapters and 完成. Text and lines use `--leaf-deep`; `#87AE73` itself only as a fill or
   a decorative frame. Games map `--code`/`--pick*` back to their orange.

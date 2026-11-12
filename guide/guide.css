@@ -9,7 +9,7 @@ html {
 }
 
 /* ═══ 章節分頁：三顆膠囊置中，捲動時黏在頂端 ════════════════════
-   選到的那一章：葉綠深實心＋白字（6.63:1）；其他：白底深字。
+   選到的那一章：葉綠深實心＋白字（5.99:1）；其他：白底深字。
    形狀不變，靠實心／空心分辨，不只靠顏色。 */
 
 .tabs {
@@ -159,7 +159,7 @@ html {
   white-space: nowrap;
 }
 
-/* 白勾配葉綠深 6.63:1 */
+/* 白勾配葉綠深 5.99:1 */
 .age-check {
   position: absolute;
   top: 6px;
@@ -176,7 +176,7 @@ html {
   transition: opacity var(--t-fast) var(--ease), transform var(--t-fast) var(--ease);
 }
 
-/* 選到：葉綠深字配葉綠淡 5.63:1 */
+/* 選到：葉綠深字配葉綠淡 5.09:1 */
 .age-opt input:checked+.age-face {
   background: var(--pick-wash);
   color: var(--pick);

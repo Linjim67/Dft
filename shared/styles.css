@@ -40,10 +40,11 @@
   /* — 副色：葉綠 — */
   --leaf: #87AE73;
   /* 只當底色用（上面放可可字 4.87:1）；白字只有 2.52:1，不用 */
-  --leaf-deep: #456535;
-  /* 葉綠的字與圖示：5.13:1 on bg · 6.37:1 on card */
+  --leaf-deep: #476D33;
+  /* 葉綠的字與圖示（2026-11-13 調亮，原本 #456535）：4.63:1 on bg · 5.75:1 on card ·
+     4.51:1 on leaf-tile；在底色上維持 4.5:1 的前提下最亮的一階 */
   --leaf-soft: #E7EFE0;
-  /* 葉綠淡底：leaf-deep 字 5.63:1 */
+  /* 葉綠淡底：leaf-deep 字 5.09:1 */
   --leaf-tile: #D5E4CB;
   /* 圖示方塊：leaf-deep 圖示 4.99:1 */
 
@@ -51,13 +52,13 @@
        可可＝動作（按鈕、連結、焦點框、內文）；葉綠＝孩子的資料與「選到了」：
        暫時代碼、選到的選項／分頁／篩選、滑桿、完成。 */
   --code: var(--leaf-deep);
-  /* 暫時代碼數字：6.37:1 on card */
+  /* 暫時代碼數字：5.75:1 on card */
   --pick: var(--leaf-deep);
-  /* 選到的框線、字、勾勾底（白勾 6.63:1）：5.63:1 on pick-wash */
+  /* 選到的框線、字、勾勾底（白勾 5.99:1）：5.09:1 on pick-wash */
   --pick-wash: var(--leaf-soft);
   /* 選到的底 */
   --pick-fill: var(--leaf-deep);
-  /* 滑桿已選區段：4.49:1 vs 凹槽 */
+  /* 滑桿已選區段：4.06:1 vs 凹槽 */
 
   /* — 章節色（指南、抽血大小問）：ink＝字與圖示、soft＝大面積淡底、tile＝圖示方塊 — */
   --cocoa: #5A4A3D;
@@ -70,8 +71,8 @@
   --honey-tile: #E9D7AB;
 
   /* — 語意 — */
-  --success: #456535;
-  /* 完成＝葉綠深：5.13:1 on bg · 6.37:1 on card */
+  --success: var(--leaf-deep);
+  /* 完成＝葉綠深：4.63:1 on bg · 5.75:1 on card */
   --success-wash: #E7EFE0;
   --danger: #A83420;
   /* 磚紅：5.11:1 on bg · 6.34:1 on card · 5.21:1 on danger-wash */
