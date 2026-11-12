@@ -43,8 +43,13 @@ and the four features split by an X of grey lines.
    - Content is monochrome: a 68px white circle (`--sh-md`) with a black-line icon (`--primary-ink`,
      white fill), then a black bold name. Each name sits at its triangle's open middle
      (top/bottom 21% / 79%, left/right 19% / 81%), clear of the lines.
-   - `clip-path` would clip a focus ring on the link, so focus is shown as a ring on the circle. Pressing
-     tints the whole triangle (5% ink) and sinks the circle 2px.
+   - `clip-path` would clip a focus ring on the link, so focus is shown as a ring on the circle.
+   - **Only the circle reacts to a press** (owner's request): the triangle never changes colour, even though
+     the whole triangle is the tap target. On `:active` the circle sinks 2px, turns `#EFEBE7`, and gets a
+     2px black inner ring (a shape change, not colour alone). The icon's white fill follows the circle
+     through `--circle`, so no white patches show. `-webkit-tap-highlight-color: transparent` removes the
+     native grey triangle. `home.js` adds an empty passive `touchstart` listener, because iPhone Safari
+     applies `:active` only when one exists.
    - No 單機／雙機 split on the hub. The 雙機 entry is the last card in the games list.
 3. **開始打針**: a full-width `.btn-primary` below.
 

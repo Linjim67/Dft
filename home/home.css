@@ -187,15 +187,19 @@
   width: 68px;
   height: 68px;
   border-radius: 50%;
-  background: var(--card);
+  /* 圓的底色；圖示裡的白色填色跟著它，按下變灰時才不會露出白塊 */
+  --circle: var(--card);
+  background: var(--circle);
   box-shadow: var(--sh-md);
-  transition: transform var(--t-fast) var(--ease), box-shadow var(--t-fast) var(--ease);
+  transition: transform var(--t-fast) var(--ease),
+    box-shadow var(--t-fast) var(--ease),
+    background-color var(--t-fast) var(--ease);
 }
 
 .cross-icon svg {
   width: 42px;
   height: 42px;
-  fill: var(--card);
+  fill: var(--circle);
   stroke: currentColor;
   stroke-width: 1.7;
   stroke-linecap: round;
@@ -213,14 +217,12 @@
   white-space: nowrap;
 }
 
-/* 按下：整塊三角形淡淡一層灰，圓往下沉一點 */
-.cross-item:active {
-  background: rgba(28, 25, 23, .05);
-}
-
+/* 按下：整塊三角形都點得到，但只有白色圓有反應——
+   往下沉、淺灰底、一圈黑框（形狀也變，不只靠顏色）；三角形本身不變色 */
 .cross-item:active .cross-icon {
+  --circle: #EFEBE7;
   transform: translateY(2px);
-  box-shadow: var(--sh-sm);
+  box-shadow: var(--sh-sm), inset 0 0 0 2px var(--primary-ink);
 }
 
 /* clip-path 會切掉連結外框：焦點框改畫在圓上 */

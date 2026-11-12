@@ -1,12 +1,15 @@
 /* ═══════════════════════════════════════════════════════════════
    安心陪伴 — 02 主頁面
-   最上面只放暫時代碼；下面是家長 3 格、孩子 2 格。填寫內容在「修改資料」（/portal/?edit）看、改、重新填寫。
+   最上面是暫時代碼（右下角的筆 = 修改資料，/portal/?edit）；下面是 X 形分隔的四個功能。
    ═══════════════════════════════════════════════════════════════ */
 (function () {
   'use strict';
 
   var p = Anxin.profile.load();
   if (!p) return; /* <head> 裡的守衛已經導回 / */
+
+  /* iPhone Safari 要有 touchstart 監聽，:active 才會套用（按下時白色圓的反應） */
+  document.addEventListener('touchstart', function () {}, { passive: true });
 
   var $ = function (id) { return document.getElementById(id); };
 
