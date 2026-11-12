@@ -197,7 +197,7 @@
 /* 按下：只有這一塊——往下沉、淺灰底、一圈黑框（形狀也變，不只靠顏色）。
    圖示裡的白色填色跟著底色走，才不會露出白塊 */
 .quad-item:active {
-  --quad-bg: #EFEBE7;
+  --quad-bg: var(--primary-wash);
   background: var(--quad-bg);
   transform: translateY(2px);
   box-shadow: var(--sh-sm), inset 0 0 0 2px var(--primary-ink);

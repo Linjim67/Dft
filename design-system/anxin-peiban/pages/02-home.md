@@ -43,7 +43,7 @@ replaced.
      shape.
    - Content sits on the quarter disc's centroid, 0.424 × radius from the inner corner (57.5% / 42.5% of the
      cell): a black-line icon (42px, `--primary-ink`, white fill) over a black bold name.
-   - **Only the pressed button reacts**: it sinks 2px, turns `#EFEBE7`, and gets a 2px black inner ring
+   - **Only the pressed button reacts**: it sinks 2px, turns `--primary-wash`, and gets a 2px black inner ring
      that follows the shape (a shape change, not colour alone). The icon fill follows through `--quad-bg`.
      `-webkit-tap-highlight-color: transparent` removes the native highlight. `home.js` adds an empty
      passive `touchstart` listener so iPhone Safari applies `:active`.
