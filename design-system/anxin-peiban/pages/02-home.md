@@ -26,8 +26,9 @@ Protected pages guard in `<head>` with `Anxin.requireProfile()` → `location.re
 
 ## Hub layout — as few words as possible
 
-The owner's direction (2026-11-12, revised the same day): no colour on the hub's features, one name each,
-and the four features split by an X of grey lines.
+The owner's direction (2026-11-12, revised twice the same day): no colour on the hub's features, one name each,
+and the four features as quarter-circle buttons that together form a circle. An earlier X of grey lines was
+replaced.
 
 1. **Code card** («打針時，請把這組代碼交給醫檢師»). **修改資料** is a 48px white circle with a black pen in
    the card's bottom-right corner (`.code-edit` → `/portal/?edit`, `aria-label="修改資料"`). The card has an
