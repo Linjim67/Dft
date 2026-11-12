@@ -237,11 +237,13 @@ body.is-playing .topbar {
 }
 
 /* 目標列 */
+/* 目標列在農場下面、工具列上面：左右和工具列一樣寬 */
 .farm-goal {
   display: flex;
   align-items: center;
   gap: var(--sp-2);
   min-height: 48px;
+  margin-inline: 10px;
   padding: 4px 6px 4px 6px;
   border-radius: var(--r-md);
   background: var(--card);
@@ -1135,9 +1137,46 @@ body.is-playing .topbar {
   height: 18px;
 }
 
-/* 月光祭壇：石頭 金礦 → 精靈寶珠 */
+/* 月光祭壇：石頭 金礦 → 精靈寶珠。跟地區價錢牌一樣：
+   換不了 = 暗灰色（灰底、灰字、灰圖）；換得了 = 彩色底、粗框、一直一放大一縮小地跳 */
 .btn-trade {
   gap: 14px;
+}
+
+.btn.btn-trade.is-ready {
+  background: var(--primary-wash);
+  border: 3px solid var(--primary-deep);
+  color: var(--primary-deep);
+  box-shadow: var(--sh-orange);
+  animation: trade-beat 1.1s ease-in-out infinite;
+}
+
+@keyframes trade-beat {
+
+  0%,
+  100% {
+    transform: scale(1);
+  }
+
+  50% {
+    transform: scale(1.05);
+  }
+}
+
+.btn.btn-trade.is-off {
+  background: #E7E5E4;
+  border-color: #A8A29E;
+  color: #57534E;
+  box-shadow: none;
+}
+
+.btn-trade.is-off img {
+  filter: grayscale(1);
+  opacity: .7;
+}
+
+.btn-trade.is-off .cost-item.is-lack {
+  color: inherit;
 }
 
 .trade-arrow {
@@ -1327,6 +1366,10 @@ body.is-playing .topbar {
     padding-inline: 14px;
   }
 
+  .farm-goal {
+    margin-inline: 14px;
+  }
+
   .tool-pic,
   .tool-img {
     width: 26px;
@@ -1357,5 +1400,9 @@ body.is-playing .topbar {
 
   .move-cancel:active {
     transform: translateX(-50%);
+  }
+
+  .btn-trade.is-ready {
+    animation: none;
   }
 }

@@ -308,13 +308,14 @@
     return null;
   }
 
-  /* 鏟子：把田裡的菜挖掉（熟的先收起來、種子錢退回來），田留著可以再種 */
-  function canShovel(S, i) {
+  /* 槌子：拆掉菜或房子，錢全部退回來。菜拆掉（熟的先收起來）田留著可以再種；
+     最後一間倉庫、正在打造的鍛造爐拆不掉 */
+  function canHammer(S, i) {
     if (!S.regions[regionOf(i)]) return 'locked';
     var b = S.tiles[i];
-    if (!b) return 'empty';
-    if (b.k !== 'crop') return 'noCrop';
-    return null;
+    if (!b || b.k === 'plot') return 'empty';
+    if (b.k === 'crop') return null;
+    return canRemove(S, i);
   }
 
   /* 田上面可以直接蓋房子、或改種別的菜：原本的菜先收起來、種子錢退回來 */
@@ -327,7 +328,7 @@
           lava 旁邊沒有岩漿 · max 蓋滿了 · soon 還不能用 · money 錢不夠 */
   function canPlace(S, kind, i, ignoreMoney) {
     if (kind === 'hoe') return canHoe(S, i);
-    if (kind === 'shovel') return canShovel(S, i);
+    if (kind === 'hammer') return canHammer(S, i);
     if (!kindReady(S, kind)) return 'soon';
     if (!S.regions[regionOf(i)]) return 'locked';
     var b = S.tiles[i];
@@ -362,8 +363,9 @@
       if (ev) ev.push({ t: 'place', i: i, kind: 'hoe' });
       return null;
     }
-    if (kind === 'shovel') {
+    if (kind === 'hammer') {
       var old = S.tiles[i];
+      if (old.k !== 'crop') return remove(S, i, ev);
       collect(S, i, ev);
       refund(S, old.paid);
       S.tiles[i] = { k: 'plot' };
@@ -411,7 +413,7 @@
       if (R.state === 'home' && R.barn === i) R.barn = -1;
     });
     layoutChanged(S);
-    if (ev) ev.push({ t: 'remove', i: i, kind: b.k === 'crop' ? b.crop : b.k });
+    if (ev) ev.push({ t: 'remove', i: i, kind: b.k === 'crop' ? b.crop : b.k, coins: b.paid ? b.paid.coins || 0 : 0 });
     return null;
   }
 
@@ -1021,7 +1023,7 @@
     canPlace: canPlace, place: place, canHoe: canHoe, canRemove: canRemove, remove: remove,
     canMove: canMove, move: move, canUnlock: canUnlock, unlock: unlock,
     canBuyRobot: canBuyRobot, buyRobot: buyRobot, canForge: canForge, forge: forge, forgeTime: forgeTime,
-    canOffer: canOffer, offer: offer, canShovel: canShovel,
+    canOffer: canOffer, offer: offer, canHammer: canHammer,
     collect: collect, available: available, kindReady: kindReady, count: count, cropCount: cropCount,
     cropValue: cropValue, cropTime: cropTime, quarryTime: quarryTime, quarryYield: quarryYield,
     speed: speed, robotCap: robotCap, robotSpeed: robotSpeed, rate: rate, goalOf: goalOf, fmt: fmt,

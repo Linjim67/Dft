@@ -1002,10 +1002,12 @@ significant figures above (315 → 320, 277 → 280, 1,153 → 1,200). Robots: 2
 - **鋤頭 first** (product owner, 2026-11-12): grass must be hoed into 耕地 before a seed can go in.
   Hoeing is free and drags like a brush; seeds go only onto 耕地 (or replace another crop), and tapping
   grass with a seed says 「先用鋤頭把草地翻成田」.
-- **鏟子** (product owner, 2026-11-12) digs a crop out: a ripe one is harvested first, the seed money
-  comes back and the 耕地 stays, ready to replant. Free, drags like the hoe, crops only (a building
-  gets 「鏟子只能挖菜；房子點一下就可以拆掉」).
-- 鋤頭 and 鏟子 are drawn in a chunky 16 × 16 "block game" tool style — diagonal two-tone wooden
+- **槌子** (replaced the 鏟子, product owner 2026-11-12) removes a crop or a building, refunding all of
+  it. A crop is harvested first if ripe and its 耕地 stays; a building leaves bare ground. The last 倉庫
+  and a forge mid-job can't be removed. Dragging removes crops only — buildings need a deliberate tap,
+  so a sweep can't flatten the farm. With the hammer selected every removable tile gets a **red**
+  frame and everything else is darkened (the placement frames stay green).
+- 鋤頭 and 槌子 are drawn in a chunky 16 × 16 "block game" tool style — diagonal two-tone wooden
   handle, heavy dark outline, three-step grey metal head — as our own pixel art, not copied textures.
 - Crops ripen and **wait**; a tap (or a finger dragged across the field) harvests, and coins fly to
   the counter. Robots (bought from the tool bar, **×1.5** price each, max 12) do the same automatically:
@@ -1027,8 +1029,10 @@ significant figures above (315 → 320, 277 → 280, 1,153 → 1,200). Robots: 2
   is missing from the neighbourhood.
 - 月光祭壇: surplus stone + ore → 精靈寶珠, +10 % speed for the whole farm each (price ×1.6). Its
   button is a picture of the trade, no words (product owner, 2026-11-12): stone and ore with their
-  amounts → an arrow → the orb; a missing material is dark red with a dotted underline, and the
-  aria-label says the whole sentence (「用 120 石頭和 10 金礦，換一顆精靈寶珠（還差 110 石頭）」).
+  amounts → an arrow → the orb. It behaves like a region price tag: grey all over (greyscale icons, a
+  dotted underline under what's missing) while the trade isn't possible; a coloured ground, a thick
+  3 px border and a steady pulse (±5 %, 1.1 s; none with reduced motion) once it is. The aria-label says
+  the whole sentence (「用 120 石頭和 10 金礦，換一顆精靈寶珠（還差 110 石頭）」).
 - 小豬銀行 was removed (product owner, 2026-11-12): building, goal and its title 利滾利. Saves that had
   built one get its coins and stone back on load. Without interest, late income grows with what the
   child builds rather than exponentially (bot: 24.5 萬 earned by 30 min instead of 126 萬), so the
@@ -1053,11 +1057,12 @@ significant figures above (315 → 320, 277 → 280, 1,153 → 1,200). Robots: 2
 ## Screen
 
 - Phone column only (max 30rem). Play view is 100dvh: HUD (menu · coins with 「+N/分」 under them ·
-  stone / ore / orbs) → goal strip → square board → tool bar. Top bar hidden while playing;
+  stone / ore / orbs) → square board → goal strip → tool bar. The goal strip sits right above the
+  tools and has exactly their width (product owner, 2026-11-13). Top bar hidden while playing;
   小遊戲選單 / 去打針 / 重新開始 are in the menu, which pauses the farm.
 - **Tool bar: two fixed rows, nothing scrolls** (a scrolling bar hid its right half — product owner,
   2026-11-12). Six **square** cells per row (52 px on a 375 px phone; the bar keeps a 10 px side margin
-  beyond the page gutter): row 1 鋤頭 · 鏟子 · 機器人 · 蘿蔔 · 玉米 · 番茄, row 2 燈塔 · 採石場 ·
+  beyond the page gutter): row 1 鋤頭 · 槌子 · 機器人 · 蘿蔔 · 玉米 · 番茄, row 2 燈塔 · 採石場 ·
   湯鍋 · 倉庫 · 鍛造爐 · 月光祭壇. Each cell is **picture + price only** (the name is in the
   aria-label, and the goal strip names the selected tool); prices drop the thousands comma to fit.
   Tools of unopened regions keep their cell and are simply grey (grey tile, faded greyscale picture —
@@ -1067,7 +1072,8 @@ significant figures above (315 → 320, 277 → 280, 1,153 → 1,200). Robots: 2
   selected because they paint.
 - **搬家**: the goal strip says what to do, and a floating 「✕ 取消」 pill (48 px tall) hovers at the
   bottom of the board — no cancel button in the strip. The hint bubble moves up above it.
-- **鍛造爐 sheet**: no explanatory lede. Each recipe row is picture · name and effect · **materials**
+- **鍛造爐 sheet**: pressing 打造 starts the job, closes the sheet and says 「開始打造…！」 (progress is
+  the bar under the forge on the board). No explanatory lede. Each recipe row is picture · name and effect · **materials**
   (stacked, right-aligned) · 打造. The item being forged replaces materials + button with a progress
   line: total forging time on the left (its real duration at this forge's lava count and orb speed),
   the bar, and the percent done on the right. Finished items show 「有了」.

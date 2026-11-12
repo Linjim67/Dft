@@ -55,15 +55,15 @@
 
   var NAME = {
     hoe: '鋤頭', carrot: '蘿蔔', corn: '玉米', tomato: '番茄', robot: '機器人', lighthouse: '燈塔',
-    shovel: '鏟子', quarry: '採石場', pot: '湯鍋', barn: '倉庫', forge: '鍛造爐', altar: '月光祭壇'
+    hammer: '槌子', quarry: '採石場', pot: '湯鍋', barn: '倉庫', forge: '鍛造爐', altar: '月光祭壇'
   };
   /* 工具列兩排、各 6 格：第一排鋤頭、鏟子、機器人、三種菜；第二排六種房子。沒選工具 = 收成／看看 */
-  var ROW1 = ['hoe', 'shovel', 'robot', 'carrot', 'corn', 'tomato'];
+  var ROW1 = ['hoe', 'hammer', 'robot', 'carrot', 'corn', 'tomato'];
   var ROW2 = ['lighthouse', 'quarry', 'pot', 'barn', 'forge', 'altar'];
   var TOOLS = ROW1.concat(ROW2);
   var HINT = {
     hoe: '點草地翻成田，才能種菜。可以一路拖過去',
-    shovel: '鏟子把田裡的菜挖掉，種子錢退回來，田還在。可以一路拖過去',
+    hammer: '槌子拆掉菜或房子，錢全部退回來。紅框的才拆得掉；菜可以一路拖過去',
     carrot: '蘿蔔長得最快。種在翻好的田上，也可以一路拖過去',
     corn: '玉米比蘿蔔慢，可是一根值 8 金幣',
     tomato: '番茄最慢、最值錢，湯鍋也要用到它',
@@ -75,7 +75,7 @@
     altar: '月光祭壇把多的石頭和金礦變成精靈寶珠'
   };
   var SPRITE_OF = {
-    hoe: 'hoeTool', shovel: 'shovelTool', carrot: 'carrot2', corn: 'corn2', tomato: 'tomato2', robot: 'robot', lighthouse: 'lighthouse',
+    hoe: 'hoeTool', hammer: 'hammerTool', carrot: 'carrot2', corn: 'corn2', tomato: 'tomato2', robot: 'robot', lighthouse: 'lighthouse',
     quarry: 'quarry', pot: 'potSoup', barn: 'barn', forge: 'forge', altar: 'altar'
   };
   var REGION_TEXT = {
@@ -91,8 +91,7 @@
       case 'locked': return '這裡還沒打開，點霧裡的價錢看看';
       case 'busy': return '這裡已經有東西了';
       case 'till': return '先用鋤頭把草地翻成田';
-      case 'noCrop': return '鏟子只能挖菜；房子點一下就可以拆掉';
-      case 'empty': return '這裡沒有菜可以挖';
+      case 'empty': return '這裡沒有東西可以拆';
       case 'floor':
         if (kind === 'hoe') return '只有草地可以翻土';
         if (CFG.crops[kind]) return '菜要種在草地翻成的田上';
@@ -349,7 +348,7 @@
 
   /* 還沒打開的地區的工具：位置照樣留著（整顆灰灰的），版面不會跳 */
   function toolLocked(k) {
-    return k !== 'hoe' && k !== 'shovel' && k !== 'robot' && !E.kindReady(S, k);
+    return k !== 'hoe' && k !== 'hammer' && k !== 'robot' && !E.kindReady(S, k);
   }
 
   function needText(k) {
@@ -358,7 +357,7 @@
   }
 
   function toolState(k) {
-    var c = k === 'hoe' || k === 'shovel' ? null : E.price(S, k);
+    var c = k === 'hoe' || k === 'hammer' ? null : E.price(S, k);
     return {
       locked: toolLocked(k),
       c: c,
@@ -589,6 +588,7 @@
           break;
         case 'remove':
         case 'move':
+          if (e.t === 'remove' && e.coins && !CFG.crops[e.kind]) floatText(e.i, '+' + fmt(e.coins), '#FFFFFF', 4);
           if (e.from !== undefined) burst(e.from, DUST, 6, false);
           UI.pops[e.i] = UI.clock;
           burst(e.i, DUST, 6, false);
@@ -989,7 +989,8 @@
         rect(x, y, 16, 16, 'rgba(255,255,255,.25)');
         continue;
       }
-      var c = '#B7F07A';
+      /* 綠框 = 可以蓋／種；槌子是紅框 = 可以拆 */
+      var c = UI.tool === 'hammer' && mode === 'tool' ? '#FF5A4E' : '#B7F07A';
       rect(x + 1, y + 1, 14, 1, c); rect(x + 1, y + 14, 14, 1, c);
       rect(x + 1, y + 1, 1, 14, c); rect(x + 14, y + 1, 1, 14, c);
     }
@@ -1183,8 +1184,9 @@
       if (E.available(S, i, true) > 0) { var ev = []; E.collect(S, i, ev); handle(ev); }
     } else if (UI.tool === 'hoe') {
       if (!E.canHoe(S, i)) placeAt(i, true);
-    } else if (UI.tool === 'shovel') {
-      if (!E.canShovel(S, i)) placeAt(i, true);
+    } else if (UI.tool === 'hammer') {
+      /* 拖過去只拆菜；房子要一個一個點，免得一路拆光 */
+      if (S.tiles[i] && S.tiles[i].k === 'crop') placeAt(i, true);
     } else if (CFG.crops[UI.tool]) {
       if (b && (b.k === 'plot' || (b.k === 'crop' && b.crop !== UI.tool))) placeAt(i, true);
     }
@@ -1479,8 +1481,10 @@
       info += row('精靈寶珠', S.orbs + ' 顆');
       info += row('農場速度', Math.round(E.speed(S) * 100) + '%');
       if (S.orbs < CFG.altar.max) {
-        /* 按鈕只畫交換：左邊石頭和金礦（不夠的那項深紅色）→ 右邊一顆精靈寶珠；報讀念完整的句子 */
-        acts += '<button class="btn btn-primary btn-trade" type="button" data-act="offer"' + (E.canOffer(S) ? ' aria-disabled="true"' : '') +
+        /* 按鈕只畫交換：左邊石頭和金礦 → 右邊一顆精靈寶珠；報讀念完整的句子。
+           跟地區價錢牌一樣：換不了 = 暗灰色；換得了 = 彩色底、粗框、一直一放大一縮小地跳 */
+        var canTrade = !E.canOffer(S);
+        acts += '<button class="btn btn-trade ' + (canTrade ? 'is-ready' : 'is-off') + '" type="button" data-act="offer"' + (canTrade ? '' : ' aria-disabled="true"') +
           ' aria-label="用 ' + op.stone + ' 石頭和 ' + op.ore + ' 金礦，換一顆精靈寶珠' + (E.canOffer(S) === 'money' ? '（' + esc(short(op)) + '）' : '') + '">' +
           costHtml(op) +
           '<svg class="trade-arrow" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 12h15M13 6l6 6-6 6" /></svg>' +
@@ -1553,6 +1557,15 @@
       var id = b.getAttribute('data-id');
       r = E.forge(S, id, ev);
       if (r === 'money') { hint(short(CFG.recipes[id].cost), 2000); shake(b); return; }
+      if (!r) {
+        /* 開始打造就關掉小視窗，回到農場（進度在鍛造爐下面那條） */
+        handle(ev);
+        renderHud(true);
+        renderTools(true);
+        closeSheet();
+        hint('開始打造' + CFG.recipes[id].name + '！', 1600);
+        return;
+      }
     } else if (act === 'offer') {
       r = E.offer(S, ev);
       if (r === 'money') { hint(short(E.orbPrice(S)), 2000); shake(b); return; }
