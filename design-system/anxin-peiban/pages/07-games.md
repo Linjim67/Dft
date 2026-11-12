@@ -970,8 +970,9 @@ are kept as written: 硬幣收藏家, 好鄰居, 無限力量.
 
 ## Map and biomes
 
-8 × 8, four regions; only 草原 is open at the start, the rest sit under cream fog + clouds with a
-price tag (the terrain shows faintly through, so the volcano is a visible promise).
+8 × 8, four regions; only 草原 is open at the start, the rest sit under fog with **only the price**
+(no region name, no clouds — product owner, 2026-11-12). The terrain shows faintly through, so the
+volcano is a visible promise; the fog fades out when a region opens.
 
 | Region | Tiles | Terrain rule | Unlock |
 |---|---|---|---|
@@ -982,8 +983,11 @@ price tag (the terrain shows faintly through, so the volcano is a visible promis
 
 ## Loop
 
+- **鋤頭 first** (product owner, 2026-11-12): grass must be hoed into 耕地 before a seed can go in.
+  Hoeing is free and drags like a brush; seeds go only onto 耕地 (or replace another crop), and tapping
+  grass with a seed says 「先用鋤頭把草地翻成田」.
 - Crops ripen and **wait**; a tap (or a finger dragged across the field) harvests, and coins fly to
-  the counter. Robots (bought from the tool bar, ×1.55 price each, max 12) do the same automatically:
+  the counter. Robots (bought from the tool bar, **×1.5** price each, max 12) do the same automatically:
   pick the best value ÷ round-trip, chain pickups on the way, deliver to the nearest 倉庫.
 - 燈塔: every lighthouse adds ×1 to the crops and quarries in its 3 × 3 (additive: two = ×3). A small
   `×N` pill sits on every boosted tile, so moving a lighthouse shows its effect at once.
@@ -994,8 +998,9 @@ price tag (the terrain shows faintly through, so the volcano is a visible promis
 - 小豬銀行: interest every 5 s, 1 %–5 % with a per-tick cap per level — the exponential part.
 - 鍛造爐 (one job at a time): 火箭鞋 (robots ×1.5 speed) · 大籃子 (carry ×2) · 金鏟子 (quarries ×2) ·
   彩虹神鋤 (crops and soup ×3; needs the other three + 3 寶珠).
-- Buildings and different seeds go **straight onto planted plots** (the crop is harvested and its seed
-  refunded): a full field must never force a 拆掉 step. Everything but crops can 搬家; 拆掉 refunds 100 %.
+- Buildings go straight onto grass, 耕地 or a planted plot, and a different seed replaces a crop (the
+  crop is harvested and its seed refunded): a full field must never force a 拆掉 step. Everything but
+  crops can 搬家; 拆掉 refunds 100 %.
 
 ## Goals, titles, pacing
 
@@ -1004,15 +1009,24 @@ price tag (the terrain shows faintly through, so the volcano is a visible promis
   when affordable (「可以買了！」 appears instead).
 - 13 titles; each new one is a card over the top of the board (not over the coin counter, so coins
   are seen landing).
-- Paced with a greedy bot that taps once per 0.8 s until it has 4 robots: robot 0.1 min · lighthouse
-  0.6 · 小河邊 1.2 · 礦山 2.3 · first soup 3.5 · all regions 4.2 · first forge 5.2 · 彩虹神鋤 12.4 ·
-  10 萬 coins 16. A real child is roughly half as fast, so a 10–30 min wait always has a next unlock.
+- Paced with a greedy bot that taps once per 0.8 s until it has 4 robots (and hoes before planting):
+  robot 0.1 min · lighthouse 0.6 · 小河邊 1.3 · 礦山 2.3 · first soup 3.5 · all regions 4.9 · first
+  forge 6.2 · 彩虹神鋤 12.4 · 10 萬 coins 16. A real child is roughly half as fast, so a 10–30 min wait always has a next unlock.
 
 ## Screen
 
 - Phone column only (max 30rem). Play view is 100dvh: HUD (menu · coins with 「+N/分」 under them ·
-  stone / ore / orbs) → goal strip → square board → horizontally scrolling tool bar. Top bar hidden
-  while playing; 小遊戲選單 / 去打針 / 重新開始 are in the menu, which pauses the farm.
+  stone / ore / orbs) → goal strip → square board → tool bar. Top bar hidden while playing;
+  小遊戲選單 / 去打針 / 重新開始 are in the menu, which pauses the farm.
+- **Tool bar: two fixed rows, nothing scrolls** (a scrolling bar hid its right half — product owner,
+  2026-11-12). Row 1, five cells: 鋤頭 · 機器人 · 蘿蔔 · 玉米 · 番茄. Row 2, seven cells: 燈塔 · 採石場 ·
+  湯鍋 · 倉庫 · 小豬銀行 · 鍛造爐 · 月光祭壇. Each cell is **picture + price only** (the name is in the
+  aria-label, and the goal strip names the selected tool); prices drop the thousands comma to fit.
+  Tools of unopened regions keep their cell, greyed with a dashed border and a lock; tapping one says
+  which region opens it. There is no 收成 tool: with nothing selected, a tap harvests or opens a
+  building; tapping the selected tool again (or 「好了」) returns to that.
+- **Tapping a growing crop** shows a small card over it (below it on the top two rows), click-through,
+  for 6 s: 品種 · grey 「5 秒」 (its real grow time, river and orbs included) · a progress line · 「56%」.
 - Board tiles are ~45 px on a 375 px phone (8 columns can't reach 48 px); the brush-style drag and the
   sheets' 48 px+ buttons carry the precise actions.
 - Selecting a tool frames every legal tile in green and darkens illegal ones, so terrain rules are

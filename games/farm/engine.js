@@ -58,7 +58,7 @@
       forge:      { name: '鍛造爐', coins: 1500, stone: 60, grow: 1, max: 1, floors: 'B', needs: 'volcano' },
       altar:      { name: '月光祭壇', coins: 1200, stone: 40, grow: 1, max: 1, floors: 'GSB', needs: 'volcano' }
     },
-    robot: { coins: 20, grow: 1.55, max: 12, speed: 1.5, cap: 3, wait: 0.2 },
+    robot: { coins: 20, grow: 1.5, max: 12, speed: 1.5, cap: 3, wait: 0.2 },
     quarry: { time: 10, cap: 12, oreChance: 0.1 },    /* 每 time ÷ 旁邊的大石頭數 秒挖一次 */
     pot: { cook: 6, cap: 4, bonus: 2 },                /* 湯 = 三種菜的價錢 × bonus */
     bank: {
@@ -306,27 +306,43 @@
     return !c.needs || !!S.regions[c.needs];
   }
 
+  /* 鋤頭：草地要先翻成田（plot）才能種菜。翻土不用錢，要自己動手 */
+  function canHoe(S, i) {
+    if (!S.regions[regionOf(i)]) return 'locked';
+    if (S.tiles[i]) return 'busy';
+    if (floorOf(i) !== 'G') return 'floor';
+    return null;
+  }
+
   /* 田上面可以直接蓋房子、或改種別的菜：原本的菜先收起來、種子錢退回來 */
   function replacing(S, kind, i) {
     var b = S.tiles[i];
     return !!(b && b.k === 'crop' && b.crop !== kind);
   }
 
-  /* why：locked 還沒打開 · busy 已經有東西 · floor 地形不對 · rock 旁邊沒有大石頭 ·
+  /* why：locked 還沒打開 · busy 已經有東西 · floor 地形不對 · till 還沒翻土 · rock 旁邊沒有大石頭 ·
           lava 旁邊沒有岩漿 · max 蓋滿了 · soon 還不能用 · money 錢不夠 */
   function canPlace(S, kind, i, ignoreMoney) {
+    if (kind === 'hoe') return canHoe(S, i);
     if (!kindReady(S, kind)) return 'soon';
     if (!S.regions[regionOf(i)]) return 'locked';
-    if (S.tiles[i] && !replacing(S, kind, i)) return 'busy';
+    var b = S.tiles[i];
     var isCrop = !!CONFIG.crops[kind];
-    var floors = isCrop ? 'G' : CONFIG.builds[kind].floors;
-    if (floors.indexOf(floorOf(i)) < 0) return 'floor';
-    if (kind === 'quarry' && !ROCKS[i]) return 'rock';
-    if (kind === 'forge' && !LAVA[i]) return 'lava';
-    if (!isCrop && count(S, kind) >= CONFIG.builds[kind].max) return 'max';
+    if (isCrop) {
+      /* 菜：種在翻好的田上，或換掉另一種菜 */
+      if (!b) return floorOf(i) === 'G' ? 'till' : 'floor';
+      if (b.k !== 'plot' && !replacing(S, kind, i)) return 'busy';
+    } else {
+      /* 房子：空地、田、菜上面都可以 */
+      if (b && b.k !== 'plot' && b.k !== 'crop') return 'busy';
+      if (CONFIG.builds[kind].floors.indexOf(floorOf(i)) < 0) return 'floor';
+      if (kind === 'quarry' && !ROCKS[i]) return 'rock';
+      if (kind === 'forge' && !LAVA[i]) return 'lava';
+      if (count(S, kind) >= CONFIG.builds[kind].max) return 'max';
+    }
     if (!ignoreMoney) {
       var cost = price(S, kind);
-      var back = replacing(S, kind, i) ? S.tiles[i].paid : null;
+      var back = b && b.k === 'crop' ? b.paid : null;
       if (back) cost = { coins: cost.coins - (back.coins || 0), stone: cost.stone - (back.stone || 0) };
       if (!afford(S, cost)) return 'money';
     }
@@ -336,7 +352,13 @@
   function place(S, kind, i, ev) {
     var why = canPlace(S, kind, i);
     if (why) return why;
-    if (S.tiles[i]) remove(S, i, ev);
+    if (kind === 'hoe') {
+      S.tiles[i] = { k: 'plot' };
+      S.claim[i] = 0;
+      if (ev) ev.push({ t: 'place', i: i, kind: 'hoe' });
+      return null;
+    }
+    if (S.tiles[i] && S.tiles[i].k === 'crop') remove(S, i, ev);
     var cost = price(S, kind);
     pay(S, cost);
     var b;
@@ -382,10 +404,10 @@
 
   function canMove(S, from, to) {
     var b = S.tiles[from];
-    if (!b || b.k === 'crop') return 'empty';
+    if (!b || b.k === 'crop' || b.k === 'plot') return 'empty';
     if (from === to) return 'same';
     if (!S.regions[regionOf(to)]) return 'locked';
-    if (S.tiles[to]) return 'busy';
+    if (S.tiles[to] && S.tiles[to].k !== 'plot') return 'busy';
     if (CONFIG.builds[b.k].floors.indexOf(floorOf(to)) < 0) return 'floor';
     if (b.k === 'quarry' && !ROCKS[to]) return 'rock';
     if (b.k === 'forge' && !LAVA[to]) return 'lava';
@@ -871,7 +893,7 @@
   var GOALS = [
     { id: 'tap', text: '點熟的蘿蔔，收成 3 次', prog: function (S) { return [S.stats.harvests, 3]; } },
     { id: 'robot', text: '買一個機器人', prog: function (S) { return money(S, price(S, 'robot'), S.robots.length >= 1); } },
-    { id: 'plots', text: '種 8 塊田', prog: function (S) { return [cropCount(S), 8]; } },
+    { id: 'plots', text: '用鋤頭翻土，種 8 塊田', prog: function (S) { return [cropCount(S), 8]; } },
     { id: 'light', text: '蓋一座燈塔，旁邊的菜變 2 倍', prog: function (S) { return money(S, price(S, 'lighthouse'), count(S, 'lighthouse') >= 1); } },
     { id: 'river', text: '打開小河邊', prog: function (S) { return money(S, CONFIG.regions.river.cost, S.regions.river); } },
     { id: 'corn', text: '種玉米', prog: function (S) { return [cropCount(S, 'corn'), 1]; } },
@@ -979,6 +1001,7 @@
   function cleanTile(b, i) {
     if (!b || typeof b !== 'object') return null;
     var k = b.k;
+    if (k === 'plot') return floorOf(i) === 'G' ? { k: 'plot' } : null;
     if (k === 'crop') {
       if (!CONFIG.crops[b.crop] || floorOf(i) !== 'G') return null;
       return { k: k, crop: b.crop, g: Math.min(1, num(b.g, 0)), ready: b.ready ? 1 : 0, paid: cost(b.paid) };
@@ -1013,7 +1036,7 @@
     col: col, row: row, at: at, floorOf: floorOf, regionOf: regionOf, buildable: buildable,
     newState: newState, step: step, load: load, save: save,
     price: price, orbPrice: orbPrice, bankUpPrice: bankUpPrice, afford: afford,
-    canPlace: canPlace, place: place, canRemove: canRemove, remove: remove,
+    canPlace: canPlace, place: place, canHoe: canHoe, canRemove: canRemove, remove: remove,
     canMove: canMove, move: move, canUnlock: canUnlock, unlock: unlock,
     canBuyRobot: canBuyRobot, buyRobot: buyRobot, canForge: canForge, forge: forge, forgeTime: forgeTime,
     canOffer: canOffer, offer: offer, canUpgradeBank: canUpgradeBank, upgradeBank: upgradeBank,

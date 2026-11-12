@@ -54,14 +54,16 @@
      ───────────────────────────────────────────────────────────── */
 
   var NAME = {
-    hand: '收成', carrot: '蘿蔔', corn: '玉米', tomato: '番茄', robot: '機器人', lighthouse: '燈塔',
+    hoe: '鋤頭', carrot: '蘿蔔', corn: '玉米', tomato: '番茄', robot: '機器人', lighthouse: '燈塔',
     quarry: '採石場', pot: '湯鍋', barn: '倉庫', bank: '小豬銀行', forge: '鍛造爐', altar: '月光祭壇'
   };
-  var SHORT = { bank: '銀行', altar: '祭壇' };
-  var TOOLS = ['hand', 'carrot', 'corn', 'tomato', 'robot', 'lighthouse', 'quarry', 'pot', 'barn', 'bank', 'forge', 'altar'];
+  /* 工具列兩排：第一排鋤頭、機器人、三種菜；第二排七種房子。沒選工具 = 收成／看看 */
+  var ROW1 = ['hoe', 'robot', 'carrot', 'corn', 'tomato'];
+  var ROW2 = ['lighthouse', 'quarry', 'pot', 'barn', 'bank', 'forge', 'altar'];
+  var TOOLS = ROW1.concat(ROW2);
   var HINT = {
-    hand: '點熟的菜、推車、湯碗收起來；點房子看看裡面',
-    carrot: '蘿蔔長得最快。點草地種下去，也可以用手指一路拖過去',
+    hoe: '點草地翻成田，才能種菜。可以一路拖過去',
+    carrot: '蘿蔔長得最快。種在翻好的田上，也可以一路拖過去',
     corn: '玉米比蘿蔔慢，可是一根值 8 金幣',
     tomato: '番茄最慢、最值錢，湯鍋也要用到它',
     lighthouse: '燈塔照到旁邊 8 格：菜和採石場收成變 2 倍',
@@ -73,7 +75,7 @@
     altar: '月光祭壇把多的石頭和金礦變成精靈寶珠'
   };
   var SPRITE_OF = {
-    carrot: 'carrot2', corn: 'corn2', tomato: 'tomato2', robot: 'robot', lighthouse: 'lighthouse',
+    hoe: 'hoeTool', carrot: 'carrot2', corn: 'corn2', tomato: 'tomato2', robot: 'robot', lighthouse: 'lighthouse',
     quarry: 'quarry', pot: 'potSoup', barn: 'barn', bank: 'bank', forge: 'forge', altar: 'altar'
   };
   var REGION_TEXT = {
@@ -86,10 +88,12 @@
   function why(reason, kind) {
     var c = CFG.builds[kind];
     switch (reason) {
-      case 'locked': return '這裡還沒打開，點雲朵看看';
+      case 'locked': return '這裡還沒打開，點霧裡的價錢看看';
       case 'busy': return '這裡已經有東西了';
+      case 'till': return '先用鋤頭把草地翻成田';
       case 'floor':
-        if (CFG.crops[kind]) return '菜要種在草地上';
+        if (kind === 'hoe') return '只有草地可以翻土';
+        if (CFG.crops[kind]) return '菜要種在草地翻成的田上';
         if (kind === 'quarry') return '採石場要蓋在礦山的碎石地上';
         if (kind === 'forge') return '鍛造爐要蓋在火山的黑色石頭地上';
         if (kind === 'pot') return '湯鍋要放在草地上';
@@ -119,7 +123,8 @@
   }
 
   /* 價錢：小圖示 + 數字；買不起的那一項是深紅色，並且前面多一個「缺」字給報讀 */
-  function costHtml(cost) {
+  /* compact：工具列很窄，一萬以下不加逗號（1500） */
+  function costHtml(cost, compact) {
     if (!cost) return '';
     var parts = [];
     [['coins', 'coin', '金幣', S.coins], ['stone', 'stone', '石頭', S.stone], ['ore', 'ore', '金礦', S.ore],
@@ -128,7 +133,7 @@
       if (!n) return;
       var lack = n > k[3];
       parts.push('<span class="cost-item' + (lack ? ' is-lack' : '') + '">' + img(k[1]) +
-        '<span class="sr-only">' + k[2] + (lack ? '（不夠）' : '') + '</span>' + fmt(n) + '</span>');
+        '<span class="sr-only">' + k[2] + (lack ? '（不夠）' : '') + '</span>' + (compact && n < 10000 ? String(n) : fmt(n)) + '</span>');
     });
     return '<span class="cost">' + parts.join('') + '</span>';
   }
@@ -145,7 +150,9 @@
   var menuDlg = $('menuDlg'), achDlg = $('achDlg'), resetDlg = $('resetDlg');
 
   var UI = {
-    tool: 'hand',
+    tool: null,
+    tip: -1,
+    tipUntil: 0,
     moveFrom: -1,
     sheetTile: -1,
     sheetRegion: null,
@@ -278,10 +285,10 @@
       html = '<span class="goal-chip is-tool">搬家</span><span class="goal-text">點一格空地，把' +
         esc(NAME[S.tiles[UI.moveFrom] ? S.tiles[UI.moveFrom].k : 'barn']) + '搬過去</span>' +
         '<button class="goal-x" type="button" data-act="cancelMove">取消</button>';
-    } else if (UI.tool !== 'hand') {
+    } else if (UI.tool) {
       sig = 'tool:' + UI.tool;
       html = '<span class="goal-chip is-tool">' + esc(NAME[UI.tool]) + '</span><span class="goal-text">' + esc(HINT[UI.tool]) + '</span>' +
-        '<button class="goal-x" type="button" data-act="hand">好了</button>';
+        '<button class="goal-x" type="button" data-act="done">好了</button>';
     } else {
       var G = E.goalOf(S);
       var pct = Math.max(0, Math.min(1, G.cur / G.max));
@@ -313,7 +320,7 @@
   $('goalBar').addEventListener('click', function (e) {
     var b = e.target.closest('[data-act]');
     if (!b) return;
-    if (b.getAttribute('data-act') === 'hand') setTool('hand');
+    if (b.getAttribute('data-act') === 'done') setTool(null);
     if (b.getAttribute('data-act') === 'cancelMove') { UI.moveFrom = -1; renderGoal(true); }
   });
 
@@ -321,59 +328,63 @@
      工具列
      ───────────────────────────────────────────────────────────── */
 
-  function toolVisible(k) {
-    if (k === 'hand' || k === 'carrot' || k === 'robot') return true;
-    if (k === 'lighthouse') return S.robots.length > 0 || S.stats.earned >= 30;
-    return E.kindReady(S, k);
+  /* 還沒打開的地區的工具：位置照樣留著（灰的、有鎖頭），版面不會跳 */
+  function toolLocked(k) {
+    return k !== 'hoe' && k !== 'robot' && !E.kindReady(S, k);
   }
 
-  function toolPrice(k) {
-    if (k === 'hand') return null;
-    return E.price(S, k);
+  function needText(k) {
+    var c = CFG.crops[k] || CFG.builds[k];
+    return '打開' + CFG.regions[c.needs].name + '就能用' + NAME[k];
+  }
+
+  function toolState(k) {
+    var c = k === 'hoe' ? null : E.price(S, k);
+    return {
+      locked: toolLocked(k),
+      c: c,
+      can: !c || E.afford(S, c),
+      full: k === 'robot' ? S.robots.length >= CFG.robot.max : CFG.builds[k] ? E.count(S, k) >= CFG.builds[k].max : false
+    };
+  }
+
+  function priceWords(c) {
+    return [c.coins ? fmt(c.coins) + ' 金幣' : '', c.stone ? fmt(c.stone) + ' 石頭' : ''].filter(Boolean).join('、');
+  }
+
+  /* 一顆工具：只有圖和價錢（名字給報讀，選了以後目標列也會寫） */
+  function toolHtml(k) {
+    var st = toolState(k);
+    if (!st.locked && !UI.seenTools[k]) { UI.seenTools[k] = true; if (UI.playing) UI.newTools[k] = true; }
+    var on = k === UI.tool, isRobot = k === 'robot';
+    var priceHtml = st.locked ? '' : st.full ? '<span class="tool-note">滿</span>' : st.c ? costHtml(st.c, true) : '';
+    var label = isRobot ? '買機器人，現在有 ' + S.robots.length + ' 個' : NAME[k];
+    label += st.locked ? '，' + needText(k) : st.full ? '，滿了' : st.c ? '，' + priceWords(st.c) + (st.can ? '' : '，錢不夠') : '，免費';
+    return '<button class="tool' + (on ? ' is-on' : '') + (st.locked ? ' is-locked' : '') + (!st.locked && (!st.can || st.full) ? ' is-poor' : '') +
+      '" type="button" data-tool="' + k + '" aria-label="' + esc(label) + '"' +
+      (isRobot ? '' : ' aria-pressed="' + on + '"') + (st.locked ? ' aria-disabled="true"' : '') + '>' +
+      (UI.newTools[k] ? '<span class="tool-new" aria-hidden="true">新</span>' : '') +
+      (isRobot ? '<span class="tool-count" aria-hidden="true">' + S.robots.length + '</span>' : '') +
+      '<span class="tool-pic">' + img(SPRITE_OF[k], true, 'tool-img') +
+      (st.locked ? '<span class="tool-lock">' + img('lock') + '</span>' : '') + '</span>' +
+      '<span class="tool-price" aria-hidden="true">' + priceHtml + '</span>' +
+      (on ? '<span class="tool-check" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="m5 12.5 4.5 4.5L19 7.5" /></svg></span>' : '') +
+      '</button>';
   }
 
   var toolSig = '';
 
   function renderTools(force) {
-    var sigParts = [UI.tool];
-    TOOLS.forEach(function (k) {
-      if (!toolVisible(k)) return;
-      var c = toolPrice(k);
-      var full = k === 'robot' ? S.robots.length >= CFG.robot.max :
-        CFG.builds[k] ? E.count(S, k) >= CFG.builds[k].max : false;
-      sigParts.push(k + (c ? c.coins + '/' + c.stone + (E.afford(S, c) ? 'y' : 'n') : '') + (full ? 'F' : '') + (UI.newTools[k] ? 'N' : ''));
-    });
-    var sig = sigParts.join('|') + '|' + S.robots.length;
+    var sig = [UI.tool, S.robots.length].concat(TOOLS.map(function (k) {
+      var st = toolState(k);
+      return k + (st.locked ? 'L' : '') + (st.c ? st.c.coins + '/' + st.c.stone + (st.can ? 'y' : 'n') : '') +
+        (st.full ? 'F' : '') + (UI.newTools[k] ? 'N' : '');
+    })).join('|');
     if (!force && sig === toolSig) return;
     toolSig = sig;
     var focusKey = document.activeElement && document.activeElement.getAttribute('data-tool');
-    var html = '';
-    TOOLS.forEach(function (k) {
-      if (!toolVisible(k)) return;
-      if (!UI.seenTools[k]) { UI.seenTools[k] = true; if (UI.playing && k !== 'hand') UI.newTools[k] = true; }
-      var c = toolPrice(k);
-      var isRobot = k === 'robot';
-      var full = isRobot ? S.robots.length >= CFG.robot.max : CFG.builds[k] ? E.count(S, k) >= CFG.builds[k].max : false;
-      var can = !c || E.afford(S, c);
-      var icon = k === 'hand' ? img('hand', false, 'tool-img') : img(SPRITE_OF[k], true, 'tool-img');
-      var priceHtml = '';
-      if (isRobot) priceHtml = full ? '<span class="tool-note">滿了</span>' : costHtml(c);
-      else if (full) priceHtml = '<span class="tool-note">蓋滿了</span>';
-      else if (c) priceHtml = costHtml(c);
-      else priceHtml = '<span class="tool-note">點點看</span>';
-      var label = SHORT[k] || NAME[k];
-      html += '<button class="tool' + (k === UI.tool ? ' is-on' : '') + (!can || full ? ' is-poor' : '') +
-        (isRobot ? ' is-buy' : '') + '" type="button" data-tool="' + k + '"' +
-        (isRobot ? ' aria-label="買機器人，現在有 ' + S.robots.length + ' 個"' : ' aria-pressed="' + (k === UI.tool) + '"') + '>' +
-        (UI.newTools[k] ? '<span class="tool-new">新</span>' : '') +
-        (isRobot ? '<span class="tool-count">' + S.robots.length + '</span>' : '') +
-        '<span class="tool-pic">' + icon + '</span>' +
-        '<span class="tool-name">' + esc(label) + '</span>' +
-        '<span class="tool-price">' + priceHtml + '</span>' +
-        (k === UI.tool ? '<span class="tool-check" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="m5 12.5 4.5 4.5L19 7.5" /></svg></span>' : '') +
-        '</button>';
-    });
-    toolsEl.innerHTML = html;
+    toolsEl.innerHTML = '<div class="tool-row r1">' + ROW1.map(toolHtml).join('') + '</div>' +
+      '<div class="tool-row r2">' + ROW2.map(toolHtml).join('') + '</div>';
     if (focusKey) {
       var f = toolsEl.querySelector('[data-tool="' + focusKey + '"]');
       if (f) f.focus();
@@ -385,18 +396,19 @@
     if (!b) return;
     var k = b.getAttribute('data-tool');
     if (UI.newTools[k]) { delete UI.newTools[k]; toolSig = ''; }
+    if (toolLocked(k)) { hint(needText(k), 1800); shake(b); return; }
     if (k === 'robot') { buyRobot(b); return; }
-    setTool(UI.tool === k && k !== 'hand' ? 'hand' : k);
+    setTool(UI.tool === k ? null : k);
   });
 
+  /* k = null：不拿工具（點熟的菜收成、點房子看看） */
   function setTool(k) {
     UI.tool = k;
     UI.moveFrom = -1;
+    hideTip();
     renderTools(true);
     renderGoal(true);
-    var b = toolsEl.querySelector('[data-tool="' + k + '"]');
-    if (b && b.scrollIntoView && k !== 'hand') b.scrollIntoView({ block: 'nearest', inline: 'nearest', behavior: still() ? 'auto' : 'smooth' });
-    say(k === 'hand' ? '收成模式' : '選了' + NAME[k] + '：' + HINT[k]);
+    say(k ? '選了' + NAME[k] + '：' + HINT[k] : '收成模式：點熟的菜收起來，點房子看看裡面');
   }
 
   function buyRobot(btn) {
@@ -554,7 +566,7 @@
           break;
         case 'place':
           UI.pops[e.i] = UI.clock;
-          burst(e.i, CFG.crops[e.kind] ? ['#9A6640', '#B9825A'] : DUST, CFG.crops[e.kind] ? 3 : 8, false);
+          burst(e.i, CFG.crops[e.kind] || e.kind === 'hoe' ? ['#9A6640', '#B9825A', '#74482B'] : DUST, CFG.crops[e.kind] ? 3 : e.kind === 'hoe' ? 6 : 8, false);
           terrainDirty = true;
           break;
         case 'remove':
@@ -618,7 +630,7 @@
       var f = E.floorOf(i), b = S.tiles[i];
       if (f === 'W' || f === 'L') continue;
       var x = E.col(i) * 16, y = E.row(i) * 16;
-      ctx.drawImage(ART.ground(f, i * 7 + 1, b && b.k === 'crop', E.WET[i]), x, y);
+      ctx.drawImage(ART.ground(f, i * 7 + 1, b && (b.k === 'crop' || b.k === 'plot'), E.WET[i]), x, y);
       if (f === 'R') ctx.drawImage(ART.hash(i * 3) < 0.5 ? SP.boulder : SP.boulderFlip, x, y);
     }
     terrainDirty = false;
@@ -879,7 +891,7 @@
 
   /* 選了工具：可以蓋的格子框綠框，不行的暗一點 */
   function drawHighlights() {
-    var mode = UI.moveFrom >= 0 ? 'move' : UI.tool !== 'hand' ? 'tool' : null;
+    var mode = UI.moveFrom >= 0 ? 'move' : UI.tool ? 'tool' : null;
     if (!mode) return;
     for (var i = 0; i < N * N; i++) {
       if (!S.regions[E.regionOf(i)]) continue;
@@ -901,7 +913,7 @@
     }
   }
 
-  /* 還沒打開的地區：一層奶油色的霧、幾朵雲、鎖頭和價錢。剛打開時雲往兩邊散開 */
+  /* 還沒打開的地區：只有一層霧和價錢（不寫名字）。霧裡有幾團慢慢飄的白氣；打開時整片霧淡掉 */
   function drawLocked(t, interactive) {
     Object.keys(REGION_BOX).forEach(function (id) {
       var bx = REGION_BOX[id], x = bx[0] * 16, y = bx[1] * 16, w = bx[2] * 16, h = bx[3] * 16;
@@ -909,55 +921,58 @@
       var since = UI.clouds[id] !== undefined ? t - UI.clouds[id] : 9;
       if (open && (since > 1.2 || still())) return;
       var k = open ? Math.min(1, since / 1.2) : 0;
-      ctxNow.save();
-      ctxNow.globalAlpha = 1 - k;
-      rect(x, y, w, h, 'rgba(255,244,224,.8)');
-      for (var n = 0; n < 5; n++) {
+      var ctx = ctxNow;
+      ctx.save();
+      ctx.globalAlpha = 1 - k;
+      rect(x, y, w, h, 'rgba(250,245,238,.72)');
+      ctx.beginPath();
+      ctx.rect(R(x), R(y), R(x + w) - R(x), R(y + h) - R(y));
+      ctx.clip();
+      for (var n = 0; n < 6; n++) {
         var hx = ART.hash(n * 13 + id.length * 7), hy = ART.hash(n * 29 + id.length * 3);
-        var dir = hx < 0.5 ? -1 : 1;
-        var cx = x + hx * (w - 16) + (still() ? 0 : Math.sin(t * 0.35 + n) * 2) + dir * k * 40;
-        var cy = y + 2 + hy * (h - 12);
-        blit(SP.cloud, Math.round(cx), Math.round(cy));
+        var drift = still() ? 0 : Math.sin(t * 0.25 + n * 1.7) * 4;
+        var mx = R(x + hx * w + drift), my = R(y + hy * h), mr = R(14 + ART.hash(n * 41 + id.length) * 10);
+        var g = ctx.createRadialGradient(mx, my, 0, mx, my, mr);
+        g.addColorStop(0, 'rgba(255,255,255,.75)');
+        g.addColorStop(1, 'rgba(255,255,255,0)');
+        ctx.fillStyle = g;
+        ctx.fillRect(mx - mr, my - mr, mr * 2, mr * 2);
       }
-      ctxNow.restore();
+      ctx.restore();
       if (open) return;
-      /* 價錢牌 */
+
+      /* 價錢：金幣（和石頭）圖示 + 數字，買得起時是橘色框 */
       var cost = CFG.regions[id].cost;
       var can = E.afford(S, cost);
-      var ctx = ctxNow;
-      var cxm = R(x + w / 2), cym = R(y + h / 2);
       var fs = Math.max(12, R(5.6));
+      var iconS = Math.round(fs * 1.1), gap = Math.round(fs * 0.3);
       ctx.save();
       ctx.font = '800 ' + fs + 'px ' + NUM_FONT;
-      var name = CFG.regions[id].name;
-      var priceText = fmt(cost.coins) + (cost.stone ? '  ' + fmt(cost.stone) : '');
-      var tw = Math.max(ctx.measureText(name).width, ctx.measureText(priceText).width + fs * 1.3 * (cost.stone ? 2 : 1));
-      var bw = tw + fs * 1.6, bh = fs * 3.3;
-      var bxp = cxm - bw / 2, byp = cym - bh / 2;
+      var parts = [['coin', fmt(cost.coins)]];
+      if (cost.stone) parts.push(['stone', fmt(cost.stone)]);
+      var inner = 0;
+      parts.forEach(function (q, n) { inner += iconS + gap + ctx.measureText(q[1]).width + (n ? fs * 0.8 : 0); });
+      var bw = inner + fs * 1.4, bh = Math.round(fs * 2.1);
+      var cxm = R(x + w / 2), cym = R(y + h / 2);
+      var bxp = Math.round(cxm - bw / 2), byp = Math.round(cym - bh / 2);
       ctx.fillStyle = can ? '#FFEDD5' : '#FFFFFF';
       ctx.strokeStyle = can ? '#C2410C' : '#9C8578';
       ctx.lineWidth = Math.max(2, fs * 0.14);
-      roundRect(ctx, bxp, byp, bw, bh, fs * 0.6);
+      roundRect(ctx, bxp, byp, bw, bh, bh / 2);
       ctx.fill();
       ctx.stroke();
-      ctx.textAlign = 'center';
-      ctx.textBaseline = 'middle';
-      ctx.fillStyle = '#7C2D12';
-      ctx.fillText(name, cxm, byp + fs * 1.05);
-      var iconS = fs * 1.05;
-      var lineY = byp + fs * 2.3;
       ctx.imageSmoothingEnabled = false;
-      var startX = cxm - (ctx.measureText(priceText).width + iconS * (cost.stone ? 2 : 1) + 4) / 2;
-      ctx.drawImage(art.icons.coin, startX, lineY - iconS / 2, iconS, iconS);
       ctx.textAlign = 'left';
+      ctx.textBaseline = 'middle';
       ctx.fillStyle = can ? '#C2410C' : '#57534E';
-      var coinsText = fmt(cost.coins);
-      ctx.fillText(coinsText, startX + iconS + 3, lineY + 1);
-      if (cost.stone) {
-        var sx = startX + iconS + 3 + ctx.measureText(coinsText + '  ').width;
-        ctx.drawImage(art.icons.stone, sx, lineY - iconS / 2, iconS, iconS);
-        ctx.fillText(fmt(cost.stone), sx + iconS + 3, lineY + 1);
-      }
+      var px = bxp + fs * 0.7;
+      parts.forEach(function (q, n) {
+        if (n) px += fs * 0.8;
+        ctx.drawImage(art.icons[q[0]], Math.round(px), Math.round(cym - iconS / 2), iconS, iconS);
+        px += iconS + gap;
+        ctx.fillText(q[1], px, cym + fs * 0.05);
+        px += ctx.measureText(q[1]).width;
+      });
       ctx.restore();
     });
   }
@@ -1038,15 +1053,19 @@
     if (!drag || drag.done[i]) return;
     drag.done[i] = true;
     if (UI.moveFrom >= 0) return;
-    if (UI.tool === 'hand') {
+    var b = S.tiles[i];
+    if (!UI.tool) {
       if (E.available(S, i, true) > 0) { var ev = []; E.collect(S, i, ev); handle(ev); }
+    } else if (UI.tool === 'hoe') {
+      if (!E.canHoe(S, i)) placeAt(i, true);
     } else if (CFG.crops[UI.tool]) {
-      if (!S.tiles[i] || (S.tiles[i].k === 'crop' && S.tiles[i].crop !== UI.tool)) placeAt(i, true);
+      if (b && (b.k === 'plot' || (b.k === 'crop' && b.crop !== UI.tool))) placeAt(i, true);
     }
   }
 
   function tap(i) {
     UI.cursor = i;
+    hideTip();
     if (UI.moveFrom >= 0) {
       if (i === UI.moveFrom) { UI.moveFrom = -1; renderGoal(true); return; }
       var ev = [];
@@ -1059,14 +1078,18 @@
     }
     var region = E.regionOf(i);
     if (!S.regions[region]) { openRegion(region); return; }
-    if (UI.tool === 'hand') {
+    if (!UI.tool) {
       if (E.available(S, i, true) > 0) { var ev2 = []; E.collect(S, i, ev2); handle(ev2); return; }
-      if (S.tiles[i]) { openSheet(i); return; }
+      var t = S.tiles[i];
+      if (t && t.k === 'crop') { showTip(i); return; }
+      if (t && t.k === 'plot') { hint('翻好的田：選一種菜，種在這裡', 2000); return; }
+      if (t) { openSheet(i); return; }
       var f = E.floorOf(i);
       if (f === 'R') hint('大石頭：在旁邊蓋採石場，就會開始挖', 2200);
       else if (f === 'L') hint('岩漿好燙！在旁邊蓋鍛造爐', 2200);
       else if (f === 'W') hint('小河：河邊的菜長得比較快', 2200);
-      else hint('選下面的工具，在這裡種菜或蓋東西', 2000);
+      else if (f === 'G') hint('先選鋤頭，把草地翻成田', 2000);
+      else hint('選下面的房子，蓋在這裡', 2000);
       return;
     }
     placeAt(i, false);
@@ -1084,8 +1107,9 @@
       return;
     }
     if (r === 'busy' && S.tiles[i]) {
-      if (UI.tool === 'hand') return;
-      hint('這裡已經有' + NAME[S.tiles[i].k === 'crop' ? S.tiles[i].crop : S.tiles[i].k] + '了', 1600);
+      var k0 = S.tiles[i].k;
+      if (k0 === 'plot') hint('這塊已經翻好了，選一種菜種下去', 1800);
+      else hint('這裡已經有' + NAME[k0 === 'crop' ? S.tiles[i].crop : k0] + '了', 1600);
       return;
     }
     hint(why(r, UI.tool), 2000);
@@ -1112,7 +1136,7 @@
       UI.keyboard = true;
       tap(UI.cursor);
     } else if (ev.key === 'Escape') {
-      if (UI.moveFrom >= 0) { UI.moveFrom = -1; renderGoal(true); } else if (UI.tool !== 'hand') setTool('hand');
+      if (UI.moveFrom >= 0) { UI.moveFrom = -1; renderGoal(true); } else if (UI.tool) setTool(null);
     }
   });
   board.addEventListener('focus', function () { if (UI.keyboard) say(describe(UI.cursor)); });
@@ -1124,9 +1148,58 @@
     var b = S.tiles[i];
     var f = E.floorOf(i);
     if (!b) return pos + ({ G: '草地', S: '碎石地', B: '火山岩地', R: '大石頭', W: '小河', L: '岩漿' })[f];
+    if (b.k === 'plot') return pos + '翻好的田';
     if (b.k === 'crop') return pos + CFG.crops[b.crop].name + (b.ready ? '，熟了' : '，還在長') + (S.mult[i] > 1 ? '，' + S.mult[i] + ' 倍' : '');
     var n = E.available(S, i, true);
     return pos + NAME[b.k] + (n ? '，有 ' + n + ' 個可以收' : '');
+  }
+
+  /* ─────────────────────────────────────────────────────────────
+     點一下還沒熟的菜：一條小卡在那一格上面——品種、灰字的「5 秒」、進度線、完成多少 %。
+     點得穿（不擋手指），6 秒後或點別的地方就收起來
+     ───────────────────────────────────────────────────────────── */
+
+  var tipEl = $('cropTip');
+
+  function secs(t) {
+    return (Math.abs(t - Math.round(t)) < 0.05 ? String(Math.round(t)) : t.toFixed(1)) + ' 秒';
+  }
+
+  function showTip(i) {
+    var b = S.tiles[i];
+    UI.tip = i;
+    UI.tipUntil = UI.clock + 6;
+    tipEl.innerHTML = '<b class="tip-name">' + esc(CFG.crops[b.crop].name) + '</b>' +
+      '<span class="tip-time">' + secs(E.cropTime(S, i)) + '</span>' +
+      '<span class="tip-bar"><span class="tip-fill" id="tipFill"></span></span>' +
+      '<span class="tip-pct" id="tipPct"></span>';
+    tipEl.hidden = false;
+    renderTip();
+    /* 放在那一格上面（最上面兩排放下面），左右不超出農場 */
+    var wr = boardWrap.getBoundingClientRect(), br = board.getBoundingClientRect();
+    var s = br.width / N;
+    var cx = br.left - wr.left + (E.col(i) + 0.5) * s;
+    var w = tipEl.offsetWidth, h = tipEl.offsetHeight;
+    var top = br.top - wr.top + E.row(i) * s - h - 6;
+    if (E.row(i) < 2) top = br.top - wr.top + (E.row(i) + 1) * s + 6;
+    var left = Math.max(br.left - wr.left + 4, Math.min(cx - w / 2, br.right - wr.left - w - 4));
+    tipEl.style.left = Math.round(left) + 'px';
+    tipEl.style.top = Math.round(top) + 'px';
+    say(CFG.crops[b.crop].name + '，' + secs(E.cropTime(S, i)) + '長一次，' + (b.ready ? '熟了' : '長了 ' + Math.floor(b.g * 100) + '%'));
+  }
+
+  function hideTip() {
+    UI.tip = -1;
+    tipEl.hidden = true;
+  }
+
+  function renderTip() {
+    if (UI.tip < 0) return;
+    var b = S.tiles[UI.tip];
+    if (!b || b.k !== 'crop' || UI.clock > UI.tipUntil) { hideTip(); return; }
+    var pct = b.ready ? 100 : Math.min(99, Math.floor(b.g * 100));
+    $('tipFill').style.transform = 'scaleX(' + (pct / 100).toFixed(3) + ')';
+    $('tipPct').textContent = pct + '%';
   }
 
   /* ─────────────────────────────────────────────────────────────
@@ -1163,8 +1236,6 @@
     return '<div class="sh-row"><dt>' + label + '</dt><dd>' + value + '</dd></div>';
   }
 
-  function perMin(x) { return '每分鐘大約 ' + fmt(Math.round(x)); }
-
   function sheetSpec() {
     var head, body = '', acts = '';
     if (UI.sheetRegion) {
@@ -1185,13 +1256,7 @@
     var canMove = b.k !== 'crop';
     var refund = b.paid && (b.paid.coins || b.paid.stone) ? '退回 ' + [b.paid.coins ? fmt(b.paid.coins) + ' 金幣' : '', b.paid.stone ? fmt(b.paid.stone) + ' 石頭' : ''].filter(Boolean).join('、') : '';
 
-    if (b.k === 'crop') {
-      var ct = E.cropTime(S, i);
-      info += row('多久收一次', ct.toFixed(1) + ' 秒' + (E.WET[i] ? '（河邊，快 1.5 倍）' : ''));
-      info += row('一次幾個金幣', fmt(E.cropValue(S, i)) + (S.mult[i] > 1 ? '（燈塔 ' + S.mult[i] + ' 倍）' : ''));
-      info += row('產量', perMin(E.cropValue(S, i) * 60 / ct));
-      info += row('現在', b.ready ? '熟了！' : '長了 ' + Math.floor(b.g * 100) + '%');
-    } else if (b.k === 'lighthouse') {
+    if (b.k === 'lighthouse') {
       var lit = E.N8[i].filter(function (j) { return S.tiles[j] && (S.tiles[j].k === 'crop' || S.tiles[j].k === 'quarry'); }).length;
       body += '<p class="sh-lede">照到旁邊 8 格（黃色的格子）：菜和採石場的收成多 1 倍。兩座燈塔一起照，就是 3 倍！</p>';
       info += row('現在照到', lit + ' 塊田或採石場');
@@ -1337,7 +1402,7 @@
       if (r === 'money') { hint(short(E.bankUpPrice(S)), 2000); shake(b); return; }
     } else if (act === 'move') {
       UI.moveFrom = i;
-      UI.tool = 'hand';
+      UI.tool = null;
       closeSheet();
       renderTools(true);
       renderGoal(true);
@@ -1402,7 +1467,7 @@
     if (resetDlg.returnValue === 'yes') {
       S = E.newState();
       hadSave = false;
-      UI.tool = 'hand';
+      UI.tool = null;
       UI.moveFrom = -1;
       UI.pops = {};
       UI.floats = [];
@@ -1451,6 +1516,7 @@
     UI.shots.forEach(function (s) { s.t += dt; });
 
     drawScene(bctx, board.width / 128, UI.clock, true);
+    renderTip();
     renderHud(false);
     renderGoal(false);
     renderTools(false);
@@ -1474,7 +1540,7 @@
     el.innerHTML = '<img class="px" src="' + ART.iconUrl(el.getAttribute('data-icon'), el.hasAttribute('data-big')) +
       '" alt="' + esc(el.getAttribute('data-alt') || '') + '">';
   });
-  TOOLS.forEach(function (k) { if (toolVisible(k)) UI.seenTools[k] = true; });
+  TOOLS.forEach(function (k) { if (!toolLocked(k)) UI.seenTools[k] = true; });
   renderCover();
   show('cover');
   track('home');

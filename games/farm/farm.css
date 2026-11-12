@@ -391,39 +391,114 @@ body.is-playing .topbar {
   }
 }
 
-/* 工具列：橫的，可以左右滑 */
-.farm-tools {
+/* 點還沒熟的菜：品種 · 灰字的「5 秒」· 進度線 · 完成 % */
+.crop-tip {
+  position: absolute;
+  z-index: 3;
   display: flex;
-  gap: 6px;
-  flex: none;
-  margin: 0 -8px;
-  padding: 4px 8px 6px;
-  overflow-x: auto;
-  scroll-snap-type: x proximity;
-  scrollbar-width: none;
-  overscroll-behavior-x: contain;
+  align-items: center;
+  gap: 8px;
+  width: 224px;
+  padding: 8px 14px;
+  border-radius: var(--r-pill);
+  background: var(--card);
+  box-shadow: var(--sh-lg);
+  pointer-events: none;
+  animation: tip-in var(--t-fast) var(--ease);
 }
 
-.farm-tools::-webkit-scrollbar {
-  display: none;
+@keyframes tip-in {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+}
+
+.tip-name {
+  flex: none;
+  color: var(--fg);
+  font-size: .95rem;
+  font-weight: 800;
+  line-height: 1.2;
+}
+
+.tip-time {
+  flex: none;
+  color: var(--fg-muted);
+  font-family: var(--font-num);
+  font-size: .8rem;
+  font-weight: 700;
+}
+
+.tip-bar {
+  flex: 1;
+  height: 6px;
+  overflow: hidden;
+  border-radius: var(--r-pill);
+  background: var(--bg-sunk);
+  box-shadow: var(--sh-inset);
+}
+
+.tip-fill {
+  display: block;
+  width: 100%;
+  height: 100%;
+  background: var(--success);
+  transform-origin: left center;
+}
+
+.tip-pct {
+  flex: none;
+  min-width: 2.6em;
+  color: var(--fg);
+  font-family: var(--font-num);
+  font-size: .9rem;
+  font-weight: 800;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+/* 工具列：兩排，全部看得到、不用滑。
+   第一排 5 格（鋤頭、機器人、三種菜），第二排 7 格（房子）。每格只有圖和價錢 */
+.farm-tools {
+  display: grid;
+  gap: 6px;
+  flex: none;
+  padding: 4px 0 2px;
+}
+
+.tool-row {
+  display: grid;
+  gap: 5px;
+}
+
+.tool-row.r1 {
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+}
+
+.tool-row.r2 {
+  grid-template-columns: repeat(7, minmax(0, 1fr));
 }
 
 .tool {
   position: relative;
   display: grid;
   justify-items: center;
-  align-content: start;
-  gap: 1px;
-  flex: 0 0 66px;
-  min-height: 86px;
-  padding: 6px 2px 5px;
+  align-content: center;
+  gap: 2px;
+  min-width: 0;
+  min-height: 60px;
+  padding: 4px 1px 3px;
   border: var(--line-w) solid var(--line);
   border-radius: var(--r-sm);
   background: var(--card);
   color: var(--fg);
   box-shadow: var(--sh-sm);
-  scroll-snap-align: start;
   transition: transform var(--t-fast) var(--ease), background-color var(--t-fast) var(--ease);
+}
+
+.r2 .tool {
+  min-height: 56px;
 }
 
 .tool:active {
@@ -433,41 +508,76 @@ body.is-playing .topbar {
 
 .tool.is-on {
   border: 2px solid var(--primary-deep);
-  padding: 5px 1px 4px;
+  padding: 3px 0 2px;
   background: var(--primary-wash);
 }
 
 .tool-pic {
+  position: relative;
   display: grid;
   place-items: center;
-  width: 34px;
-  height: 34px;
+  width: 32px;
+  height: 32px;
 }
 
 .tool-img {
-  width: 34px;
-  height: 34px;
+  width: 32px;
+  height: 32px;
   image-rendering: pixelated;
 }
 
-.tool-name {
-  font-size: .8rem;
-  font-weight: 800;
-  line-height: 1.25;
-  white-space: nowrap;
+.r2 .tool-pic,
+.r2 .tool-img {
+  width: 26px;
+  height: 26px;
 }
 
 .tool-price {
   font-family: var(--font-num);
   font-size: .72rem;
   font-weight: 700;
-  line-height: 1.2;
+  line-height: 1.15;
   color: var(--fg-muted);
+}
+
+.r2 .tool-price {
+  font-size: .66rem;
 }
 
 .tool-price .cost {
   flex-direction: column;
   gap: 0;
+}
+
+.tool-price .cost-item img {
+  width: 11px;
+  height: 11px;
+}
+
+/* 還沒打開：灰的、虛線框、圖上有鎖頭（點了會說要先打開哪裡） */
+.tool.is-locked {
+  border-style: dashed;
+  background: var(--bg-sunk);
+  box-shadow: none;
+}
+
+.tool.is-locked .tool-img {
+  filter: grayscale(1);
+  opacity: .4;
+}
+
+.tool-lock {
+  position: absolute;
+  right: -4px;
+  bottom: -2px;
+  width: 15px;
+  height: 15px;
+}
+
+.tool-lock img {
+  width: 100%;
+  height: 100%;
+  image-rendering: pixelated;
 }
 
 .tool-note {
@@ -1088,21 +1198,41 @@ body.is-playing .topbar {
     gap: 4px;
   }
 
+  .farm-hud,
+  .farm-goal {
+    min-height: 44px;
+  }
+
+  .hud-btn {
+    width: 44px;
+    height: 44px;
+  }
+
   .tool {
-    min-height: 78px;
-    padding-top: 4px;
+    min-height: 52px;
+  }
+
+  .r2 .tool {
+    min-height: 48px;
   }
 
   .tool-pic,
   .tool-img {
-    width: 30px;
-    height: 30px;
+    width: 28px;
+    height: 28px;
+  }
+
+  .r2 .tool-pic,
+  .r2 .tool-img {
+    width: 22px;
+    height: 22px;
   }
 }
 
 @media (prefers-reduced-motion: reduce) {
 
   .farm-hint,
+  .crop-tip,
   .farm-toast,
   .farm-sheet[open] {
     animation: none;
