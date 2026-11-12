@@ -972,7 +972,10 @@ are kept as written: 硬幣收藏家, 好鄰居, 無限力量.
 
 8 × 8, four regions; only 草原 is open at the start, the rest sit under fog with **only the price**
 (no region name, no clouds — product owner, 2026-11-12). The terrain shows faintly through, so the
-volcano is a visible promise; the fog fades out when a region opens.
+volcano is a visible promise; the fog fades out when a region opens. The price tag is **grey** while
+it can't be bought (grey ground `#E7E5E4`, `#57534E` text — 6:1 — and a grey coin); once it can, it
+turns **white with an orange border and a gold coin and gently pulses** (±8 %, 1.1 s) to invite the
+tap. Reduced motion: no pulse, same colours.
 
 | Region | Tiles | Terrain rule | Unlock |
 |---|---|---|---|
@@ -1026,8 +1029,8 @@ volcano is a visible promise; the fog fades out when a region opens.
   2026-11-12). Row 1, five cells: 鋤頭 · 機器人 · 蘿蔔 · 玉米 · 番茄. Row 2, seven cells: 燈塔 · 採石場 ·
   湯鍋 · 倉庫 · 小豬銀行 · 鍛造爐 · 月光祭壇. Each cell is **picture + price only** (the name is in the
   aria-label, and the goal strip names the selected tool); prices drop the thousands comma to fit.
-  Tools of unopened regions keep their cell, greyed with a dashed border and a lock; tapping one says
-  which region opens it. There is no 收成 tool: with nothing selected, a tap harvests or opens a
+  Tools of unopened regions keep their cell and are simply grey (grey tile, faded greyscale picture —
+  no lock badge, product owner 2026-11-12); tapping one says which region opens it. There is no 收成 tool: with nothing selected, a tap harvests or opens a
   building; tapping the selected tool again (or 「好了」) returns to that.
 - **Tapping a growing crop** shows a small card over it (below it on the top two rows), click-through,
   for 6 s: 品種 · grey 「5 秒」 (its real grow time, river and orbs included) · a progress line · 「56%」.

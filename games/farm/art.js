@@ -360,6 +360,9 @@
     S.hoeGlow = sprite(A.tomato2);
     var icons = {};
     Object.keys(I).forEach(function (k) { icons[k] = sprite(I[k]); });
+    /* 買不起時的灰色金幣、灰一點的石頭（地區價錢牌） */
+    icons.coinGray = sprite(I.coin, { a: 'X', i: 'x', A: 'E' });
+    icons.stoneGray = sprite(I.stone, { e: 'x', E: 'X', f: 'E' });
     var pebbles = { s: sprite(PEBBLE.s), o: sprite(PEBBLE.o) };
     built = { sprites: S, icons: icons, pebbles: pebbles, bowl: sprite(BOWL) };
     return built;

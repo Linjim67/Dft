@@ -554,30 +554,16 @@ body.is-playing .topbar {
   height: 11px;
 }
 
-/* 還沒打開：灰的、虛線框、圖上有鎖頭（點了會說要先打開哪裡） */
+/* 還沒打開：整顆灰灰的就好（點了會說要先打開哪裡） */
 .tool.is-locked {
-  border-style: dashed;
-  background: var(--bg-sunk);
+  border-color: #D6D3D1;
+  background: #EEECEA;
   box-shadow: none;
 }
 
 .tool.is-locked .tool-img {
   filter: grayscale(1);
-  opacity: .4;
-}
-
-.tool-lock {
-  position: absolute;
-  right: -4px;
-  bottom: -2px;
-  width: 15px;
-  height: 15px;
-}
-
-.tool-lock img {
-  width: 100%;
-  height: 100%;
-  image-rendering: pixelated;
+  opacity: .35;
 }
 
 .tool-note {

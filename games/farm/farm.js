@@ -329,7 +329,7 @@
      工具列
      ───────────────────────────────────────────────────────────── */
 
-  /* 還沒打開的地區的工具：位置照樣留著（灰的、有鎖頭），版面不會跳 */
+  /* 還沒打開的地區的工具：位置照樣留著（整顆灰灰的），版面不會跳 */
   function toolLocked(k) {
     return k !== 'hoe' && k !== 'robot' && !E.kindReady(S, k);
   }
@@ -366,8 +366,7 @@
       (isRobot ? '' : ' aria-pressed="' + on + '"') + (st.locked ? ' aria-disabled="true"' : '') + '>' +
       (UI.newTools[k] ? '<span class="tool-new" aria-hidden="true">新</span>' : '') +
       (isRobot ? '<span class="tool-count" aria-hidden="true">' + S.robots.length + '</span>' : '') +
-      '<span class="tool-pic">' + img(SPRITE_OF[k], true, 'tool-img') +
-      (st.locked ? '<span class="tool-lock">' + img('lock') + '</span>' : '') + '</span>' +
+      '<span class="tool-pic">' + img(SPRITE_OF[k], true, 'tool-img') + '</span>' +
       '<span class="tool-price" aria-hidden="true">' + priceHtml + '</span>' +
       (on ? '<span class="tool-check" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="m5 12.5 4.5 4.5L19 7.5" /></svg></span>' : '') +
       '</button>';
@@ -978,7 +977,8 @@
       ctx.restore();
       if (open) return;
 
-      /* 價錢：金幣（和石頭）圖示 + 數字，買得起時是橘色框 */
+      /* 價錢牌：買不起 = 灰底、灰字、灰色的金幣；買得起 = 白底、橘框、金色金幣，
+         而且一放大一縮小地跳（減少動態時不跳），讓人想點 */
       var cost = CFG.regions[id].cost;
       var can = E.afford(S, cost);
       var fs = Math.max(12, R(5.6));
@@ -990,13 +990,19 @@
       var inner = 0;
       parts.forEach(function (q, n) { inner += iconS + gap + ctx.measureText(q[1]).width + (n ? fs * 0.8 : 0); });
       var bw = inner + fs * 1.4, bh = Math.round(fs * 2.1);
-      var cxm = R(x + w / 2), cym = R(y + h / 2);
-      var bxp = Math.round(cxm - bw / 2), byp = Math.round(cym - bh / 2);
-      ctx.fillStyle = can ? '#FFEDD5' : '#FFFFFF';
-      ctx.strokeStyle = can ? '#C2410C' : '#9C8578';
-      ctx.lineWidth = Math.max(2, fs * 0.14);
+      ctx.translate(R(x + w / 2), R(y + h / 2));
+      if (can && !still()) {
+        var beat = 1 + 0.08 * (0.5 - 0.5 * Math.cos(t * Math.PI * 2 / 1.1));
+        ctx.scale(beat, beat);
+      }
+      var bxp = Math.round(-bw / 2), byp = Math.round(-bh / 2);
+      if (can) { ctx.shadowColor = 'rgba(194,65,12,.35)'; ctx.shadowBlur = R(3); }
+      ctx.fillStyle = can ? '#FFFFFF' : 'rgba(231,229,228,.94)';
       roundRect(ctx, bxp, byp, bw, bh, bh / 2);
       ctx.fill();
+      ctx.shadowColor = 'transparent';
+      ctx.strokeStyle = can ? '#C2410C' : '#A8A29E';
+      ctx.lineWidth = Math.max(2, fs * (can ? 0.16 : 0.1));
       ctx.stroke();
       ctx.imageSmoothingEnabled = false;
       ctx.textAlign = 'left';
@@ -1005,9 +1011,9 @@
       var px = bxp + fs * 0.7;
       parts.forEach(function (q, n) {
         if (n) px += fs * 0.8;
-        ctx.drawImage(art.icons[q[0]], Math.round(px), Math.round(cym - iconS / 2), iconS, iconS);
+        ctx.drawImage(art.icons[can ? q[0] : q[0] + 'Gray'], Math.round(px), Math.round(-iconS / 2), iconS, iconS);
         px += iconS + gap;
-        ctx.fillText(q[1], px, cym + fs * 0.05);
+        ctx.fillText(q[1], px, fs * 0.05);
         px += ctx.measureText(q[1]).width;
       });
       ctx.restore();
