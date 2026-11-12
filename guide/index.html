@@ -44,15 +44,15 @@
       <p class="page-lede">陪孩子度過打針的小方法。</p>
     </div>
 
-    <!-- 章節選單：捲動時黏在頂端；每章一個色點，目前所在的章節會標出來 -->
-    <nav class="jump" aria-label="本頁段落">
-      <a class="jump-link" href="#say" data-tone="apricot"><span class="jump-dot" aria-hidden="true"></span>怎麼說</a>
-      <a class="jump-link" href="#during" data-tone="sage"><span class="jump-dot" aria-hidden="true"></span>打針當下</a>
-      <a class="jump-link" href="#dont" data-tone="honey"><span class="jump-dot" aria-hidden="true"></span>不要說</a>
-    </nav>
+    <!-- 章節分頁：一次顯示一章，捲動時黏在頂端（guide.js 負責切換） -->
+    <div class="tabs" role="tablist" aria-label="章節">
+      <button class="tab" type="button" role="tab" id="tab-say" aria-controls="say" aria-selected="true">怎麼說</button>
+      <button class="tab" type="button" role="tab" id="tab-during" aria-controls="during" aria-selected="false" tabindex="-1">打針當下</button>
+      <button class="tab" type="button" role="tab" id="tab-dont" aria-controls="dont" aria-selected="false" tabindex="-1">不要說</button>
+    </div>
 
     <!-- ── 1. 你可以這樣跟他說！依年紀分組（預設依小檔案的年紀選好） ── -->
-    <section class="part" id="say" data-tone="apricot" aria-labelledby="sayTitle">
+    <section class="part" id="say" data-tone="apricot" role="tabpanel" aria-labelledby="tab-say">
       <div class="part-head">
         <span class="part-mark" aria-hidden="true">
           <svg viewBox="0 0 24 24" class="icon">
@@ -73,7 +73,7 @@
     </section>
 
     <!-- ── 2. 打針當下，家長可以這樣做！（全年齡） ── -->
-    <section class="part" id="during" data-tone="sage" aria-labelledby="duringTitle">
+    <section class="part" id="during" data-tone="sage" role="tabpanel" aria-labelledby="tab-during" hidden>
       <div class="part-head">
         <!-- 大人牽著小孩 -->
         <span class="part-mark" aria-hidden="true">
@@ -87,7 +87,7 @@
         <h2 class="part-title" id="duringTitle">打針當下，家長可以這樣做！</h2>
         <p class="part-sub"><span class="all-ages">全年齡適用</span>你的陪伴很重要，你的配合更是孩子安全完成抽血的重要關鍵。</p>
       </div>
-      <div class="topic-list" id="duringList"></div>
+      <div class="topic-list is-plain" id="duringList"></div>
 
       <!-- 規格：這一塊最下方放「我要打針了」，直接連到轉移注意力的小遊戲 -->
       <a class="ready-card" href="/games/solo/">
@@ -106,7 +106,7 @@
     </section>
 
     <!-- ── 3. 這些話先不要跟小孩說！（全年齡）：每個人都該看到，不收進折疊 ── -->
-    <section class="part" id="dont" data-tone="honey" aria-labelledby="dontTitle">
+    <section class="part" id="dont" data-tone="honey" role="tabpanel" aria-labelledby="tab-dont" hidden>
       <div class="part-head">
         <!-- 對話框裡一個叉：這些話先別說 -->
         <span class="part-mark" aria-hidden="true">
@@ -118,7 +118,7 @@
         <h2 class="part-title" id="dontTitle">這些話先不要跟小孩說！</h2>
         <p class="part-sub"><span class="all-ages">全年齡適用</span>每一句都附上可以換成的說法。</p>
       </div>
-      <div class="topic-list" id="dontList"></div>
+      <div class="topic-list is-plain" id="dontList"></div>
     </section>
 
     <!-- 讀完之後的下一步：陪孩子玩小遊戲，或去「抽血大小問」 -->

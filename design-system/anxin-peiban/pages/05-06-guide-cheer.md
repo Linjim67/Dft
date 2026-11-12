@@ -49,20 +49,28 @@ the cream ground was nearly invisible, which is why it is a white card.
 
 Chapters: 怎麼說 = apricot · 打針當下 = sage · 不要說 = honey.
 
-- **Chapter menu:** three sticky pills with tone dots, `aria-current` via IntersectionObserver,
-  and a soft shadow once stuck. The current chapter gets its tone's soft fill, inner ring and ink.
+- **Chapter tabs** (owner's reference screenshot, 2026-11-12): three centred pills, sticky. They are
+  real WAI-ARIA tabs that show **one chapter at a time**: ←/→/Home/End move between them, and
+  `#say` / `#during` / `#dont` open that chapter. The selected tab is solid ink (`--fg`) with white
+  text (12.8:1); the others are white with ink text. Switching tabs while scrolled down rewinds to the
+  tab bar, so the new chapter starts at its top.
+- **Topic rows, not cards** (same screenshot; guide only, so cheer keeps its card list):
+  `.topic-list.is-plain` drops the white card and shadow. Each row is a 22px icon in the chapter tone,
+  then the bold title, then a plain chevron, with **no right-side count**. When opened, the content
+  sits directly under the title (indented 38px), in grey. Every topic has an `icon` in `content.js`;
+  the icons are authored in `guide.js` (`ICONS`).
 - **Age cards** (2 歲以下 / 3–4 歲 / 5–9 歲): a radio group with icons and a check badge, selected in
   apricot. Pre-selected from the profile by whole years (2歲半 → 2 歲以下; 10+ falls back to 5–9 with
   a note). Only the selected group's panel is rendered visible.
 - 怎麼說 has no lede: the age cards follow the heading directly.
 - **Phrases to say** (and the baby group's actions) are one per line after a **16×2px dash** in the
   chapter tone, in regular weight, with no bubbles. Riddle answers hide behind 「看答案」.
-- 打針當下 rows carry sage icon tiles; their action lists keep tone dots. 讓孩子分心 has no game link
+- 打針當下 action lists keep tone dots. 讓孩子分心 has no game link
   inside it: the chapter ends in the **我要打針了** card (white, 2px apricot border) → `/games/solo/`,
   which is distinct from the top bar's 開始打針 → `/shot/`.
-- 這些話先不要跟小孩說 uses the same topic cards as the other chapters (owner, 2026-11-12): the title
-  and 「3 句」 show first, and opening a card shows its pairs. Each pair is 「✕ 避免」 (grey text, red
-  ✕ icon only) then 「✓ 改說」 in a honey speech bubble (green ✓ icon only).
+- 這些話先不要跟小孩說 uses the same topic rows as the other chapters (owner, 2026-11-12): only the
+  titles show at first, and opening one shows its pairs. Each pair is 「✕ 避免」 (grey text, red ✕ icon
+  only) then 「✓ 改說」 in a honey speech bubble (green ✓ icon only).
 
 ## 06 抽血大小問 `/cheer/` — FAQ page
 

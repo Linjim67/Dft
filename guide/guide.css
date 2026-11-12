@@ -1,65 +1,99 @@
 /* ═══ 家長安慰指南 ═══════════════════════════════════════════════
    小冊子外框、章節標題、一題一張卡沿用 /shared/page.css（.booklet、.part、.topic）。
    章節色：怎麼說＝杏橘（apricot）、打針當下＝鼠尾草綠（sage）、不要說＝蜂蜜黃（honey）。
-   這裡放本頁的：章節選單、年紀卡、對話框、清單、猜謎、「我要打針了」、避免／改說。
+   這裡放本頁的：章節分頁、主題列、年紀卡、橫槓句子、清單、猜謎、「我要打針了」、避免／改說。
    ═══════════════════════════════════════════════════════════════ */
 
 html {
   scroll-behavior: smooth;
 }
 
-/* ═══ 章節選單：三顆膠囊，捲動時黏在頂端 ═══════════════════════ */
+/* ═══ 章節分頁：三顆膠囊置中，捲動時黏在頂端 ════════════════════
+   選到的那一章：深色實心＋白字（白字配深可可 12.8:1）；其他：白底深字。
+   形狀不變，靠實心／空心分辨，不只靠顏色。 */
 
-.jump {
+.tabs {
   position: sticky;
   top: 0;
   z-index: 5;
   display: flex;
+  justify-content: center;
   gap: var(--sp-2);
-  margin: 0 calc(var(--sp-5) * -1) var(--sp-6);
+  margin: 0 calc(var(--sp-5) * -1) var(--sp-5);
   padding: var(--sp-2) var(--sp-5);
   background: var(--bg);
   transition: box-shadow var(--t-base) var(--ease);
 }
 
-.jump.is-stuck {
-  box-shadow: 0 8px 16px -12px rgba(124, 45, 18, .35);
+.tabs.is-stuck {
+  box-shadow: 0 8px 16px -12px rgba(74, 42, 28, .35);
 }
 
-.jump-link {
-  flex: 1 1 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 6px;
+.tab {
   min-height: var(--tap);
-  padding-inline: var(--sp-2);
+  padding-inline: 20px;
+  border: 0;
   border-radius: var(--r-pill);
   background: var(--card);
-  box-shadow: var(--sh-sm);
-  color: var(--fg-muted);
+  color: var(--fg);
+  font: inherit;
   font-size: .95rem;
   font-weight: 700;
-  text-decoration: none;
   white-space: nowrap;
+  cursor: pointer;
   transition: background-color var(--t-fast) var(--ease),
-    color var(--t-fast) var(--ease),
-    box-shadow var(--t-fast) var(--ease);
+    color var(--t-fast) var(--ease);
 }
 
-.jump-dot {
-  flex: none;
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  background: var(--tone);
+.tab[aria-selected="true"] {
+  background: var(--fg);
+  color: #FFFFFF;
 }
 
-/* 目前章節：章節色淡底＋內框＋章節色字（形狀也變，不只靠顏色） */
-.jump-link[aria-current="true"] {
-  background: var(--tone-soft);
+/* 一次只顯示一章：章節之間不需要再拉開距離 */
+.part[role="tabpanel"] {
+  margin-top: 0;
+}
+
+/* ═══ 主題列：不用卡片，一行一題（左邊小圖示、粗體標題、右邊箭頭）═══
+   點開後內容排在標題正下方、和標題對齊，灰字 */
+
+.topic-list.is-plain {
+  gap: 0;
+}
+
+.is-plain .topic {
+  background: none;
+  border-radius: 0;
+  box-shadow: none;
+}
+
+.is-plain .topic-head,
+.is-plain .topic-head.has-icon {
+  grid-template-columns: 24px minmax(0, 1fr) auto;
+  gap: 14px;
+  min-height: 56px;
+  padding: 14px 0;
+}
+
+.is-plain .topic-icon {
+  width: 24px;
+  height: 24px;
+  border-radius: 0;
+  background: none;
   color: var(--tone);
-  box-shadow: inset 0 0 0 2px var(--tone);
+}
+
+.is-plain .topic-icon .icon {
+  width: 22px;
+  height: 22px;
+}
+
+.is-plain .topic-body {
+  margin: -4px 0 0 38px;
+  padding: 0 0 var(--sp-4);
+  border-top: 0;
+  color: var(--fg-muted);
 }
 
 /* ═══ 年紀卡（單選；選到的有勾勾） ═══════════════════════════ */
@@ -417,9 +451,8 @@ html {
     color: var(--apricot);
   }
 
-  .jump-link:not([aria-current="true"]):hover {
-    color: var(--tone);
-    background: var(--tone-soft);
+  .tab[aria-selected="false"]:hover {
+    background: var(--apricot-soft);
   }
 
   .age-opt input:not(:checked)+.age-face:hover {
