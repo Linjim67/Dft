@@ -10,26 +10,30 @@
 
   /* 地形：G 草地、W 小河、R 大石頭、S 碎石地、L 岩漿、B 火山岩地
      地區：F 草原（一開始就有）、R 小河邊、M 礦山、V 火山 */
+  /* 版面（2026-11-12）：左下 5×5 草原（一開始的農場，倉庫在正中間 (2,5)）、右下 3×5 小溪、
+     上面 5×3 礦山、右上角 3×3 火山。
+     礦山：(1,1) 碰到 4 顆大石頭（礦山高手），其他碎石地 1–3 顆。火山：正中間 (6,1) 碰到 4 格岩漿 */
   var MAP = [
-    'RRSRLLBL',
-    'SSSSBBLL',
-    'RSRSBLBB',
-    'SSRSBBBL',
+    'RRSRSLBL',
+    'SSSSRBBL',
+    'RSRSSLBB',
+    'GGGGGGWG',
     'GGGGGGWG',
     'GGGGGGWG',
     'GGGGGGWG',
     'GGGGGGWG'
   ];
   var REGION_MAP = [
-    'MMMMVVVV',
-    'MMMMVVVV',
-    'MMMMVVVV',
-    'MMMMVVVV',
+    'MMMMMVVV',
+    'MMMMMVVV',
+    'MMMMMVVV',
+    'FFFFFRRR',
     'FFFFFRRR',
     'FFFFFRRR',
     'FFFFFRRR',
     'FFFFFRRR'
   ];
+  var HOME = 5 * N + 2;   /* 倉庫：草原正中間 */
   var REGION_KEY = { F: 'meadow', R: 'river', M: 'mountain', V: 'volcano' };
   var REGION_ORDER = ['meadow', 'river', 'mountain', 'volcano'];
 
@@ -132,8 +136,8 @@
     };
     for (var i = 0; i < N * N; i++) S.tiles.push(null);
     /* 一開始：倉庫在草原中間，旁邊四塊蘿蔔田 */
-    S.tiles[at(2, 6)] = { k: 'barn', paid: null };
-    [at(2, 5), at(1, 6), at(3, 6), at(2, 7)].forEach(function (j) {
+    S.tiles[HOME] = { k: 'barn', paid: null };
+    [at(2, 4), at(1, 5), at(3, 5), at(2, 6)].forEach(function (j) {
       S.tiles[j] = { k: 'crop', crop: 'carrot', g: 0.35 + 0.15 * (j % 3), ready: 0, paid: { coins: 2 } };
     });
     prepare(S);
@@ -210,21 +214,29 @@
      價錢
      ───────────────────────────────────────────────────────────── */
 
+  /* 好看的數字：10 以下照算；100 以下取 5 的倍數；再大取兩位有效數字（315 → 320、1,153 → 1,200） */
+  function nice(n) {
+    if (n <= 10) return Math.round(n);
+    if (n < 100) return Math.round(n / 5) * 5;
+    var mag = Math.pow(10, Math.floor(Math.log(n) / Math.LN10 + 1e-9) - 1);
+    return Math.round(n / mag) * mag;
+  }
+
   function price(S, kind) {
     if (CONFIG.crops[kind]) return { coins: CONFIG.crops[kind].plant, stone: 0 };
     if (kind === 'robot') {
       var r = CONFIG.robot;
-      return { coins: Math.round(r.coins * Math.pow(r.grow, S.robots.length)), stone: 0 };
+      return { coins: nice(r.coins * Math.pow(r.grow, S.robots.length)), stone: 0 };
     }
     var c = CONFIG.builds[kind];
     var f = Math.pow(c.grow, count(S, kind));
-    return { coins: Math.round(c.coins * f), stone: Math.round(c.stone * f) };
+    return { coins: nice(c.coins * f), stone: nice(c.stone * f) };
   }
 
   function orbPrice(S) {
     var a = CONFIG.altar;
     var f = Math.pow(a.grow, S.orbs);
-    return { stone: Math.round(a.stone * f), ore: Math.round(a.ore * f) };
+    return { stone: nice(a.stone * f), ore: nice(a.ore * f) };
   }
 
   function afford(S, cost) {
@@ -470,7 +482,7 @@
 
   function resetRobot(S, R) {
     var b = findOne(S, 'barn');
-    var c = b >= 0 ? b : at(2, 6);
+    var c = b >= 0 ? b : HOME;
     R.x = col(c) + 0.5;
     R.y = row(c) + 0.5;
     R.state = 'idle';
@@ -951,12 +963,13 @@
     S.ach = {};
     ACH.forEach(function (a) { if (d.ach && typeof d.ach[a.id] === 'number') S.ach[a.id] = d.ach[a.id]; });
     S.goal = Math.floor(num(d.goal, 0));
-    /* 小豬銀行拿掉了（2026-11-12）：舊存檔裡蓋過的，把錢退回來 */
-    d.tiles.forEach(function (b) {
-      if (b && b.k === 'bank' && b.paid) { S.coins += num(b.paid.coins, 0); S.stone += num(b.paid.stone, 0); }
+    /* 舊存檔裡放不下的東西（小豬銀行拿掉了、地圖改過，地形不一樣了）：拿掉，花的錢全部退回來 */
+    S.tiles = d.tiles.map(function (b, i) {
+      var c = cleanTile(b, i);
+      if (!c && b && typeof b === 'object' && b.paid) refund(S, cost(b.paid));
+      return c;
     });
-    S.tiles = d.tiles.map(function (b, i) { return cleanTile(b, i); });
-    if (findOne(S, 'barn') < 0) S.tiles[at(2, 6)] = { k: 'barn', paid: null };
+    if (findOne(S, 'barn') < 0) { refund(S, S.tiles[HOME] && S.tiles[HOME].paid); S.tiles[HOME] = { k: 'barn', paid: null }; }
     S.robots = [];
     var n = Math.min(CONFIG.robot.max, Math.floor(num(d.robots, 0)));
     for (var r = 0; r < n; r++) S.robots.push({ id: S.nextId++ });
@@ -1004,7 +1017,7 @@
     ACH: ACH, GOALS: GOALS, ROCKS: ROCKS, LAVA: LAVA, WET: WET, N8: N8,
     col: col, row: row, at: at, floorOf: floorOf, regionOf: regionOf, buildable: buildable,
     newState: newState, step: step, load: load, save: save,
-    price: price, orbPrice: orbPrice, afford: afford,
+    price: price, orbPrice: orbPrice, afford: afford, nice: nice, HOME: HOME,
     canPlace: canPlace, place: place, canHoe: canHoe, canRemove: canRemove, remove: remove,
     canMove: canMove, move: move, canUnlock: canUnlock, unlock: unlock,
     canBuyRobot: canBuyRobot, buyRobot: buyRobot, canForge: canForge, forge: forge, forgeTime: forgeTime,

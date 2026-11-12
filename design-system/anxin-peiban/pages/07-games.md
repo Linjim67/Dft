@@ -977,12 +977,25 @@ it can't be bought (grey ground `#E7E5E4`, `#57534E` text — 6:1 — and a grey
 turns **white with an orange border and a gold coin and gently pulses** (±8 %, 1.1 s) to invite the
 tap. Reduced motion: no pulse, same colours.
 
+Layout (product owner, 2026-11-12): a 5 × 5 starting farm bottom-left with the 倉庫 in its exact
+centre (2,5) and four carrots around it; a 3 × 5 stream strip on its right; a 5 × 3 quarry band above
+it; a 3 × 3 lava corner top-right.
+
 | Region | Tiles | Terrain rule | Unlock |
 |---|---|---|---|
-| 草原 | cols 0–4, rows 4–7 | grass: crops, pots, anything | start |
-| 小河邊 | cols 5–7, rows 4–7 | a stream in col 6; every plot beside it grows ×1.5 (darker wet soil) · corn | 150 |
-| 礦山 | cols 0–3, rows 0–3 | 6 boulders; 採石場 only on gravel next to ≥ 1 boulder, speed ∝ boulders around it (best spot touches 4) · tomato | 600 |
-| 火山 | cols 4–7, rows 0–3 | 7 lava tiles; 鍛造爐 only on basalt next to lava, speed ∝ lava around it (max 4) | 3,000 + 40 stone |
+| 草原 | cols 0–4, rows 3–7 (5 × 5) | grass: crops, pots, anything | start |
+| 小溪 | cols 5–7, rows 3–7 (3 × 5) | stream down col 6; all 10 plots beside it grow ×1.5 (darker wet soil) · corn | 150 |
+| 礦山 | cols 0–4, rows 0–2 (5 × 3) | 6 boulders, 9 gravel; 採石場 only on gravel next to ≥ 1 boulder, speed ∝ boulders around it — (1,1) touches 4, three spots touch 3 · tomato | 600 |
+| 火山 | cols 5–7, rows 0–2 (3 × 3) | 4 lava, 5 basalt; 鍛造爐 only on basalt next to lava — the centre (6,1) touches all 4 | 3,000 + 40 stone |
+
+Every inner meadow tile touches the barn, so 好鄰居 (a lighthouse ringed by 8 crops) is earned on the
+meadow's right column once 小溪 is open. Saves from the earlier layout keep everything that still
+fits; anything whose ground changed is removed and refunded in full.
+
+**Prices are round numbers** (product owner, 2026-11-12): every growing price (robots ×1.5, buildings,
+the altar's stone and ore) goes through `nice()` — exact up to 10, steps of 5 below 100, two
+significant figures above (315 → 320, 277 → 280, 1,153 → 1,200). Robots: 20 · 30 · 45 · 70 · 100 ·
+150 · 230 · 340 · 510 · 770 · 1,200 · 1,700. Unlocks, seeds and recipes are fixed round numbers.
 
 ## Loop
 

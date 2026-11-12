@@ -159,7 +159,7 @@
     moveFrom: -1,
     sheetTile: -1,
     sheetRegion: null,
-    cursor: E.at(2, 5),
+    cursor: E.at(2, 4),
     keyboard: false,
     pops: {},          /* 剛蓋好：格子 → 時間 */
     floats: [],        /* 「+12」 */
@@ -676,8 +676,9 @@
     ctxNow.fillRect(x, y, R(lx + lw) - x, R(ly + lh) - y);
   }
 
+  /* 還沒打開的地區：[左上行, 左上列, 寬, 高]（格） */
   var REGION_BOX = {
-    river: [5, 4, 3, 4], mountain: [0, 0, 4, 4], volcano: [4, 0, 4, 4]
+    river: [5, 3, 3, 5], mountain: [0, 0, 5, 3], volcano: [5, 0, 3, 3]
   };
 
   function drawScene(ctx, scale, t, interactive) {
@@ -1031,15 +1032,24 @@
          而且一放大一縮小地跳（減少動態時不跳），讓人想點 */
       var cost = CFG.regions[id].cost;
       var can = E.afford(S, cost);
-      var fs = Math.max(12, R(5.6));
-      var iconS = Math.round(fs * 1.1), gap = Math.round(fs * 0.3);
-      ctx.save();
-      ctx.font = '800 ' + fs + 'px ' + NUM_FONT;
       var parts = [['coin', fmt(cost.coins)]];
       if (cost.stone) parts.push(['stone', fmt(cost.stone)]);
-      var inner = 0;
-      parts.forEach(function (q, n) { inner += iconS + gap + ctx.measureText(q[1]).width + (n ? fs * 0.8 : 0); });
-      var bw = inner + fs * 1.4, bh = Math.round(fs * 2.1);
+      ctx.save();
+      /* 價錢牌要放得進這一區（火山只有 3 格寬）：太寬就把字縮小 */
+      var fs, iconS, gap, bw, bh;
+      function measure(size) {
+        fs = size;
+        iconS = Math.round(fs * 1.1);
+        gap = Math.round(fs * 0.3);
+        ctx.font = '800 ' + fs + 'px ' + NUM_FONT;
+        var inner = 0;
+        parts.forEach(function (q, n) { inner += iconS + gap + ctx.measureText(q[1]).width + (n ? fs * 0.8 : 0); });
+        bw = inner + fs * 1.4;
+        bh = Math.round(fs * 2.1);
+      }
+      measure(Math.max(12, R(5.6)));
+      var room = (R(x + w) - R(x)) * 0.9;
+      if (bw > room) measure(Math.max(10, Math.floor(fs * room / bw)));
       ctx.translate(R(x + w / 2), R(y + h / 2));
       if (can && !still()) {
         var beat = 1 + 0.08 * (0.5 - 0.5 * Math.cos(t * Math.PI * 2 / 1.1));
