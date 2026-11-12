@@ -1055,6 +1055,12 @@ tap. Reduced motion: no pulse, same colours.
   (stacked, right-aligned) · 打造. The item being forged replaces materials + button with a progress
   line: total forging time on the left (its real duration at this forge's lava count and orb speed),
   the bar, and the percent done on the right. Finished items show 「有了」.
+- **採石場 works like a crop** (product owner, 2026-11-12): a tap collects whatever is in the cart and
+  shows the same card — 採石場 · grey seconds per dig · progress to the next dig · % (「滿」 when the cart
+  is full). 搬家 / 拆掉 moved to a **long press** (0.55 s, any building) that opens the full sheet; a tap
+  can't, because children tap quarries over and over to collect. Keyboard: Enter again while the card
+  is up. The browser's own long-press menu is suppressed on the board, and the click that follows the
+  release is ignored so the sheet stays open.
 - **Tapping a growing crop** shows a small card over it (below it on the top two rows), click-through,
   for 6 s: 品種 · grey 「5 秒」 (its real grow time, river and orbs included) · a progress line · 「56%」.
 - Board tiles are ~45 px on a 375 px phone (8 columns can't reach 48 px); the brush-style drag and the

@@ -154,6 +154,7 @@
   var UI = {
     tool: null,
     tip: -1,
+    tipKind: null,
     tipUntil: 0,
     moveFrom: -1,
     sheetTile: -1,
@@ -1118,14 +1119,35 @@
     UI.keyboard = false;
     try { board.setPointerCapture(ev.pointerId); } catch (e) { /* 忽略 */ }
     drag = { id: ev.pointerId, start: i, last: i, swept: false, done: {} };
+    /* 長按房子 0.55 秒：打開它的小視窗（採石場的搬家、拆掉在這裡） */
+    var b = S.tiles[i];
+    if (!UI.tool && UI.moveFrom < 0 && b && b.k !== 'crop' && b.k !== 'plot' && S.regions[E.regionOf(i)]) {
+      var d = drag;
+      d.timer = window.setTimeout(function () {
+        if (drag !== d || d.swept) return;
+        d.long = true;
+        hideTip();
+        holdClick = true;
+        openSheet(i);
+      }, 550);
+    }
   });
+
+  /* 長按是我們自己的（打開房子的小視窗），不要跳出瀏覽器的選單 */
+  board.addEventListener('contextmenu', function (e) { e.preventDefault(); });
+
+  /* 長按打開的小視窗：放開手指後瀏覽器補送的 click 不算點背景 */
+  var holdClick = false;
+  window.addEventListener('pointerup', function () {
+    if (holdClick) window.setTimeout(function () { holdClick = false; }, 350);
+  }, true);
 
   board.addEventListener('pointermove', function (ev) {
     if (!drag || ev.pointerId !== drag.id) return;
     var i = tileAt(ev);
     if (i < 0 || i === drag.last) return;
     /* 第一次離開起點：起點也算進去 */
-    if (!drag.swept) { drag.swept = true; sweep(drag.start); }
+    if (!drag.swept) { drag.swept = true; window.clearTimeout(drag.timer); sweep(drag.start); }
     drag.last = i;
     sweep(i);
   });
@@ -1134,7 +1156,8 @@
     if (!drag || ev.pointerId !== drag.id) return;
     var d = drag;
     drag = null;
-    if (ev.type === 'pointercancel') return;
+    window.clearTimeout(d.timer);
+    if (ev.type === 'pointercancel' || d.long) return;
     if (!d.swept) tap(d.start);
   }
   board.addEventListener('pointerup', endDrag);
@@ -1159,6 +1182,7 @@
 
   function tap(i) {
     UI.cursor = i;
+    var tipWas = UI.tip;
     hideTip();
     if (UI.moveFrom >= 0) {
       if (i === UI.moveFrom) { UI.moveFrom = -1; renderGoal(true); return; }
@@ -1173,8 +1197,16 @@
     var region = E.regionOf(i);
     if (!S.regions[region]) { openRegion(region); return; }
     if (!UI.tool) {
-      if (E.available(S, i, true) > 0) { var ev2 = []; E.collect(S, i, ev2); handle(ev2); return; }
       var t = S.tiles[i];
+      /* 採石場跟菜一樣：點一下收石頭、出現小卡（幾秒挖一次 · 進度 · %）。
+         搬家、拆掉：長按；鍵盤是小卡還在時再按一次 Enter */
+      if (t && t.k === 'quarry') {
+        if (UI.keyboard && tipWas === i) { openSheet(i); return; }
+        if (E.available(S, i, true) > 0) { var evq = []; E.collect(S, i, evq); handle(evq); }
+        showTip(i);
+        return;
+      }
+      if (E.available(S, i, true) > 0) { var ev2 = []; E.collect(S, i, ev2); handle(ev2); return; }
       if (t && t.k === 'crop') { showTip(i); return; }
       if (t && t.k === 'plot') { hint('翻好的田：選一種菜，種在這裡', 2000); return; }
       if (t) { openSheet(i); return; }
@@ -1264,12 +1296,30 @@
     return (Math.abs(t - Math.round(t)) < 0.05 ? String(Math.round(t)) : t.toFixed(1)) + ' 秒';
   }
 
-  function showTip(i) {
+  /* 菜：幾秒長一次、長了多少；採石場：幾秒挖一次、下一次挖到多少（推車滿了寫「滿」） */
+  function tipInfo(i) {
     var b = S.tiles[i];
+    if (!b) return null;
+    if (b.k === 'crop') {
+      return { name: CFG.crops[b.crop].name, time: E.cropTime(S, i), verb: '長一次',
+        pct: b.ready ? 100 : Math.min(99, Math.floor(b.g * 100)), full: false };
+    }
+    if (b.k === 'quarry') {
+      var full = b.items.length >= CFG.quarry.cap;
+      return { name: NAME.quarry, time: E.quarryTime(S, i), verb: '挖一次',
+        pct: full ? 100 : Math.min(99, Math.floor(b.t * 100)), full: full };
+    }
+    return null;
+  }
+
+  function showTip(i) {
+    var info = tipInfo(i);
+    if (!info) return;
     UI.tip = i;
+    UI.tipKind = S.tiles[i].k;
     UI.tipUntil = UI.clock + 6;
-    tipEl.innerHTML = '<b class="tip-name">' + esc(CFG.crops[b.crop].name) + '</b>' +
-      '<span class="tip-time">' + secs(E.cropTime(S, i)) + '</span>' +
+    tipEl.innerHTML = '<b class="tip-name">' + esc(info.name) + '</b>' +
+      '<span class="tip-time">' + secs(info.time) + '</span>' +
       '<span class="tip-bar"><span class="tip-fill" id="tipFill"></span></span>' +
       '<span class="tip-pct" id="tipPct"></span>';
     tipEl.hidden = false;
@@ -1284,7 +1334,8 @@
     var left = Math.max(br.left - wr.left + 4, Math.min(cx - w / 2, br.right - wr.left - w - 4));
     tipEl.style.left = Math.round(left) + 'px';
     tipEl.style.top = Math.round(top) + 'px';
-    say(CFG.crops[b.crop].name + '，' + secs(E.cropTime(S, i)) + '長一次，' + (b.ready ? '熟了' : '長了 ' + Math.floor(b.g * 100) + '%'));
+    say(info.name + '，' + secs(info.time) + info.verb + '，' + (info.full ? '推車滿了' : info.pct >= 100 ? '熟了' : '完成 ' + info.pct + '%') +
+      (UI.tipKind === 'quarry' ? '。長按可以搬家或拆掉' : ''));
   }
 
   function hideTip() {
@@ -1295,10 +1346,10 @@
   function renderTip() {
     if (UI.tip < 0) return;
     var b = S.tiles[UI.tip];
-    if (!b || b.k !== 'crop' || UI.clock > UI.tipUntil) { hideTip(); return; }
-    var pct = b.ready ? 100 : Math.min(99, Math.floor(b.g * 100));
-    $('tipFill').style.transform = 'scaleX(' + (pct / 100).toFixed(3) + ')';
-    $('tipPct').textContent = pct + '%';
+    var info = b && b.k === UI.tipKind ? tipInfo(UI.tip) : null;
+    if (!info || UI.clock > UI.tipUntil) { hideTip(); return; }
+    $('tipFill').style.transform = 'scaleX(' + (info.pct / 100).toFixed(3) + ')';
+    $('tipPct').textContent = info.full ? '滿' : info.pct + '%';
   }
 
   /* ─────────────────────────────────────────────────────────────
@@ -1467,7 +1518,7 @@
   /* 點背景關掉。手機放開手指時先開視窗、接著瀏覽器才補送 click：
      那個 click 會落在背景上，所以剛打開的半秒內不算（不然點上半部的房子，視窗會一開就關） */
   sheet.addEventListener('click', function (e) {
-    if (e.target === sheet) { if (performance.now() - sheetOpenedAt > 500) closeSheet(); return; }
+    if (e.target === sheet) { if (!holdClick && performance.now() - sheetOpenedAt > 500) closeSheet(); return; }
     var b = e.target.closest('[data-act]');
     if (!b) return;
     var act = b.getAttribute('data-act');
