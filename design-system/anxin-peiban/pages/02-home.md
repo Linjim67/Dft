@@ -42,7 +42,9 @@ replaced.
      down. The result is a true quarter circle around the inner corner. Hit-testing follows the rounded
      shape.
    - Content sits on the quarter disc's centroid, 0.424 × radius from the inner corner (57.5% / 42.5% of the
-     cell): a black-line icon (42px, `--primary-ink`, white fill) over a black bold name.
+     cell): a line icon (42px, white fill) over a bold name. With the Sand palette (6df2eac) the icon stroke is
+     `--leaf-deep` (6.37:1 on card) and the name stays cocoa (`--primary-ink`). The owner's earlier brief asked for
+     black strokes; the leaf icons came with the palette change.
    - **Only the pressed button reacts**: it sinks 2px, turns `--primary-wash`, and gets a 2px black inner ring
      that follows the shape (a shape change, not colour alone). The icon fill follows through `--quad-bg`.
      `-webkit-tap-highlight-color: transparent` removes the native highlight. `home.js` adds an empty
