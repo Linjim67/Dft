@@ -8,8 +8,8 @@
   color-scheme: light;
 
   /* — 表面 — */
-  --bg: #FFF7F0;
-  /* 暖奶油底 */
+  --bg: #E9E1D8;
+  /* 暖灰米底（2026-11-12 起，原本是 #FFF7F0 奶油白）；白卡片浮在上面 1.29:1 */
   --bg-sunk: #FFF1E0;
   /* 凹陷軌道／輸入底 */
   --card: #FFFFFF;
@@ -25,8 +25,9 @@
   /* 填色 */
   --primary-ink: #1C1917;
   /* 橘底上的字 */
-  --primary-deep: #C2410C;
-  /* 5.18:1 on card — 邊界／選取／連結 */
+  --primary-deep: #B03A0A;
+  /* 6.08:1 on card · 4.70:1 on bg · 5.30:1 on primary-wash — 邊界／選取／連結
+     （底色換成 #E9E1D8 後，原本的 #C2410C 在底色上只剩 4.00:1，加深一階） */
   --primary-fill: #EA580C;
   /* 3.21:1 vs 未填色軌道 — 滑桿已選區段 */
   --primary-wash: #FFEDD5;
@@ -34,7 +35,7 @@
   /* — 章節色（指南、鼓勵頁）：每一段一個色調，用在圖示方塊、淡底對話框／提醒框、打開的箭頭。
        ink 是字與圖示（皆量過），soft 是大面積淡底，tile 只放圖示（≥ 3:1） — */
   --apricot: var(--primary-deep);
-  /* 4.78:1 on apricot-soft */
+  /* 5.61:1 on apricot-soft · 4.70:1 on bg */
   --apricot-soft: #FFF4EB;
   --apricot-tile: #FFE6D2;
   --sage: #2E6B57;
@@ -55,16 +56,16 @@
   --danger-wash: #FEF2F2;
 
   /* — 線條 — */
-  --line: #9C8578;
-  /* 3.48:1 on card · 3.27:1 on bg */
+  --line: #8A7366;
+  /* 4.44:1 on card · 3.43:1 on bg（原本 #9C8578 在新底色上只剩 2.69:1） */
   --line-w: 1px;
   /* 控制項邊框線寬。對比由顏色承擔（3.48:1），不靠厚度。 */
   --hairline: #F5E3CE;
   /* 裝飾用，不作控制項邊界 */
   --rule: #C09A72;
   /* 題目之間的分隔線 — 2.44:1，看得見但比輸入框邊界(3.27:1)輕 */
-  --idle: #78716C;
-  /* 未作答的表情／說明灰 — 4.80:1 on card */
+  --idle: #66605B;
+  /* 未作答的表情／說明灰 — 6.20:1 on card · 4.79:1 on bg */
 
   /* — 暖色陰影（取代硬邊，質感較軟） — */
   --sh-sm: 0 1px 2px rgba(124, 45, 18, .05), 0 2px 8px -2px rgba(124, 45, 18, .08);

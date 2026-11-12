@@ -50,7 +50,7 @@
   display: none;
 }
 
-/* 提示字用 --idle（4.80:1），看得清楚但不會被當成已輸入的字 */
+/* 提示字用 --idle（6.20:1 on card），看得清楚但不會被當成已輸入的字 */
 .search input::placeholder {
   color: var(--idle);
   opacity: 1;
@@ -147,7 +147,7 @@
   transition: opacity var(--t-fast) var(--ease), transform var(--t-fast) var(--ease);
 }
 
-/* 杏橘字配杏橘淡底 4.78:1 */
+/* 杏橘字配杏橘淡底 5.61:1 */
 .chip input:checked+.chip-face {
   background: var(--apricot-soft);
   border-color: var(--apricot);
@@ -182,7 +182,7 @@
   color: var(--fg-muted);
 }
 
-/* 杏橘字配頁面底 4.89:1 */
+/* 杏橘字配頁面底 4.70:1 */
 .text-btn {
   flex: none;
   min-height: var(--tap);

@@ -19,24 +19,24 @@
 ## Colour — warm orange ("Playful orange")
 
 Source: `--domain color` → **#23 Pet Tech App**, *"Playful orange + trust blue"*.
-**Every pair below is measured.** The cream ground is what makes this warm rather than clinical —
-it does more work than the orange does.
+**Every pair below is measured.** Since 2026-11-12 the ground is a warm greige (`#E9E1D8`, owner's choice) and white cards float on it;
+the warmth comes from the greige plus the orange.
 
 | Token | Value | Measured |
 |---|---|---|
-| `--bg` | `#FFF7ED` warm cream | — |
+| `--bg` | `#E9E1D8` warm greige (was `#FFF7F0` cream until 2026-11-12) | white cards 1.29:1 on it |
 | `--bg-sunk` | `#FFF1E0` | slider track, inset wells |
 | `--card` | `#FFFFFF` | — |
-| `--fg` | `#7C2D12` | 8.83:1 on bg · 9.37:1 on card |
-| `--fg-muted` | `#57534E` warm stone | 7.19:1 on bg · 7.63:1 on card |
+| `--fg` | `#7C2D12` | 7.24:1 on bg · 9.37:1 on card |
+| `--fg-muted` | `#57534E` warm stone | 5.90:1 on bg · 7.63:1 on card |
 | `--primary` | `#F97316` | fills only |
 | `--primary-ink` | `#1C1917` | **6.24:1 on orange** |
-| `--primary-deep` | `#C2410C` | 5.18:1 on card — borders, selected, links |
+| `--primary-deep` | `#B03A0A` | 6.08:1 on card · 4.70:1 on bg — borders, selected, links (darkened from `#C2410C` for the greige ground) |
 | `--primary-fill` | `#EA580C` | 3.21:1 vs unfilled track |
 | `--primary-wash` | `#FFEDD5` | selected-card ground |
 | `--success` | `#15803D` | 5.02:1 on card |
 | `--danger` | `#B91C1C` | 6.47:1 on card |
-| `--line` | `#9C8578` warm taupe | **3.48:1 / 3.27:1** — control boundaries |
+| `--line` | `#8A7366` warm taupe | **4.44:1 card / 3.43:1 bg** — control boundaries |
 | `--hairline` | `#F5E3CE` | decorative only, never a boundary |
 
 ### Traps found by measuring
@@ -57,7 +57,7 @@ colour; sage and honey never style a control.
 
 | Token | Value | Measured / use |
 |---|---|---|
-| `--apricot` / `-soft` / `-tile` | `#C2410C` / `#FFF4EB` / `#FFE6D2` | 4.78:1 on soft |
+| `--apricot` / `-soft` / `-tile` | = `--primary-deep` / `#FFF4EB` / `#FFE6D2` | 5.61:1 on soft |
 | `--sage` / `-soft` / `-tile` | `#2E6B57` / `#EDF5F0` / `#D9ECE2` | 6.26:1 card · 5.64:1 soft · 5.08:1 tile |
 | `--honey` / `-soft` / `-tile` | `#8A5A06` / `#FDF5E2` / `#F8E7BC` | 5.92:1 card · 5.45:1 soft · 4.84:1 tile |
 

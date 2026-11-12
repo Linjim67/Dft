@@ -125,7 +125,7 @@ html {
   white-space: nowrap;
 }
 
-/* 白勾配杏橘底 5.18:1 */
+/* 白勾配杏橘底 6.08:1 */
 .age-check {
   position: absolute;
   top: 6px;
@@ -142,7 +142,7 @@ html {
   transition: opacity var(--t-fast) var(--ease), transform var(--t-fast) var(--ease);
 }
 
-/* 杏橘字配杏橘淡底 4.78:1 */
+/* 杏橘字配杏橘淡底 5.61:1 */
 .age-opt input:checked+.age-face {
   background: var(--apricot-soft);
   color: var(--apricot);
