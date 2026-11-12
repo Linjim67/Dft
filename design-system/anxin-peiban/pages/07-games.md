@@ -989,8 +989,12 @@ volcano is a visible promise; the fog fades out when a region opens.
 - Crops ripen and **wait**; a tap (or a finger dragged across the field) harvests, and coins fly to
   the counter. Robots (bought from the tool bar, **×1.5** price each, max 12) do the same automatically:
   pick the best value ÷ round-trip, chain pickups on the way, deliver to the nearest 倉庫.
-- 燈塔: every lighthouse adds ×1 to the crops and quarries in its 3 × 3 (additive: two = ×3). A small
-  `×N` pill sits on every boosted tile, so moving a lighthouse shows its effect at once.
+- 燈塔: every lighthouse adds ×1 to the crops and quarries in its 3 × 3 (additive: two = ×3). **No
+  `×N` text** (product owner, 2026-11-12): boosted tiles glow — a faint warm pool at their base and
+  yellow light motes (bright 1-px core, soft 3 × 3 halo) that rise ~1 tile and fade, 3 per second
+  per extra lighthouse, so more overlap visibly means more light and moving a lighthouse shows its
+  effect at once. Reduced motion: the pool plus 2 fixed sparkles per extra lighthouse. Screen readers
+  still hear 「N 倍」 on the keyboard cursor.
 - 湯鍋: pulls ripe 蘿蔔 + 玉米 + 番茄 from its 8 neighbours (before robots can), cooks 彩虹湯 worth 2 ×
   their boosted value. Three lights on the pot show which crops have arrived; the sheet says which crop
   is missing from the neighbourhood.

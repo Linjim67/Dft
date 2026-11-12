@@ -161,6 +161,7 @@
     pops: {},          /* 剛蓋好：格子 → 時間 */
     floats: [],        /* 「+12」 */
     parts: [],         /* 小粒子 */
+    motes: [],         /* 燈塔照到的格子冒出的光點 */
     shots: [],         /* 菜跳進湯鍋 */
     clouds: {},        /* 剛打開的地區：雲散開 */
     newTools: {},
@@ -700,13 +701,7 @@
       drawTile(i, b, x, y, sc, t);
     }
 
-    /* 收成倍數：右上角的「x2」 */
-    for (i = 0; i < N * N; i++) {
-      b = S.tiles[i];
-      if (!b || (b.k !== 'crop' && b.k !== 'quarry') || S.mult[i] < 2) continue;
-      badge(E.col(i) * 16 + 16, E.row(i) * 16, '×' + S.mult[i]);
-    }
-
+    drawLight();
     drawShots(t);
     drawRobots(t);
     drawParts();
@@ -722,21 +717,63 @@
     }
   }
 
-  /* 小小的深色膠囊、黃字：只佔格子右上角，不蓋住菜 */
-  function badge(rx, ty, text) {
-    var ctx = ctxNow;
-    var fs = Math.max(9, R(4.1));
+  /* ─────────────────────────────────────────────────────────────
+     燈塔的加成：被照到的菜和採石場一直冒出黃黃的小光點，往上飄、慢慢淡掉。
+     被越多座燈塔照到，冒得越多（每多一座，每秒多 3 顆），格子底下也越亮。不寫「×2」。
+     減少動態：光點不動，改成固定的幾顆（一樣是越多座越多顆）
+     ───────────────────────────────────────────────────────────── */
+
+  var LIGHT = ['#FFF6B8', '#FFEC80', '#FFFFFF', '#FFE066'];
+
+  function boosted(i) {
+    var b = S.tiles[i];
+    return b && (b.k === 'crop' || b.k === 'quarry') && S.mult[i] > 1;
+  }
+
+  function spawnMotes(dt) {
+    for (var i = 0; i < N * N; i++) {
+      if (!boosted(i) || Math.random() >= 3 * (S.mult[i] - 1) * dt) continue;
+      UI.motes.push({
+        x: E.col(i) * 16 + 2 + Math.random() * 12, y: E.row(i) * 16 + 8 + Math.random() * 7,
+        vy: -(8 + Math.random() * 7), ph: Math.random() * 6, t: 0, life: 1.2 + Math.random() * 0.8,
+        c: LIGHT[Math.floor(Math.random() * LIGHT.length)]
+      });
+    }
+    if (UI.motes.length > 300) UI.motes.splice(0, UI.motes.length - 300);
+  }
+
+  function drawLight() {
+    var ctx = ctxNow, i;
+    /* 格子底下一圈淡淡的暖光 */
+    for (i = 0; i < N * N; i++) {
+      if (!boosted(i)) continue;
+      var gx = R(E.col(i) * 16 + 8), gy = R(E.row(i) * 16 + 12), gr = R(11);
+      var g = ctx.createRadialGradient(gx, gy, 0, gx, gy, gr);
+      g.addColorStop(0, 'rgba(255,236,128,' + Math.min(0.42, 0.16 * (S.mult[i] - 1)) + ')');
+      g.addColorStop(1, 'rgba(255,236,128,0)');
+      ctx.fillStyle = g;
+      ctx.fillRect(gx - gr, gy - gr, gr * 2, gr * 2);
+    }
+    if (still()) {
+      for (i = 0; i < N * N; i++) {
+        if (!boosted(i)) continue;
+        for (var n = 0; n < 2 * (S.mult[i] - 1) && n < 8; n++) {
+          rect(E.col(i) * 16 + 2 + Math.floor(ART.hash(i * 17 + n) * 12), E.row(i) * 16 + 1 + Math.floor(ART.hash(i * 31 + n) * 13), 1, 1, LIGHT[n % 3]);
+        }
+      }
+      return;
+    }
+    /* 每一顆：淡黃的 3 × 3 光暈 + 亮亮的 1 格芯 */
     ctx.save();
-    ctx.font = '800 ' + fs + 'px ' + NUM_FONT;
-    var h = Math.round(fs * 1.2), w = Math.round(ctx.measureText(text).width + fs * 0.6);
-    var x = R(rx) - w - R(0.6), y = R(ty) + R(0.6);
-    ctx.fillStyle = 'rgba(43,27,23,.8)';
-    roundRect(ctx, x, y, w, h, h / 2);
-    ctx.fill();
-    ctx.fillStyle = '#FFE066';
-    ctx.textAlign = 'center';
-    ctx.textBaseline = 'middle';
-    ctx.fillText(text, x + w / 2, y + h / 2 + fs * 0.05);
+    UI.motes.forEach(function (m) {
+      var k = m.t / m.life;
+      var a = k < 0.2 ? k / 0.2 : 1 - (k - 0.2) / 0.8;
+      var mx = Math.round(m.x), my = Math.round(m.y);
+      ctx.globalAlpha = a * 0.35;
+      rect(mx - 1, my - 1, 3, 3, '#FFE066');
+      ctx.globalAlpha = a;
+      rect(mx, my, 1, 1, m.c);
+    });
     ctx.restore();
   }
 
@@ -1472,6 +1509,7 @@
       UI.pops = {};
       UI.floats = [];
       UI.parts = [];
+      UI.motes = [];
       UI.newTools = {};
       UI.seenTools = {};
       terrainDirty = true;
@@ -1513,6 +1551,9 @@
     UI.floats = UI.floats.filter(function (f) { return f.t <= 1.1; });
     UI.parts.forEach(function (q) { q.t += dt; q.x += q.vx * dt; q.y += q.vy * dt; q.vy += q.g * dt; });
     UI.parts = UI.parts.filter(function (q) { return q.t < q.life; });
+    if (!still()) spawnMotes(dt);
+    UI.motes.forEach(function (m) { m.t += dt; m.y += m.vy * dt; m.x += Math.sin(UI.clock * 3 + m.ph) * 2 * dt; });
+    UI.motes = UI.motes.filter(function (m) { return m.t < m.life; });
     UI.shots.forEach(function (s) { s.t += dt; });
 
     drawScene(bctx, board.width / 128, UI.clock, true);
