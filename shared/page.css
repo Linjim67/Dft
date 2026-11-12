@@ -42,8 +42,8 @@ a.btn {
   gap: var(--sp-1);
   min-height: var(--tap);
   padding-inline: var(--sp-4) var(--sp-3);
-  border-radius: var(--r-pill);
-  background: var(--primary-wash);
+  border-radius: var(--r-btn);
+  background: var(--pill-cta-bg, transparent);
   color: var(--primary-deep);
   border: 2px solid var(--primary-deep);
   font-weight: 700;
@@ -178,31 +178,25 @@ a.btn {
   font-size: 1rem;
 }
 
-/* ═══ 內容頁（指南、鼓勵頁）：讀起來像一本分章節的小冊子 ════════
-   <body class="booklet">：字色換成深可可色，橘色只留給可以按的東西和章節色，
-   整頁才不會糊成一片咖啡橘。每一章用 data-tone 帶一個色調（apricot／sage／honey），
-   底下的元件都讀 --tone／--tone-soft／--tone-tile。 */
-
-.booklet {
-  --fg: #4A2A1C;
-  /* 12.8:1 on card · 12.1:1 on bg */
-}
+/* ═══ 內容頁（指南、抽血大小問）：讀起來像一本分章節的小冊子 ════════
+   每一章用 data-tone 帶一個色調（cocoa 可可／leaf 葉綠／honey 蜂蜜），
+   底下的元件都讀 --tone／--tone-soft／--tone-tile。字色是全站的可可色（沙米調色盤）。 */
 
 .booklet ::selection {
-  background: var(--apricot-tile);
+  background: var(--cocoa-tile);
   color: var(--fg);
 }
 
-[data-tone="apricot"] {
-  --tone: var(--apricot);
-  --tone-soft: var(--apricot-soft);
-  --tone-tile: var(--apricot-tile);
+[data-tone="cocoa"] {
+  --tone: var(--cocoa);
+  --tone-soft: var(--cocoa-soft);
+  --tone-tile: var(--cocoa-tile);
 }
 
-[data-tone="sage"] {
-  --tone: var(--sage);
-  --tone-soft: var(--sage-soft);
-  --tone-tile: var(--sage-tile);
+[data-tone="leaf"] {
+  --tone: var(--leaf-deep);
+  --tone-soft: var(--leaf-soft);
+  --tone-tile: var(--leaf-tile);
 }
 
 [data-tone="honey"] {
@@ -237,8 +231,8 @@ a.btn {
   width: 48px;
   height: 48px;
   border-radius: var(--r-md);
-  background: var(--tone-tile, var(--apricot-tile));
-  color: var(--tone, var(--apricot));
+  background: var(--tone-tile, var(--cocoa-tile));
+  color: var(--tone, var(--cocoa));
 }
 
 /* 沒有說明行的章節：只有一列，圖示和標題置中對齊 */
@@ -325,8 +319,8 @@ a.btn {
   width: 40px;
   height: 40px;
   border-radius: var(--r-md);
-  background: var(--tone-tile, var(--apricot-tile));
-  color: var(--tone, var(--apricot));
+  background: var(--tone-tile, var(--cocoa-tile));
+  color: var(--tone, var(--cocoa));
 }
 
 /* 標題在左，小標在右（「｜抽血時」「｜5 句」） */
@@ -375,7 +369,7 @@ a.btn {
 /* 打開：箭頭翻轉＋換成章節色（不只靠顏色），卡片浮起一點 */
 .topic[open]>.topic-head .topic-toggle {
   transform: rotate(180deg);
-  color: var(--tone, var(--apricot));
+  color: var(--tone, var(--cocoa));
 }
 
 .topic-body {
@@ -400,7 +394,7 @@ a.btn {
 }
 
 /* ═══ 讀完之後：下一步（兩頁的最後一張卡） ═══════════════════
-   白卡浮在奶油底上（看得出是一張卡），杏橘只用在圖示方塊和連結 */
+   紙白卡浮在沙米底上（看得出是一張卡）；圖示方塊用葉綠，連結是可可描邊 */
 
 .help-card {
   display: grid;
@@ -420,8 +414,8 @@ a.btn {
   width: 48px;
   height: 48px;
   border-radius: var(--r-md);
-  background: var(--apricot-tile);
-  color: var(--apricot);
+  background: var(--leaf-tile);
+  color: var(--leaf-deep);
 }
 
 .help-title {
@@ -450,10 +444,10 @@ a.btn {
   gap: var(--sp-1);
   min-height: var(--tap);
   padding-inline: var(--sp-4) var(--sp-3);
-  border-radius: var(--r-pill);
-  border: 2px solid var(--apricot);
+  border-radius: var(--r-btn);
+  border: 2px solid var(--primary-deep);
   background: var(--card);
-  color: var(--apricot);
+  color: var(--primary-deep);
   font-weight: 700;
   text-decoration: none;
 }
@@ -467,11 +461,11 @@ a.btn {
   height: 18px;
 }
 
-/* 搜尋命中的字：深字配淺橘底 6.92:1；打開的深橘標題裡也維持深字 */
+/* 搜尋命中的字：可可字配蜂蜜塊 8.6:1 */
 mark {
   padding: 0 1px;
   border-radius: 3px;
-  background: #FED7AA;
+  background: var(--honey-tile);
   color: var(--fg);
 }
 
@@ -545,8 +539,9 @@ mark {
   margin-top: var(--sp-5);
 }
 
+/* 危險按鈕（按鈕樣式 C）：紙白底＋2px 磚紅框＋磚紅字（6.34:1） */
 .btn-danger {
-  background: var(--danger-wash);
+  background: var(--btn-danger-bg, var(--card));
   color: var(--danger);
   border-color: var(--danger);
 }
@@ -579,7 +574,7 @@ mark {
 
   /* 不加深底色：17px 字屬一般字級，#FFE2C4 底只有 4.17:1。改用浮起陰影。 */
   .pill-cta:hover {
-    box-shadow: var(--sh-md);
+    background: var(--primary-wash);
   }
 
   .back-link:hover,
@@ -592,16 +587,15 @@ mark {
   }
 
   .topic-head:hover .topic-toggle {
-    color: var(--tone, var(--apricot));
+    color: var(--tone, var(--cocoa));
   }
 
   .help-link:hover {
-    background: var(--apricot-soft);
-    box-shadow: var(--sh-sm);
+    background: var(--primary-wash);
   }
 
   .btn-danger:hover {
-    background: #FEE2E2;
+    background: var(--danger-wash);
   }
 }
 

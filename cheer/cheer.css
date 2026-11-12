@@ -1,6 +1,6 @@
 /* ═══ 抽血大小問（常見問題） ═══════════════════════════════════
    小冊子外框、章節標題、一題一張卡沿用 /shared/page.css（.booklet、.part、.topic）。
-   章節色：醫療現場解密＝鼠尾草綠（sage）、抽血大小問＝蜂蜜黃（honey）；可以按的東西用杏橘。
+   章節色：醫療現場解密＝葉綠（leaf）、抽血大小問＝蜂蜜黃（honey）；可以按的東西用可可色。
    這裡放：搜尋框、時間篩選、狀態列、答案內容、找不到時、還有疑問嗎。
    ═══════════════════════════════════════════════════════════════ */
 
@@ -25,7 +25,7 @@
   pointer-events: none;
 }
 
-/* 框線 3.48:1（控制項邊界）；焦點時換杏橘，和其他輸入框一致 */
+/* 框線 3.45:1（控制項邊界）；焦點時換可可色，和其他輸入框一致 */
 .search input {
   display: block;
   width: 100%;
@@ -36,7 +36,7 @@
   border: var(--line-w) solid var(--line);
   box-shadow: var(--sh-sm);
   color: var(--fg);
-  caret-color: var(--apricot);
+  caret-color: var(--primary-deep);
   font-size: 1rem;
   -webkit-appearance: none;
   appearance: none;
@@ -57,7 +57,7 @@
 }
 
 .search input:focus {
-  border-color: var(--apricot);
+  border-color: var(--primary-deep);
 }
 
 .search input:focus-visible {
@@ -125,7 +125,7 @@
   gap: 2px;
   min-height: var(--tap);
   padding-inline: var(--sp-1);
-  border-radius: var(--r-pill);
+  border-radius: var(--r-btn);
   background: var(--card);
   border: var(--line-w) solid var(--line);
   color: var(--fg-muted);
@@ -147,12 +147,12 @@
   transition: opacity var(--t-fast) var(--ease), transform var(--t-fast) var(--ease);
 }
 
-/* 杏橘字配杏橘淡底 5.61:1 */
+/* 可可字配淡米底 10.02:1 */
 .chip input:checked+.chip-face {
-  background: var(--apricot-soft);
-  border-color: var(--apricot);
-  color: var(--apricot);
-  box-shadow: inset 0 0 0 var(--line-w) var(--apricot);
+  background: var(--primary-wash);
+  border-color: var(--primary-deep);
+  color: var(--primary-deep);
+  box-shadow: inset 0 0 0 var(--line-w) var(--primary-deep);
 }
 
 .chip input:checked+.chip-face .chip-check {
@@ -182,7 +182,7 @@
   color: var(--fg-muted);
 }
 
-/* 杏橘字配頁面底 4.70:1 */
+/* 可可字配頁面底 9.49:1 */
 .text-btn {
   flex: none;
   min-height: var(--tap);
@@ -191,7 +191,7 @@
   border: 0;
   border-radius: var(--r-sm);
   background: none;
-  color: var(--apricot);
+  color: var(--primary-deep);
   font-size: .92rem;
   font-weight: 700;
   white-space: nowrap;
@@ -244,7 +244,7 @@
   height: 18px;
 }
 
-/* 小提醒是家長能做的事：章節色淡底框起來，和上面的知識分開（綠 5.64:1 on sage-soft） */
+/* 小提醒是家長能做的事：章節色淡底框起來，和上面的知識分開（葉綠深 5.63:1 on leaf-soft） */
 .know.is-tip {
   margin-top: var(--sp-1);
   padding: var(--sp-3) var(--sp-4);
@@ -265,7 +265,7 @@
 .suggest-chip {
   min-height: var(--tap);
   padding-inline: var(--sp-4);
-  border-radius: var(--r-pill);
+  border-radius: var(--r-btn);
   border: var(--line-w) solid var(--line);
   background: var(--card);
   color: var(--fg);
@@ -275,20 +275,20 @@
 @media (hover: hover) and (pointer: fine) {
 
   .search input:hover {
-    border-color: var(--apricot);
+    border-color: var(--primary-deep);
   }
 
   .chip input:not(:checked)+.chip-face:hover,
   .suggest-chip:hover {
-    background: var(--apricot-soft);
-    border-color: var(--apricot);
-    color: var(--apricot);
+    background: var(--primary-wash);
+    border-color: var(--primary-deep);
+    color: var(--primary-deep);
   }
 
   .search-clear:hover,
   .text-btn:hover {
-    background: var(--apricot-soft);
-    color: var(--apricot);
+    background: var(--primary-wash);
+    color: var(--primary-deep);
   }
 
 }

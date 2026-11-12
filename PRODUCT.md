@@ -37,7 +37,7 @@ A one-visit companion handed over in the waiting room: no sign-up, no name or me
 
 - Name: 安心陪伴.
 - Warm and reassuring, never clinical; the child's fear is never framed as a failure.
-- The visual world is warm orange on a cream ground (see `design-system/anxin-peiban/MASTER.md`). The product owner keeps it colourful: a site-wide black/grey text treatment was tried and reverted.
+- The visual world is the sand palette approved by the owner on 2026-11-12: sand ground `#E9E1D8`, cocoa ink, leaf green `#87AE73` as the supporting colour, no orange, and outlined cocoa buttons with 16px corners (see `design-system/anxin-peiban/MASTER.md`). It stays warm and coloured: a black/grey-only text treatment was tried earlier and reverted. Games keep their own palettes.
 
 ## Evidence on Hand
 

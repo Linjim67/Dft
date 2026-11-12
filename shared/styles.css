@@ -7,72 +7,82 @@
 :root {
   color-scheme: light;
 
+  /* — 沙米調色盤（2026-11-12，使用者核定）：沙米底、可可為主、葉綠 #87AE73 為副色、沒有橘色。
+       每一種字色在它會出現的底上都量過（≥ 4.5:1），控制項框線 ≥ 3:1。
+       token 名稱沿用（primary-* 等），數值換成新的；遊戲畫面在下面另外保留舊值。 — */
+
   /* — 表面 — */
   --bg: #E9E1D8;
-  /* 暖灰米底（2026-11-12 起，原本是 #FFF7F0 奶油白）；白卡片浮在上面 1.29:1 */
-  --bg-sunk: #FFF1E0;
-  /* 凹陷軌道／輸入底 */
-  --card: #FFFFFF;
+  /* 沙米底（使用者指定） */
+  --bg-sunk: #DDD3C7;
+  /* 凹槽：滑桿軌道、「選填」小標底；比底色深才看得出是凹下去的 */
+  --card: #FCFAF7;
+  /* 紙白：卡片、輸入框（和底色 1.24:1，靠陰影分開） */
 
   /* — 文字 — */
-  --fg: #7C2D12;
-  /* 8.83:1 on bg · 9.37:1 on card */
-  --fg-muted: #57534E;
-  /* 7.19:1 on bg · 7.63:1 on card */
+  --fg: #3E3329;
+  /* 可可：9.49:1 on bg · 11.78:1 on card */
+  --fg-muted: #5C524A;
+  /* 石灰：5.88:1 on bg · 7.30:1 on card · 5.15:1 on bg-sunk */
 
-  /* — 品牌橘 — */
-  --primary: #F97316;
-  /* 填色 */
-  --primary-ink: #1C1917;
-  /* 橘底上的字 */
-  --primary-deep: #B03A0A;
-  /* 6.08:1 on card · 4.70:1 on bg · 5.30:1 on primary-wash — 邊界／選取／連結
-     （底色換成 #E9E1D8 後，原本的 #C2410C 在底色上只剩 4.00:1，加深一階） */
-  --primary-fill: #EA580C;
-  /* 3.21:1 vs 未填色軌道 — 滑桿已選區段 */
-  --primary-wash: #FFEDD5;
+  /* — 可以按的東西：可可色（原本的橘色全部拿掉） — */
+  --primary: #87AE73;
+  /* 實心填色＝葉綠（醫護端的標誌方塊）；上面放可可字 4.87:1，不放白字 */
+  --primary-ink: #3E3329;
+  /* 深色字（淺底上的內文、葉綠上的字） */
+  --primary-deep: #3E3329;
+  /* 選取框、連結、按鈕字與框、代碼數字：9.49:1 on bg · 10.02:1 on primary-wash */
+  --primary-fill: #6B5A4C;
+  /* 滑桿已選區段：4.45:1 vs 凹槽（葉綠和軌道只有 1.71:1，看不出來，所以不用葉綠） */
+  --primary-wash: #EFE7DD;
+  /* 選到的卡片、hover 的淡底 */
 
-  /* — 章節色（指南、鼓勵頁）：每一段一個色調，用在圖示方塊、淡底對話框／提醒框、打開的箭頭。
-       ink 是字與圖示（皆量過），soft 是大面積淡底，tile 只放圖示（≥ 3:1） — */
-  --apricot: var(--primary-deep);
-  /* 5.61:1 on apricot-soft · 4.70:1 on bg */
-  --apricot-soft: #FFF4EB;
-  --apricot-tile: #FFE6D2;
-  --sage: #2E6B57;
-  /* 6.26:1 on card · 5.64:1 on sage-soft · 5.08:1 on sage-tile */
-  --sage-soft: #EDF5F0;
-  --sage-tile: #D9ECE2;
-  --honey: #8A5A06;
-  /* 5.92:1 on card · 5.45:1 on honey-soft · 4.84:1 on honey-tile */
-  --honey-soft: #FDF5E2;
-  --honey-tile: #F8E7BC;
+  /* — 副色：葉綠 — */
+  --leaf: #87AE73;
+  /* 只當底色用（上面放可可字 4.87:1）；白字只有 2.52:1，不用 */
+  --leaf-deep: #456535;
+  /* 葉綠的字與圖示：5.13:1 on bg · 6.37:1 on card */
+  --leaf-soft: #E7EFE0;
+  /* 葉綠淡底：leaf-deep 字 5.63:1 */
+  --leaf-tile: #D5E4CB;
+  /* 圖示方塊：leaf-deep 圖示 4.99:1 */
+
+  /* — 章節色（指南、抽血大小問）：ink＝字與圖示、soft＝大面積淡底、tile＝圖示方塊 — */
+  --cocoa: #5A4A3D;
+  /* 「怎麼說」：6.54:1 on bg · 6.02:1 on tile */
+  --cocoa-soft: #F2ECE5;
+  --cocoa-tile: #E2D8CC;
+  --honey: #77560A;
+  /* 「不要說」「抽血大小問」：5.20:1 on bg · 5.58:1 on soft · 4.74:1 on tile */
+  --honey-soft: #F3E9D2;
+  --honey-tile: #E9D7AB;
 
   /* — 語意 — */
-  --success: #15803D;
-  /* 5.02:1 on card */
-  --success-wash: #F0FDF4;
-  --danger: #B91C1C;
-  /* 6.47:1 on card */
-  --danger-wash: #FEF2F2;
+  --success: #456535;
+  /* 完成＝葉綠深：5.13:1 on bg · 6.37:1 on card */
+  --success-wash: #E7EFE0;
+  --danger: #A83420;
+  /* 磚紅：5.11:1 on bg · 6.34:1 on card · 5.21:1 on danger-wash */
+  --danger-wash: #F5E0DA;
 
   /* — 線條 — */
-  --line: #8A7366;
-  /* 4.44:1 on card · 3.43:1 on bg（原本 #9C8578 在新底色上只剩 2.69:1） */
+  --line: #8A7362;
+  /* 控制項框線：3.45:1 on bg · 4.28:1 on card */
   --line-w: 1px;
-  /* 控制項邊框線寬。對比由顏色承擔（3.48:1），不靠厚度。 */
-  --hairline: #F5E3CE;
-  /* 裝飾用，不作控制項邊界 */
-  --rule: #C09A72;
-  /* 題目之間的分隔線 — 2.44:1，看得見但比輸入框邊界(3.27:1)輕 */
-  --idle: #66605B;
-  /* 未作答的表情／說明灰 — 6.20:1 on card · 4.79:1 on bg */
+  /* 控制項邊框線寬。對比由顏色承擔，不靠厚度。 */
+  --hairline: #E4DACF;
+  /* 卡片裡的分隔線（裝飾用，不作控制項邊界） */
+  --rule: #C6B6A5;
+  /* 題目之間的分隔線、小標前的直槓 */
+  --idle: #685E56;
+  /* 未作答的表情／提示字／箭頭：4.88:1 on bg · 6.06:1 on card */
 
-  /* — 暖色陰影（取代硬邊，質感較軟） — */
-  --sh-sm: 0 1px 2px rgba(124, 45, 18, .05), 0 2px 8px -2px rgba(124, 45, 18, .08);
-  --sh-md: 0 2px 4px rgba(124, 45, 18, .04), 0 8px 20px -6px rgba(124, 45, 18, .13);
-  --sh-lg: 0 4px 10px -2px rgba(124, 45, 18, .07), 0 18px 34px -12px rgba(124, 45, 18, .20);
-  --sh-orange: 0 2px 6px rgba(194, 65, 12, .18), 0 10px 22px -8px rgba(194, 65, 12, .38);
-  --sh-inset: inset 0 1px 3px rgba(124, 45, 18, .07);
+  /* — 可可色陰影（取代硬邊，質感較軟） — */
+  --sh-sm: 0 1px 2px rgba(62, 51, 41, .06), 0 2px 8px -2px rgba(62, 51, 41, .10);
+  --sh-md: 0 2px 4px rgba(62, 51, 41, .05), 0 8px 20px -6px rgba(62, 51, 41, .16);
+  --sh-lg: 0 4px 10px -2px rgba(62, 51, 41, .08), 0 18px 34px -12px rgba(62, 51, 41, .24);
+  --sh-orange: var(--sh-md);
+  --sh-inset: inset 0 1px 3px rgba(62, 51, 41, .08);
 
   /* — 幾何 — */
   --r-sm: 12px;
@@ -80,6 +90,8 @@
   --r-lg: 22px;
   --r-xl: 28px;
   --r-pill: 999px;
+  --r-btn: 16px;
+  /* 所有按鈕（含分頁、篩選、「開始打針」）的圓角：使用者指定 16px，不再整顆圓 */
 
   --sp-1: 4px;
   --sp-2: 8px;
@@ -99,6 +111,44 @@
 
   --font: "Atkinson Hyperlegible", "PingFang TC", "Noto Sans TC",
     "Microsoft JhengHei", system-ui, sans-serif;
+}
+
+/* 遊戲畫面維持原本的調色盤（使用者決定：遊戲內部自己的顏色不動）。遊戲頁都會載入自己的樣式表，
+   用它認頁面，遊戲的檔案不用改。遊戲選單（/games/solo/、/games/duo/ 與配對頁）不在清單裡，跟著新調色盤。
+   新增遊戲時，把它的樣式表路徑加進來。不支援 :has() 的舊瀏覽器會顯示新調色盤，不影響使用。 */
+:root:has(link[href^="/games/whack-a-mole/"], link[href^="/games/duo/whack-a-mole/"],
+  link[href^="/games/dash/"], link[href^="/games/golf/"], link[href^="/games/draw-circle/"],
+  link[href^="/games/farm/"]) {
+  --bg-sunk: #FFF1E0;
+  --card: #FFFFFF;
+  --fg: #7C2D12;
+  --fg-muted: #57534E;
+  --primary: #F97316;
+  --primary-ink: #1C1917;
+  --primary-deep: #B03A0A;
+  --primary-fill: #EA580C;
+  --primary-wash: #FFEDD5;
+  --success: #15803D;
+  --success-wash: #F0FDF4;
+  --danger: #B91C1C;
+  --danger-wash: #FEF2F2;
+  --line: #8A7366;
+  --hairline: #F5E3CE;
+  --rule: #C09A72;
+  --idle: #66605B;
+  --sh-sm: 0 1px 2px rgba(124, 45, 18, .05), 0 2px 8px -2px rgba(124, 45, 18, .08);
+  --sh-md: 0 2px 4px rgba(124, 45, 18, .04), 0 8px 20px -6px rgba(124, 45, 18, .13);
+  --sh-lg: 0 4px 10px -2px rgba(124, 45, 18, .07), 0 18px 34px -12px rgba(124, 45, 18, .20);
+  --sh-orange: 0 2px 6px rgba(194, 65, 12, .18), 0 10px 22px -8px rgba(194, 65, 12, .38);
+  --sh-inset: inset 0 1px 3px rgba(124, 45, 18, .07);
+  --r-btn: 999px;
+  /* 共用按鈕在遊戲裡維持原本的淡橘底＋深橘框 */
+  --btn-primary-bg: var(--primary-wash);
+  --btn-quiet-bg: var(--card);
+  --btn-danger-bg: var(--danger-wash);
+  --btn-shadow: var(--sh-md);
+  --btn-quiet-shadow: var(--sh-sm);
+  --pill-cta-bg: var(--primary-wash);
 }
 
 /* ═══ Reset & base ═══════════════════════════════════════════ */
@@ -737,20 +787,20 @@ input[type="range"]:active::-webkit-slider-thumb {
   font-size: 1.1rem;
   font-weight: 700;
   letter-spacing: .01em;
-  border-radius: var(--r-pill);
+  border-radius: var(--r-btn);
   border: 2px solid transparent;
   transition: transform var(--t-fast) var(--ease),
     box-shadow var(--t-fast) var(--ease),
     background-color var(--t-fast) var(--ease);
 }
 
-/* 淡橘底對頁面底色只有 1.08:1，單靠填色看不出按鈕範圍，
-   因此保留 2px 深橘外框來界定形狀（對頁面 4.88:1）。 */
+/* 按鈕樣式 C「可可描邊」（使用者選的）：紙白底＋2px 可可框＋可可字（11.78:1），沒有陰影；
+   按下時往下 2px、改成內陰影。遊戲畫面由上面的 --btn-* 換回淡橘底＋陰影。 */
 .btn-primary {
-  background: var(--primary-wash);
+  background: var(--btn-primary-bg, var(--card));
   color: var(--primary-deep);
   border-color: var(--primary-deep);
-  box-shadow: var(--sh-md);
+  box-shadow: var(--btn-shadow, none);
 }
 
 /* 送出鈕不是一題，要比題目之間更疏離，否則會被讀成最後一題的一部分 */
@@ -760,19 +810,21 @@ form .btn-primary {
 
 .btn-primary:active {
   transform: translateY(2px);
-  box-shadow: none;
+  box-shadow: inset 0 2px 6px rgba(62, 51, 41, .25);
 }
 
+/* 次要按鈕：透明底＋細框（3.45:1 on bg） */
 .btn-quiet {
-  background: var(--card);
+  background: var(--btn-quiet-bg, transparent);
   color: var(--fg);
   border-color: var(--line);
-  box-shadow: var(--sh-sm);
+  border-width: 1px;
+  box-shadow: var(--btn-quiet-shadow, none);
 }
 
 .btn-quiet:active {
   transform: translateY(2px);
-  box-shadow: none;
+  box-shadow: inset 0 2px 6px rgba(62, 51, 41, .2);
 }
 
 /* ═══ 修改填寫內容（/portal/?edit）════════════════════════════
@@ -976,11 +1028,8 @@ form .btn-primary {
 
 @media (hover: hover) and (pointer: fine) {
 
-  /* 不加深底色（#FFE2C4 上的深橘字只有 4.17:1）：改成浮起陰影＋框線加深，和 .pill-cta 一樣 */
-  .btn-primary:hover {
-    box-shadow: var(--sh-lg);
-  }
-
+  /* 描邊按鈕 hover：填上淡米底（可可字 10.02:1） */
+  .btn-primary:hover,
   .btn-quiet:hover {
     background: var(--primary-wash);
     border-color: var(--primary-deep);

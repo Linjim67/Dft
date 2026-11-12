@@ -1,6 +1,6 @@
 /* ═══ 家長安慰指南 ═══════════════════════════════════════════════
    小冊子外框、章節標題、一題一張卡沿用 /shared/page.css（.booklet、.part、.topic）。
-   章節色：怎麼說＝杏橘（apricot）、打針當下＝鼠尾草綠（sage）、不要說＝蜂蜜黃（honey）。
+   章節色：怎麼說＝可可（cocoa）、打針當下＝葉綠（leaf）、不要說＝蜂蜜黃（honey）。可以按的東西用可可色。
    這裡放本頁的：章節分頁、主題列、年紀卡、橫槓句子、清單、猜謎、「我要打針了」、避免／改說。
    ═══════════════════════════════════════════════════════════════ */
 
@@ -26,14 +26,14 @@ html {
 }
 
 .tabs.is-stuck {
-  box-shadow: 0 8px 16px -12px rgba(74, 42, 28, .35);
+  box-shadow: 0 8px 16px -12px rgba(62, 51, 41, .35);
 }
 
 .tab {
   min-height: var(--tap);
   padding-inline: 20px;
   border: 0;
-  border-radius: var(--r-pill);
+  border-radius: var(--r-btn);
   background: var(--card);
   color: var(--fg);
   font: inherit;
@@ -159,7 +159,7 @@ html {
   white-space: nowrap;
 }
 
-/* 白勾配杏橘底 6.08:1 */
+/* 白勾配可可底 12.28:1 */
 .age-check {
   position: absolute;
   top: 6px;
@@ -168,7 +168,7 @@ html {
   height: 20px;
   padding: 3px;
   border-radius: 50%;
-  background: var(--apricot);
+  background: var(--primary-deep);
   color: #FFFFFF;
   stroke-width: 3;
   opacity: 0;
@@ -176,16 +176,16 @@ html {
   transition: opacity var(--t-fast) var(--ease), transform var(--t-fast) var(--ease);
 }
 
-/* 杏橘字配杏橘淡底 5.61:1 */
+/* 可可字配淡米底 10.02:1 */
 .age-opt input:checked+.age-face {
-  background: var(--apricot-soft);
-  color: var(--apricot);
-  border-color: var(--apricot);
-  box-shadow: var(--sh-md), inset 0 0 0 var(--line-w) var(--apricot);
+  background: var(--primary-wash);
+  color: var(--primary-deep);
+  border-color: var(--primary-deep);
+  box-shadow: var(--sh-md), inset 0 0 0 var(--line-w) var(--primary-deep);
 }
 
 .age-opt input:checked+.age-face .age-icon {
-  color: var(--apricot);
+  color: var(--primary-deep);
 }
 
 .age-opt input:checked+.age-face .age-check {
@@ -288,7 +288,7 @@ html {
   align-items: center;
   min-height: 36px;
   padding-inline: var(--sp-3);
-  border-radius: var(--r-pill);
+  border-radius: var(--r-btn);
   border: var(--line-w) solid var(--line);
   background: var(--card);
   font-size: .85rem;
@@ -323,7 +323,7 @@ html {
   padding: var(--sp-4) var(--sp-5) var(--sp-4) var(--sp-4);
   border-radius: var(--r-lg);
   background: var(--card);
-  border: 2px solid var(--apricot);
+  border: 2px solid var(--primary-deep);
   box-shadow: var(--sh-md);
   color: var(--fg);
   text-decoration: none;
@@ -337,8 +337,8 @@ html {
   width: 48px;
   height: 48px;
   border-radius: var(--r-md);
-  background: var(--apricot-tile);
-  color: var(--apricot);
+  background: var(--leaf-tile);
+  color: var(--leaf-deep);
 }
 
 .ready-label {
@@ -356,7 +356,7 @@ html {
 }
 
 .ready-arrow {
-  color: var(--apricot);
+  color: var(--primary-deep);
 }
 
 .ready-card:active {
@@ -446,18 +446,18 @@ html {
 @media (hover: hover) and (pointer: fine) {
 
   .riddle-ans>summary:hover {
-    background: var(--apricot-soft);
-    border-color: var(--apricot);
-    color: var(--apricot);
+    background: var(--primary-wash);
+    border-color: var(--primary-deep);
+    color: var(--primary-deep);
   }
 
   .tab[aria-selected="false"]:hover {
-    background: var(--apricot-soft);
+    background: var(--primary-wash);
   }
 
   .age-opt input:not(:checked)+.age-face:hover {
-    background: var(--apricot-soft);
-    border-color: var(--apricot);
+    background: var(--primary-wash);
+    border-color: var(--primary-deep);
   }
 
   .ready-card:hover {

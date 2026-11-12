@@ -5,10 +5,10 @@
    ═══════════════════════════════════════════════════════════════ */
 
 .pro {
-  --staff-ink: var(--primary-ink);      /* #1C1917 */
-  --staff-on: #FFF7ED;                  /* 17.6:1 on ink */
+  --staff-ink: #1C1917;                 /* 醫護模式列維持近黑（沙米調色盤時決定不變） */
+  --staff-on: #FCFAF7;                  /* 紙白 16.79:1 on ink */
   --staff-dim: #D6D3D1;                 /* 12.9:1 on ink */
-  --staff-ring: #FDBA74;                /* 焦點環：深底上 #C2410C 只有 2.8:1，改淺橘 10.9:1 */
+  --staff-ring: #87AE73;                /* 焦點環：葉綠 6.94:1 on ink（沒有橘色了） */
   --key-h: 60px;
 }
 
@@ -86,7 +86,7 @@
   min-height: var(--tap);
   padding-inline: var(--sp-3);
   border: 1px solid #78716C;           /* 3.6:1 on ink */
-  border-radius: var(--r-pill);
+  border-radius: var(--r-btn);
   background: transparent;
   color: var(--staff-on);
   font-size: .9rem;
@@ -591,7 +591,7 @@
   padding-inline: var(--sp-2) var(--sp-4);
   margin-inline-start: calc(var(--sp-2) * -1);
   border: 0;
-  border-radius: var(--r-pill);
+  border-radius: var(--r-btn);
   background: transparent;
   color: var(--fg-muted);
   font-weight: 700;

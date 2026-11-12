@@ -16,67 +16,70 @@
 | Theme | **Bright mode only.** No dark mode — deliberate, per product owner. |
 | Stack | Vanilla HTML/CSS/JS, no build step, static on Vercel. Cross-page logic in `/shared/app.js` (`window.Anxin`); Firestore for #01 code registry, #03 feedback + 醫護端 (`/pro/`), #04 discussion, #07 duo rooms |
 
-## Colour — warm orange ("Playful orange")
+## Colour — Sand palette (沙米調色盤, owner-approved 2026-11-12)
 
-Source: `--domain color` → **#23 Pet Tech App**, *"Playful orange + trust blue"*.
-**Every pair below is measured.** Since 2026-11-12 the ground is a warm greige (`#E9E1D8`, owner's choice) and white cards float on it;
-the warmth comes from the greige plus the orange.
-
-| Token | Value | Measured |
-|---|---|---|
-| `--bg` | `#E9E1D8` warm greige (was `#FFF7F0` cream until 2026-11-12) | white cards 1.29:1 on it |
-| `--bg-sunk` | `#FFF1E0` | slider track, inset wells |
-| `--card` | `#FFFFFF` | — |
-| `--fg` | `#7C2D12` | 7.24:1 on bg · 9.37:1 on card |
-| `--fg-muted` | `#57534E` warm stone | 5.90:1 on bg · 7.63:1 on card |
-| `--primary` | `#F97316` | fills only |
-| `--primary-ink` | `#1C1917` | **6.24:1 on orange** |
-| `--primary-deep` | `#B03A0A` | 6.08:1 on card · 4.70:1 on bg — borders, selected, links (darkened from `#C2410C` for the greige ground) |
-| `--primary-fill` | `#EA580C` | 3.21:1 vs unfilled track |
-| `--primary-wash` | `#FFEDD5` | selected-card ground |
-| `--success` | `#15803D` | 5.02:1 on card |
-| `--danger` | `#B91C1C` | 6.47:1 on card |
-| `--line` | `#8A7366` warm taupe | **4.44:1 card / 3.43:1 bg** — control boundaries |
-| `--hairline` | `#F5E3CE` | decorative only, never a boundary |
-
-### Traps found by measuring
-- **white on `#F97316` = 2.80:1.** Orange buttons take **dark ink** (`#1C1917`), not white.
-  This is also the better look.
-- **`#FED7AA` border = 1.35:1.** Unusable as a control boundary — the same trap the
-  previous cyan palette had with `#A5F3FC`. Warm taupe `#9C8578` carries boundaries instead.
-- **`#F97316` slider fill vs track = 2.52:1.** Fill uses `#EA580C`.
-
-### Dropped from the dataset entry
-The `#2563EB` "trust blue" accent. A third hue had nowhere to go in this UI and added noise.
-Confirmation uses `--success` green; everything else is orange + warm neutrals.
-
-### Chapter tones (reading pages only)
-The guide and cheer pages read top to bottom in chapters, and the owner asked for supporting colours
-there (2026-11-12). Each chapter takes one warm, earthy tone. Apricot remains the only *interactive*
-colour; sage and honey never style a control.
+Sand ground `#E9E1D8`, cocoa ink, **no orange**, leaf green `#87AE73` as the one supporting colour.
+Designed and approved on the proposal page "沙米調色盤" (claude.ai artifact). **Every pair below is
+measured.** Token names are kept from the old orange system (`--primary-*`) so pages didn't change;
+only the values did. Game screens keep the old orange values (see *Games keep their palette*).
 
 | Token | Value | Measured / use |
 |---|---|---|
-| `--apricot` / `-soft` / `-tile` | = `--primary-deep` / `#FFF4EB` / `#FFE6D2` | 5.61:1 on soft |
-| `--sage` / `-soft` / `-tile` | `#2E6B57` / `#EDF5F0` / `#D9ECE2` | 6.26:1 card · 5.64:1 soft · 5.08:1 tile |
-| `--honey` / `-soft` / `-tile` | `#8A5A06` / `#FDF5E2` / `#F8E7BC` | 5.92:1 card · 5.45:1 soft · 4.84:1 tile |
+| `--bg` | `#E9E1D8` sand | the owner's ground colour |
+| `--bg-sunk` | `#DDD3C7` | slider track, 「選填」 tag; darker than bg so it reads as sunk |
+| `--card` | `#FCFAF7` paper | cards, inputs (1.24:1 on bg — separated by shadow) |
+| `--fg` | `#3E3329` cocoa | 9.49:1 on bg · 11.78:1 on card (less red than the earlier `#4A2A1C`) |
+| `--fg-muted` | `#5C524A` | 5.88:1 on bg · 7.30:1 on card · 5.15:1 on bg-sunk |
+| `--idle` | `#685E56` | unanswered faces, hints, chevrons: 4.88:1 on bg |
+| `--primary-deep` | `#3E3329` (= cocoa) | selection borders, links, button text and borders, code digits |
+| `--primary-wash` | `#EFE7DD` | selected ground, hover fill (cocoa text 10.02:1) |
+| `--primary-fill` | `#6B5A4C` | slider fill, 4.45:1 vs track (leaf green would be 1.71:1) |
+| `--primary` | `#87AE73` leaf | solid fill (staff brand mark); cocoa text on it 4.87:1 |
+| `--primary-ink` | `#3E3329` | dark ink used as body text on some pages |
+| `--leaf` / `-deep` / `-soft` / `-tile` | `#87AE73` / `#456535` / `#E7EFE0` / `#D5E4CB` | leaf is fill-only (white on it 2.52:1 ✗); deep 5.13:1 bg · 4.99:1 tile |
+| `--success` / `-wash` | `#456535` / `#E7EFE0` | completion = leaf deep |
+| `--danger` / `-wash` | `#A83420` / `#F5E0DA` | brick red: 5.11:1 bg · 6.34:1 card · 5.21:1 wash |
+| `--line` | `#8A7362` | control boundaries: 3.45:1 bg · 4.28:1 card |
+| `--hairline` / `--rule` | `#E4DACF` / `#C6B6A5` | decorative dividers only |
+| shadows | `rgba(62, 51, 41, …)` | cocoa-tinted |
 
-*ink* = icons and short labels · *soft* = large washes (bubbles, tip boxes) · *tile* = icon tiles,
-count badges. Those pages also set the ink to chocolate `#4A2A1C` (`.booklet`), so the orange reads as
-an accent. See `pages/05-06-guide-cheer.md`.
+### Traps found by measuring
+- **Leaf green can't carry text or boundaries**: white on `#87AE73` = 2.52:1, leaf on bg = 1.95:1,
+  leaf vs slider track = 1.71:1. It is a fill with cocoa text, and `--leaf-deep` does text and icons.
+- **The old cream-era washes were lighter than the sand ground** (`#FFF1E0` sunk, `#F5E3CE` hairline),
+  so "sunk" looked raised; the sand palette's sunk/hairline are derived from the ground instead.
+
+### Buttons — style C 「可可描邊」 (owner's pick of five)
+All buttons, including tabs, filter chips, 開始打針 and link buttons, use **16px corners**
+(`--r-btn`), not pills. Primary: paper `--card` + 2px cocoa border + cocoa text (11.78:1), no
+shadow. Secondary `.btn-quiet`: transparent + 1px `--line`. Danger: paper + 2px brick border. Hover
+fills `--primary-wash`; press = 2px down + inset shadow. Tags, badges, dots, search fields and slider
+tracks are not buttons and keep their round shapes.
+
+### Chapter tones (guide, 抽血大小問, books)
+`data-tone="cocoa | leaf | honey"`: 怎麼說 = cocoa `#5A4A3D` (soft `#F2ECE5`, tile `#E2D8CC`) ·
+打針當下 / 醫療現場解密 = leaf · 不要說 / 抽血大小問 = honey `#77560A` (soft `#F3E9D2`, tile `#E9D7AB`).
+*ink* = icons and short labels · *soft* = large washes · *tile* = icon tiles, count badges.
+Search highlights (`mark`) use the honey tile (8.6:1 with cocoa).
+
+### Games keep their palette
+The owner excluded the games' own colours. `shared/styles.css` restores the old orange-era token
+values (and pill buttons) on game screens, recognised with `:root:has(link[href^="/games/<game>/"])`.
+The game menus (`/games/solo/`, `/games/duo/` and the pairing page) are not in that list and follow
+the sand palette. **Add any new game's stylesheet path to that selector.**
 
 ## Style — warm soft, low-chrome
 
 Claymorphism geometry **without** the hard flat edge shadows, which read as cheap plastic.
 
-- Radius `12 / 16 / 22 / 28px`; buttons are full pills
+- Radius `12 / 16 / 22 / 28px`; buttons use 16px (`--r-btn`) since 2026-11-12, no pills
 - **Depth is warm ambient shadow**, tinted `rgba(124,45,18,…)` — never a flat colour edge.
-  Orange elements get `--sh-orange` so the glow matches the object.
+  (Shadows are cocoa-tinted; `--sh-orange` survives only for the games.)
 - Press = `translateY(2px)` + shadow collapse. Subtle; never shifts layout bounds.
 - **Borders only where WCAG 1.4.11 needs one** — inputs, steppers, unselected radio cards.
   Containers (assurance list, summary, code card) float on shadow with no outline.
   Outlining every surface was the main thing making the old build noisy.
-- Resting borders are quiet taupe; **saturated orange is reserved for focus and selection**,
+- Resting borders are quiet taupe; **cocoa is reserved for focus and selection**,
   so the active element is the loudest thing on screen.
 
 ### Face scale is monochrome

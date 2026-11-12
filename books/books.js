@@ -42,16 +42,16 @@
       '<circle class="f1" cx="16" cy="17.5" r="10"/>' +
       '<circle class="ink" cx="12.2" cy="15.6" r="1.1"/><circle class="ink" cx="19.8" cy="15.6" r="1.1"/>' +
       '<ellipse class="f2" cx="16" cy="21.2" rx="3.8" ry="2.9"/><path d="M14.8 20.4h2.4"/>' },
-    dinosaurs: { tone: 'sage', art:
+    dinosaurs: { tone: 'leaf', art:
       '<path class="f1" d="M3.5 21.5c2.6.1 4.3-.9 5.8-3 1.7-2.4 4-3.7 7-3.7 1.8 0 3-.6 3.7-1.9V8.6A3 3 0 0 1 23 5.6h2a2.2 2.2 0 0 1 0 4.4h-1v6.2c0 4.6-3.7 8.3-8.3 8.3H9.2c-2.9 0-5-1.2-5.7-3Z"/>' +
       '<path d="M11 24.5v3.3M18.6 24.5v3.3"/><circle class="ink" cx="23.4" cy="7.8" r="1"/>' +
       '<path d="M11.5 15.7l1.2-2.4 1.6 1.9M15.4 14.8l1.4-2.4 1.4 2"/>' },
-    space: { tone: 'apricot', art:
+    space: { tone: 'cocoa', art:
       '<path class="f2" d="M10.3 17.4 6.5 21.2v3.6h3.8ZM21.7 17.4l3.8 3.8v3.6h-3.8Z"/>' +
       '<path class="f1" d="M16 3.5c3.9 2.9 5.8 7.2 5.8 12.8v8.5H10.2v-8.5c0-5.6 1.9-9.9 5.8-12.8Z"/>' +
       '<circle class="f2" cx="16" cy="13" r="2.7"/>' +
       '<path d="M13.6 24.8c0 1.8.9 3 2.4 4.2 1.5-1.2 2.4-2.4 2.4-4.2"/>' },
-    ocean: { tone: 'sage', art:
+    ocean: { tone: 'leaf', art:
       '<path class="f2" d="M24.2 16 29 11.2v9.6Z"/>' +
       '<path class="f1" d="M3.5 16c3.6-5.4 8.9-7.4 13.9-6.4 3 .6 5.4 2.7 6.8 6.4-1.4 3.7-3.8 5.8-6.8 6.4-5 1-10.3-1-13.9-6.4Z"/>' +
       '<circle class="ink" cx="9.6" cy="15" r="1.1"/><path d="M14.5 12.6c1.2 2.1 1.2 4.7 0 6.8"/>' +
@@ -61,7 +61,7 @@
       '<path d="M7 27.6h18"/><circle class="ink" cx="16" cy="18.6" r="1.5"/>' +
       '<circle class="ink" cx="10.4" cy="20" r="1"/><circle class="ink" cx="21.6" cy="20" r="1"/>' +
       '<path d="M26.5 3.6v3.2M24.9 5.2h3.2"/>' },
-    hospital: { tone: 'apricot', art:
+    hospital: { tone: 'cocoa', art:
       '<path class="f1" d="M16 3.8 6 7.6v7.2c0 6.3 4.2 11.2 10 13.2 5.8-2 10-6.9 10-13.2V7.6Z"/>' +
       '<path class="ink" d="m16 10.4 1.7 3.4 3.7.5-2.7 2.6.7 3.7-3.4-1.8-3.4 1.8.7-3.7-2.7-2.6 3.7-.5Z"/>' }
   };

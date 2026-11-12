@@ -107,7 +107,7 @@ html:not([data-discuss="clinic"]) .only-clinic {
 .filter-toggle:focus-visible,
 .share-btn:focus-visible,
 .like-btn:focus-visible {
-  border-radius: var(--r-pill);
+  border-radius: var(--r-btn);
 }
 
 .search-box input:focus-visible {
@@ -125,7 +125,7 @@ html:not([data-discuss="clinic"]) .only-clinic {
   color: var(--fg);
   font-weight: 700;
   border: var(--line-w) solid var(--line);
-  border-radius: var(--r-pill);
+  border-radius: var(--r-btn);
   box-shadow: var(--sh-sm);
   transition: background-color var(--t-fast) var(--ease),
     border-color var(--t-fast) var(--ease);
@@ -214,7 +214,7 @@ html:not([data-discuss="clinic"]) .only-clinic {
   font-weight: 700;
   line-height: 1.3;
   border: var(--line-w) solid var(--line);
-  border-radius: var(--r-pill);
+  border-radius: var(--r-btn);
   box-shadow: var(--sh-sm);
   transition: transform var(--t-fast) var(--ease),
     background-color var(--t-fast) var(--ease),
@@ -374,7 +374,7 @@ html:not([data-discuss="clinic"]) .only-clinic {
   gap: 2px;
   padding: 2px;
   background: var(--bg-sunk);
-  border-radius: var(--r-pill);
+  border-radius: var(--r-btn);
   box-shadow: var(--sh-inset);
 }
 
@@ -397,7 +397,7 @@ html:not([data-discuss="clinic"]) .only-clinic {
   place-items: center;
   min-height: 44px;
   padding: 0 var(--sp-4);
-  border-radius: var(--r-pill);
+  border-radius: var(--r-sm);
   font-size: .95rem;
   font-weight: 700;
   color: var(--fg-muted);
@@ -530,7 +530,7 @@ html:not([data-discuss="clinic"]) .only-clinic {
   margin-top: 2px;
 }
 
-/* 標籤 #7C2D12（= --fg） */
+/* 標籤用 --fg（可可色） */
 .card-tags {
   display: flex;
   flex-wrap: wrap;
@@ -575,7 +575,7 @@ html:not([data-discuss="clinic"]) .only-clinic {
   padding: 0 10px;
   background: none;
   border: 0;
-  border-radius: var(--r-pill);
+  border-radius: var(--r-btn);
   color: var(--fg-muted);
   font-size: .85rem;
   font-variant-numeric: tabular-nums;
@@ -662,7 +662,7 @@ html:not([data-discuss="clinic"]) .only-clinic {
   white-space: pre-wrap;
 }
 
-/* 單篇的標籤：外觀和列表卡片的 .card-tags 一樣（純文字、#7C2D12），但每個都是按鈕，點了就搜尋。
+/* 單篇的標籤：外觀和列表卡片的 .card-tags 一樣（純文字、--fg 可可色），但每個都是按鈕，點了就搜尋。
    上下的內距放大點擊範圍，再用負邊距抵掉，行距和卡片一致 */
 .post-tags {
   margin: 0;
@@ -723,7 +723,7 @@ html:not([data-discuss="clinic"]) .only-clinic {
   padding: 0;
   background: none;
   border: 0;
-  border-radius: var(--r-pill);
+  border-radius: var(--r-btn);
   color: var(--idle);
 }
 

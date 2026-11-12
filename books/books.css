@@ -1,7 +1,7 @@
 /* ═══ 看繪本 ═══════════════════════════════════════════════════════
    繪本還沒做：書架（準備中的繪本，點一下加入願望清單）、自己寫主題、選角色。
-   互動色只用 apricot（和指南、抽血大小問一致）；封面用 apricot／sage／honey 分色。
-   字配色：深橘字只放在 --apricot-soft 上（4.78:1），不放在 --apricot-tile（4.32:1）上。
+   互動色只用可可色（和指南、抽血大小問一致）；封面用 cocoa／leaf／honey 章節色分色。
+   字配色：可可字放在 --primary-wash（淡米）上 10.02:1。
    ═══════════════════════════════════════════════════════════════ */
 
 .book-part+.book-part {
@@ -55,7 +55,7 @@
   aspect-ratio: 4 / 3;
   border-radius: var(--r-md);
   background: var(--tone-tile);
-  box-shadow: inset 7px 0 0 rgba(124, 45, 18, .07);
+  box-shadow: inset 7px 0 0 rgba(62, 51, 41, .08);
   color: var(--tone);
 }
 
@@ -113,7 +113,7 @@
 }
 
 .book[aria-pressed="true"] .book-wish {
-  background: var(--apricot-soft);
+  background: var(--primary-wash);
   color: var(--primary-deep);
 }
 
@@ -141,8 +141,8 @@
   min-height: var(--tap);
   padding-inline: var(--sp-5);
   border: 2px solid var(--primary-deep);
-  border-radius: var(--r-pill);
-  background: var(--apricot-soft);
+  border-radius: var(--r-btn);
+  background: var(--primary-wash);
   color: var(--primary-deep);
   font-weight: 700;
   transition: transform var(--t-fast) var(--ease), opacity var(--t-fast) var(--ease);
@@ -215,7 +215,7 @@
   min-height: var(--tap);
   padding-inline: var(--sp-4);
   border: var(--line-w) solid var(--line);
-  border-radius: var(--r-pill);
+  border-radius: var(--r-btn);
   background: var(--card);
   color: var(--fg);
   font-weight: 700;
@@ -233,7 +233,7 @@
 }
 
 .char-chip[aria-pressed="true"] {
-  background: var(--apricot-soft);
+  background: var(--primary-wash);
   border-color: var(--primary-deep);
   color: var(--primary-deep);
   box-shadow: inset 0 0 0 var(--line-w) var(--primary-deep);
@@ -284,13 +284,13 @@
 
   .char-chip[aria-pressed="false"]:hover,
   .idea-add:not(:disabled):hover {
-    background: var(--apricot-soft);
+    background: var(--primary-wash);
     border-color: var(--primary-deep);
     color: var(--primary-deep);
   }
 
   .idea-del:hover {
-    background: var(--apricot-soft);
+    background: var(--primary-wash);
     color: var(--primary-deep);
   }
 }

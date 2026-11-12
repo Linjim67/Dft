@@ -10,13 +10,12 @@ make it 更耐看; supporting colours allowed; parents read top to bottom). Dire
 
 ## Shared: the booklet (`/shared/page.css`)
 
-- **`<body class="booklet">`** sets the ink to chocolate `#4A2A1C` (12.8:1) instead of the site's
-  red-brown `#7C2D12`, so apricot reads as an accent rather than everything blurring into
-  brown-orange. Text selection uses `--apricot-tile`.
-- **Chapters carry a tone:** `data-tone="apricot | sage | honey"` on a `.part` sets `--tone` (ink: icons
+- **`<body class="booklet">`** themes text selection (`--cocoa-tile`). The ink is the site-wide cocoa
+  of the sand palette (MASTER).
+- **Chapters carry a tone:** `data-tone="cocoa | leaf | honey"` on a `.part` sets `--tone` (ink: icons
   and labels), `--tone-soft` (large washes: speech bubbles, tip boxes) and `--tone-tile` (icon tiles,
-  count badges). Tokens are in MASTER. Apricot stays the one *interactive* colour (selected age card,
-  chips, links, CTAs); sage and honey only mark chapters.
+  count badges). Tokens are in MASTER. Cocoa (`--primary-deep`) is the one *interactive* colour
+  (selected age card, chips, links, buttons); the chapter tones only mark chapters.
 - **Chapter heading:** a 48px tone tile with an authored SVG mark, then the `h2` (1.4rem) and a one-line
   lede. No eyebrow labels and no 01/02/03 numbering (the chapters aren't a sequence).
 - **Phone-only** (MASTER): there is no desktop layout. A desktop rail was tried and removed on
@@ -41,13 +40,13 @@ These patterns were pinned by the owner:
 
 ## Shared: the closing card (`.help-card`)
 
-Both pages end on a white card with an apricot icon tile and pill links: the guide's 都讀完了嗎？
+Both pages end on a paper card with a leaf icon tile and outlined cocoa link buttons: the guide's 都讀完了嗎？
 (→ 小遊戲, → 抽血大小問), and cheer's 還有其他疑問嗎？ (→ other parents' stories). A wash on
 the cream ground was nearly invisible, which is why it is a white card.
 
 ## 05 家長安慰指南 `/guide/`
 
-Chapters: 怎麼說 = apricot · 打針當下 = sage · 不要說 = honey.
+Chapters: 怎麼說 = cocoa · 打針當下 = leaf · 不要說 = honey.
 
 - **Chapter tabs** (owner's reference screenshot, 2026-11-12): three centred pills, sticky. They are
   real WAI-ARIA tabs that show **one chapter at a time**: ←/→/Home/End move between them, and
@@ -60,13 +59,13 @@ Chapters: 怎麼說 = apricot · 打針當下 = sage · 不要說 = honey.
   sits directly under the title (indented 38px), in grey. Every topic has an `icon` in `content.js`;
   the icons are authored in `guide.js` (`ICONS`).
 - **Age cards** (2 歲以下 / 3–4 歲 / 5–9 歲): a radio group with icons and a check badge, selected in
-  apricot. Pre-selected from the profile by whole years (2歲半 → 2 歲以下; 10+ falls back to 5–9 with
+  cocoa. Pre-selected from the profile by whole years (2歲半 → 2 歲以下; 10+ falls back to 5–9 with
   a note). Only the selected group's panel is rendered visible.
 - 怎麼說 has no lede: the age cards follow the heading directly.
 - **Phrases to say** (and the baby group's actions) are one per line after a **16×2px dash** in the
   chapter tone, in regular weight, with no bubbles. Riddle answers hide behind 「看答案」.
 - 打針當下 action lists keep tone dots. 讓孩子分心 has no game link
-  inside it: the chapter ends in the **我要打針了** card (white, 2px apricot border) → `/games/solo/`,
+  inside it: the chapter ends in the **我要打針了** card (paper, 2px cocoa border, leaf icon tile) → `/games/solo/`,
   which is distinct from the top bar's 開始打針 → `/shot/`.
 - 這些話先不要跟小孩說 uses the same topic rows as the other chapters (owner, 2026-11-12): only the
   titles show at first, and opening one shows its pairs. Each pair is 「✕ 避免」 (grey text, red ✕ icon
@@ -74,9 +73,9 @@ Chapters: 怎麼說 = apricot · 打針當下 = sage · 不要說 = honey.
 
 ## 06 抽血大小問 `/cheer/` — FAQ page
 
-Chapters: 醫療現場解密 = sage · 抽血大小問 = honey.
+Chapters: 醫療現場解密 = leaf · 抽血大小問 = honey.
 
-- **Search first:** a pill search field (apricot focus and caret) filters as you type. Every
+- **Search first:** a round search field (cocoa focus and caret) filters as you type. Every
   space-separated word must match, and hits are wrapped in `<mark>` (`#FED7AA` + ink). Matching
   questions open; clearing the search folds them again.
 - **Phase filter:** 全部 / 抽血前 / 抽血時 / 抽血後, four across, combinable with search.
