@@ -229,10 +229,10 @@ html:not([data-discuss="clinic"]) .only-clinic {
 
 .chip[aria-pressed="true"],
 .chip-radio input:checked+.chip {
-  background: var(--primary-wash);
-  color: var(--primary-deep);
-  border-color: var(--primary-deep);
-  box-shadow: var(--sh-sm), inset 0 0 0 var(--line-w) var(--primary-deep);
+  background: var(--pick-wash);
+  color: var(--pick);
+  border-color: var(--pick);
+  box-shadow: var(--sh-sm), inset 0 0 0 var(--line-w) var(--pick);
 }
 
 .chip:active,
@@ -409,7 +409,7 @@ html:not([data-discuss="clinic"]) .only-clinic {
 /* 選取：浮起的白底（形狀）＋深橘字（顏色），兩個線索 */
 .sort input:checked+span {
   background: var(--card);
-  color: var(--primary-deep);
+  color: var(--pick);
   box-shadow: var(--sh-sm);
 }
 
@@ -589,12 +589,12 @@ html:not([data-discuss="clinic"]) .only-clinic {
 
 /* 按過：愛心填滿（形狀改變，不只是變色） */
 .like-btn[aria-pressed="true"] {
-  color: var(--primary-deep);
+  color: var(--pick);
   font-weight: 700;
 }
 
 .like-btn[aria-pressed="true"] .icon {
-  color: var(--primary-deep);
+  color: var(--pick);
   fill: currentColor;
 }
 

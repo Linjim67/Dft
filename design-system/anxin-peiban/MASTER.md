@@ -49,6 +49,15 @@ only the values did. Game screens keep the old orange values (see *Games keep th
 - **The old cream-era washes were lighter than the sand ground** (`#FFF1E0` sunk, `#F5E3CE` hairline),
   so "sunk" looked raised; the sand palette's sunk/hairline are derived from the ground instead.
 
+### Where cocoa and leaf go (owner: "網頁不需要完全類黑白", 2026-11-12)
+- **Cocoa = actions:** buttons, links, focus rings, body text, the 開始打針 button.
+- **Leaf = the child's data and "chosen":** the temporary code (home, 打針 page, staff page:
+  `--code`), its dashed frame, the age readout and slider fill, every selected option (faces,
+  gender, age cards, guide's active tab as solid leaf-deep with white text 6.63:1, filter chips,
+  discussion chips/sort/「有幫助」, books) via `--pick` / `--pick-wash`, home tile icons, icon tiles,
+  the leaf chapters and 完成. Text and lines use `--leaf-deep`; `#87AE73` itself only as a fill or
+  a decorative frame. Games map `--code`/`--pick*` back to their orange.
+
 ### Buttons — style C 「可可描邊」 (owner's pick of five)
 All buttons, including tabs, filter chips, 開始打針 and link buttons, use **16px corners**
 (`--r-btn`), not pills. Primary: paper `--card` + 2px cocoa border + cocoa text (11.78:1), no

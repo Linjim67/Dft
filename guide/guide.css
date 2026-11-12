@@ -9,7 +9,7 @@ html {
 }
 
 /* ═══ 章節分頁：三顆膠囊置中，捲動時黏在頂端 ════════════════════
-   選到的那一章：深色實心＋白字（白字配深可可 12.8:1）；其他：白底深字。
+   選到的那一章：葉綠深實心＋白字（6.63:1）；其他：白底深字。
    形狀不變，靠實心／空心分辨，不只靠顏色。 */
 
 .tabs {
@@ -46,7 +46,7 @@ html {
 }
 
 .tab[aria-selected="true"] {
-  background: var(--fg);
+  background: var(--pick);
   color: #FFFFFF;
 }
 
@@ -159,7 +159,7 @@ html {
   white-space: nowrap;
 }
 
-/* 白勾配可可底 12.28:1 */
+/* 白勾配葉綠深 6.63:1 */
 .age-check {
   position: absolute;
   top: 6px;
@@ -168,7 +168,7 @@ html {
   height: 20px;
   padding: 3px;
   border-radius: 50%;
-  background: var(--primary-deep);
+  background: var(--pick);
   color: #FFFFFF;
   stroke-width: 3;
   opacity: 0;
@@ -176,16 +176,16 @@ html {
   transition: opacity var(--t-fast) var(--ease), transform var(--t-fast) var(--ease);
 }
 
-/* 可可字配淡米底 10.02:1 */
+/* 選到：葉綠深字配葉綠淡 5.63:1 */
 .age-opt input:checked+.age-face {
-  background: var(--primary-wash);
-  color: var(--primary-deep);
-  border-color: var(--primary-deep);
-  box-shadow: var(--sh-md), inset 0 0 0 var(--line-w) var(--primary-deep);
+  background: var(--pick-wash);
+  color: var(--pick);
+  border-color: var(--pick);
+  box-shadow: var(--sh-md), inset 0 0 0 var(--line-w) var(--pick);
 }
 
 .age-opt input:checked+.age-face .age-icon {
-  color: var(--primary-deep);
+  color: var(--pick);
 }
 
 .age-opt input:checked+.age-face .age-check {

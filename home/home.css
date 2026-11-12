@@ -187,6 +187,11 @@
   fill: currentColor;
 }
 
+/* 圖示用葉綠深（6.37:1 on card），字維持可可：主頁不再整片咖啡色 */
+.quad-icon {
+  color: var(--leaf-deep);
+}
+
 .quad-label {
   font-size: 1rem;
   font-weight: 700;

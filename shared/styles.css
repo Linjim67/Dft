@@ -47,6 +47,18 @@
   --leaf-tile: #D5E4CB;
   /* 圖示方塊：leaf-deep 圖示 4.99:1 */
 
+  /* — 葉綠用在哪裡（使用者：葉綠當副色，網頁不要整片黑白）—
+       可可＝動作（按鈕、連結、焦點框、內文）；葉綠＝孩子的資料與「選到了」：
+       暫時代碼、選到的選項／分頁／篩選、滑桿、完成。 */
+  --code: var(--leaf-deep);
+  /* 暫時代碼數字：6.37:1 on card */
+  --pick: var(--leaf-deep);
+  /* 選到的框線、字、勾勾底（白勾 6.63:1）：5.63:1 on pick-wash */
+  --pick-wash: var(--leaf-soft);
+  /* 選到的底 */
+  --pick-fill: var(--leaf-deep);
+  /* 滑桿已選區段：4.49:1 vs 凹槽 */
+
   /* — 章節色（指南、抽血大小問）：ink＝字與圖示、soft＝大面積淡底、tile＝圖示方塊 — */
   --cocoa: #5A4A3D;
   /* 「怎麼說」：6.54:1 on bg · 6.02:1 on tile */
@@ -142,6 +154,11 @@
   --sh-orange: 0 2px 6px rgba(194, 65, 12, .18), 0 10px 22px -8px rgba(194, 65, 12, .38);
   --sh-inset: inset 0 1px 3px rgba(124, 45, 18, .07);
   --r-btn: 999px;
+  --code: var(--primary-deep);
+  --pick: var(--primary-deep);
+  --pick-wash: var(--primary-wash);
+  --pick-fill: var(--primary-fill);
+  --code-frame: var(--line);
   /* 共用按鈕在遊戲裡維持原本的淡橘底＋深橘框 */
   --btn-primary-bg: var(--primary-wash);
   --btn-quiet-bg: var(--card);
@@ -521,7 +538,7 @@ textarea:focus-visible {
   font-weight: 700;
   line-height: 1.4;
   letter-spacing: -.01em;
-  color: var(--primary-deep);
+  color: var(--pick);
   font-variant-numeric: tabular-nums;
 }
 
@@ -559,7 +576,7 @@ input[type="range"]::-webkit-slider-runnable-track {
   height: 12px;
   border-radius: var(--r-pill);
   background:
-    linear-gradient(90deg, var(--primary-fill) var(--fill), var(--bg-sunk) var(--fill));
+    linear-gradient(90deg, var(--pick-fill) var(--fill), var(--bg-sunk) var(--fill));
   border: 1px solid var(--line);
   box-shadow: var(--sh-inset);
 }
@@ -568,7 +585,7 @@ input[type="range"]::-moz-range-track {
   height: 12px;
   border-radius: var(--r-pill);
   background:
-    linear-gradient(90deg, var(--primary-fill) var(--fill), var(--bg-sunk) var(--fill));
+    linear-gradient(90deg, var(--pick-fill) var(--fill), var(--bg-sunk) var(--fill));
   border: 1px solid var(--line);
   box-shadow: var(--sh-inset);
 }
@@ -581,7 +598,7 @@ input[type="range"]::-webkit-slider-thumb {
   margin-top: -13px;
   border-radius: 50%;
   background: var(--card);
-  border: 4px solid var(--primary-deep);
+  border: 4px solid var(--pick);
   box-shadow: var(--sh-md);
   transition: transform var(--t-fast) var(--ease);
 }
@@ -591,7 +608,7 @@ input[type="range"]::-moz-range-thumb {
   height: 32px;
   border-radius: 50%;
   background: var(--card);
-  border: 4px solid var(--primary-deep);
+  border: 4px solid var(--pick);
   box-shadow: var(--sh-md);
 }
 
@@ -671,10 +688,10 @@ input[type="range"]:active::-webkit-slider-thumb {
 
 /* 與表情卡的選取樣式一致：淡橘底＋深橘框，不用飽和橘填滿 */
 .segmented-option input:checked+.segmented-face {
-  background: var(--primary-wash);
-  color: var(--primary-deep);
-  border-color: var(--primary-deep);
-  box-shadow: var(--sh-md), inset 0 0 0 var(--line-w) var(--primary-deep);
+  background: var(--pick-wash);
+  color: var(--pick);
+  border-color: var(--pick);
+  box-shadow: var(--sh-md), inset 0 0 0 var(--line-w) var(--pick);
 }
 
 .segmented-option input:focus-visible+.segmented-face {
@@ -752,17 +769,17 @@ input[type="range"]:active::-webkit-slider-thumb {
    用 inset shadow 疊出 1+1px 的厚度，不動 border-width 就不會有 1px 位移。
    未選 1px / 已選 2px，倍率與改細前相同。 */
 .face-option input:checked+.face-body {
-  background: var(--primary-wash);
-  border-color: var(--primary-deep);
-  box-shadow: var(--sh-md), inset 0 0 0 var(--line-w) var(--primary-deep);
+  background: var(--pick-wash);
+  border-color: var(--pick);
+  box-shadow: var(--sh-md), inset 0 0 0 var(--line-w) var(--pick);
 }
 
 .face-option input:checked+.face-body svg {
-  stroke: var(--primary-deep);
+  stroke: var(--pick);
 }
 
 .face-option input:checked+.face-body .face-caption {
-  color: var(--primary-deep);
+  color: var(--pick);
 }
 
 .face-option input:focus-visible+.face-body {
@@ -922,7 +939,8 @@ form .btn-primary {
   padding: var(--sp-5) var(--sp-4);
   margin-bottom: var(--sp-6);
   background: var(--card);
-  border: 2px dashed var(--line);
+  /* 虛線框是裝飾（不是控制項）：葉綠，和代碼數字同一色系 */
+  border: 2px dashed var(--code-frame, var(--leaf));
   border-radius: var(--r-xl);
   box-shadow: var(--sh-md);
 }
@@ -939,7 +957,7 @@ form .btn-primary {
   line-height: 1.2;
   letter-spacing: .2em;
   text-indent: .2em;
-  color: var(--primary-deep);
+  color: var(--code);
   font-variant-numeric: tabular-nums;
 }
 

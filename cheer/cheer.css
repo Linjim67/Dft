@@ -147,12 +147,12 @@
   transition: opacity var(--t-fast) var(--ease), transform var(--t-fast) var(--ease);
 }
 
-/* 可可字配淡米底 10.02:1 */
+/* 選到：葉綠深字配葉綠淡 5.63:1 */
 .chip input:checked+.chip-face {
-  background: var(--primary-wash);
-  border-color: var(--primary-deep);
-  color: var(--primary-deep);
-  box-shadow: inset 0 0 0 var(--line-w) var(--primary-deep);
+  background: var(--pick-wash);
+  border-color: var(--pick);
+  color: var(--pick);
+  box-shadow: inset 0 0 0 var(--line-w) var(--pick);
 }
 
 .chip input:checked+.chip-face .chip-check {

@@ -334,7 +334,7 @@
   font-size: 2.4rem;
   font-weight: 700;
   line-height: 1;
-  color: var(--primary-deep);
+  color: var(--code);
   font-variant-numeric: tabular-nums;
   transition: border-color var(--t-fast) var(--ease), box-shadow var(--t-fast) var(--ease);
 }
@@ -483,10 +483,10 @@
 
 /* 正在看的那一組 */
 .wait-code[aria-current="true"] {
-  background: var(--primary-wash);
-  border-color: var(--primary-deep);
-  box-shadow: inset 0 0 0 var(--line-w) var(--primary-deep);
-  color: var(--primary-deep);
+  background: var(--pick-wash);
+  border-color: var(--pick);
+  box-shadow: inset 0 0 0 var(--line-w) var(--pick);
+  color: var(--pick);
 }
 
 /* 剛進來的號碼：彈進來 + 一圈橘光，提醒有新的家長 */
@@ -610,7 +610,7 @@
 .code-bar-code strong {
   font-size: 1.3rem;
   letter-spacing: .1em;
-  color: var(--primary-deep);
+  color: var(--code);
   font-variant-numeric: tabular-nums;
 }
 

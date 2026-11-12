@@ -109,12 +109,12 @@
 
 /* 加入了：外框、愛心填滿、字改「已加入」（不只靠顏色） */
 .book[aria-pressed="true"] {
-  border-color: var(--primary-deep);
+  border-color: var(--pick);
 }
 
 .book[aria-pressed="true"] .book-wish {
-  background: var(--primary-wash);
-  color: var(--primary-deep);
+  background: var(--pick-wash);
+  color: var(--pick);
 }
 
 .book[aria-pressed="true"] .book-heart {
@@ -233,10 +233,10 @@
 }
 
 .char-chip[aria-pressed="true"] {
-  background: var(--primary-wash);
-  border-color: var(--primary-deep);
-  color: var(--primary-deep);
-  box-shadow: inset 0 0 0 var(--line-w) var(--primary-deep);
+  background: var(--pick-wash);
+  border-color: var(--pick);
+  color: var(--pick);
+  box-shadow: inset 0 0 0 var(--line-w) var(--pick);
   padding-inline-start: var(--sp-3);
 }
 
