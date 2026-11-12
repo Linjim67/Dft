@@ -97,140 +97,113 @@
   border-radius: 50%;
 }
 
-/* ═══ 四個功能：X 形分隔 ═══════════════════════════════════════
-   正方形區塊，四條灰線沿 45°／135°／225°／315° 從中心往四角，
-   中間留一個空白（線不相交）。每一格是蓋滿整塊的連結，用 clip-path 切成三角形，
-   所以整塊三角形都點得到。內容不上色：白底圓、黑色線條、黑字。 */
+/* ═══ 四個功能：一個圓切成四個四分之一圓的按鈕 ═════════════════
+   2 × 2 正方形格子，中間 10px 的十字縫。每一格是正方形，外側那個角的半徑
+   = 100% − 內側小圓角，剛好是以內側角為圓心的四分之一圓（不會被瀏覽器等比縮小）。
+   白底、黑色線條圖示、黑字；按下只有那一塊有反應。 */
 
-.cross {
-  position: relative;
-  width: 100%;
+.quad {
+  --quad-gap: 10px;
+  --quad-inner: 10px;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--quad-gap);
+  width: min(100%, 330px);
   aspect-ratio: 1;
-  margin-top: var(--sp-5);
+  margin: var(--sp-5) auto 0;
 }
 
-/* 線條純裝飾：灰色，粗細不跟著 viewBox 縮放 */
-.cross-lines {
-  position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-  fill: none;
-  stroke: #A8A29E;
-  stroke-width: 1.5;
-  stroke-linecap: round;
-  vector-effect: non-scaling-stroke;
-  pointer-events: none;
-}
-
-.cross-lines path {
-  vector-effect: non-scaling-stroke;
-}
-
-.cross-item {
-  position: absolute;
-  inset: 0;
+.quad-item {
+  position: relative;
+  display: block;
+  background: var(--card);
+  box-shadow: var(--sh-md);
   color: var(--primary-ink);
   text-decoration: none;
   -webkit-tap-highlight-color: transparent;
-  transition: background-color var(--t-fast) var(--ease);
-}
-
-.cross-item.is-top {
-  clip-path: polygon(0 0, 100% 0, 50% 50%);
-}
-
-.cross-item.is-right {
-  clip-path: polygon(100% 0, 100% 100%, 50% 50%);
-}
-
-.cross-item.is-bottom {
-  clip-path: polygon(0 100%, 100% 100%, 50% 50%);
-}
-
-.cross-item.is-left {
-  clip-path: polygon(0 0, 0 100%, 50% 50%);
-}
-
-/* 圖示＋名字放在每塊三角形裡、離線條夠遠的位置 */
-.cross-body {
-  position: absolute;
-  display: grid;
-  justify-items: center;
-  gap: var(--sp-2);
-  transform: translate(-50%, -50%);
-}
-
-.is-top .cross-body {
-  left: 50%;
-  top: 21%;
-}
-
-.is-left .cross-body {
-  left: 19%;
-  top: 50%;
-}
-
-.is-right .cross-body {
-  left: 81%;
-  top: 50%;
-}
-
-.is-bottom .cross-body {
-  left: 50%;
-  top: 79%;
-}
-
-.cross-icon {
-  display: grid;
-  place-items: center;
-  width: 68px;
-  height: 68px;
-  border-radius: 50%;
-  /* 圓的底色；圖示裡的白色填色跟著它，按下變灰時才不會露出白塊 */
-  --circle: var(--card);
-  background: var(--circle);
-  box-shadow: var(--sh-md);
   transition: transform var(--t-fast) var(--ease),
     box-shadow var(--t-fast) var(--ease),
     background-color var(--t-fast) var(--ease);
 }
 
-.cross-icon svg {
+/* border-radius 順序：左上 右上 右下 左下；外側那個角是大弧 */
+.quad-item.is-tl {
+  border-radius: calc(100% - var(--quad-inner)) var(--quad-inner) var(--quad-inner) var(--quad-inner);
+}
+
+.quad-item.is-tr {
+  border-radius: var(--quad-inner) calc(100% - var(--quad-inner)) var(--quad-inner) var(--quad-inner);
+}
+
+.quad-item.is-br {
+  border-radius: var(--quad-inner) var(--quad-inner) calc(100% - var(--quad-inner)) var(--quad-inner);
+}
+
+.quad-item.is-bl {
+  border-radius: var(--quad-inner) var(--quad-inner) var(--quad-inner) calc(100% - var(--quad-inner));
+}
+
+/* 內容放在四分之一圓的重心：離內側角 0.424 × 半徑（約 42.5%） */
+.quad-body {
+  position: absolute;
+  display: grid;
+  justify-items: center;
+  gap: var(--sp-1);
+  transform: translate(-50%, -50%);
+}
+
+.is-tl .quad-body {
+  left: 57.5%;
+  top: 57.5%;
+}
+
+.is-tr .quad-body {
+  left: 42.5%;
+  top: 57.5%;
+}
+
+.is-bl .quad-body {
+  left: 57.5%;
+  top: 42.5%;
+}
+
+.is-br .quad-body {
+  left: 42.5%;
+  top: 42.5%;
+}
+
+.quad-icon svg {
+  display: block;
   width: 42px;
   height: 42px;
-  fill: var(--circle);
+  fill: var(--quad-bg, var(--card));
   stroke: currentColor;
   stroke-width: 1.7;
   stroke-linecap: round;
   stroke-linejoin: round;
 }
 
-.cross-icon .ink {
+.quad-icon .ink {
   fill: currentColor;
 }
 
-.cross-label {
+.quad-label {
   font-size: 1rem;
   font-weight: 700;
   line-height: 1.35;
   white-space: nowrap;
 }
 
-/* 按下：整塊三角形都點得到，但只有白色圓有反應——
-   往下沉、淺灰底、一圈黑框（形狀也變，不只靠顏色）；三角形本身不變色 */
-.cross-item:active .cross-icon {
-  --circle: #EFEBE7;
+/* 按下：只有這一塊——往下沉、淺灰底、一圈黑框（形狀也變，不只靠顏色）。
+   圖示裡的白色填色跟著底色走，才不會露出白塊 */
+.quad-item:active {
+  --quad-bg: #EFEBE7;
+  background: var(--quad-bg);
   transform: translateY(2px);
   box-shadow: var(--sh-sm), inset 0 0 0 2px var(--primary-ink);
 }
 
-/* clip-path 會切掉連結外框：焦點框改畫在圓上 */
-.cross-item:focus-visible {
-  outline: none;
-}
-
-.cross-item:focus-visible .cross-icon {
+.quad-item:focus-visible {
   outline: 3px solid var(--primary-ink);
   outline-offset: 3px;
 }
@@ -241,7 +214,7 @@
 }
 
 @media (hover: hover) and (pointer: fine) {
-  .cross-item:hover .cross-icon,
+  .quad-item:hover,
   .code-edit:hover {
     box-shadow: var(--sh-lg);
   }
@@ -249,7 +222,7 @@
 
 @media (prefers-reduced-motion: reduce) {
 
-  .cross-item:active .cross-icon,
+  .quad-item:active,
   .code-edit:active {
     transform: none;
   }

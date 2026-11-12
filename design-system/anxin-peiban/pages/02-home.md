@@ -32,24 +32,21 @@ and the four features split by an X of grey lines.
 1. **Code card** («打針時，請把這組代碼交給醫檢師»). **修改資料** is a 48px white circle with a black pen in
    the card's bottom-right corner (`.code-edit` → `/portal/?edit`, `aria-label="修改資料"`). The card has an
    extra 44px of bottom padding, so the circle never covers the note in either state.
-2. **The X** (`.cross`): a square area (342 × 342 at 390px). Four grey lines (`#A8A29E`, 1.5px, non-scaling)
-   run from the centre toward the four corners at 45° / 135° / 225° / 315°. They start 7 units from the
-   centre (viewBox 100), so they never meet, and stop 5 units short of the corners. The lines split the
-   area into four triangles:
-   top 安慰指南 (`/guide/`) · left 抽血大小問 (`/cheer/`) · right 玩遊戲 (`/games/solo/`) · bottom 看繪本 (`/books/`).
-   The DOM order (top → left → right → bottom) is the reading order and keeps the owner's list order.
-   - Each link covers the whole square and is cut to its triangle with `clip-path`, so the entire triangle
-     is the tap target. Checked with `elementFromPoint` near every corner.
-   - Content is monochrome: a 68px white circle (`--sh-md`) with a black-line icon (`--primary-ink`,
-     white fill), then a black bold name. Each name sits at its triangle's open middle
-     (top/bottom 21% / 79%, left/right 19% / 81%), clear of the lines.
-   - `clip-path` would clip a focus ring on the link, so focus is shown as a ring on the circle.
-   - **Only the circle reacts to a press** (owner's request): the triangle never changes colour, even though
-     the whole triangle is the tap target. On `:active` the circle sinks 2px, turns `#EFEBE7`, and gets a
-     2px black inner ring (a shape change, not colour alone). The icon's white fill follows the circle
-     through `--circle`, so no white patches show. `-webkit-tap-highlight-color: transparent` removes the
-     native grey triangle. `home.js` adds an empty passive `touchstart` listener, because iPhone Safari
-     applies `:active` only when one exists.
+2. **Four quarter-circle buttons** (`.quad`, from the owner's reference image, 2026-11-12): one circle (up to
+   330px) cut into four white buttons by a 10px cross-shaped gap. Top-left 安慰指南 (`/guide/`) · top-right
+   抽血大小問 (`/cheer/`) · bottom-left 玩遊戲 (`/games/solo/`) · bottom-right 看繪本 (`/books/`). DOM order
+   is the reading order and keeps the owner's list order.
+   - Each button is a square grid cell. The outer corner's radius is `calc(100% − 10px)` and the three
+     inner corners are 10px, so the sides add up to exactly 100% and the browser never scales the radii
+     down. The result is a true quarter circle around the inner corner. Hit-testing follows the rounded
+     shape.
+   - Content sits on the quarter disc's centroid, 0.424 × radius from the inner corner (57.5% / 42.5% of the
+     cell): a black-line icon (42px, `--primary-ink`, white fill) over a black bold name.
+   - **Only the pressed button reacts**: it sinks 2px, turns `#EFEBE7`, and gets a 2px black inner ring
+     that follows the shape (a shape change, not colour alone). The icon fill follows through `--quad-bg`.
+     `-webkit-tap-highlight-color: transparent` removes the native highlight. `home.js` adds an empty
+     passive `touchstart` listener so iPhone Safari applies `:active`.
+   - Focus is a 3px ink outline, which follows the radius.
    - No 單機／雙機 split on the hub. The 雙機 entry is the last card in the games list.
 3. **開始打針**: a full-width `.btn-primary` below.
 

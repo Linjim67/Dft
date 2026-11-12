@@ -48,17 +48,13 @@
       </div>
     </section>
 
-    <!-- ── 2. 四個功能：45°／135°／225°／315° 四條灰線（中間留空、不相交）切成上、左、右、下四塊。
-         整塊三角形都是連結（clip-path），閱讀順序 = 上 → 左 → 右 → 下。圖示白底黑線，不上色。 ── -->
+    <!-- ── 2. 四個功能：一個圓切成四個四分之一圓的白色按鈕，中間十字形的縫隔開。
+         左上 → 右上 → 左下 → 右下 = 閱讀順序。白底、黑色線條圖示、黑字；按下只有那一塊有反應。 ── -->
     <h2 class="sr-only">等待的時候</h2>
-    <nav class="cross" aria-label="等待的時候">
-      <svg class="cross-lines" viewBox="0 0 100 100" aria-hidden="true">
-        <path d="M43 43 5 5M57 43 95 5M43 57 5 95M57 57 95 95" />
-      </svg>
-
-      <a class="cross-item is-top" href="/guide/">
-        <span class="cross-body">
-          <span class="cross-icon" aria-hidden="true">
+    <nav class="quad" aria-label="等待的時候">
+      <a class="quad-item is-tl" href="/guide/">
+        <span class="quad-body">
+          <span class="quad-icon" aria-hidden="true">
             <svg viewBox="0 0 32 32">
               <path d="M4 8.5A3.5 3.5 0 0 1 7.5 5h12A3.5 3.5 0 0 1 23 8.5v6a3.5 3.5 0 0 1-3.5 3.5H11.5L6 22.5V18A3.5 3.5 0 0 1 4 14.5Z" />
               <path d="M13.5 15.6s-3.7-2.1-3.7-4.7a1.95 1.95 0 0 1 3.7-.9 1.95 1.95 0 0 1 3.7.9c0 2.6-3.7 4.7-3.7 4.7Z" />
@@ -66,13 +62,12 @@
               <path d="M21.4 23.3h.01M24.6 23.3h.01" />
             </svg>
           </span>
-          <span class="cross-label">安慰指南</span>
+          <span class="quad-label">安慰指南</span>
         </span>
       </a>
-
-      <a class="cross-item is-left" href="/cheer/">
-        <span class="cross-body">
-          <span class="cross-icon" aria-hidden="true">
+      <a class="quad-item is-tr" href="/cheer/">
+        <span class="quad-body">
+          <span class="quad-icon" aria-hidden="true">
             <svg viewBox="0 0 32 32">
               <circle cx="13" cy="13.5" r="9.5" />
               <path d="M10 11a3 3 0 1 1 4.2 2.8c-.8.4-1.2 1-1.2 1.8v.7M13 19.6h.01" />
@@ -80,13 +75,12 @@
               <path d="M23.5 20.4v2.8M23.5 25.7h.01" />
             </svg>
           </span>
-          <span class="cross-label">抽血大小問</span>
+          <span class="quad-label">抽血大小問</span>
         </span>
       </a>
-
-      <a class="cross-item is-right" href="/games/solo/">
-        <span class="cross-body">
-          <span class="cross-icon" aria-hidden="true">
+      <a class="quad-item is-bl" href="/games/solo/">
+        <span class="quad-body">
+          <span class="quad-icon" aria-hidden="true">
             <svg viewBox="0 0 32 32">
               <path d="M9.5 10.5h13a6.3 6.3 0 0 1 6.1 7.9l-1 3.9a3.5 3.5 0 0 1-6 1.4l-2.1-2.4h-7l-2.1 2.4a3.5 3.5 0 0 1-6-1.4l-1-3.9a6.3 6.3 0 0 1 6.1-7.9Z" />
               <path d="M10 14.3v4.6M7.7 16.6h4.6" />
@@ -95,13 +89,12 @@
               <path d="M16 3.5v3.2M14.4 5.1h3.2" />
             </svg>
           </span>
-          <span class="cross-label">玩遊戲</span>
+          <span class="quad-label">玩遊戲</span>
         </span>
       </a>
-
-      <a class="cross-item is-bottom" href="/books/">
-        <span class="cross-body">
-          <span class="cross-icon" aria-hidden="true">
+      <a class="quad-item is-br" href="/books/">
+        <span class="quad-body">
+          <span class="quad-icon" aria-hidden="true">
             <svg viewBox="0 0 32 32">
               <path d="M16 9.5C13.4 7.6 9.6 6.8 4.5 7v16.5c5.1-.2 8.9.6 11.5 2.5Z" />
               <path d="M16 9.5c2.6-1.9 6.4-2.7 11.5-2.5v16.5c-5.1-.2-8.9.6-11.5 2.5Z" />
@@ -109,7 +102,7 @@
               <path class="ink" d="m21.8 11.6 1 2.1 2.3.3-1.7 1.6.4 2.3-2-1.1-2 1.1.4-2.3-1.7-1.6 2.3-.3Z" />
             </svg>
           </span>
-          <span class="cross-label">看繪本</span>
+          <span class="quad-label">看繪本</span>
         </span>
       </a>
     </nav>
