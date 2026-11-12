@@ -1025,7 +1025,10 @@ significant figures above (315 → 320, 277 → 280, 1,153 → 1,200). Robots: 2
 - 湯鍋: pulls ripe 蘿蔔 + 玉米 + 番茄 from its 8 neighbours (before robots can), cooks 彩虹湯 worth 2 ×
   their boosted value. Three lights on the pot show which crops have arrived; the sheet says which crop
   is missing from the neighbourhood.
-- 月光祭壇: surplus stone + ore → 精靈寶珠, +10 % speed for the whole farm each (price ×1.6).
+- 月光祭壇: surplus stone + ore → 精靈寶珠, +10 % speed for the whole farm each (price ×1.6). Its
+  button is a picture of the trade, no words (product owner, 2026-11-12): stone and ore with their
+  amounts → an arrow → the orb; a missing material is dark red with a dotted underline, and the
+  aria-label says the whole sentence (「用 120 石頭和 10 金礦，換一顆精靈寶珠（還差 110 石頭）」).
 - 小豬銀行 was removed (product owner, 2026-11-12): building, goal and its title 利滾利. Saves that had
   built one get its coins and stone back on load. Without interest, late income grows with what the
   child builds rather than exponentially (bot: 24.5 萬 earned by 30 min instead of 126 萬), so the

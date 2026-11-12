@@ -1479,7 +1479,12 @@
       info += row('精靈寶珠', S.orbs + ' 顆');
       info += row('農場速度', Math.round(E.speed(S) * 100) + '%');
       if (S.orbs < CFG.altar.max) {
-        acts += '<button class="btn btn-primary" type="button" data-act="offer"' + (E.canOffer(S) ? ' aria-disabled="true"' : '') + '><span>換一顆</span>' + costHtml(op) + '</button>';
+        /* 按鈕只畫交換：左邊石頭和金礦（不夠的那項深紅色）→ 右邊一顆精靈寶珠；報讀念完整的句子 */
+        acts += '<button class="btn btn-primary btn-trade" type="button" data-act="offer"' + (E.canOffer(S) ? ' aria-disabled="true"' : '') +
+          ' aria-label="用 ' + op.stone + ' 石頭和 ' + op.ore + ' 金礦，換一顆精靈寶珠' + (E.canOffer(S) === 'money' ? '（' + esc(short(op)) + '）' : '') + '">' +
+          costHtml(op) +
+          '<svg class="trade-arrow" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 12h15M13 6l6 6-6 6" /></svg>' +
+          '<span class="trade-get">' + img('orb') + '</span></button>';
       }
     }
 

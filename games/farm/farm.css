@@ -1135,6 +1135,29 @@ body.is-playing .topbar {
   height: 18px;
 }
 
+/* 月光祭壇：石頭 金礦 → 精靈寶珠 */
+.btn-trade {
+  gap: 14px;
+}
+
+.trade-arrow {
+  flex: none;
+  width: 26px;
+  height: 26px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2.6;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.trade-get img {
+  display: block;
+  width: 30px;
+  height: 30px;
+  image-rendering: pixelated;
+}
+
 .btn-sm {
   width: auto;
   min-height: 48px;
