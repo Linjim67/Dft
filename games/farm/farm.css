@@ -458,8 +458,8 @@ body.is-playing .topbar {
   font-variant-numeric: tabular-nums;
 }
 
-/* 工具列：兩排，全部看得到、不用滑。
-   第一排 5 格（鋤頭、機器人、三種菜），第二排 7 格（房子）。每格只有圖和價錢 */
+/* 工具列：兩排、各 6 格，全部看得到、不用滑。
+   第一排鋤頭、鏟子、機器人、三種菜；第二排六種房子。每格只有圖和價錢 */
 .farm-tools {
   display: grid;
   gap: 6px;
@@ -472,12 +472,8 @@ body.is-playing .topbar {
   gap: 5px;
 }
 
-.tool-row.r1 {
-  grid-template-columns: repeat(5, minmax(0, 1fr));
-}
-
-.tool-row.r2 {
-  grid-template-columns: repeat(7, minmax(0, 1fr));
+.tool-row {
+  grid-template-columns: repeat(6, minmax(0, 1fr));
 }
 
 .tool {
@@ -528,8 +524,8 @@ body.is-playing .topbar {
 
 .r2 .tool-pic,
 .r2 .tool-img {
-  width: 26px;
-  height: 26px;
+  width: 28px;
+  height: 28px;
 }
 
 .tool-price {
@@ -541,7 +537,7 @@ body.is-playing .topbar {
 }
 
 .r2 .tool-price {
-  font-size: .66rem;
+  font-size: .68rem;
 }
 
 .tool-price .cost {

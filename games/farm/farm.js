@@ -55,14 +55,15 @@
 
   var NAME = {
     hoe: '鋤頭', carrot: '蘿蔔', corn: '玉米', tomato: '番茄', robot: '機器人', lighthouse: '燈塔',
-    quarry: '採石場', pot: '湯鍋', barn: '倉庫', bank: '小豬銀行', forge: '鍛造爐', altar: '月光祭壇'
+    shovel: '鏟子', quarry: '採石場', pot: '湯鍋', barn: '倉庫', forge: '鍛造爐', altar: '月光祭壇'
   };
-  /* 工具列兩排：第一排鋤頭、機器人、三種菜；第二排七種房子。沒選工具 = 收成／看看 */
-  var ROW1 = ['hoe', 'robot', 'carrot', 'corn', 'tomato'];
-  var ROW2 = ['lighthouse', 'quarry', 'pot', 'barn', 'bank', 'forge', 'altar'];
+  /* 工具列兩排、各 6 格：第一排鋤頭、鏟子、機器人、三種菜；第二排六種房子。沒選工具 = 收成／看看 */
+  var ROW1 = ['hoe', 'shovel', 'robot', 'carrot', 'corn', 'tomato'];
+  var ROW2 = ['lighthouse', 'quarry', 'pot', 'barn', 'forge', 'altar'];
   var TOOLS = ROW1.concat(ROW2);
   var HINT = {
     hoe: '點草地翻成田，才能種菜。可以一路拖過去',
+    shovel: '鏟子把田裡的菜挖掉，種子錢退回來，田還在。可以一路拖過去',
     carrot: '蘿蔔長得最快。種在翻好的田上，也可以一路拖過去',
     corn: '玉米比蘿蔔慢，可是一根值 8 金幣',
     tomato: '番茄最慢、最值錢，湯鍋也要用到它',
@@ -70,17 +71,16 @@
     quarry: '採石場要蓋在大石頭旁邊，石頭越多挖越快',
     pot: '湯鍋旁邊要有蘿蔔、玉米、番茄，會煮成彩虹湯',
     barn: '多一間倉庫，機器人可以送到比較近的地方',
-    bank: '小豬銀行：金幣放著，每 5 秒會自己變多',
     forge: '鍛造爐要蓋在岩漿旁邊，用金礦打造寶物',
     altar: '月光祭壇把多的石頭和金礦變成精靈寶珠'
   };
   var SPRITE_OF = {
-    hoe: 'hoeTool', carrot: 'carrot2', corn: 'corn2', tomato: 'tomato2', robot: 'robot', lighthouse: 'lighthouse',
-    quarry: 'quarry', pot: 'potSoup', barn: 'barn', bank: 'bank', forge: 'forge', altar: 'altar'
+    hoe: 'hoeTool', shovel: 'shovelTool', carrot: 'carrot2', corn: 'corn2', tomato: 'tomato2', robot: 'robot', lighthouse: 'lighthouse',
+    quarry: 'quarry', pot: 'potSoup', barn: 'barn', forge: 'forge', altar: 'altar'
   };
   var REGION_TEXT = {
     river: '小河從中間流過。河邊的田長得快 1.5 倍，還可以種玉米！',
-    mountain: '有很多大石頭。在旁邊蓋採石場，挖石頭和金礦。還可以種番茄、蓋湯鍋和小豬銀行！',
+    mountain: '有很多大石頭。在旁邊蓋採石場，挖石頭和金礦。還可以種番茄、蓋湯鍋！',
     volcano: '岩漿熱呼呼。在岩漿旁邊蓋鍛造爐，打造寶物；還可以蓋月光祭壇。'
   };
   var RECIPE_ICON = { boots: 'boots', basket: 'basket', shovel: 'shovel', hoe: 'hoe' };
@@ -91,6 +91,8 @@
       case 'locked': return '這裡還沒打開，點霧裡的價錢看看';
       case 'busy': return '這裡已經有東西了';
       case 'till': return '先用鋤頭把草地翻成田';
+      case 'noCrop': return '鏟子只能挖菜；房子點一下就可以拆掉';
+      case 'empty': return '這裡沒有菜可以挖';
       case 'floor':
         if (kind === 'hoe') return '只有草地可以翻土';
         if (CFG.crops[kind]) return '菜要種在草地翻成的田上';
@@ -331,7 +333,7 @@
 
   /* 還沒打開的地區的工具：位置照樣留著（整顆灰灰的），版面不會跳 */
   function toolLocked(k) {
-    return k !== 'hoe' && k !== 'robot' && !E.kindReady(S, k);
+    return k !== 'hoe' && k !== 'shovel' && k !== 'robot' && !E.kindReady(S, k);
   }
 
   function needText(k) {
@@ -340,7 +342,7 @@
   }
 
   function toolState(k) {
-    var c = k === 'hoe' ? null : E.price(S, k);
+    var c = k === 'hoe' || k === 'shovel' ? null : E.price(S, k);
     return {
       locked: toolLocked(k),
       c: c,
@@ -559,10 +561,10 @@
         case 'dig':
           if (Math.random() < 0.6) burst(e.i, DUST, 2, true);
           break;
-        case 'interest':
-          floatText(e.i, '+' + fmt(e.coins));
-          fly('coin', e.i, 'hudCoinIcon', e.coins >= 100 ? 3 : 2);
-          burst(e.i, GOLD, 6, true);
+        case 'unplant':
+          burst(e.i, ['#9A6640', '#B9825A', '#74482B', '#6DB54B'], 7, true);
+          if (e.coins) floatText(e.i, '+' + e.coins, '#FFFFFF', 4);
+          terrainDirty = true;
           break;
         case 'place':
           UI.pops[e.i] = UI.clock;
@@ -597,9 +599,6 @@
           burst(e.i, ['#D9B8FF', '#9C6BE0', '#8FF0E8'], 12, true);
           floatText(e.i, '寶珠 +1', '#D9B8FF');
           fly('orb', e.i, 'resOrbImg', 1);
-          break;
-        case 'bankUp':
-          burst(e.i, GOLD, 12, true);
           break;
         case 'ach':
           var a = E.ACH.filter(function (x) { return x.id === e.id; })[0];
@@ -861,10 +860,6 @@
       case 'altar':
         blit(SP.altar, x, y + (still() ? 0 : Math.round(Math.sin(t * 1.6) * 0.8)), 16, 8);
         ctxNow.drawImage(SP.altar, 0, 8, 16, 8, R(x), R(y + 8), R(x + 16) - R(x), R(y + 16) - R(y + 8));
-        break;
-      case 'bank':
-        drawScaled(SP.bank, x, y + Math.max(0, bob), sc);
-        rect(x + 3, y + 14, 10, 1, 'rgba(43,27,23,.25)');
         break;
     }
   }
@@ -1140,6 +1135,8 @@
       if (E.available(S, i, true) > 0) { var ev = []; E.collect(S, i, ev); handle(ev); }
     } else if (UI.tool === 'hoe') {
       if (!E.canHoe(S, i)) placeAt(i, true);
+    } else if (UI.tool === 'shovel') {
+      if (!E.canShovel(S, i)) placeAt(i, true);
     } else if (CFG.crops[UI.tool]) {
       if (b && (b.k === 'plot' || (b.k === 'crop' && b.crop !== UI.tool))) placeAt(i, true);
     }
@@ -1397,18 +1394,6 @@
       if (S.orbs < CFG.altar.max) {
         acts += '<button class="btn btn-primary" type="button" data-act="offer"' + (E.canOffer(S) ? ' aria-disabled="true"' : '') + '><span>換一顆</span>' + costHtml(op) + '</button>';
       }
-    } else if (b.k === 'bank') {
-      var L = CFG.bank.levels[b.level - 1];
-      body += '<p class="sh-lede">每 5 秒，小豬會把你的金幣多給 ' + Math.round(L.rate * 100) + '%（一次最多 ' + fmt(L.cap) + '）。金幣越多，長得越快！</p>';
-      info += row('等級', b.level + ' / ' + CFG.bank.levels.length);
-      info += row('下一次利息', '+' + fmt(Math.min(L.cap, Math.floor(S.coins * L.rate))) + '（' + Math.ceil(CFG.bank.every - b.t) + ' 秒後）');
-      info += row('總共給了', fmt(S.stats.interest) + ' 金幣');
-      var up = E.bankUpPrice(S);
-      if (up) {
-        var nl = CFG.bank.levels[b.level];
-        acts += '<button class="btn btn-primary" type="button" data-act="bankUp"' + (E.afford(S, up) ? '' : ' aria-disabled="true"') + '>' +
-          '<span>升級：' + Math.round(nl.rate * 100) + '%，最多 ' + fmt(nl.cap) + '</span>' + costHtml(up) + '</button>';
-      }
     }
 
     if (info) body += '<dl class="sh-info">' + info + '</dl>';
@@ -1479,9 +1464,6 @@
     } else if (act === 'offer') {
       r = E.offer(S, ev);
       if (r === 'money') { hint(short(E.orbPrice(S)), 2000); shake(b); return; }
-    } else if (act === 'bankUp') {
-      r = E.upgradeBank(S, ev);
-      if (r === 'money') { hint(short(E.bankUpPrice(S)), 2000); shake(b); return; }
     } else if (act === 'move') {
       UI.moveFrom = i;
       UI.tool = null;

@@ -950,7 +950,7 @@ round, up to ×1.3.
 
 An idle/automation farm for the whole wait: no reflexes, no fail state, progress that keeps growing
 while the child watches robots work. Built from five asks (2026-11-12): visible harvest loop with
-robots and an exponential coin counter · placement puzzles (range buffs, quarry geometry) ·
+robots and a fast-growing coin counter · placement puzzles (range buffs, quarry geometry) ·
 biomes with their own terrain and resources, routed to a volcano forge · processing (soup, an altar
 that turns surplus into permanent boosts) · milestones and titles tied to farm expansion.
 
@@ -989,6 +989,11 @@ tap. Reduced motion: no pulse, same colours.
 - **鋤頭 first** (product owner, 2026-11-12): grass must be hoed into 耕地 before a seed can go in.
   Hoeing is free and drags like a brush; seeds go only onto 耕地 (or replace another crop), and tapping
   grass with a seed says 「先用鋤頭把草地翻成田」.
+- **鏟子** (product owner, 2026-11-12) digs a crop out: a ripe one is harvested first, the seed money
+  comes back and the 耕地 stays, ready to replant. Free, drags like the hoe, crops only (a building
+  gets 「鏟子只能挖菜；房子點一下就可以拆掉」).
+- 鋤頭 and 鏟子 are drawn in a chunky 16 × 16 "block game" tool style — diagonal two-tone wooden
+  handle, heavy dark outline, three-step grey metal head — as our own pixel art, not copied textures.
 - Crops ripen and **wait**; a tap (or a finger dragged across the field) harvests, and coins fly to
   the counter. Robots (bought from the tool bar, **×1.5** price each, max 12) do the same automatically:
   pick the best value ÷ round-trip, chain pickups on the way, deliver to the nearest 倉庫.
@@ -1008,7 +1013,10 @@ tap. Reduced motion: no pulse, same colours.
   their boosted value. Three lights on the pot show which crops have arrived; the sheet says which crop
   is missing from the neighbourhood.
 - 月光祭壇: surplus stone + ore → 精靈寶珠, +10 % speed for the whole farm each (price ×1.6).
-- 小豬銀行: interest every 5 s, 1 %–5 % with a per-tick cap per level — the exponential part.
+- 小豬銀行 was removed (product owner, 2026-11-12): building, goal and its title 利滾利. Saves that had
+  built one get its coins and stone back on load. Without interest, late income grows with what the
+  child builds rather than exponentially (bot: 24.5 萬 earned by 30 min instead of 126 萬), so the
+  endless goals after 10 萬 step 20 萬 · 50 萬 · 100 萬 · 200 萬 · 500 萬 · 1,000 萬.
 - 鍛造爐 (one job at a time): 火箭鞋 (robots ×1.5 speed) · 大籃子 (carry ×2) · 金鏟子 (quarries ×2) ·
   彩虹神鋤 (crops and soup ×3; needs the other three + 3 寶珠).
 - Buildings go straight onto grass, 耕地 or a planted plot, and a different seed replaces a crop (the
@@ -1020,11 +1028,11 @@ tap. Reduced motion: no pulse, same colours.
 - A goal strip under the HUD always names the next step (19 fixed goals, then 「總共賺到 N 金幣」).
   Buy-goals show **coins saved ÷ price**, so the wait has a visible end; they complete on purchase, not
   when affordable (「可以買了！」 appears instead).
-- 13 titles; each new one is a card over the top of the board (not over the coin counter, so coins
+- 12 titles; each new one is a card over the top of the board (not over the coin counter, so coins
   are seen landing).
 - Paced with a greedy bot that taps once per 0.8 s until it has 4 robots (and hoes before planting):
-  robot 0.1 min · lighthouse 0.6 · 小河邊 1.3 · 礦山 2.3 · first soup 3.5 · all regions 4.9 · first
-  forge 6.2 · 彩虹神鋤 12.4 · 10 萬 coins 16. A real child is roughly half as fast, so a 10–30 min wait always has a next unlock.
+  robot 0.1 min · lighthouse 0.6 · 小河邊 1.3 · 礦山 2.3 · first soup 3.5 · all regions 4.3 · first
+  forge 5.2 · 彩虹神鋤 12.6 · 10 萬 coins 17.9. A real child is roughly half as fast, so a 10–30 min wait always has a next unlock.
 
 ## Screen
 
@@ -1032,8 +1040,8 @@ tap. Reduced motion: no pulse, same colours.
   stone / ore / orbs) → goal strip → square board → tool bar. Top bar hidden while playing;
   小遊戲選單 / 去打針 / 重新開始 are in the menu, which pauses the farm.
 - **Tool bar: two fixed rows, nothing scrolls** (a scrolling bar hid its right half — product owner,
-  2026-11-12). Row 1, five cells: 鋤頭 · 機器人 · 蘿蔔 · 玉米 · 番茄. Row 2, seven cells: 燈塔 · 採石場 ·
-  湯鍋 · 倉庫 · 小豬銀行 · 鍛造爐 · 月光祭壇. Each cell is **picture + price only** (the name is in the
+  2026-11-12). Six cells per row: row 1 鋤頭 · 鏟子 · 機器人 · 蘿蔔 · 玉米 · 番茄, row 2 燈塔 · 採石場 ·
+  湯鍋 · 倉庫 · 鍛造爐 · 月光祭壇. Each cell is **picture + price only** (the name is in the
   aria-label, and the goal strip names the selected tool); prices drop the thousands comma to fit.
   Tools of unopened regions keep their cell and are simply grey (grey tile, faded greyscale picture —
   no lock badge, product owner 2026-11-12); tapping one says which region opens it. There is no 收成 tool: with nothing selected, a tap harvests or opens a

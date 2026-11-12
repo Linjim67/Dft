@@ -54,23 +54,12 @@
       quarry:     { name: '採石場', coins: 250, stone: 0, grow: 1.5, max: 6, floors: 'S', needs: 'mountain' },
       pot:        { name: '湯鍋', coins: 400, stone: 20, grow: 1.6, max: 3, floors: 'G', needs: 'mountain' },
       barn:       { name: '倉庫', coins: 200, stone: 15, grow: 1.8, max: 4, floors: 'GSB', needs: 'mountain' },
-      bank:       { name: '小豬銀行', coins: 1000, stone: 50, grow: 1, max: 1, floors: 'GSB', needs: 'mountain' },
       forge:      { name: '鍛造爐', coins: 1500, stone: 60, grow: 1, max: 1, floors: 'B', needs: 'volcano' },
       altar:      { name: '月光祭壇', coins: 1200, stone: 40, grow: 1, max: 1, floors: 'GSB', needs: 'volcano' }
     },
     robot: { coins: 20, grow: 1.5, max: 12, speed: 1.5, cap: 3, wait: 0.2 },
     quarry: { time: 10, cap: 12, oreChance: 0.1 },    /* 每 time ÷ 旁邊的大石頭數 秒挖一次 */
     pot: { cook: 6, cap: 4, bonus: 2 },                /* 湯 = 三種菜的價錢 × bonus */
-    bank: {
-      every: 5,
-      levels: [
-        { rate: 0.01, cap: 30, up: null },
-        { rate: 0.02, cap: 200, up: { coins: 3000, stone: 100 } },
-        { rate: 0.03, cap: 1500, up: { coins: 15000, stone: 300 } },
-        { rate: 0.04, cap: 10000, up: { coins: 80000, stone: 800 } },
-        { rate: 0.05, cap: 80000, up: { coins: 400000, stone: 2000 } }
-      ]
-    },
     altar: { stone: 30, ore: 3, grow: 1.6, max: 20, speed: 0.1 },  /* 每顆精靈寶珠：全部快 10%；過剩的石頭和金礦換 */
     /* 鍛造：time 是一格岩漿的秒數；旁邊每多一格岩漿就快一倍 */
     recipes: {
@@ -81,7 +70,7 @@
                 needs: ['boots', 'basket', 'shovel'] }
     },
     recipeOrder: ['boots', 'basket', 'shovel', 'hoe'],
-    richGoals: [50000, 100000, 500000, 1e6, 5e6, 1e7, 5e7, 1e8]
+    richGoals: [50000, 100000, 200000, 500000, 1e6, 2e6, 5e6, 1e7]
   };
 
   var CROP_ORDER = ['carrot', 'corn', 'tomato'];
@@ -136,7 +125,7 @@
       tiles: [],
       robots: [],
       tools: { boots: false, basket: false, shovel: false, hoe: false },
-      stats: { earned: 0, harvests: 0, soups: 0, interest: 0, forged: 0 },
+      stats: { earned: 0, harvests: 0, soups: 0, forged: 0 },
       ach: {},
       goal: 0,
       nextId: 1
@@ -238,13 +227,6 @@
     return { stone: Math.round(a.stone * f), ore: Math.round(a.ore * f) };
   }
 
-  function bankUpPrice(S) {
-    var b = findOne(S, 'bank');
-    if (b < 0) return null;
-    var next = CONFIG.bank.levels[S.tiles[b].level];
-    return next ? next.up : null;
-  }
-
   function afford(S, cost) {
     if (!cost) return true;
     return (S.coins >= (cost.coins || 0)) && (S.stone >= (cost.stone || 0)) &&
@@ -314,6 +296,15 @@
     return null;
   }
 
+  /* 鏟子：把田裡的菜挖掉（熟的先收起來、種子錢退回來），田留著可以再種 */
+  function canShovel(S, i) {
+    if (!S.regions[regionOf(i)]) return 'locked';
+    var b = S.tiles[i];
+    if (!b) return 'empty';
+    if (b.k !== 'crop') return 'noCrop';
+    return null;
+  }
+
   /* 田上面可以直接蓋房子、或改種別的菜：原本的菜先收起來、種子錢退回來 */
   function replacing(S, kind, i) {
     var b = S.tiles[i];
@@ -324,6 +315,7 @@
           lava 旁邊沒有岩漿 · max 蓋滿了 · soon 還不能用 · money 錢不夠 */
   function canPlace(S, kind, i, ignoreMoney) {
     if (kind === 'hoe') return canHoe(S, i);
+    if (kind === 'shovel') return canShovel(S, i);
     if (!kindReady(S, kind)) return 'soon';
     if (!S.regions[regionOf(i)]) return 'locked';
     var b = S.tiles[i];
@@ -358,6 +350,16 @@
       if (ev) ev.push({ t: 'place', i: i, kind: 'hoe' });
       return null;
     }
+    if (kind === 'shovel') {
+      var old = S.tiles[i];
+      collect(S, i, ev);
+      refund(S, old.paid);
+      S.tiles[i] = { k: 'plot' };
+      S.claim[i] = 0;
+      layoutChanged(S);
+      if (ev) ev.push({ t: 'unplant', i: i, crop: old.crop, coins: old.paid ? old.paid.coins || 0 : 0 });
+      return null;
+    }
     if (S.tiles[i] && S.tiles[i].k === 'crop') remove(S, i, ev);
     var cost = price(S, kind);
     pay(S, cost);
@@ -366,7 +368,6 @@
     else if (kind === 'quarry') b = { k: 'quarry', t: 0, items: [] };
     else if (kind === 'pot') b = { k: 'pot', has: {}, hv: 0, cook: -1, val: 0, bowls: [] };
     else if (kind === 'forge') b = { k: 'forge', job: null, t: 0 };
-    else if (kind === 'bank') b = { k: 'bank', level: 1, t: 0 };
     else b = { k: kind };
     b.paid = cost;
     S.tiles[i] = b;
@@ -522,24 +523,6 @@
     pay(S, orbPrice(S));
     S.orbs++;
     if (ev) ev.push({ t: 'orb', i: findOne(S, 'altar') });
-    return null;
-  }
-
-  function canUpgradeBank(S) {
-    var up = bankUpPrice(S);
-    if (findOne(S, 'bank') < 0) return 'noBank';
-    if (!up) return 'max';
-    if (!afford(S, up)) return 'money';
-    return null;
-  }
-
-  function upgradeBank(S, ev) {
-    var why = canUpgradeBank(S);
-    if (why) return why;
-    var i = findOne(S, 'bank');
-    pay(S, bankUpPrice(S));
-    S.tiles[i].level++;
-    if (ev) ev.push({ t: 'bankUp', i: i, level: S.tiles[i].level });
     return null;
   }
 
@@ -777,19 +760,6 @@
           b.job = null;
           b.t = 0;
         }
-
-      } else if (b.k === 'bank') {
-        b.t += dt;
-        if (b.t >= CONFIG.bank.every) {
-          b.t -= CONFIG.bank.every;
-          var L = CONFIG.bank.levels[b.level - 1];
-          var gain = Math.min(L.cap, Math.floor(S.coins * L.rate));
-          if (gain > 0) {
-            addCoins(S, gain);
-            S.stats.interest += gain;
-            ev.push({ t: 'interest', i: i, coins: gain });
-          }
-        }
       }
     }
 
@@ -864,7 +834,6 @@
     { id: 'robots8', name: '機器人大隊', how: '有 8 個機器人', test: function (S) { return S.robots.length >= 8; } },
     { id: 'orb', name: '精靈之友', how: '換到第一顆精靈寶珠', test: function (S) { return S.orbs >= 1 || S.tools.hoe; } },
     { id: 'smith', name: '打鐵師傅', how: '打造第一件寶物', test: function (S) { return S.stats.forged >= 1; } },
-    { id: 'piggy', name: '利滾利', how: '小豬銀行給了 1,000 金幣利息', test: function (S) { return S.stats.interest >= 1000; } },
     { id: 'power', name: '無限力量', how: '打造彩虹神鋤', test: function (S) { return !!S.tools.hoe; } },
     { id: 'rich', name: '金幣大富翁', how: '總共賺到 10 萬金幣', test: function (S) { return S.stats.earned >= 100000; } }
   ];
@@ -903,7 +872,6 @@
     { id: 'tomato', text: '種番茄', prog: function (S) { return [cropCount(S, 'tomato'), 1]; } },
     { id: 'pot', text: '蓋湯鍋，旁邊要有三種菜', prog: function (S) { return money(S, price(S, 'pot'), count(S, 'pot') >= 1); } },
     { id: 'soup', text: '煮出一鍋彩虹湯', prog: function (S) { return [S.stats.soups, 1]; } },
-    { id: 'bank', text: '蓋小豬銀行，錢會自己變多', prog: function (S) { return money(S, price(S, 'bank'), count(S, 'bank') >= 1); } },
     { id: 'volcano', text: '打開火山', prog: function (S) { return money(S, CONFIG.regions.volcano.cost, S.regions.volcano); } },
     { id: 'forge', text: '在岩漿旁邊蓋鍛造爐', prog: function (S) { return money(S, price(S, 'forge'), count(S, 'forge') >= 1); } },
     { id: 'tool', text: '打造一件寶物', prog: function (S) { return [S.stats.forged, 1]; } },
@@ -983,6 +951,10 @@
     S.ach = {};
     ACH.forEach(function (a) { if (d.ach && typeof d.ach[a.id] === 'number') S.ach[a.id] = d.ach[a.id]; });
     S.goal = Math.floor(num(d.goal, 0));
+    /* 小豬銀行拿掉了（2026-11-12）：舊存檔裡蓋過的，把錢退回來 */
+    d.tiles.forEach(function (b) {
+      if (b && b.k === 'bank' && b.paid) { S.coins += num(b.paid.coins, 0); S.stone += num(b.paid.stone, 0); }
+    });
     S.tiles = d.tiles.map(function (b, i) { return cleanTile(b, i); });
     if (findOne(S, 'barn') < 0) S.tiles[at(2, 6)] = { k: 'barn', paid: null };
     S.robots = [];
@@ -1023,9 +995,6 @@
     } else if (k === 'forge') {
       out.job = CONFIG.recipes[b.job] ? b.job : null;
       out.t = num(b.t, 0);
-    } else if (k === 'bank') {
-      out.level = Math.max(1, Math.min(CONFIG.bank.levels.length, Math.floor(num(b.level, 1))));
-      out.t = Math.min(CONFIG.bank.every, num(b.t, 0));
     }
     return out;
   }
@@ -1035,11 +1004,11 @@
     ACH: ACH, GOALS: GOALS, ROCKS: ROCKS, LAVA: LAVA, WET: WET, N8: N8,
     col: col, row: row, at: at, floorOf: floorOf, regionOf: regionOf, buildable: buildable,
     newState: newState, step: step, load: load, save: save,
-    price: price, orbPrice: orbPrice, bankUpPrice: bankUpPrice, afford: afford,
+    price: price, orbPrice: orbPrice, afford: afford,
     canPlace: canPlace, place: place, canHoe: canHoe, canRemove: canRemove, remove: remove,
     canMove: canMove, move: move, canUnlock: canUnlock, unlock: unlock,
     canBuyRobot: canBuyRobot, buyRobot: buyRobot, canForge: canForge, forge: forge, forgeTime: forgeTime,
-    canOffer: canOffer, offer: offer, canUpgradeBank: canUpgradeBank, upgradeBank: upgradeBank,
+    canOffer: canOffer, offer: offer, canShovel: canShovel,
     collect: collect, available: available, kindReady: kindReady, count: count, cropCount: cropCount,
     cropValue: cropValue, cropTime: cropTime, quarryTime: quarryTime, quarryYield: quarryYield,
     speed: speed, robotCap: robotCap, robotSpeed: robotSpeed, rate: rate, goalOf: goalOf, fmt: fmt,
