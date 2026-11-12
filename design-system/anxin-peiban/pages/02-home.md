@@ -26,23 +26,29 @@ Protected pages guard in `<head>` with `Anxin.requireProfile()` → `location.re
 
 ## Hub layout — as few words as possible
 
-Owner's direction (2026-11-12): a 3 × 1 grid for the parent, a grey line, a 2 × 1 grid for the child;
-one name per tile, no descriptions.
+The owner's direction (2026-11-12, revised the same day): no colour on the hub's features, one name each,
+and the four features split by an X of grey lines.
 
-1. **Code card** only (「打針時，請把這組代碼交給醫檢師」). The child's details live in 修改資料.
-2. **Parent tiles, 3 × 1** (`.tiles-3`): 修改資料 (`/portal/?edit`, honey) · 安慰指南 (`/guide/`, apricot) ·
-   抽血大小問 (`/cheer/`, sage). Whole-tile links, 116px tall, 60px icon block.
-3. **Grey line** (`.home-divider`, `#D6D3D1`, decorative) between the parent's and the child's features.
-4. **Child tiles, 2 × 1** (`.tiles-2` + `.tile-kid`): 玩遊戲 (`/games/solo/`, apricot) · 看繪本 (`/books/`, sage).
-   Bigger (156px, 84px icon block) so a child can hit them. No 單機／雙機 split on the hub; the 雙機 entry
-   is the last card in the games list.
-5. **開始打針** — full-width `.btn-primary`, separated by `--sp-6` so it reads as its own step.
+1. **Code card** («打針時，請把這組代碼交給醫檢師»). **修改資料** is a 48px white circle with a black pen in
+   the card's bottom-right corner (`.code-edit` → `/portal/?edit`, `aria-label="修改資料"`). The card has an
+   extra 44px of bottom padding, so the circle never covers the note in either state.
+2. **The X** (`.cross`): a square area (342 × 342 at 390px). Four grey lines (`#A8A29E`, 1.5px, non-scaling)
+   run from the centre toward the four corners at 45° / 135° / 225° / 315°. They start 7 units from the
+   centre (viewBox 100), so they never meet, and stop 5 units short of the corners. The lines split the
+   area into four triangles:
+   top 安慰指南 (`/guide/`) · left 抽血大小問 (`/cheer/`) · right 玩遊戲 (`/games/solo/`) · bottom 看繪本 (`/books/`).
+   The DOM order (top → left → right → bottom) is the reading order and keeps the owner's list order.
+   - Each link covers the whole square and is cut to its triangle with `clip-path`, so the entire triangle
+     is the tap target. Checked with `elementFromPoint` near every corner.
+   - Content is monochrome: a 68px white circle (`--sh-md`) with a black-line icon (`--primary-ink`,
+     white fill), then a black bold name. Each name sits at its triangle's open middle
+     (top/bottom 21% / 79%, left/right 19% / 81%), clear of the lines.
+   - `clip-path` would clip a focus ring on the link, so focus is shown as a ring on the circle. Pressing
+     tints the whole triangle (5% ink) and sinks the circle 2px.
+   - No 單機／雙機 split on the hub. The 雙機 entry is the last card in the games list.
+3. **開始打針**: a full-width `.btn-primary` below.
 
-Section headings (給家長 / 給孩子) are `sr-only`: screen readers get the structure, the screen stays wordless.
-
-**Tile icons** are drawn for the hub on a 32 × 32 grid, two-tone: line in the tile's `--tone`
-(icons need 3:1, and every tone is ≥ 4.3:1 on its `--tone-tile`), fill `.f1` = `--tone-soft`, `.f2` = white,
-`.ink` = solid tone. Stroke 1.9 (1.7 on the child tiles, which render bigger).
+Section heading (等待的時候) is `sr-only`: screen readers get the structure, the screen stays wordless.
 
 ## Subpage shell
 

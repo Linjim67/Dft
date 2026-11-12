@@ -17,10 +17,14 @@
   margin-top: var(--sp-2);
 }
 
-/* 主頁面最上面只有代碼卡；下面「等待的時候」的標題自己會拉開距離 */
+/* 主頁面最上面只有代碼卡。底部多留一排空間給右下角的「修改資料」圓鈕，
+   代碼說明（兩種狀態都一樣長）才不會被壓到。
+   68px = 原本的 --sp-5（24px）+ 44px 給圓鈕；寫成固定值，設計檢查工具讀不懂 calc() */
 .brief .code-card {
-  text-align: center;
+  position: relative;
   margin-bottom: 0;
+  padding-bottom: 68px;
+  text-align: center;
 }
 
 /* 代碼要交給醫檢師：用深橘小字點出來，但不搶數字本身 */
@@ -53,61 +57,29 @@
   mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M5 12.4 10 17.4 19 7.8' fill='none' stroke='%23000' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") center / contain no-repeat;
 }
 
-/* ═══ 功能格：家長 3 × 1、灰線、孩子 2 × 1 ═══════════════════
-   整格都是連結，字只留一個名字。圖示是雙色：
-   底塊 = 該格色調的 --tone-tile，線 = --tone（深色，4.8:1 以上），
-   填色 f1 = --tone-soft、f2 = 白。色調沿用指南／抽血大小問的 apricot／sage／honey。 */
+/* ═══ 修改資料：代碼卡右下角的白色圓鈕＋黑色筆 ══════════════
+   圓鈕框線用 --line（3.48:1，控制項邊界），筆是黑色線條。 */
 
-.tiles {
-  display: grid;
-  gap: var(--sp-3);
-}
-
-.tiles-3 {
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: var(--sp-2);
-  margin-top: var(--sp-5);
-}
-
-.tiles-2 {
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-}
-
-.tile {
-  display: grid;
-  justify-items: center;
-  align-content: center;
-  gap: var(--sp-2);
-  min-height: 116px;
-  padding: var(--sp-4) var(--sp-1) var(--sp-3);
-  border-radius: var(--r-lg);
-  background: var(--card);
-  box-shadow: var(--sh-md);
-  color: var(--fg);
-  text-decoration: none;
-  -webkit-tap-highlight-color: transparent;
-  transition: transform var(--t-fast) var(--ease),
-    box-shadow var(--t-fast) var(--ease);
-}
-
-.tile:active {
-  transform: translateY(2px);
-  box-shadow: var(--sh-sm);
-}
-
-.tile-art {
+.code-edit {
+  position: absolute;
+  right: var(--sp-3);
+  bottom: var(--sp-3);
   display: grid;
   place-items: center;
-  width: 60px;
-  height: 60px;
-  border-radius: 18px;
-  background: var(--tone-tile);
-  color: var(--tone);
+  width: var(--tap);
+  height: var(--tap);
+  border-radius: 50%;
+  background: var(--card);
+  border: var(--line-w) solid var(--line);
+  box-shadow: var(--sh-sm);
+  color: var(--primary-ink);
+  -webkit-tap-highlight-color: transparent;
+  transition: transform var(--t-fast) var(--ease), box-shadow var(--t-fast) var(--ease);
 }
 
-.tile-art svg {
-  width: 40px;
-  height: 40px;
+.code-edit svg {
+  width: 22px;
+  height: 22px;
   fill: none;
   stroke: currentColor;
   stroke-width: 1.9;
@@ -115,69 +87,168 @@
   stroke-linejoin: round;
 }
 
-.tile-art .f1 {
-  fill: var(--tone-soft);
+.code-edit:active {
+  transform: translateY(1px);
+  box-shadow: none;
 }
 
-.tile-art .f2 {
+.code-edit:focus-visible {
+  outline-offset: 3px;
+  border-radius: 50%;
+}
+
+/* ═══ 四個功能：X 形分隔 ═══════════════════════════════════════
+   正方形區塊，四條灰線沿 45°／135°／225°／315° 從中心往四角，
+   中間留一個空白（線不相交）。每一格是蓋滿整塊的連結，用 clip-path 切成三角形，
+   所以整塊三角形都點得到。內容不上色：白底圓、黑色線條、黑字。 */
+
+.cross {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 1;
+  margin-top: var(--sp-5);
+}
+
+/* 線條純裝飾：灰色，粗細不跟著 viewBox 縮放 */
+.cross-lines {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  fill: none;
+  stroke: #A8A29E;
+  stroke-width: 1.5;
+  stroke-linecap: round;
+  vector-effect: non-scaling-stroke;
+  pointer-events: none;
+}
+
+.cross-lines path {
+  vector-effect: non-scaling-stroke;
+}
+
+.cross-item {
+  position: absolute;
+  inset: 0;
+  color: var(--primary-ink);
+  text-decoration: none;
+  -webkit-tap-highlight-color: transparent;
+  transition: background-color var(--t-fast) var(--ease);
+}
+
+.cross-item.is-top {
+  clip-path: polygon(0 0, 100% 0, 50% 50%);
+}
+
+.cross-item.is-right {
+  clip-path: polygon(100% 0, 100% 100%, 50% 50%);
+}
+
+.cross-item.is-bottom {
+  clip-path: polygon(0 100%, 100% 100%, 50% 50%);
+}
+
+.cross-item.is-left {
+  clip-path: polygon(0 0, 0 100%, 50% 50%);
+}
+
+/* 圖示＋名字放在每塊三角形裡、離線條夠遠的位置 */
+.cross-body {
+  position: absolute;
+  display: grid;
+  justify-items: center;
+  gap: var(--sp-2);
+  transform: translate(-50%, -50%);
+}
+
+.is-top .cross-body {
+  left: 50%;
+  top: 21%;
+}
+
+.is-left .cross-body {
+  left: 19%;
+  top: 50%;
+}
+
+.is-right .cross-body {
+  left: 81%;
+  top: 50%;
+}
+
+.is-bottom .cross-body {
+  left: 50%;
+  top: 79%;
+}
+
+.cross-icon {
+  display: grid;
+  place-items: center;
+  width: 68px;
+  height: 68px;
+  border-radius: 50%;
+  background: var(--card);
+  box-shadow: var(--sh-md);
+  transition: transform var(--t-fast) var(--ease), box-shadow var(--t-fast) var(--ease);
+}
+
+.cross-icon svg {
+  width: 42px;
+  height: 42px;
   fill: var(--card);
+  stroke: currentColor;
+  stroke-width: 1.7;
+  stroke-linecap: round;
+  stroke-linejoin: round;
 }
 
-.tile-art .ink {
+.cross-icon .ink {
   fill: currentColor;
 }
 
-.tile-label {
-  font-size: .95rem;
+.cross-label {
+  font-size: 1rem;
   font-weight: 700;
   line-height: 1.35;
-  text-align: center;
   white-space: nowrap;
 }
 
-/* 孩子的兩格：大一號，圖示更大，孩子自己也點得到 */
-.tile-kid {
-  min-height: 156px;
-  gap: var(--sp-3);
+/* 按下：整塊三角形淡淡一層灰，圓往下沉一點 */
+.cross-item:active {
+  background: rgba(28, 25, 23, .05);
 }
 
-.tile-kid .tile-art {
-  width: 84px;
-  height: 84px;
-  border-radius: 24px;
+.cross-item:active .cross-icon {
+  transform: translateY(2px);
+  box-shadow: var(--sh-sm);
 }
 
-.tile-kid .tile-art svg {
-  width: 58px;
-  height: 58px;
-  stroke-width: 1.7;
+/* clip-path 會切掉連結外框：焦點框改畫在圓上 */
+.cross-item:focus-visible {
+  outline: none;
 }
 
-.tile-kid .tile-label {
-  font-size: 1.1rem;
+.cross-item:focus-visible .cross-icon {
+  outline: 3px solid var(--primary-ink);
+  outline-offset: 3px;
 }
 
-/* 家長／孩子之間的灰線：純裝飾，不是控制項邊界 */
-.home-divider {
-  height: 1px;
-  margin: var(--sp-6) 0;
-  border: 0;
-  background: #D6D3D1;
-}
-
-/* 開始打針：與上面的功能格拉開距離，讀成獨立的一步 */
+/* 開始打針：與上面的功能區拉開距離，讀成獨立的一步 */
 .start-btn {
-  margin-top: var(--sp-6);
+  margin-top: var(--sp-5);
 }
 
 @media (hover: hover) and (pointer: fine) {
-  .tile:hover {
+  .cross-item:hover .cross-icon,
+  .code-edit:hover {
     box-shadow: var(--sh-lg);
   }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .tile:active {
+
+  .cross-item:active .cross-icon,
+  .code-edit:active {
     transform: none;
   }
 }
