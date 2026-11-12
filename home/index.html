@@ -52,7 +52,8 @@
       </div>
     </section>
 
-    <!-- ── 2. 四個功能：一個圓切成四個四分之一圓的白色按鈕，中間十字形的縫隔開。
+    <!-- ── 2. 四個功能＋開始打針：一個圓切成四個四分之一圓的白色按鈕，中間十字形的縫隔開，
+         圓心挖一個圓洞，洞裡是「開始打針」。
          左上 → 右上 → 左下 → 右下 = 閱讀順序。白底、黑色線條圖示、黑字；按下只有那一塊有反應。 ── -->
     <h2 class="sr-only">等待的時候</h2>
     <nav class="quad" aria-label="等待的時候">
@@ -109,13 +110,21 @@
           <span class="quad-label">看繪本</span>
         </span>
       </a>
+
+      <!-- ── 3. 開始打針（#03）：大圓中心挖一個圓洞，洞裡一顆較小的圓鈕。
+           打針圖示是主人指定的例外（MASTER 原則上不放針筒圖案，見 02-home.md）。 ── -->
+      <!-- 圓洞本身：mask 只挖掉畫面、不挖掉點擊範圍，所以放一個透明圓蓋住，點洞裡的空白不會誤觸旁邊那塊 -->
+      <span class="quad-hole" aria-hidden="true"></span>
+      <a class="quad-center" href="/shot/">
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M15.5 5.5 18.5 8.5 9.5 17.5 6.5 14.5Z" />
+          <path d="M14.5 4.5 19.5 9.5M17 7l3-3M18.5 2.5l3 3M8 16l-5 5" />
+          <path d="M13 8l1.3 1.3M10.5 10.5l1.3 1.3" />
+        </svg>
+        <span class="quad-center-label">開始打針</span>
+      </a>
     </nav>
 
-    <!-- ── 5. 開始打針（#03） ── -->
-    <a class="btn btn-primary start-btn" href="/shot/">
-      <span>開始打針</span>
-      <svg viewBox="0 0 24 24" class="icon" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6" /></svg>
-    </a>
   </main>
 
   <!-- 只用來確認代碼是否已由醫檢師完成；載不到時代碼卡維持原樣 -->

@@ -59,7 +59,20 @@ replaced.
      passive `touchstart` listener so iPhone Safari applies `:active`.
    - Focus is a 3px ink outline, which follows the radius.
    - No 單機／雙機 split on the hub. The 雙機 entry is the last card in the games list.
-3. **開始打針**: a full-width `.btn-primary` below.
+3. **開始打針 in the centre of the circle** (owner, 2026-11-13). This replaces the full-width button that sat below.
+   - A **larger round hole** is cut out of the circle's centre: each quarter button gets a `mask-image`
+     radial gradient centred on the whole circle (`--hx`/`--hy`), so the quarters become ring pieces.
+   - Inside the hole sits a **smaller circle**, `.quad-center` → `/shot/`: white, with a 2px ink border, a
+     line-drawn syringe in `--leaf-deep`, and «開始打針».
+   - At 342px wide the hole has a 60px radius, the button is 92px across and leaves a 14px ring, and the
+     quarter content sits 84px from the centre on the diagonals, clear of both the hole and the outer arc.
+     Every size is in `cqw`, so the group scales down on narrow phones (checked at 320px).
+   - A **mask hides but does not cut hit-testing**, so a transparent `.quad-hole` circle covers the hole and
+     taps on the empty ring do nothing. Checked with `elementFromPoint`: the hole is inert, just outside it
+     is the quarter, and the centre is `/shot/`.
+   - The mask also clips `box-shadow` and `outline`. Depth comes from a `drop-shadow` filter on the whole
+     `.quad`, a quarter's focus ring is drawn on its content, and pressing a quarter sinks it and fills
+     `--primary-wash` (no inner ring, since the mask would cut it).
 
 Section heading (等待的時候) is `sr-only`: screen readers get the structure, the screen stays wordless.
 
@@ -69,6 +82,7 @@ Section heading (等待的時候) is `sr-only`: screen readers get the structure
   Not shown on `/shot/` itself.
 - **No needle or syringe imagery anywhere.** These screens sit in front of anxious children; the CTA uses
   a neutral arrow. *Exception: the 打地鼠 game, by spec — see `07-games.md` (medical play, no tip ever shown).*
+  *Exception: the hub's centre 開始打針 button (owner's request, 2026-11-13), a simple line syringe.*
   *Exception: the favicon (owner's choice), the owner's drawing of two syringes whose needles form an N.
   Everything favicon lives in `/favicon/`: `ver1.svg` is the Inkscape original (the second syringe is the first
   turned 180°); `favicon.svg` is it redrawn for tabs (black 1.2 stroke, white rounded square). It only appears at

@@ -122,85 +122,117 @@
   border-radius: 50%;
 }
 
-/* ═══ 四個功能：一個圓切成四個四分之一圓的按鈕 ═════════════════
-   2 × 2 正方形格子，中間 10px 的十字縫。每一格是正方形，外側那個角的半徑
-   = 100% − 內側小圓角，剛好是以內側角為圓心的四分之一圓（不會被瀏覽器等比縮小）。
-   白底、黑色線條圖示、黑字；按下只有那一塊有反應。 */
+/* ═══ 四個功能＋開始打針 ════════════════════════════════════════
+   一個圓切成四個四分之一圓的白色按鈕（2 × 2 格子、10px 十字縫），
+   圓心挖一個圓洞（每一塊用 mask 挖掉，點擊範圍也跟著缺口），洞裡放一顆較小的「開始打針」圓鈕。
+   - 外側那個角的半徑 = 100% − 內側小圓角，剛好是四分之一圓（瀏覽器不會等比縮小）。
+   - mask 會連 box-shadow、outline 一起裁掉：陰影改成整組的 drop-shadow，焦點框畫在內容上。
+   - 洞、圓鈕、內容位置都用 cqw（容器寬度的 %）：窄手機上整組等比縮小。
+     在 342px 寬時：洞半徑 60px、圓鈕直徑 92px、內容中心離圓心 84px（避開洞，也不超出外弧）。 */
 
 .quad {
   --quad-gap: 10px;
+  --quad-half: 5px;
   --quad-inner: 10px;
+  --hole: 60px;
+  --center: 92px;
+  --reach: 84px;
+  position: relative;
+  container-type: inline-size;
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: var(--quad-gap);
-  width: min(100%, 330px);
+  width: min(100%, 360px);
   aspect-ratio: 1;
   margin: var(--sp-5) auto 0;
+  filter: drop-shadow(0 2px 3px rgba(62, 51, 41, .06)) drop-shadow(0 8px 12px rgba(62, 51, 41, .12));
+}
+
+@supports (width: 1cqw) {
+  .quad {
+    --hole: 17.5cqw;
+    --center: 27cqw;
+    --reach: 24.5cqw;
+  }
 }
 
 .quad-item {
   position: relative;
   display: block;
   background: var(--card);
-  box-shadow: var(--sh-md);
   color: var(--primary-ink);
   text-decoration: none;
   -webkit-tap-highlight-color: transparent;
   transition: transform var(--t-fast) var(--ease),
-    box-shadow var(--t-fast) var(--ease),
     background-color var(--t-fast) var(--ease);
+  -webkit-mask-image: radial-gradient(circle at var(--hx) var(--hy), transparent var(--hole), #000 calc(var(--hole) + 1px));
+  mask-image: radial-gradient(circle at var(--hx) var(--hy), transparent var(--hole), #000 calc(var(--hole) + 1px));
 }
 
-/* border-radius 順序：左上 右上 右下 左下；外側那個角是大弧 */
+/* border-radius 順序：左上 右上 右下 左下；外側那個角是大弧。
+   --hx／--hy = 整個圓的圓心，在這一格座標裡的位置（內側角再往縫的中間 5px） */
 .quad-item.is-tl {
+  --hx: calc(100% + var(--quad-half));
+  --hy: calc(100% + var(--quad-half));
   border-radius: calc(100% - var(--quad-inner)) var(--quad-inner) var(--quad-inner) var(--quad-inner);
 }
 
 .quad-item.is-tr {
+  --hx: calc(-1 * var(--quad-half));
+  --hy: calc(100% + var(--quad-half));
   border-radius: var(--quad-inner) calc(100% - var(--quad-inner)) var(--quad-inner) var(--quad-inner);
 }
 
 .quad-item.is-br {
+  --hx: calc(-1 * var(--quad-half));
+  --hy: calc(-1 * var(--quad-half));
   border-radius: var(--quad-inner) var(--quad-inner) calc(100% - var(--quad-inner)) var(--quad-inner);
 }
 
 .quad-item.is-bl {
+  --hx: calc(100% + var(--quad-half));
+  --hy: calc(-1 * var(--quad-half));
   border-radius: var(--quad-inner) var(--quad-inner) var(--quad-inner) calc(100% - var(--quad-inner));
 }
 
-/* 內容放在四分之一圓的重心：離內側角 0.424 × 半徑（約 42.5%） */
+/* 內容放在圓環那一塊的中間：沿 45° 對角線、離圓心 --reach */
 .quad-body {
   position: absolute;
   display: grid;
   justify-items: center;
-  gap: var(--sp-1);
+  gap: 2px;
   transform: translate(-50%, -50%);
 }
 
 .is-tl .quad-body {
-  left: 57.5%;
-  top: 57.5%;
+  left: calc(100% + var(--quad-half) - var(--reach));
+  top: calc(100% + var(--quad-half) - var(--reach));
 }
 
 .is-tr .quad-body {
-  left: 42.5%;
-  top: 57.5%;
+  left: calc(var(--reach) - var(--quad-half));
+  top: calc(100% + var(--quad-half) - var(--reach));
 }
 
 .is-bl .quad-body {
-  left: 57.5%;
-  top: 42.5%;
+  left: calc(100% + var(--quad-half) - var(--reach));
+  top: calc(var(--reach) - var(--quad-half));
 }
 
 .is-br .quad-body {
-  left: 42.5%;
-  top: 42.5%;
+  left: calc(var(--reach) - var(--quad-half));
+  top: calc(var(--reach) - var(--quad-half));
+}
+
+/* 圖示用葉綠深（5.75:1 on card），字維持可可：主頁不再整片咖啡色 */
+.quad-icon {
+  color: var(--leaf-deep);
 }
 
 .quad-icon svg {
   display: block;
-  width: 42px;
-  height: 42px;
+  width: 40px;
+  height: 40px;
   fill: var(--quad-bg, var(--card));
   stroke: currentColor;
   stroke-width: 1.7;
@@ -212,11 +244,6 @@
   fill: currentColor;
 }
 
-/* 圖示用葉綠深（5.75:1 on card），字維持可可：主頁不再整片咖啡色 */
-.quad-icon {
-  color: var(--leaf-deep);
-}
-
 .quad-label {
   font-size: 1rem;
   font-weight: 700;
@@ -224,27 +251,118 @@
   white-space: nowrap;
 }
 
-/* 按下：只有這一塊——往下沉、淺灰底、一圈黑框（形狀也變，不只靠顏色）。
-   圖示裡的白色填色跟著底色走，才不會露出白塊 */
+@supports (width: 1cqw) {
+  .quad-icon svg {
+    width: min(40px, 11.7cqw);
+    height: min(40px, 11.7cqw);
+  }
+
+  .quad-label {
+    font-size: min(1rem, 4.7cqw);
+  }
+}
+
+/* 按下：只有這一塊——往下沉、底色變淡米（形狀位置也變，不只靠顏色）。
+   圖示裡的白色填色跟著底色走，才不會露出白塊。（mask 會裁掉內框線，所以不用框） */
 .quad-item:active {
   --quad-bg: var(--primary-wash);
   background: var(--quad-bg);
   transform: translateY(2px);
-  box-shadow: var(--sh-sm), inset 0 0 0 2px var(--primary-ink);
 }
 
+/* 焦點框畫在內容上（mask 會裁掉外框） */
 .quad-item:focus-visible {
+  outline: none;
+}
+
+.quad-item:focus-visible .quad-body {
+  outline: 3px solid var(--primary-ink);
+  outline-offset: 2px;
+  border-radius: var(--r-sm);
+}
+
+/* ── 圓洞：透明、蓋在四塊上面接住點擊（mask 不會挖掉點擊範圍） ── */
+
+.quad-hole {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: calc(2 * var(--hole));
+  height: calc(2 * var(--hole));
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
+}
+
+/* ── 圓心的「開始打針」：較小的圓，放在圓洞正中間 ── */
+
+.quad-center {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  display: grid;
+  place-items: center;
+  align-content: center;
+  gap: 2px;
+  width: var(--center);
+  height: var(--center);
+  border-radius: 50%;
+  background: var(--card);
+  border: 2px solid var(--primary-ink);
+  color: var(--primary-ink);
+  text-decoration: none;
+  transform: translate(-50%, -50%);
+  -webkit-tap-highlight-color: transparent;
+  transition: transform var(--t-fast) var(--ease),
+    background-color var(--t-fast) var(--ease);
+}
+
+.quad-center svg {
+  width: 30px;
+  height: 30px;
+  fill: var(--quad-bg, var(--card));
+  stroke: var(--leaf-deep);
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.quad-center-label {
+  font-size: .95rem;
+  font-weight: 700;
+  line-height: 1.3;
+  white-space: nowrap;
+}
+
+@supports (width: 1cqw) {
+  .quad-center svg {
+    width: min(30px, 8.8cqw);
+    height: min(30px, 8.8cqw);
+  }
+
+  .quad-center-label {
+    font-size: min(.95rem, 4.4cqw);
+  }
+}
+
+.quad-center:active {
+  --quad-bg: var(--primary-wash);
+  background: var(--quad-bg);
+  transform: translate(-50%, calc(-50% + 2px));
+}
+
+.quad-center:focus-visible {
   outline: 3px solid var(--primary-ink);
   outline-offset: 3px;
-}
-
-/* 開始打針：與上面的功能區拉開距離，讀成獨立的一步 */
-.start-btn {
-  margin-top: var(--sp-5);
+  border-radius: 50%;
 }
 
 @media (hover: hover) and (pointer: fine) {
   .quad-item:hover,
+  .quad-center:hover {
+    --quad-bg: var(--primary-wash);
+    background: var(--quad-bg);
+  }
+
   .code-edit:hover {
     box-shadow: var(--sh-lg);
   }
@@ -255,5 +373,9 @@
   .quad-item:active,
   .code-edit:active {
     transform: none;
+  }
+
+  .quad-center:active {
+    transform: translate(-50%, -50%);
   }
 }
