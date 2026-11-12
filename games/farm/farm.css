@@ -304,12 +304,14 @@ body.is-playing .topbar {
   box-shadow: var(--sh-inset);
 }
 
+/* 進度用 scaleX（只動 transform）；圓角由外框的 overflow 裁掉 */
 .goal-fill {
   display: block;
+  width: 100%;
   height: 100%;
-  border-radius: inherit;
   background: var(--primary-fill);
-  transition: width var(--t-base) var(--ease);
+  transform-origin: left center;
+  transition: transform var(--t-base) var(--ease);
 }
 
 .goal-x {

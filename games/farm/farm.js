@@ -290,7 +290,7 @@
       html = '<span class="goal-chip">目標</span><span class="goal-text">' + esc(G.text) +
         (ready ? '<b class="goal-ready">可以買了！</b>' : '') + '</span>' +
         '<span class="goal-meter" role="progressbar" aria-label="目標進度" aria-valuemin="0" aria-valuemax="100" aria-valuenow="' +
-        Math.round(pct * 100) + '"><span class="goal-fill" style="width:' + (pct * 100).toFixed(1) + '%"></span></span>';
+        Math.round(pct * 100) + '"><span class="goal-fill" style="transform:scaleX(' + pct.toFixed(3) + ')"></span></span>';
     }
     if (!force && sig === goalSig) return;
     goalSig = sig;
