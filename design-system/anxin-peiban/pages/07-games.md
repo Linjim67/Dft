@@ -1040,12 +1040,21 @@ tap. Reduced motion: no pulse, same colours.
   stone / ore / orbs) → goal strip → square board → tool bar. Top bar hidden while playing;
   小遊戲選單 / 去打針 / 重新開始 are in the menu, which pauses the farm.
 - **Tool bar: two fixed rows, nothing scrolls** (a scrolling bar hid its right half — product owner,
-  2026-11-12). Six cells per row: row 1 鋤頭 · 鏟子 · 機器人 · 蘿蔔 · 玉米 · 番茄, row 2 燈塔 · 採石場 ·
+  2026-11-12). Six **square** cells per row (52 px on a 375 px phone; the bar keeps a 10 px side margin
+  beyond the page gutter): row 1 鋤頭 · 鏟子 · 機器人 · 蘿蔔 · 玉米 · 番茄, row 2 燈塔 · 採石場 ·
   湯鍋 · 倉庫 · 鍛造爐 · 月光祭壇. Each cell is **picture + price only** (the name is in the
   aria-label, and the goal strip names the selected tool); prices drop the thousands comma to fit.
   Tools of unopened regions keep their cell and are simply grey (grey tile, faded greyscale picture —
   no lock badge, product owner 2026-11-12); tapping one says which region opens it. There is no 收成 tool: with nothing selected, a tap harvests or opens a
   building; tapping the selected tool again (or 「好了」) returns to that.
+- **Building tools end after one placement** (product owner, 2026-11-12); seeds, 鋤頭 and 鏟子 stay
+  selected because they paint.
+- **搬家**: the goal strip says what to do, and a floating 「✕ 取消」 pill (48 px tall) hovers at the
+  bottom of the board — no cancel button in the strip. The hint bubble moves up above it.
+- **鍛造爐 sheet**: no explanatory lede. Each recipe row is picture · name and effect · **materials**
+  (stacked, right-aligned) · 打造. The item being forged replaces materials + button with a progress
+  line: total forging time on the left (its real duration at this forge's lava count and orb speed),
+  the bar, and the percent done on the right. Finished items show 「有了」.
 - **Tapping a growing crop** shows a small card over it (below it on the top two rows), click-through,
   for 6 s: 品種 · grey 「5 秒」 (its real grow time, river and orbs included) · a progress line · 「56%」.
 - Board tiles are ~45 px on a 375 px phone (8 columns can't reach 48 px); the brush-style drag and the

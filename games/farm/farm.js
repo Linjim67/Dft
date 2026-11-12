@@ -279,6 +279,7 @@
   var goalSig = '', goalDoneUntil = 0;
 
   function renderGoal(force) {
+    syncMove();
     var el = $('goalBar');
     var now = performance.now();
     if (now < goalDoneUntil && !force) return;
@@ -286,8 +287,7 @@
     if (UI.moveFrom >= 0) {
       sig = 'move';
       html = '<span class="goal-chip is-tool">搬家</span><span class="goal-text">點一格空地，把' +
-        esc(NAME[S.tiles[UI.moveFrom] ? S.tiles[UI.moveFrom].k : 'barn']) + '搬過去</span>' +
-        '<button class="goal-x" type="button" data-act="cancelMove">取消</button>';
+        esc(NAME[S.tiles[UI.moveFrom] ? S.tiles[UI.moveFrom].k : 'barn']) + '搬過去</span>';
     } else if (UI.tool) {
       sig = 'tool:' + UI.tool;
       html = '<span class="goal-chip is-tool">' + esc(NAME[UI.tool]) + '</span><span class="goal-text">' + esc(HINT[UI.tool]) + '</span>' +
@@ -320,11 +320,26 @@
     say('目標完成：' + text);
   }
 
+  /* 搬家時：農場下面浮著一顆「✕ 取消」 */
+  var moveCancel = $('moveCancel');
+
+  function syncMove() {
+    var on = UI.moveFrom >= 0;
+    if (moveCancel.hidden === on) moveCancel.hidden = !on;
+    boardWrap.classList.toggle('is-moving', on);
+  }
+
+  moveCancel.addEventListener('click', function () {
+    UI.moveFrom = -1;
+    renderGoal(true);
+    say('不搬了');
+    if (UI.keyboard) board.focus();
+  });
+
   $('goalBar').addEventListener('click', function (e) {
     var b = e.target.closest('[data-act]');
     if (!b) return;
     if (b.getAttribute('data-act') === 'done') setTool(null);
-    if (b.getAttribute('data-act') === 'cancelMove') { UI.moveFrom = -1; renderGoal(true); }
   });
 
   /* ─────────────────────────────────────────────────────────────
@@ -1177,7 +1192,12 @@
   function placeAt(i, quiet) {
     var ev = [];
     var r = E.place(S, UI.tool, i, ev);
-    if (!r) { handle(ev); renderTools(); return; }
+    if (!r) {
+      handle(ev);
+      /* 房子蓋好一個就結束（菜、鋤頭、鏟子可以一路用下去） */
+      if (CFG.builds[UI.tool]) setTool(null); else renderTools();
+      return;
+    }
     if (quiet && r !== 'money') return;
     if (r === 'money') {
       var c = E.price(S, UI.tool);
@@ -1369,22 +1389,28 @@
       info += row('湯碗', b.bowls.length + ' / ' + CFG.pot.cap);
       if (b.bowls.length) acts += '<button class="btn btn-primary" type="button" data-act="collect">收起來（' + b.bowls.length + ' 碗）</button>';
     } else if (b.k === 'forge') {
-      body += '<p class="sh-lede">旁邊有 ' + E.LAVA[i] + ' 格岩漿，打造快 ' + E.LAVA[i] + ' 倍。一次打造一件，打好就一直有效。</p>';
-      if (b.job) {
-        var rem = Math.max(0, (CFG.recipes[b.job].time - b.t) / (E.LAVA[i] * E.speed(S)));
-        info += row('正在打造', esc(CFG.recipes[b.job].name) + '，還要 ' + Math.ceil(rem) + ' 秒');
-      }
+      /* 每一件：圖 · 名字和效果 · 要用的材料 · 打造鈕。
+         正在打造的那一件：材料和按鈕換成進度線——左邊總共要幾秒、右邊完成多少 % */
       body += '<ul class="sh-recipes">' + CFG.recipeOrder.map(function (id) {
         var r = CFG.recipes[id];
         var st = E.canForge(S, id);
-        var right;
-        if (S.tools[id]) right = '<span class="sh-done"><svg viewBox="0 0 24 24" class="icon" aria-hidden="true"><path d="m5 12.5 4.5 4.5L19 7.5" /></svg>有了</span>';
-        else if (b.job === id) right = '<span class="sh-done">打造中</span>';
-        else if (st === 'needs') right = '<span class="sh-note">先打造上面三件</span>';
-        else right = '<button class="btn btn-primary btn-sm" type="button" data-act="forge" data-id="' + id + '"' +
-          (st ? ' aria-disabled="true"' : '') + '>打造</button>';
+        var side;
+        if (S.tools[id]) {
+          side = '<span class="recipe-wide sh-done"><svg viewBox="0 0 24 24" class="icon" aria-hidden="true"><path d="m5 12.5 4.5 4.5L19 7.5" /></svg>有了</span>';
+        } else if (b.job === id) {
+          var total = r.time / (Math.max(1, E.LAVA[i]) * E.speed(S));
+          var pct = Math.min(99, Math.floor(b.t / r.time * 100));
+          side = '<span class="recipe-wide recipe-prog" role="progressbar" aria-label="' + esc(r.name) + '打造中" aria-valuemin="0" aria-valuemax="100" aria-valuenow="' + pct + '">' +
+            '<span class="rp-time">' + secs(total) + '</span>' +
+            '<span class="rp-bar"><span class="rp-fill" style="transform:scaleX(' + (pct / 100).toFixed(3) + ')"></span></span>' +
+            '<span class="rp-pct">' + pct + '%</span></span>';
+        } else {
+          side = costHtml(r.cost) + (st === 'needs' ?
+            '<span class="sh-note recipe-need">先打造上面三件</span>' :
+            '<button class="btn btn-primary btn-sm" type="button" data-act="forge" data-id="' + id + '"' + (st ? ' aria-disabled="true"' : '') + '>打造</button>');
+        }
         return '<li class="recipe">' + img(RECIPE_ICON[id], false, 'recipe-img') + '<span class="recipe-text"><strong>' + esc(r.name) + '</strong>' +
-          '<span>' + esc(r.desc) + '</span>' + (S.tools[id] ? '' : costHtml(r.cost)) + '</span>' + right + '</li>';
+          '<span>' + esc(r.desc) + '</span></span>' + side + '</li>';
       }).join('') + '</ul>';
     } else if (b.k === 'altar') {
       var op = E.orbPrice(S);

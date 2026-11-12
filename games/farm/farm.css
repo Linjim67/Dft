@@ -391,6 +391,50 @@ body.is-playing .topbar {
   }
 }
 
+/* 搬家時浮在農場下面的「✕ 取消」 */
+.move-cancel {
+  position: absolute;
+  left: 50%;
+  bottom: 12px;
+  z-index: 4;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 48px;
+  padding: 0 22px 0 16px;
+  border: var(--line-w) solid var(--line);
+  border-radius: var(--r-pill);
+  background: var(--card);
+  color: var(--fg);
+  font-weight: 800;
+  font-size: 1rem;
+  box-shadow: var(--sh-lg);
+  transform: translateX(-50%);
+  animation: float-in var(--t-base) var(--ease);
+}
+
+.move-cancel .icon {
+  width: 20px;
+  height: 20px;
+  stroke-width: 2.6;
+}
+
+.move-cancel:active {
+  transform: translate(-50%, 2px);
+}
+
+@keyframes float-in {
+  from {
+    opacity: 0;
+    transform: translate(-50%, 8px);
+  }
+}
+
+/* 搬家時，提示泡泡讓到取消鈕上面 */
+.board-wrap.is-moving .farm-hint {
+  bottom: 72px;
+}
+
 /* 點還沒熟的菜：品種 · 灰字的「5 秒」· 進度線 · 完成 % */
 .crop-tip {
   position: absolute;
@@ -460,11 +504,12 @@ body.is-playing .topbar {
 
 /* 工具列：兩排、各 6 格，全部看得到、不用滑。
    第一排鋤頭、鏟子、機器人、三種菜；第二排六種房子。每格只有圖和價錢 */
+/* 左右多留一點邊，每一格是正方形 */
 .farm-tools {
   display: grid;
-  gap: 6px;
+  gap: 5px;
   flex: none;
-  padding: 4px 0 2px;
+  padding: 4px 10px 2px;
 }
 
 .tool-row {
@@ -481,20 +526,16 @@ body.is-playing .topbar {
   display: grid;
   justify-items: center;
   align-content: center;
-  gap: 2px;
+  gap: 1px;
   min-width: 0;
-  min-height: 60px;
-  padding: 4px 1px 3px;
+  aspect-ratio: 1 / 1;
+  padding: 2px 1px;
   border: var(--line-w) solid var(--line);
   border-radius: var(--r-sm);
   background: var(--card);
   color: var(--fg);
   box-shadow: var(--sh-sm);
   transition: transform var(--t-fast) var(--ease), background-color var(--t-fast) var(--ease);
-}
-
-.r2 .tool {
-  min-height: 56px;
 }
 
 .tool:active {
@@ -504,7 +545,7 @@ body.is-playing .topbar {
 
 .tool.is-on {
   border: 2px solid var(--primary-deep);
-  padding: 3px 0 2px;
+  padding: 1px 0;
   background: var(--primary-wash);
 }
 
@@ -512,32 +553,33 @@ body.is-playing .topbar {
   position: relative;
   display: grid;
   place-items: center;
-  width: 32px;
-  height: 32px;
-}
-
-.tool-img {
-  width: 32px;
-  height: 32px;
-  image-rendering: pixelated;
-}
-
-.r2 .tool-pic,
-.r2 .tool-img {
   width: 28px;
   height: 28px;
 }
 
+.tool-img {
+  width: 28px;
+  height: 28px;
+  image-rendering: pixelated;
+}
+
+/* 房子那排常常有兩行價錢（金幣、石頭），圖小一點才放得進正方形 */
+.r2 .tool-pic,
+.r2 .tool-img {
+  width: 22px;
+  height: 22px;
+}
+
 .tool-price {
   font-family: var(--font-num);
-  font-size: .72rem;
+  font-size: .7rem;
   font-weight: 700;
-  line-height: 1.15;
+  line-height: 1.1;
   color: var(--fg-muted);
 }
 
 .r2 .tool-price {
-  font-size: .68rem;
+  font-size: .66rem;
 }
 
 .tool-price .cost {
@@ -546,8 +588,8 @@ body.is-playing .topbar {
 }
 
 .tool-price .cost-item img {
-  width: 11px;
-  height: 11px;
+  width: 10px;
+  height: 10px;
 }
 
 /* 還沒打開：整顆灰灰的就好（點了會說要先打開哪裡） */
@@ -948,12 +990,13 @@ body.is-playing .topbar {
   list-style: none;
 }
 
+/* 圖 · 名字和效果 · 材料 · 打造鈕（做好的、正在打造的：後面兩格合成一格） */
 .recipe {
   display: grid;
-  grid-template-columns: 40px 1fr auto;
+  grid-template-columns: 40px minmax(0, 1fr) auto auto;
   align-items: center;
-  gap: var(--sp-3);
-  padding: var(--sp-2) var(--sp-3);
+  gap: var(--sp-2);
+  padding: var(--sp-2) var(--sp-2) var(--sp-2) var(--sp-3);
   border-radius: var(--r-md);
   background: var(--bg-sunk);
 }
@@ -981,11 +1024,77 @@ body.is-playing .topbar {
   font-size: 1rem;
 }
 
-.recipe-text .cost {
-  justify-content: flex-start;
-  margin-top: 2px;
+/* 材料：直的一排、靠右，緊貼在打造鈕左邊 */
+.recipe>.cost {
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 1px;
   color: var(--fg);
+  font-size: .85rem;
   font-weight: 700;
+}
+
+.recipe>.cost .cost-item img {
+  width: 16px;
+  height: 16px;
+}
+
+.recipe-need {
+  max-width: 4.5em;
+  margin: 0;
+  font-size: .78rem;
+  line-height: 1.3;
+  text-align: right;
+}
+
+.recipe-wide {
+  grid-column: span 2;
+  justify-self: end;
+}
+
+/* 打造中：總共幾秒 · 進度線 · 完成 % */
+.recipe-prog {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  justify-self: stretch;
+  min-width: 132px;
+}
+
+.rp-time {
+  flex: none;
+  color: var(--fg-muted);
+  font-family: var(--font-num);
+  font-size: .8rem;
+  font-weight: 700;
+}
+
+.rp-bar {
+  flex: 1;
+  height: 6px;
+  overflow: hidden;
+  border-radius: var(--r-pill);
+  background: var(--card);
+  box-shadow: var(--sh-inset);
+}
+
+.rp-fill {
+  display: block;
+  width: 100%;
+  height: 100%;
+  background: var(--primary-fill);
+  transform-origin: left center;
+}
+
+.rp-pct {
+  flex: none;
+  min-width: 2.6em;
+  color: var(--fg);
+  font-family: var(--font-num);
+  font-size: .88rem;
+  font-weight: 800;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
 }
 
 .sh-done {
@@ -1190,24 +1299,20 @@ body.is-playing .topbar {
     height: 44px;
   }
 
-  .tool {
-    min-height: 52px;
-  }
-
-  .r2 .tool {
-    min-height: 48px;
+  .farm-tools {
+    padding-inline: 14px;
   }
 
   .tool-pic,
   .tool-img {
-    width: 28px;
-    height: 28px;
+    width: 26px;
+    height: 26px;
   }
 
   .r2 .tool-pic,
   .r2 .tool-img {
-    width: 22px;
-    height: 22px;
+    width: 20px;
+    height: 20px;
   }
 }
 
@@ -1215,6 +1320,7 @@ body.is-playing .topbar {
 
   .farm-hint,
   .crop-tip,
+  .move-cancel,
   .farm-toast,
   .farm-sheet[open] {
     animation: none;
@@ -1223,5 +1329,9 @@ body.is-playing .topbar {
   .tool:active,
   .hud-btn:active {
     transform: none;
+  }
+
+  .move-cancel:active {
+    transform: translateX(-50%);
   }
 }
