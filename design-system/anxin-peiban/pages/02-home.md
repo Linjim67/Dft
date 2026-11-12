@@ -30,9 +30,17 @@ The owner's direction (2026-11-12, revised twice the same day): no colour on the
 and the four features as quarter-circle buttons that together form a circle. An earlier X of grey lines was
 replaced.
 
-1. **Code card** («打針時，請把這組代碼交給醫檢師»), with **no expiry date** (owner, 2026-11-13). A redesign with digit tiles was tried and reverted at the owner's request. **修改資料** is a 48px white circle with a black pen in
-   the card's bottom-right corner (`.code-edit` → `/portal/?edit`, `aria-label="修改資料"`). The card has an
-   extra 44px of bottom padding, so the circle never covers the note in either state.
+1. **Code card** (owner, 2026-11-13). It has **no expiry date**. The card floats on its shadow and has no
+   dashed frame.
+   - The label reads «{暱稱}的暫時代碼»: the nickname just entered in `/portal/`, set with `textContent`. It
+     stays on the phone and never goes to Firestore.
+   - The digits keep the **old style**: one string of four, 3.1rem bold, `.2em` letter-spacing,
+     `tabular-nums`, `--code`, centred. A version with one tile per digit was tried and rejected.
+   - A hairline separates the **footer row**: the note «打針時，請把這組代碼交給醫檢師» on the left, and
+     **修改資料** on the right, a 48px white circle with a black pen (`.code-edit` → `/portal/?edit`,
+     `aria-label="修改資料"`), at the bottom-right corner.
+   - Once the 醫檢師 finishes, the digits turn `--idle` and the note turns green with a check, balanced over
+     two lines.
 2. **Four quarter-circle buttons** (`.quad`, from the owner's reference image, 2026-11-12): one circle (up to
    330px) cut into four white buttons by a 10px cross-shaped gap. Top-left 安慰指南 (`/guide/`) · top-right
    抽血大小問 (`/cheer/`) · bottom-left 玩遊戲 (`/games/solo/`) · bottom-right 看繪本 (`/books/`). DOM order

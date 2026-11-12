@@ -15,7 +15,8 @@
 
   /* ── 1. 暫時代碼 ── */
 
-  /* 不顯示有效日期 */
+  /* 「{暱稱}的暫時代碼」；數字一串顯示；不顯示有效日期。暱稱只在這支手機上，用 textContent */
+  $('codeLabel').textContent = p.nickname + '的暫時代碼';
   $('codeDigits').textContent = p.code;
 
   /* ── 代碼失效：醫檢師送出回饋後，這組代碼就查不到了 ──

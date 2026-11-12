@@ -17,31 +17,60 @@
   margin-top: var(--sp-2);
 }
 
-/* 主頁面最上面只有代碼卡。底部多留一排空間給右下角的「修改資料」圓鈕，
-   代碼說明（兩種狀態都一樣長）才不會被壓到。
-   68px = 原本的 --sp-5（24px）+ 44px 給圓鈕；寫成固定值，設計檢查工具讀不懂 calc() */
+/* ═══ 暫時代碼 ══════════════════════════════════════════════════
+   乾淨的卡片（不要虛線框，靠陰影浮起）：「{暱稱}的暫時代碼」→ 一串大數字 → 底部一列（說明＋修改資料的筆）。
+   不顯示有效日期。共用的 .code-card／.code-digits 在 /shared/styles.css，這裡覆寫成主頁的樣子。 */
+
 .brief .code-card {
-  position: relative;
   margin-bottom: 0;
-  padding-bottom: 68px;
+  padding: var(--sp-4) var(--sp-4) var(--sp-3);
+  border: 0;
+  text-align: start;
+}
+
+.brief .code-label {
+  font-size: .9rem;
+  font-weight: 700;
+  line-height: 1.5;
+  color: var(--fg-muted);
+}
+
+/* 數字用舊的樣子：一串四個字、大字距（.2em）、等寬數字（tabular-nums），
+   大小與顏色沿用 /shared/styles.css 的 .code-digits；置中，text-indent 抵銷最後一格字距 */
+.brief .code-digits {
+  margin: var(--sp-2) 0 var(--sp-1);
   text-align: center;
 }
 
-/* 代碼要交給醫檢師：用深橘小字點出來，但不搶數字本身 */
-.code-note {
-  margin-top: var(--sp-2);
-  font-size: .88rem;
-  font-weight: 700;
-  color: var(--primary-deep);
+/* 底部一列：說明靠左，筆靠右（右下角） */
+.code-foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--sp-3);
+  margin-top: var(--sp-3);
+  padding-top: var(--sp-3);
+  border-top: 1px solid var(--hairline);
 }
 
-/* 已完成：數字退成灰階，說明改綠色（附勾勾，不只靠顏色） */
+.code-note {
+  flex: 1 1 auto;
+  min-width: 0;
+  font-size: .9rem;
+  font-weight: 700;
+  line-height: 1.5;
+  color: var(--fg);
+  /* 失效時的說明比較長，換行時兩行平均，不要只剩兩個字掉到第二行 */
+  text-wrap: balance;
+}
+
+/* 已完成：數字退成灰階，說明改綠色並附勾勾（不只靠顏色） */
 .code-card.is-done .code-digits {
   color: var(--idle);
 }
 
 .code-card.is-done .code-note {
-  display: inline-flex;
+  display: flex;
   align-items: center;
   gap: var(--sp-1);
   color: var(--success);
@@ -57,13 +86,9 @@
   mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M5 12.4 10 17.4 19 7.8' fill='none' stroke='%23000' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") center / contain no-repeat;
 }
 
-/* ═══ 修改資料：代碼卡右下角的白色圓鈕＋黑色筆 ══════════════
-   圓鈕框線用 --line（3.48:1，控制項邊界），筆是黑色線條。 */
-
+/* 修改資料：底部一列最右邊的白色圓鈕＋黑色筆。框線 --line 是控制項邊界 */
 .code-edit {
-  position: absolute;
-  right: var(--sp-3);
-  bottom: var(--sp-3);
+  flex: none;
   display: grid;
   place-items: center;
   width: var(--tap);
