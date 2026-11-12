@@ -15,8 +15,15 @@
 
   /* ── 1. 暫時代碼 ── */
 
-  $('codeDigits').textContent = p.code;
-  $('codeExpiry').textContent = Anxin.formatExpiry(p.expiresAt);
+  /* 一格一個數字；不顯示有效日期 */
+  var digits = $('codeDigits');
+  digits.textContent = '';
+  String(p.code).split('').forEach(function (d) {
+    var cell = document.createElement('span');
+    cell.className = 'code-digit';
+    cell.textContent = d;
+    digits.appendChild(cell);
+  });
 
   /* ── 代碼失效：醫檢師送出回饋後，這組代碼就查不到了 ──
      讀不到（離線、Firebase 載不到）就維持原樣；代碼卡只是提示，不擋任何功能。
@@ -28,7 +35,6 @@
     var lock = r[0];
     if (!lock || lock.holderUid !== r[1].uid || lock.status !== 'done') return;
     $('codeCard').classList.add('is-done');
-    $('codeExpiry').hidden = true;
     $('codeNote').textContent = '醫檢師已完成紀錄，這組代碼已經失效';
   }).catch(function () { /* 維持原樣 */ });
 

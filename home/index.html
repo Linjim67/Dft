@@ -31,20 +31,25 @@
     <!-- 畫面上不放大標題（最上面就是代碼），標題留給螢幕閱讀器 -->
     <h1 class="sr-only">安心陪伴主頁面</h1>
 
-    <!-- ── 1. 暫時代碼；右下角的筆 = 修改資料（看、改、重新填寫都在 /portal/?edit，代碼不變） ── -->
+    <!-- ── 1. 暫時代碼（不顯示有效日期）；右下角的筆 = 修改資料 ── -->
     <section class="brief" aria-label="暫時代碼">
       <div class="code-card" id="codeCard">
-        <p class="code-label">暫時代碼</p>
-        <p class="code-digits" id="codeDigits">----</p>
-        <p class="code-expiry" id="codeExpiry"></p>
-        <!-- 醫檢師送出回饋後，代碼就失效了：這一行會換成「已完成」 -->
-        <p class="code-note" id="codeNote" role="status">打針時，請把這組代碼交給醫檢師</p>
-        <a class="code-edit" href="/portal/?edit" aria-label="修改資料" title="修改資料">
-          <svg viewBox="0 0 24 24" aria-hidden="true">
-            <path d="M4.5 19.5h4l10-10a2.8 2.8 0 0 0-4-4l-10 10v4Z" />
-            <path d="m13 7 4 4" />
-          </svg>
-        </a>
+        <p class="code-label" id="codeLabel">暫時代碼</p>
+        <!-- 一格一個數字（home.js 依代碼填入），醫檢師對照時好念 -->
+        <p class="code-digits" id="codeDigits">
+          <span class="code-digit">·</span><span class="code-digit">·</span><span class="code-digit">·</span><span class="code-digit">·</span>
+        </p>
+        <!-- 底部一列：左邊說明，右邊的筆 = 修改資料（看、改、重新填寫都在 /portal/?edit，代碼不變） -->
+        <div class="code-foot">
+          <!-- 醫檢師送出回饋後，代碼就失效了：這一行會換成「已完成」 -->
+          <p class="code-note" id="codeNote" role="status">打針時，請把這組代碼交給醫檢師</p>
+          <a class="code-edit" href="/portal/?edit" aria-label="修改資料" title="修改資料">
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M4.5 19.5h4l10-10a2.8 2.8 0 0 0-4-4l-10 10v4Z" />
+              <path d="m13 7 4 4" />
+            </svg>
+          </a>
+        </div>
       </div>
     </section>
 
