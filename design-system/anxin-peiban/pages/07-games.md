@@ -998,6 +998,12 @@ tap. Reduced motion: no pulse, same colours.
   per extra lighthouse, so more overlap visibly means more light and moving a lighthouse shows its
   effect at once. Reduced motion: the pool plus 2 fixed sparkles per extra lighthouse. Screen readers
   still hear 「N 倍」 on the keyboard cursor.
+- 採石場 visibly works (product owner, 2026-11-12): its 十字鎬 swings — slow lift, short hold, fast
+  strike into the stone cart, stone dust on impact. The pick is generated as pixel frames at 7 angles
+  (10°–60°, swapped, never rotated, so the pixels stay square); the grip sits behind the cart and the
+  part above the cart rim is drawn again over the stones so the head is seen landing. More boulders
+  around it = faster swing (0.95–1.55 per second); a full cart rests the pick upright; reduced motion
+  holds it still at 26°. Each quarry has its own offset, so neighbours don't swing in unison.
 - 湯鍋: pulls ripe 蘿蔔 + 玉米 + 番茄 from its 8 neighbours (before robots can), cooks 彩虹湯 worth 2 ×
   their boosted value. Three lights on the pot show which crops have arrived; the sheet says which crop
   is missing from the neighbourhood.

@@ -110,6 +110,9 @@
     '...k XXXX XXXX k...', '...k kkkk kkkk k...', '.... kFk. .kFk ....', '.... .k.. ..k. ....'
   ];
 
+  /* 農場上的採石場只畫推車；十字鎬另外畫（pick），會揮 */
+  A.quarryCart = A.quarry.map(function (r, y) { return y < 8 ? '................' : r; });
+
   A.forge = [
     '.... .... .kfk ....', '.... .... .kFk ....', '.... .... .kfk ....', '..kk kkkk kkkk kk..',
     '..ke eeEe eeEe ek..', '..ke Eeee Eeee Ek..', '..ke ekkk kkke ek..', '..kE ekzz zzke Ek..',
@@ -346,6 +349,43 @@
     return c;
   }
 
+  /* 十字鎬：用像素一格一格畫出某個角度（0 = 直立，往右前方倒是正的）。
+     支點在推車左邊（握把，畫在推車後面），木柄 + 灰色的鎬頭，鎬頭兩端往下彎、外框只描上下左右。
+     先畫好幾個角度，揮的時候換圖，才會一直是方方正正的像素 */
+  var PICK_ANGLES = [10, 18, 26, 34, 42, 51, 60];
+
+  function pick(deg) {
+    var c = canvas(16, 16), ctx = c.getContext('2d');
+    var a = deg * Math.PI / 180, px = 2, py = 12, L = 9.5;
+    var sx = Math.sin(a), sy = -Math.cos(a);           /* 從握把往鎬頭 */
+    var ex = px + sx * L, ey = py + sy * L;
+    var grid = {}, head = [];
+    function plot(x, y, ch, isHead) {
+      x = Math.floor(x); y = Math.floor(y);
+      if (x < 0 || y < 0 || x > 15 || y > 15) return;
+      var key = x + ',' + y;
+      if (isHead) { if (!grid[key] || grid[key] !== 'E') grid[key] = ch; head.push([x, y]); } else if (!grid[key]) grid[key] = ch;
+    }
+    for (var u = -3.4; u <= 3.401; u += 0.2) {
+      var bend = Math.abs(u) > 2.3 ? 1 : 0;           /* 兩端往握把那邊彎 */
+      plot(ex + Math.cos(a) * u - sx * bend, ey + Math.sin(a) * u - sy * bend, Math.abs(u) < 0.7 ? 'E' : 'e', true);
+    }
+    for (var d = 0; d <= L - 0.6; d += 0.2) plot(px + sx * d, py + sy * d, d < 1.4 ? 'K' : 'T', false);
+    /* 鎬頭外框：只描上下左右，才不會糊成一團 */
+    head.forEach(function (h) {
+      [[1, 0], [-1, 0], [0, 1], [0, -1]].forEach(function (o) {
+        var nx = h[0] + o[0], ny = h[1] + o[1], k = nx + ',' + ny;
+        if (!grid[k] && nx >= 0 && ny >= 0 && nx <= 15 && ny <= 15) grid[k] = 'k';
+      });
+    });
+    Object.keys(grid).forEach(function (k) {
+      var xy = k.split(',');
+      ctx.fillStyle = PAL[grid[k]];
+      ctx.fillRect(+xy[0], +xy[1], 1, 1);
+    });
+    return c;
+  }
+
   var built = null;
 
   function build() {
@@ -356,6 +396,7 @@
     S.potSoup = sprite(A.pot, { F: 'o' });
     S.potCook = sprite(stamp(A.pot, ['oyorgoyo'], 4, 5));
     S.forgeIdle = sprite(A.forge, { z: 'K', L: 'Z', Z: 'K' });
+    S.picks = PICK_ANGLES.map(function (deg) { return { deg: deg, im: pick(deg) }; });
     S.robot2 = sprite(stamp(A.robot, ['.Lz..zL.', '........'], 4, 13));
     S.hoeGlow = sprite(A.tomato2);
     var icons = {};

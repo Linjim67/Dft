@@ -810,10 +810,22 @@
         drawScaled(SP.lighthouse, x, y, sc);
         break;
       case 'quarry':
-        drawScaled(SP.quarry, x, y, sc);
+        /* 十字鎬：握把在推車後面（先畫鎬、再畫推車和石頭），
+           推車邊緣以上的部分再畫一次蓋在石頭上，敲下去時看得到鎬頭 */
+        var pickIm = pickFrame(pickAngle(i, t, b.items.length < CFG.quarry.cap));
+        drawScaled(pickIm, x, y, sc);
+        drawScaled(SP.quarryCart, x, y, sc);
         var spots = [[3, 6], [6, 6], [9, 6], [11, 6], [4, 5], [7, 5], [10, 5], [5, 4], [8, 4], [6, 3], [9, 3], [7, 2]];
         for (var k = 0; k < b.items.length && k < spots.length; k++) {
           blit(art.pebbles[b.items[k]], x + spots[k][0], y + spots[k][1]);
+        }
+        if (sc === 1) {
+          ctxNow.save();
+          ctxNow.beginPath();
+          ctxNow.rect(R(x), R(y), R(x + 16) - R(x), R(y + 8) - R(y));
+          ctxNow.clip();
+          blit(pickIm, x, y);
+          ctxNow.restore();
         }
         if (b.items.length >= CFG.quarry.cap) badgeFull(x, y);
         break;
@@ -858,6 +870,33 @@
   }
 
   function frame3(t) { return Math.floor(t / 0.15) % 2; }
+
+  /* 十字鎬的角度：慢慢舉起來 → 停一下 → 很快地敲下去 → 停在推車上（這時噴一點石屑）。
+     旁邊的大石頭越多揮得越快；推車滿了就直立休息；減少動態時固定斜斜的不動 */
+  var pickPhase = {};
+
+  function pickAngle(i, t, working) {
+    if (!working) return 10;
+    if (still()) return 26;
+    var f = 0.75 + 0.2 * E.ROCKS[i];
+    var p = (t * f + ART.hash(i * 7)) % 1;
+    var prev = pickPhase[i];
+    pickPhase[i] = p;
+    if (prev !== undefined && prev < 0.74 && p >= 0.74 && UI.playing) {
+      burst(i, DUST, 3, true);
+      UI.parts.push({ x: E.col(i) * 16 + 10, y: E.row(i) * 16 + 7, vx: 8, vy: -14, g: 40, life: 0.45, t: 0, c: '#8D867B' });
+    }
+    if (p < 0.5) { var q = p / 0.5; return 60 - 50 * (1 - (1 - q) * (1 - q)); }
+    if (p < 0.62) return 10;
+    if (p < 0.74) return 10 + 50 * (p - 0.62) / 0.12;
+    return 60;
+  }
+
+  function pickFrame(deg) {
+    var best = SP.picks[0];
+    SP.picks.forEach(function (f) { if (Math.abs(f.deg - deg) < Math.abs(best.deg - deg)) best = f; });
+    return best.im;
+  }
 
   /* 推車滿了：小小的「滿」，提醒用手收或多買機器人 */
   function badgeFull(x, y) {
