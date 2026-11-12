@@ -24,7 +24,7 @@
   var MAX_ROWS = 200;
 
   /* 必須和 firestore.rules 的 validPlay 一致 */
-  var GAMES = ['dash', 'golf', 'draw-circle', 'whack-a-mole', 'whack-a-mole-duo', 'whack-a-mole-remote'];
+  var GAMES = ['dash', 'golf', 'draw-circle', 'farm', 'whack-a-mole', 'whack-a-mole-duo', 'whack-a-mole-remote'];
   var LEVEL = /^(home|play|inf|[0-9]{1,3})$/;
   var ID_CHARS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
 

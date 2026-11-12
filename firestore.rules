@@ -510,7 +510,7 @@ service cloud.firestore {
       && d.keys().hasAll(['v', 'uid', 'game', 'level', 'age', 'startAt', 'endAt', 'ended', 'updatedAt'])
       && d.v == 1
       && d.uid == request.auth.uid
-      && d.game in ['dash', 'golf', 'draw-circle', 'whack-a-mole', 'whack-a-mole-duo', 'whack-a-mole-remote']
+      && d.game in ['dash', 'golf', 'draw-circle', 'farm', 'whack-a-mole', 'whack-a-mole-duo', 'whack-a-mole-remote']
       && d.level is string && d.level.matches('^(home|play|inf|[0-9]{1,3})$')
       && (d.age == null || (d.age is number && d.age >= 0 && d.age <= 18))
       // 手機的時間：容許時鐘有點偏、離線晚一點才補送，但不收離譜的
