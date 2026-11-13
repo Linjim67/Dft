@@ -460,7 +460,7 @@ html {
 }
 
 /* ═══ ✕ 不要說 → ✓ 改成說（在「不要說」的主題裡）══════════════════
-   不要說的那句退成灰字；改成說的那句就是「可以說的話」，用章節色（淺綠）對話框。
+   不要說的那句退成灰字；改成說的那句就是「可以說的話」，用粗體（不加底色）。
    標籤不加色塊，只留小圖示（叉紅、勾綠），整張卡才安靜。組和組之間一條灰線。 */
 
 .pair-list {
@@ -491,17 +491,6 @@ html {
   align-items: start;
   gap: var(--sp-2);
   line-height: 1.65;
-}
-
-.pair-row.is-better {
-  justify-self: start;
-  padding: 8px var(--sp-4) 8px var(--sp-3);
-  background: var(--tone-soft);
-  border-radius: 18px 18px 18px 4px;
-}
-
-.is-avoid {
-  padding-inline-start: var(--sp-3);
 }
 
 .pair-tag {

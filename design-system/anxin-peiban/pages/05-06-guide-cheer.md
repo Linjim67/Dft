@@ -91,7 +91,8 @@ its tab. The 「全年齡適用」 tag and the 打針當下 / 不要說 ledes we
   which is distinct from the top bar's 開始打針 → `/shot/`.
 - 這些話先不要跟小孩說 uses the same topic rows as the other chapters (owner, 2026-11-12): only the
   titles show at first, and opening one shows its pairs. Each pair is 「✕ 不要說」 (grey text, red ✕ icon
-  only) then 「✓ 改成說」 in a light-green (`--leaf-soft`) speech bubble (green ✓ icon only). Pairs are
+  only) then 「✓ 改成說」 in bold with no background (green ✓ icon only; the
+  bubble was removed on 2026-11-14). Both rows start flush under the title. Pairs are
   separated by a 1px solid `--rule` grey line (owner, 2026-11-14; the old dashed hairline was nearly
   invisible on the sand ground).
 
