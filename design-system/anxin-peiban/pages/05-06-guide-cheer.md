@@ -108,9 +108,8 @@ Chapters: 醫療現場解密 and 抽血大小問 are both leaf (owner, 2026-11-1
   hidden.
 - **Answers (抽血大小問), structured for scanning** (owner: the old paragraphs were hard to read,
   2026-11-14). Each FAQ in `content.js` has fields instead of one paragraph, always in this order:
-  **簡單說** (bold one-line answer behind a tone tag) → `lead` + `points` (dot list; `{k, v}` items get
-  a bold label with the explanation below; when every item is short, they become a row of soft
-  chips) → `note` (grey) → **放心** (`calm`, leaf-soft box with a check) → **要注意** (`watch`, honey-soft
+  **簡單說** (bold one-line answer behind a tone tag) → `lead` + `points` (always a list with leaf-deep dots,
+  owner 2026-11-14; `{k, v}` items get a bold label with the explanation below) → `note` (grey) → **放心** (`calm`, leaf-soft box with a check) → **要注意** (`watch`, honey-soft
   box with a warning icon: when to tell the staff). The wording is the authors'; sentences were only
   split up, with a few joining words. 醫療現場解密 keeps its two blocks: 醫療小知識 and a 給家長的小提醒
   box in the chapter's soft tone. All of these text pieces are searchable and highlighted.

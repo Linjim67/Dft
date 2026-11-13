@@ -255,7 +255,7 @@
   margin-bottom: calc(var(--sp-1) * -1);
 }
 
-/* 條列：章節色圓點；有小標的項目（{ k, v }）小標粗體、說明在下一行 */
+/* 條列：一律用章節色（葉綠深）圓點開頭；有小標的項目（{ k, v }）小標粗體、說明在下一行 */
 .ans-points {
   display: grid;
   gap: var(--sp-2);
@@ -289,22 +289,6 @@
 
 .ans-v {
   color: var(--fg-muted);
-}
-
-/* 每項都很短（因素、動作）：排成一排小方塊，比一行一行好掃 */
-.ans-chips {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px var(--sp-2);
-}
-
-.ans-chips li {
-  padding: 4px var(--sp-3);
-  border-radius: 10px;
-  background: var(--tone-soft);
-  font-size: .92rem;
-  font-weight: 700;
-  line-height: 1.6;
 }
 
 .ans-note {

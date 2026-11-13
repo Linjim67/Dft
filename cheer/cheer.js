@@ -68,7 +68,7 @@
   }
 
   /* 抽血大小問的答案：固定的順序，方便掃讀
-     簡單說（粗體一句）→ 條列（短的排成小方塊）→ 補充 → 放心（綠框）→ 要注意（蜂蜜框） */
+     簡單說（粗體一句）→ 條列（綠色圓點）→ 補充 → 放心（綠框）→ 要注意（蜂蜜框） */
   function renderAnswer(body, f, item) {
     var short = el('p', 'ans-short');
     short.appendChild(el('span', 'ans-tag', '簡單說'));
@@ -77,8 +77,7 @@
 
     if (f.points) {
       if (f.lead) body.appendChild(textNode('p', 'ans-lead', f.lead, item));
-      var chips = f.points.every(function (pt) { return typeof pt === 'string' && pt.length <= 12; });
-      var ul = el('ul', chips ? 'ans-chips' : 'ans-points');
+      var ul = el('ul', 'ans-points');
       f.points.forEach(function (pt) {
         var li = el('li');
         if (typeof pt === 'string') {
