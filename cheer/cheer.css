@@ -202,6 +202,14 @@
   margin-top: 0;
 }
 
+/* 醫療現場解密｜抽血大小問：兩段都在時，中間一條灰線分開（線在兩段間距的正中間）。
+   篩選藏掉其中一段時不畫，免得頂端多一條線 */
+#why:not([hidden])+#faq:not([hidden]) {
+  margin-top: var(--sp-6);
+  padding-top: var(--sp-6);
+  border-top: 1px solid var(--rule);
+}
+
 /* 章節標題旁的題數：章節色（綠 5.08:1、黃 4.84:1 on tile） */
 .part-count {
   display: inline-grid;
