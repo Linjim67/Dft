@@ -173,7 +173,7 @@ html {
   transition: transform var(--dur-in, 300ms) linear var(--in, 0ms);
 }
 
-/* 樹枝：8px 高的盒子，線畫在中間；「做法」的樹枝尾端多一顆圓點（和「說法」分得出來） */
+/* 樹枝：8px 高的盒子，線畫在中間；說法、做法都一樣，尾端不加圓點 */
 .tree-twig {
   position: absolute;
   height: 8px;
@@ -191,17 +191,6 @@ html {
   position: absolute;
   inset: 3px 0;
   border-radius: 1px;
-  background: var(--tree-ink);
-}
-
-.tree-twig.has-node::after {
-  content: "";
-  position: absolute;
-  top: .5px;
-  right: 0;
-  width: 7px;
-  height: 7px;
-  border-radius: 50%;
   background: var(--tree-ink);
 }
 
@@ -362,7 +351,7 @@ html {
   gap: 10px;
 }
 
-/* 一句一行。前面不另加記號：打開時樹枝會接到每一句（說法＝一條線，做法＝線＋圓點） */
+/* 一句一行。前面不另加記號：怎麼說打開時樹枝會接到每一句（說法、做法都是一條線） */
 .say,
 .do {
   line-height: 1.75;

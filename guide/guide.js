@@ -267,7 +267,7 @@
     entries.forEach(function (e) { if (e.target._tree) measure(e.target._tree); });
   }) : null;
 
-  /* rows：每一句 { el：浮現的那一塊, edge：樹枝接到的左邊緣, text：對齊哪一行, node：尾端加圓點 }
+  /* rows：每一句 { el：浮現的那一塊, edge：樹枝接到的左邊緣, text：對齊哪一行 }
      opts.lines === false：只圈圖示，不畫樹幹和樹枝（打針當下、不要說；.is-bare） */
   function plantTree(topic, rows, opts) {
     if (!rows.length) return;
@@ -284,7 +284,7 @@
       trunk = el('span', 'tree-trunk');
       tree.appendChild(trunk);
       rows.forEach(function (r) {
-        r.twig = el('span', 'tree-twig' + (r.node ? ' has-node' : ''));
+        r.twig = el('span', 'tree-twig');
         tree.appendChild(r.twig);
       });
       root.appendChild(tree);
@@ -317,7 +317,7 @@
 
   function listRows(body) {
     return Array.prototype.map.call(body.querySelectorAll(':scope > p, .tip-list > li'), function (n) {
-      return { el: n, node: n.classList.contains('do') };
+      return { el: n };
     });
   }
 

@@ -84,8 +84,8 @@ its tab. The 「全年齡適用」 tag and the 打針當下 / 不要說 ledes we
   a note). Only the selected group's panel is rendered visible.
 - 怎麼說 opens straight onto the age cards.
 - **Phrases to say** are one per line in regular weight, with no bubbles. The tree's branch is their
-  marker: a plain line for phrases, and a line ending in a 7px tone dot for actions (「做法」). Riddle
-  answers hide behind 「看答案」.
+  marker: a plain line for phrases and for the 2 歲以下 actions alike (owner, 2026-11-14: no dot at
+  the branch end). Riddle answers hide behind 「看答案」.
 - 打針當下 action lists have a 7px leaf (tone) dot before each item, centred on the first line;
   paragraphs and the bold lead have no marker. 讓孩子分心 has no game link
   inside it: the chapter ends in the **我要打針了** card (paper, 2px cocoa border, leaf icon tile) → `/games/solo/`,
