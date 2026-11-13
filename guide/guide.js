@@ -157,17 +157,21 @@
     var top = ring.bottom - box.top - 1;
     var ys = t.rows.map(function (r) {
       var y = firstLineMid(r.text) - box.top;
-      var end = r.edge.getBoundingClientRect().left - box.left - 8;
-      r.twig.style.left = x + 'px';
-      r.twig.style.top = (y - 4) + 'px';
-      r.twig.style.width = Math.max(0, end - x) + 'px';
+      if (r.twig) {
+        var end = r.edge.getBoundingClientRect().left - box.left - 8;
+        r.twig.style.left = x + 'px';
+        r.twig.style.top = (y - 4) + 'px';
+        r.twig.style.width = Math.max(0, end - x) + 'px';
+      }
       return y;
     });
     var last = ys[ys.length - 1];
     var span = Math.max(1, last - top);
-    t.trunk.style.left = (x - 1) + 'px';
-    t.trunk.style.top = top + 'px';
-    t.trunk.style.height = (last + 1 - top) + 'px';
+    if (t.trunk) {
+      t.trunk.style.left = (x - 1) + 'px';
+      t.trunk.style.top = top + 'px';
+      t.trunk.style.height = (last + 1 - top) + 'px';
+    }
 
     /* 樹幹等速往下（約 0.9px/ms），太短太長都夾住；收回快一點。
        收回：最下面一根樹枝先收，樹幹晚 CLOSE_LEAD 才往上縮；每根樹枝在樹幹尖端經過前收完 */
@@ -178,18 +182,23 @@
 
     t.root.style.setProperty('--ring-in', RING_MS + 'ms');
     t.root.style.setProperty('--ring-out', (CLOSE_LEAD + dOut) + 'ms');
-    var ts = t.trunk.style;
-    ts.setProperty('--in', RING_MS + 'ms');
-    ts.setProperty('--dur-in', dIn + 'ms');
-    ts.setProperty('--out', CLOSE_LEAD + 'ms');
-    ts.setProperty('--dur-out', dOut + 'ms');
+    if (t.trunk) {
+      var ts = t.trunk.style;
+      ts.setProperty('--in', RING_MS + 'ms');
+      ts.setProperty('--dur-in', dIn + 'ms');
+      ts.setProperty('--out', CLOSE_LEAD + 'ms');
+      ts.setProperty('--dur-out', dOut + 'ms');
+    }
+    /* 沒有線的（不要說）照同一個節奏：圓圈畫完，一組一組由上往下浮現 */
     t.rows.forEach(function (r, i) {
       var f = (ys[i] - top) / span;
       var tin = Math.round(RING_MS + dIn * f);
       var tout = Math.max(0, Math.round(CLOSE_LEAD + dOut * (1 - f) - TWIG_OUT_MS));
-      r.twig.style.setProperty('--in', tin + 'ms');
-      r.twig.style.setProperty('--out', tout + 'ms');
-      r.el.style.setProperty('--in', (tin + 90) + 'ms');
+      if (r.twig) {
+        r.twig.style.setProperty('--in', tin + 'ms');
+        r.twig.style.setProperty('--out', tout + 'ms');
+      }
+      r.el.style.setProperty('--in', (tin + (r.twig ? 90 : 0)) + 'ms');
       r.el.style.setProperty('--out', tout + 'ms');
     });
   }
@@ -258,26 +267,35 @@
     entries.forEach(function (e) { if (e.target._tree) measure(e.target._tree); });
   }) : null;
 
-  /* rows：每一句 { el：浮現的那一塊, edge：樹枝接到的左邊緣, text：對齊哪一行, node：尾端加圓點 } */
-  function plantTree(topic, rows) {
+  /* rows：每一句 { el：浮現的那一塊, edge：樹枝接到的左邊緣, text：對齊哪一行, node：尾端加圓點 }
+     opts.lines === false：只圈圖示，不畫樹幹和樹枝（不要說；.is-bare） */
+  function plantTree(topic, rows, opts) {
     if (!rows.length) return;
+    var lines = !(opts && opts.lines === false);
     var root = topic.root;
     var head = root.querySelector('.topic-head');
     var icon = head.querySelector('.topic-icon');
     icon.insertAdjacentHTML('beforeend', RING);
 
-    var tree = el('div', 'topic-tree');
-    tree.setAttribute('aria-hidden', 'true');
-    var trunk = el('span', 'tree-trunk');
-    tree.appendChild(trunk);
+    var trunk = null;
+    if (lines) {
+      var tree = el('div', 'topic-tree');
+      tree.setAttribute('aria-hidden', 'true');
+      trunk = el('span', 'tree-trunk');
+      tree.appendChild(trunk);
+      rows.forEach(function (r) {
+        r.twig = el('span', 'tree-twig' + (r.node ? ' has-node' : ''));
+        tree.appendChild(r.twig);
+      });
+      root.appendChild(tree);
+    } else {
+      root.classList.add('is-bare');
+    }
     rows.forEach(function (r) {
       r.edge = r.edge || r.el;
       r.text = r.text || r.el;
-      r.twig = el('span', 'tree-twig' + (r.node ? ' has-node' : ''));
       r.el.classList.add('tree-row');
-      tree.appendChild(r.twig);
     });
-    root.appendChild(tree);
 
     var t = { root: root, head: head, body: topic.body, ring: icon.querySelector('.topic-ring'),
       trunk: trunk, rows: rows, anim: null, closing: false };
@@ -378,8 +396,8 @@
     plantTree(topic, listRows(topic.body));
   });
 
-  /* ── 3. 這些話先不要跟小孩說！避免的第 n 句 ↔ 改說的第 n 句 ───────
-     和上面兩段一樣：先只列標題，點開才看到避免／改說 */
+  /* ── 3. 這些話先不要跟小孩說！不要說的第 n 句 ↔ 改成說的第 n 句 ───────
+     和上面兩段一樣：先只列標題，點開才看到「✕ 不要說」／「✓ 改成說」 */
 
   function pairRow(kind, tag, icon, text) {
     var row = el('p', 'pair-row ' + kind);
@@ -397,17 +415,16 @@
     var ul = el('ul', 'pair-list');
     t.avoid.forEach(function (bad, i) {
       var li = el('li', 'pair');
-      li.appendChild(pairRow('is-avoid', '避免', ICON_X, bad));
-      if (t.better[i]) li.appendChild(pairRow('is-better', '改說', ICON_CHECK, t.better[i]));
+      li.appendChild(pairRow('is-avoid', '不要說', ICON_X, bad));
+      if (t.better[i]) li.appendChild(pairRow('is-better', '改成說', ICON_CHECK, t.better[i]));
       ul.appendChild(li);
     });
     topic.body.appendChild(ul);
     dontList.appendChild(topic.root);
-    /* 樹枝接到「改說」那一句（可以說的話）；整組避免＋改說一起浮現 */
+    /* 只圈圖示、不畫線（組和組之間已經有灰線）；一組一組由上往下浮現 */
     plantTree(topic, Array.prototype.map.call(ul.children, function (li) {
-      var better = li.querySelector('.is-better');
-      return { el: li, edge: better || li, text: better ? better.querySelector('.pair-text') : li };
-    }));
+      return { el: li };
+    }), { lines: false });
   });
 
   /* ── 章節分頁（怎麼說／打針當下／不要說）：一次顯示一章 ──────────

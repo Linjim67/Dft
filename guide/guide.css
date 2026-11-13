@@ -1,7 +1,7 @@
 /* ═══ 家長安慰指南 ═══════════════════════════════════════════════
    小冊子外框、章節標題、一題一張卡沿用 /shared/page.css（.booklet、.part、.topic）。
-   章節色：怎麼說＝可可（cocoa）、打針當下＝葉綠（leaf）、不要說＝蜂蜜黃（honey）。可以按的東西用可可色。
-   這裡放本頁的：章節分頁、主題列（點開時畫的圓圈和樹枝）、年紀卡、句子、清單、猜謎、「我要打針了」、避免／改說。
+   三章都用葉綠（leaf）當章節色，也沒有章節標題（分頁就是標題）。可以按的東西用可可色。
+   這裡放本頁的：章節分頁、主題列（點開時畫的圓圈和樹枝）、年紀卡、句子、清單、猜謎、「我要打針了」、不要說／改成說。
    ═══════════════════════════════════════════════════════════════ */
 
 html {
@@ -232,6 +232,12 @@ html {
   transition: none;
 }
 
+/* 不要說（.is-bare）：只圈圖示、沒有樹枝，每一組直接淡入／淡出，不從左邊展開 */
+.topic.is-bare .tree-row,
+.topic.is-bare:not(.is-drawn) .tree-row {
+  clip-path: none;
+}
+
 /* ═══ 年紀卡（單選；選到的有勾勾） ═══════════════════════════ */
 
 .age-pick {
@@ -349,20 +355,6 @@ html {
   margin-top: var(--sp-5);
 }
 
-/* 「全年齡適用」：章節色小標（綠 5.08:1、黃 4.84:1 on tile） */
-.all-ages {
-  display: inline-block;
-  margin-inline-end: var(--sp-2);
-  padding: 0 var(--sp-2);
-  border-radius: var(--r-pill);
-  background: var(--tone-tile);
-  color: var(--tone);
-  font-size: .8rem;
-  font-weight: 700;
-  line-height: 1.8;
-  vertical-align: 1px;
-}
-
 /* ═══ 主題裡的內容 ═══════════════════════════════════════════ */
 
 .tip-list {
@@ -467,9 +459,9 @@ html {
   box-shadow: var(--sh-sm);
 }
 
-/* ═══ 避免 → 改說（在「不要說」的主題卡裡）══════════════════════
-   避免的那句退成灰字；改說的那句就是「可以說的話」，用章節色對話框。
-   標籤不加色塊，只留小圖示（叉紅、勾綠），整張卡才安靜。 */
+/* ═══ ✕ 不要說 → ✓ 改成說（在「不要說」的主題裡）══════════════════
+   不要說的那句退成灰字；改成說的那句就是「可以說的話」，用章節色（淺綠）對話框。
+   標籤不加色塊，只留小圖示（叉紅、勾綠），整張卡才安靜。組和組之間一條灰線。 */
 
 .pair-list {
   display: grid;
@@ -478,11 +470,11 @@ html {
 .pair {
   display: grid;
   gap: 6px;
-  padding-block: var(--sp-3);
+  padding-block: var(--sp-4);
 }
 
 .pair+.pair {
-  border-top: 1px dashed var(--hairline);
+  border-top: 1px solid var(--rule);
 }
 
 .pair:first-child {

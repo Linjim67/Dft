@@ -52,7 +52,9 @@ the cream ground was nearly invisible, which is why it is a white card.
 
 ## 05 家長安慰指南 `/guide/`
 
-Chapters: 怎麼說 = cocoa · 打針當下 = leaf · 不要說 = honey.
+All three chapters are **leaf** (owner, 2026-11-14: 副色調 follows 打針當下), and none has a chapter
+heading (`.part-head` removed): the sticky tabs name the chapter, and each tab panel is labelled by
+its tab. The 「全年齡適用」 tag and the 打針當下 / 不要說 ledes went with the headings.
 
 - **Chapter tabs** (owner's reference screenshot, 2026-11-12): three centred pills, sticky. They are
   real WAI-ARIA tabs that show **one chapter at a time**: ←/→/Home/End move between them, and
@@ -72,14 +74,15 @@ Chapters: 怎麼說 = cocoa · 打針當下 = leaf · 不要說 = honey.
   from the lines' positions). Closing runs in reverse: the bottom branch retracts first, the trunk
   shrinks upward, then the circle unwinds. The chevron flips back at once (`.is-closing`). The card
   height animates too (Web Animations), so it never jumps open. Branches attach to the first line of:
-  each phrase or action (怎麼說), each paragraph, lead and action (打針當下), and each 「改說」 bubble
-  (不要說, where the whole 避免＋改說 pair fades in together). `guide.js` measures the positions and
+  each phrase or action (怎麼說) and each paragraph, lead and action (打針當下). 不要說 only circles
+  the icon, with no trunk or branches (`plantTree(…, { lines: false })` → `.is-bare`). Its pairs fade
+  in one group at a time on the same rhythm. `guide.js` measures the positions and
   re-measures on resize, font load and riddle reveals (`ResizeObserver`). Topics that open without a
   tap (the first one in each age group, find-in-page) appear already drawn. Reduced motion → instant.
 - **Age cards** (2 歲以下 / 3–4 歲 / 5–9 歲): a radio group with icons and a check badge, selected in
   cocoa. Pre-selected from the profile by whole years (2歲半 → 2 歲以下; 10+ falls back to 5–9 with
   a note). Only the selected group's panel is rendered visible.
-- 怎麼說 has no lede: the age cards follow the heading directly.
+- 怎麼說 opens straight onto the age cards.
 - **Phrases to say** are one per line in regular weight, with no bubbles. The tree's branch is their
   marker: a plain line for phrases, and a line ending in a 7px tone dot for actions (「做法」). Riddle
   answers hide behind 「看答案」.
@@ -87,8 +90,10 @@ Chapters: 怎麼說 = cocoa · 打針當下 = leaf · 不要說 = honey.
   inside it: the chapter ends in the **我要打針了** card (paper, 2px cocoa border, leaf icon tile) → `/games/solo/`,
   which is distinct from the top bar's 開始打針 → `/shot/`.
 - 這些話先不要跟小孩說 uses the same topic rows as the other chapters (owner, 2026-11-12): only the
-  titles show at first, and opening one shows its pairs. Each pair is 「✕ 避免」 (grey text, red ✕ icon
-  only) then 「✓ 改說」 in a honey speech bubble (green ✓ icon only).
+  titles show at first, and opening one shows its pairs. Each pair is 「✕ 不要說」 (grey text, red ✕ icon
+  only) then 「✓ 改成說」 in a light-green (`--leaf-soft`) speech bubble (green ✓ icon only). Pairs are
+  separated by a 1px solid `--rule` grey line (owner, 2026-11-14; the old dashed hairline was nearly
+  invisible on the sand ground).
 
 ## 06 抽血大小問 `/cheer/` — FAQ page
 
