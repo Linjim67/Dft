@@ -189,7 +189,7 @@
       ts.setProperty('--out', CLOSE_LEAD + 'ms');
       ts.setProperty('--dur-out', dOut + 'ms');
     }
-    /* 沒有線的（不要說）照同一個節奏：圓圈畫完，一組一組由上往下浮現 */
+    /* 沒有線的（打針當下、不要說）照同一個節奏：圓圈畫完，一組一組由上往下浮現 */
     t.rows.forEach(function (r, i) {
       var f = (ys[i] - top) / span;
       var tin = Math.round(RING_MS + dIn * f);
@@ -268,7 +268,7 @@
   }) : null;
 
   /* rows：每一句 { el：浮現的那一塊, edge：樹枝接到的左邊緣, text：對齊哪一行, node：尾端加圓點 }
-     opts.lines === false：只圈圖示，不畫樹幹和樹枝（不要說；.is-bare） */
+     opts.lines === false：只圈圖示，不畫樹幹和樹枝（打針當下、不要說；.is-bare） */
   function plantTree(topic, rows, opts) {
     if (!rows.length) return;
     var lines = !(opts && opts.lines === false);
@@ -393,7 +393,8 @@
       }
     });
     duringList.appendChild(topic.root);
-    plantTree(topic, listRows(topic.body));
+    /* 打針當下：只圈圖示、不畫線；條列前面是綠色圓點（guide.css 的 .is-bare .do） */
+    plantTree(topic, listRows(topic.body), { lines: false });
   });
 
   /* ── 3. 這些話先不要跟小孩說！不要說的第 n 句 ↔ 改成說的第 n 句 ───────

@@ -232,7 +232,7 @@ html {
   transition: none;
 }
 
-/* 不要說（.is-bare）：只圈圖示、沒有樹枝，每一組直接淡入／淡出，不從左邊展開 */
+/* 打針當下、不要說（.is-bare）：只圈圖示、沒有樹枝，每一段直接淡入／淡出，不從左邊展開 */
 .topic.is-bare .tree-row,
 .topic.is-bare:not(.is-drawn) .tree-row {
   clip-path: none;
@@ -366,6 +366,23 @@ html {
 .say,
 .do {
   line-height: 1.75;
+}
+
+/* 沒有樹枝的主題（打針當下）：條列前面一顆章節色（綠）圓點，對齊第一行的中線（行高 1.75 → .875em） */
+.is-bare .do {
+  position: relative;
+  padding-inline-start: 18px;
+}
+
+.is-bare .do::before {
+  content: "";
+  position: absolute;
+  inset-inline-start: 1px;
+  top: calc(.875em - 3.5px);
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--tone);
 }
 
 .topic-lead {
