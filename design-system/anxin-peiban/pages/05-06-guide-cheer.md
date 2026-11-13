@@ -64,7 +64,8 @@ Chapters: 怎麼說 = cocoa · 打針當下 = leaf · 不要說 = honey.
   (in a 36px column), then the bold title, then a plain chevron, with **no right-side count**. When
   opened, the content sits directly under the title (indented 48px), in grey. Every topic has an
   `icon` in `content.js`; the icons are authored in `guide.js` (`ICONS`).
-- **Opening a topic draws a tree** (owner, 2026-11-14): a 2px chapter-tone circle draws around the
+- **Opening a topic draws a tree** (owner, 2026-11-14): the lines are the chapter tone mixed 20%
+  toward `--bg` (`--tree-ink`; owner asked for 淡 20%), the icon keeps the full tone. A 2px circle draws around the
   icon, starting and ending at the bottom (220ms). A vertical trunk then grows down from it at a
   steady ~0.9px/ms (200–560ms). As the trunk passes each line, a branch grows out to it and the
   line wipes in from the left (`clip-path`, not `transform`, because the branch lengths are measured

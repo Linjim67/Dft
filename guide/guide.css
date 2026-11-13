@@ -105,7 +105,16 @@ html {
    高度動畫也在 guide.js（Web Animations），動畫中 .is-moving 把超出的內容切掉。 */
 
 .is-plain .topic {
+  --tree-ink: var(--tone);
   position: relative;
+}
+
+/* 線條比章節色淡 20%（往頁面底色混，不用 opacity：樹幹和樹枝重疊處才不會變深）。
+   不支援 color-mix 的瀏覽器就用章節色 */
+@supports (color: color-mix(in srgb, red, blue)) {
+  .is-plain .topic {
+    --tree-ink: color-mix(in srgb, var(--tone) 80%, var(--bg));
+  }
 }
 
 .is-plain .topic.is-moving {
@@ -125,7 +134,7 @@ html {
   height: 36px;
   overflow: visible;
   fill: none;
-  stroke: var(--tone);
+  stroke: var(--tree-ink);
   stroke-width: 2;
   stroke-linecap: round;
   transform: rotate(90deg);
@@ -153,7 +162,7 @@ html {
   position: absolute;
   width: 2px;
   border-radius: 1px;
-  background: var(--tone);
+  background: var(--tree-ink);
   transform: scaleY(0);
   transform-origin: top;
   transition: transform var(--dur-out, 200ms) linear var(--out, 0ms);
@@ -182,7 +191,7 @@ html {
   position: absolute;
   inset: 3px 0;
   border-radius: 1px;
-  background: var(--tone);
+  background: var(--tree-ink);
 }
 
 .tree-twig.has-node::after {
@@ -193,7 +202,7 @@ html {
   width: 7px;
   height: 7px;
   border-radius: 50%;
-  background: var(--tone);
+  background: var(--tree-ink);
 }
 
 /* 每一句等樹枝接到了，才從左往右展開（像線條延伸進句子裡）；收回時由右往左收。
