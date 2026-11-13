@@ -228,14 +228,18 @@
    每題同一個順序，家長掃一眼就知道答案在哪、要不要擔心 */
 
 /* 簡單說：一句話的答案，粗體；前面一個章節色小標（葉綠深 on 葉綠塊 4.51:1） */
+/* 凸排：「簡單說」自己一欄，答案換行時對齊答案的第一個字，不會跑到小標底下 */
 .ans-short {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  /* 小標的字和答案第一行的字對齊同一條基線 */
+  align-items: baseline;
+  gap: var(--sp-2);
   font-weight: 700;
   line-height: 1.7;
 }
 
 .ans-tag {
-  display: inline-block;
-  margin-inline-end: var(--sp-2);
   padding: 0 var(--sp-2);
   border-radius: 8px;
   background: var(--tone-tile);
@@ -243,7 +247,7 @@
   font-size: .78rem;
   font-weight: 700;
   line-height: 1.8;
-  vertical-align: 1px;
+  white-space: nowrap;
 }
 
 /* 條列前的那一句，和清單貼近一點 */
