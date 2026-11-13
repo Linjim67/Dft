@@ -316,9 +316,10 @@
     background-color var(--t-fast) var(--ease);
 }
 
+/* 針筒 33px（原本 30px 的 1.1 倍） */
 .quad-center svg {
-  width: 30px;
-  height: 30px;
+  width: 33px;
+  height: 33px;
   fill: var(--quad-bg, var(--card));
   stroke: var(--leaf-deep);
   stroke-width: 1.8;
@@ -326,7 +327,10 @@
   stroke-linejoin: round;
 }
 
+/* 文字略往下移（只移文字，圖示不動） */
 .quad-center-label {
+  position: relative;
+  top: 3px;
   font-size: .95rem;
   font-weight: 700;
   line-height: 1.3;
@@ -335,8 +339,8 @@
 
 @supports (width: 1cqw) {
   .quad-center svg {
-    width: min(30px, 8.8cqw);
-    height: min(30px, 8.8cqw);
+    width: min(33px, 9.7cqw);
+    height: min(33px, 9.7cqw);
   }
 
   .quad-center-label {
