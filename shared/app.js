@@ -197,7 +197,65 @@
     body.className = 'topic-body';
     det.appendChild(sum);
     det.appendChild(body);
+    animateTopic(det, sum, body);
     return { root: det, title: t, body: body };
+  }
+
+  /* ── 展開／收合動畫：點標題時，卡片高度在 0.25s 內長出來或縮回去（Web Animations API）──
+     只接手「使用者點標題」；搜尋、全部展開、網址直接打開仍然直接切換 open，
+     也避開 Chrome 130 用 CSS 轉場時、被程式打開的內容高度變成 0 的問題。
+     收到一半再點：從目前的高度長回去。減少動態效果、或瀏覽器沒有 animate() 時，照原生直接切換。 */
+  var TOPIC_MS = 250;
+  var TOPIC_EASE = 'cubic-bezier(.22, .78, .35, 1)';
+
+  function animateTopic(det, sum, body) {
+    var anim = null;
+    var fade = null;
+    var closing = false;
+
+    function reduced() {
+      return !!(root.matchMedia && root.matchMedia('(prefers-reduced-motion: reduce)').matches);
+    }
+
+    function settle(open) {
+      if (fade) { fade.cancel(); fade = null; }
+      det.open = open;
+      det.classList.remove('is-closing');
+      det.style.height = '';
+      det.style.overflow = '';
+      anim = null;
+      closing = false;
+    }
+
+    function grow(from, to, open) {
+      if (anim) anim.cancel();
+      det.style.overflow = 'hidden';
+      anim = det.animate({ height: [from + 'px', to + 'px'] }, { duration: TOPIC_MS, easing: TOPIC_EASE });
+      anim.onfinish = function () { settle(open); };
+    }
+
+    sum.addEventListener('click', function (ev) {
+      if (reduced() || typeof det.animate !== 'function') return;
+      ev.preventDefault();
+      var start = det.offsetHeight;
+      if (det.open && !closing) {
+        /* 收合：內容先淡出，高度縮回只剩標題；箭頭馬上轉回去（.is-closing） */
+        closing = true;
+        det.classList.add('is-closing');
+        fade = body.animate({ opacity: [1, 0] }, { duration: TOPIC_MS * 0.6, easing: 'ease-out', fill: 'forwards' });
+        grow(start, sum.offsetHeight, false);
+      } else {
+        /* 展開（或收合到一半又點）：先打開量出完整高度，再從目前高度長過去 */
+        if (fade) { fade.cancel(); fade = null; }
+        closing = false;
+        det.classList.remove('is-closing');
+        det.open = true;
+        det.style.height = '';
+        if (anim) anim.cancel();
+        var end = det.offsetHeight;
+        grow(start, end, true);
+      }
+    });
   }
 
   /* ─────────────────────────────────────────────────────────────

@@ -372,6 +372,17 @@ a.btn {
   color: var(--tone, var(--cocoa));
 }
 
+/* 收合動畫進行中（Anxin.buildTopic 加上 .is-closing，open 要等高度縮完才拿掉）：
+   箭頭和卡片陰影一點下去就回到收起來的樣子 */
+.topic.is-closing>.topic-head .topic-toggle {
+  transform: none;
+  color: var(--idle);
+}
+
+.topic.is-closing {
+  box-shadow: var(--sh-sm);
+}
+
 .topic-body {
   display: grid;
   gap: var(--sp-3);

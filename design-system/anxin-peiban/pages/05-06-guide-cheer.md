@@ -35,8 +35,12 @@ These patterns were pinned by the owner:
 - The body sits under a hairline. Its content rises in on open (opacity and 4px translate only).
 - Open/close motion (chevron turn, content rise, card lift) is **250ms** (`--t-open` on `.topic-list`);
   colour-only hovers elsewhere keep the site's 140ms.
-- **No height animation.** A `::details-content` block-size transition clipped answers to zero in
-  Chrome 130 when items were opened by script (search opens matches).
+- **Animated open/close (owner, 2026-11-14), done in script, not CSS.** Tapping a title grows or
+  shrinks the card's height over 250ms with the Web Animations API (`animateTopic` in
+  `shared/app.js`); closing fades the content and flips the chevron back at once (`.is-closing`).
+  A tap mid-animation reverses from the current height. Search, 全部展開 and deep links still toggle
+  `open` directly. Don't switch to a `::details-content` block-size transition: in Chrome 130 it
+  clipped script-opened answers to zero. Reduced motion → native instant toggle.
 
 ## Shared: the closing card (`.help-card`)
 
