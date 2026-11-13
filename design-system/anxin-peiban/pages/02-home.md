@@ -62,7 +62,7 @@ replaced.
 3. **開始打針 in the centre of the circle** (owner, 2026-11-13). This replaces the full-width button that sat below.
    - A **larger round hole** is cut out of the circle's centre: each quarter button gets a `mask-image`
      radial gradient centred on the whole circle (`--hx`/`--hy`), so the quarters become ring pieces.
-   - Inside the hole sits a **smaller circle**, `.quad-center` → `/shot/`: white, with a 2px ink border, a
+   - Inside the hole sits a **smaller circle**, `.quad-center` → `/shot/`: white, with no border (owner, 2026-11-14), a
      line-drawn syringe in `--leaf-deep`, and «開始打針».
    - At 342px wide the hole has a 60px radius, the button is 92px across and leaves a 14px ring, and the
      quarter content sits 84px from the centre on the diagonals, clear of both the hole and the outer arc.

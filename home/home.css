@@ -307,7 +307,7 @@
   height: var(--center);
   border-radius: 50%;
   background: var(--card);
-  border: 2px solid var(--primary-ink);
+  /* 不要外框（主人指定）：白色圓靠整組的 drop-shadow 浮在圓洞裡 */
   color: var(--primary-ink);
   text-decoration: none;
   transform: translate(-50%, -50%);
