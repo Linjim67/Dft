@@ -128,14 +128,14 @@
    - 外側那個角的半徑 = 100% − 內側小圓角，剛好是四分之一圓（瀏覽器不會等比縮小）。
    - mask 會連 box-shadow、outline 一起裁掉：陰影改成整組的 drop-shadow，焦點框畫在內容上。
    - 洞、圓鈕、內容位置都用 cqw（容器寬度的 %）：窄手機上整組等比縮小。
-     在 342px 寬時：洞半徑 60px、圓鈕直徑 92px、內容中心離圓心 84px（避開洞，也不超出外弧）。 */
+     在 342px 寬時：洞半徑 60px、圓鈕直徑 103px（30cqw）、內容中心離圓心 84px（避開洞，也不超出外弧）。 */
 
 .quad {
   --quad-gap: 10px;
   --quad-half: 5px;
   --quad-inner: 10px;
   --hole: 60px;
-  --center: 92px;
+  --center: 103px;
   --reach: 84px;
   position: relative;
   container-type: inline-size;
@@ -151,7 +151,7 @@
 @supports (width: 1cqw) {
   .quad {
     --hole: 17.5cqw;
-    --center: 27cqw;
+    --center: 30cqw;
     --reach: 24.5cqw;
   }
 }

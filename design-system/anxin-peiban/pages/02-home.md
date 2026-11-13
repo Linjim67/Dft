@@ -64,7 +64,7 @@ replaced.
      radial gradient centred on the whole circle (`--hx`/`--hy`), so the quarters become ring pieces.
    - Inside the hole sits a **smaller circle**, `.quad-center` → `/shot/`: white, with no border (owner, 2026-11-14), a
      line-drawn syringe in `--leaf-deep`, and «開始打針».
-   - At 342px wide the hole has a 60px radius, the button is 92px across and leaves a 14px ring, and the
+   - At 342px wide the hole has a 60px radius, the button is 30cqw (103px) across and leaves a ~9px ring, and the
      quarter content sits 84px from the centre on the diagonals, clear of both the hole and the outer arc.
      Every size is in `cqw`, so the group scales down on narrow phones (checked at 320px).
    - A **mask hides but does not cut hit-testing**, so a transparent `.quad-hole` circle covers the hole and
