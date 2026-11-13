@@ -73,7 +73,7 @@ Chapters: 怎麼說 = cocoa · 打針當下 = leaf · 不要說 = honey.
 
 ## 06 抽血大小問 `/cheer/` — FAQ page
 
-Chapters: 醫療現場解密 = leaf · 抽血大小問 = honey.
+Chapters: 醫療現場解密 and 抽血大小問 are both leaf (owner, 2026-11-14).
 
 - **Search first:** a round search field (cocoa focus and caret) filters as you type. Every
   space-separated word must match, and hits are wrapped in `<mark>` (`#FED7AA` + ink). Matching
@@ -82,7 +82,13 @@ Chapters: 醫療現場解密 = leaf · 抽血大小問 = honey.
 - **Status row:** 「共 18 個問題」 / 「找到 3 個和「頭暈」有關的問題」 (`role=status`) + 全部展開 ⇄
   全部收合. Chapter titles carry a live count badge in the tone tile; a chapter with no matches is
   hidden.
-- **Answers:** in 抽血大小問, the first sentence is bold (the short answer). 醫療現場解密 keeps the
-  authors' two blocks: 醫療小知識 (tone label) and 給家長的小提醒, a box in the chapter's soft tone.
+- **Answers (抽血大小問), structured for scanning** (owner: the old paragraphs were hard to read,
+  2026-11-14). Each FAQ in `content.js` has fields instead of one paragraph, always in this order:
+  **簡單說** (bold one-line answer behind a tone tag) → `lead` + `points` (dot list; `{k, v}` items get
+  a bold label with the explanation below; when every item is short, they become a row of soft
+  chips) → `note` (grey) → **放心** (`calm`, leaf-soft box with a check) → **要注意** (`watch`, honey-soft
+  box with a warning icon: when to tell the staff). The wording is the authors'; sentences were only
+  split up, with a few joining words. 醫療現場解密 keeps its two blocks: 醫療小知識 and a 給家長的小提醒
+  box in the chapter's soft tone. All of these text pieces are searchable and highlighted.
 - **Deep links:** `#why-1…7` and `#faq-1…11` open and scroll to that question.
 - **Empty state:** reuses `.empty-state`, with tappable suggestions (頭暈 / 瘀青 / 空腹 / 血管).

@@ -1,6 +1,6 @@
 /* ═══ 抽血大小問（常見問題） ═══════════════════════════════════
    小冊子外框、章節標題、一題一張卡沿用 /shared/page.css（.booklet、.part、.topic）。
-   章節色：醫療現場解密＝葉綠（leaf）、抽血大小問＝蜂蜜黃（honey）；可以按的東西用可可色。
+   章節色：醫療現場解密、抽血大小問都是葉綠（leaf）；可以按的東西用可可色；「要注意」用蜂蜜色。
    這裡放：搜尋框、時間篩選、狀態列、答案內容、找不到時、還有疑問嗎。
    ═══════════════════════════════════════════════════════════════ */
 
@@ -220,9 +220,110 @@
 
 /* ═══ 答案內容 ═══════════════════════════════════════════════ */
 
-/* 第一句是重點 */
-.answer-lead {
+/* ── 抽血大小問的答案：簡單說 → 條列 → 補充 → 放心 → 要注意 ──
+   每題同一個順序，家長掃一眼就知道答案在哪、要不要擔心 */
+
+/* 簡單說：一句話的答案，粗體；前面一個章節色小標（葉綠深 on 葉綠塊 4.51:1） */
+.ans-short {
   font-weight: 700;
+  line-height: 1.7;
+}
+
+.ans-tag {
+  display: inline-block;
+  margin-inline-end: var(--sp-2);
+  padding: 0 var(--sp-2);
+  border-radius: 8px;
+  background: var(--tone-tile);
+  color: var(--tone);
+  font-size: .78rem;
+  font-weight: 700;
+  line-height: 1.8;
+  vertical-align: 1px;
+}
+
+/* 條列前的那一句，和清單貼近一點 */
+.ans-lead {
+  margin-bottom: calc(var(--sp-1) * -1);
+}
+
+/* 條列：章節色圓點；有小標的項目（{ k, v }）小標粗體、說明在下一行 */
+.ans-points {
+  display: grid;
+  gap: var(--sp-2);
+}
+
+.ans-points li {
+  position: relative;
+  padding-inline-start: 20px;
+  line-height: 1.7;
+}
+
+.ans-points li::before {
+  content: "";
+  position: absolute;
+  inset-inline-start: 4px;
+  top: .72em;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--tone);
+}
+
+.ans-points li.has-key {
+  display: grid;
+  gap: 2px;
+}
+
+.ans-k {
+  font-weight: 700;
+}
+
+.ans-v {
+  color: var(--fg-muted);
+}
+
+/* 每項都很短（因素、動作）：排成一排小方塊，比一行一行好掃 */
+.ans-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px var(--sp-2);
+}
+
+.ans-chips li {
+  padding: 4px var(--sp-3);
+  border-radius: 10px;
+  background: var(--tone-soft);
+  font-size: .92rem;
+  font-weight: 700;
+  line-height: 1.6;
+}
+
+.ans-note {
+  color: var(--fg-muted);
+}
+
+/* 放心（葉綠淡底，葉綠深小標 5.09:1）／要注意（蜂蜜淡底，蜂蜜小標 5.58:1） */
+.know.is-calm,
+.know.is-watch {
+  padding: var(--sp-3) var(--sp-4);
+  border-radius: var(--r-md);
+}
+
+.know.is-calm {
+  background: var(--leaf-soft);
+}
+
+.know.is-calm .know-label {
+  color: var(--leaf-deep);
+}
+
+.know.is-watch {
+  background: var(--honey-soft);
+}
+
+.know.is-watch .know-label {
+  color: var(--honey);
 }
 
 .know {

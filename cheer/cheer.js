@@ -6,7 +6,7 @@
    - 先搜尋、再瀏覽：搜尋框在最上面，邊打邊篩，命中的字標出來
    - 依時間分類：抽血前／抽血時／抽血後，和搜尋可以同時用
    - 「全部展開／全部收合」（GOV.UK accordion 的 Show all sections）
-   - 每題答案第一句是重點，加粗放前面
+   - 每題答案拆成：簡單說 → 條列 → 補充 → 放心 → 要注意
    - 每題有自己的網址（#why-1、#faq-3），打開連結就直接展開那一題
    - 找不到答案時，告訴家長下一步：問現場醫護人員、看其他家長的經驗
    ═══════════════════════════════════════════════════════════════ */
@@ -45,6 +45,7 @@
   var ICON_INFO = '<circle cx="12" cy="12" r="8.5"/><path d="M12 11v5M12 8h.01"/>';
   var ICON_HEART = '<path d="M12 19.5s-6.8-4.1-6.8-8.9A3.8 3.8 0 0 1 12 8.3a3.8 3.8 0 0 1 6.8 2.3c0 4.8-6.8 8.9-6.8 8.9Z"/>';
   var ICON_CHECK = '<path d="M6 12.4 10.2 16.6 18 8.8"/>';
+  var ICON_ALERT = '<path d="M12 3.5 2.5 20h19L12 3.5Z"/><path d="M12 9.5v4.5M12 17h.01"/>';
 
   /* ── 每一題：記住可搜尋的文字節點，之後標記命中的字 ── */
   var items = [];
@@ -66,11 +67,34 @@
     return box;
   }
 
-  /* 第一句是重點：拆成粗體的「簡單說」＋其餘說明 */
-  function splitLead(para) {
-    var i = para.indexOf('。');
-    if (i < 0 || i === para.length - 1) return [para, ''];
-    return [para.slice(0, i + 1), para.slice(i + 1)];
+  /* 抽血大小問的答案：固定的順序，方便掃讀
+     簡單說（粗體一句）→ 條列（短的排成小方塊）→ 補充 → 放心（綠框）→ 要注意（蜂蜜框） */
+  function renderAnswer(body, f, item) {
+    var short = el('p', 'ans-short');
+    short.appendChild(el('span', 'ans-tag', '簡單說'));
+    short.appendChild(textNode('span', null, f.short, item));
+    body.appendChild(short);
+
+    if (f.points) {
+      if (f.lead) body.appendChild(textNode('p', 'ans-lead', f.lead, item));
+      var chips = f.points.every(function (pt) { return typeof pt === 'string' && pt.length <= 12; });
+      var ul = el('ul', chips ? 'ans-chips' : 'ans-points');
+      f.points.forEach(function (pt) {
+        var li = el('li');
+        if (typeof pt === 'string') {
+          li.appendChild(textNode('span', null, pt, item));
+        } else {
+          li.className = 'has-key';
+          li.appendChild(textNode('b', 'ans-k', pt.k, item));
+          li.appendChild(textNode('span', 'ans-v', pt.v, item));
+        }
+        ul.appendChild(li);
+      });
+      body.appendChild(ul);
+    }
+    if (f.note) body.appendChild(textNode('p', 'ans-note', f.note, item));
+    if (f.calm) body.appendChild(labelled('is-calm', ICON_CHECK, '放心', f.calm, item));
+    if (f.watch) body.appendChild(labelled('is-watch', ICON_ALERT, '要注意', f.watch, item));
   }
 
   function addItem(section, list, idPrefix, idx, q, when, fill) {
@@ -96,15 +120,7 @@
   var faqList = doc.getElementById('faqList');
   C.faqs.forEach(function (f, i) {
     addItem('faq', faqList, 'faq', i, f.q, f.when, function (body, item) {
-      f.a.forEach(function (para, k) {
-        if (k === 0) {
-          var parts = splitLead(para);
-          body.appendChild(textNode('p', 'answer-lead', parts[0], item));
-          if (parts[1]) body.appendChild(textNode('p', null, parts[1], item));
-        } else {
-          body.appendChild(textNode('p', null, para, item));
-        }
-      });
+      renderAnswer(body, f, item);
     });
   });
 
