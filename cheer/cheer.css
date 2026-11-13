@@ -96,9 +96,11 @@
   min-width: 0;
 }
 
+/* 和指南的章節分頁同一個樣子：置中一排、沒有框線，選到的是葉綠深實心＋白字 */
 .chips {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
   gap: var(--sp-2);
 }
 
@@ -124,11 +126,11 @@
   justify-content: center;
   gap: 2px;
   min-height: var(--tap);
-  padding-inline: var(--sp-1);
+  padding-inline: var(--sp-4);
   border-radius: var(--r-btn);
   background: var(--card);
-  border: var(--line-w) solid var(--line);
-  color: var(--fg-muted);
+  border: 0;
+  color: var(--fg);
   font-size: .95rem;
   font-weight: 700;
   white-space: nowrap;
@@ -137,28 +139,22 @@
     color var(--t-fast) var(--ease);
 }
 
+/* 窄手機（360px 等）：四顆要擠在同一排，左右留白縮一點 */
+@media (max-width: 24rem) {
+  .chip-face {
+    padding-inline: var(--sp-3);
+  }
+}
+
+/* 指南的分頁沒有勾勾：靠實心／空心分辨，這裡也一樣 */
 .chip-check {
-  width: 0;
-  height: 16px;
-  opacity: 0;
-  stroke-width: 2.6;
-  /* 寬度直接切換（不做版面動畫），只淡入勾勾 */
-  transform: scale(.6);
-  transition: opacity var(--t-fast) var(--ease), transform var(--t-fast) var(--ease);
+  display: none;
 }
 
-/* 選到：葉綠深字配葉綠淡 5.09:1 */
+/* 選到：葉綠深實心＋白字（5.99:1），和指南選到的分頁一樣 */
 .chip input:checked+.chip-face {
-  background: var(--pick-wash);
-  border-color: var(--pick);
-  color: var(--pick);
-  box-shadow: inset 0 0 0 var(--line-w) var(--pick);
-}
-
-.chip input:checked+.chip-face .chip-check {
-  width: 16px;
-  opacity: 1;
-  transform: none;
+  background: var(--pick);
+  color: #FFFFFF;
 }
 
 .chip input:focus-visible+.chip-face {
@@ -387,7 +383,10 @@
     border-color: var(--primary-deep);
   }
 
-  .chip input:not(:checked)+.chip-face:hover,
+  .chip input:not(:checked)+.chip-face:hover {
+    background: var(--primary-wash);
+  }
+
   .suggest-chip:hover {
     background: var(--primary-wash);
     border-color: var(--primary-deep);
