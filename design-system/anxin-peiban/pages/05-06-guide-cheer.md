@@ -55,6 +55,8 @@ the cream ground was nearly invisible, which is why it is a white card.
 All three chapters are **leaf** (owner, 2026-11-14: 副色調 follows 打針當下), and none has a chapter
 heading (`.part-head` removed): the sticky tabs name the chapter, and each tab panel is labelled by
 its tab. The 「全年齡適用」 tag and the 打針當下 / 不要說 ledes went with the headings.
+The page itself has no lede either: the h1 「家長安慰指南」 sits straight above the tabs (owner,
+2026-11-14, removed 「陪孩子度過打針的小方法。」).
 
 - **Chapter tabs** (owner's reference screenshot, 2026-11-12): three centred pills, sticky. They are
   real WAI-ARIA tabs that show **one chapter at a time**: ←/→/Home/End move between them, and
