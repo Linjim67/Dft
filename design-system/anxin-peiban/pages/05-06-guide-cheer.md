@@ -41,6 +41,8 @@ These patterns were pinned by the owner:
   A tap mid-animation reverses from the current height. Search, 全部展開 and deep links still toggle
   `open` directly. Don't switch to a `::details-content` block-size transition: in Chrome 130 it
   clipped script-opened answers to zero. Reduced motion → native instant toggle.
+  The guide opts out (`buildTopic(…, { animate: false })`) and runs its own, longer open/close that
+  draws a tree (see 05 below).
 
 ## Shared: the closing card (`.help-card`)
 
@@ -58,17 +60,29 @@ Chapters: 怎麼說 = cocoa · 打針當下 = leaf · 不要說 = honey.
   white text (5.99:1); the others are paper with cocoa text. Switching tabs while scrolled down rewinds to the
   tab bar, so the new chapter starts at its top.
 - **Topic rows, not cards** (same screenshot; guide only, so cheer keeps its card list):
-  `.topic-list.is-plain` drops the white card and shadow. Each row is a 22px icon in the chapter tone,
-  then the bold title, then a plain chevron, with **no right-side count**. When opened, the content
-  sits directly under the title (indented 38px), in grey. Every topic has an `icon` in `content.js`;
-  the icons are authored in `guide.js` (`ICONS`).
+  `.topic-list.is-plain` drops the white card and shadow. Each row is a 20px icon in the chapter tone
+  (in a 36px column), then the bold title, then a plain chevron, with **no right-side count**. When
+  opened, the content sits directly under the title (indented 48px), in grey. Every topic has an
+  `icon` in `content.js`; the icons are authored in `guide.js` (`ICONS`).
+- **Opening a topic draws a tree** (owner, 2026-11-14): a 2px chapter-tone circle draws around the
+  icon, starting and ending at the bottom (220ms). A vertical trunk then grows down from it at a
+  steady ~0.9px/ms (200–560ms). As the trunk passes each line, a branch grows out to it and the
+  line wipes in from the left (`clip-path`, not `transform`, because the branch lengths are measured
+  from the lines' positions). Closing runs in reverse: the bottom branch retracts first, the trunk
+  shrinks upward, then the circle unwinds. The chevron flips back at once (`.is-closing`). The card
+  height animates too (Web Animations), so it never jumps open. Branches attach to the first line of:
+  each phrase or action (怎麼說), each paragraph, lead and action (打針當下), and each 「改說」 bubble
+  (不要說, where the whole 避免＋改說 pair fades in together). `guide.js` measures the positions and
+  re-measures on resize, font load and riddle reveals (`ResizeObserver`). Topics that open without a
+  tap (the first one in each age group, find-in-page) appear already drawn. Reduced motion → instant.
 - **Age cards** (2 歲以下 / 3–4 歲 / 5–9 歲): a radio group with icons and a check badge, selected in
   cocoa. Pre-selected from the profile by whole years (2歲半 → 2 歲以下; 10+ falls back to 5–9 with
   a note). Only the selected group's panel is rendered visible.
 - 怎麼說 has no lede: the age cards follow the heading directly.
-- **Phrases to say** (and the baby group's actions) are one per line after a **16×2px dash** in the
-  chapter tone, in regular weight, with no bubbles. Riddle answers hide behind 「看答案」.
-- 打針當下 action lists keep tone dots. 讓孩子分心 has no game link
+- **Phrases to say** are one per line in regular weight, with no bubbles. The tree's branch is their
+  marker: a plain line for phrases, and a line ending in a 7px tone dot for actions (「做法」). Riddle
+  answers hide behind 「看答案」.
+- 打針當下 actions use the same dotted branches. 讓孩子分心 has no game link
   inside it: the chapter ends in the **我要打針了** card (paper, 2px cocoa border, leaf icon tile) → `/games/solo/`,
   which is distinct from the top bar's 開始打針 → `/shot/`.
 - 這些話先不要跟小孩說 uses the same topic rows as the other chapters (owner, 2026-11-12): only the

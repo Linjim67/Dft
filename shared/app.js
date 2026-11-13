@@ -157,7 +157,8 @@
   /* ─────────────────────────────────────────────────────────────
      可展開的主題（原生 <details>）：指南、鼓勵頁共用，樣式在 /shared/page.css
      同一組主題放進 .topic-list，會排成一張用細線分隔的卡片。
-     opts: { open, id, icon（SVG path 字串，自家常數，不放使用者輸入）, meta（標題下的小字） }
+     opts: { open, id, icon（SVG path 字串，自家常數，不放使用者輸入）, meta（標題下的小字），
+             animate（false＝不掛下面的高度動畫，頁面自己接手點標題；指南用它畫樹枝） }
      回傳 { root, title, body }：內容自己 append 到 body。
      ───────────────────────────────────────────────────────────── */
 
@@ -197,7 +198,7 @@
     body.className = 'topic-body';
     det.appendChild(sum);
     det.appendChild(body);
-    animateTopic(det, sum, body);
+    if (opts.animate !== false) animateTopic(det, sum, body);
     return { root: det, title: t, body: body };
   }
 

@@ -1,7 +1,7 @@
 /* ═══ 家長安慰指南 ═══════════════════════════════════════════════
    小冊子外框、章節標題、一題一張卡沿用 /shared/page.css（.booklet、.part、.topic）。
    章節色：怎麼說＝可可（cocoa）、打針當下＝葉綠（leaf）、不要說＝蜂蜜黃（honey）。可以按的東西用可可色。
-   這裡放本頁的：章節分頁、主題列、年紀卡、橫槓句子、清單、猜謎、「我要打針了」、避免／改說。
+   這裡放本頁的：章節分頁、主題列（點開時畫的圓圈和樹枝）、年紀卡、句子、清單、猜謎、「我要打針了」、避免／改說。
    ═══════════════════════════════════════════════════════════════ */
 
 html {
@@ -70,30 +70,157 @@ html {
 
 .is-plain .topic-head,
 .is-plain .topic-head.has-icon {
-  grid-template-columns: 24px minmax(0, 1fr) auto;
-  gap: 14px;
-  min-height: 56px;
-  padding: 14px 0;
+  grid-template-columns: 36px minmax(0, 1fr) auto;
+  gap: var(--sp-3);
+  min-height: 60px;
+  padding: var(--sp-3) 0;
 }
 
+/* 圖示欄 36px：留位置給打開時畫上的圓圈，收合時只看到圖示 */
 .is-plain .topic-icon {
-  width: 24px;
-  height: 24px;
+  position: relative;
+  width: 36px;
+  height: 36px;
   border-radius: 0;
   background: none;
   color: var(--tone);
 }
 
 .is-plain .topic-icon .icon {
-  width: 22px;
-  height: 22px;
+  width: 20px;
+  height: 20px;
 }
 
+/* 內容和標題對齊（36 + 12）；左邊空出來的地方畫樹枝 */
 .is-plain .topic-body {
-  margin: -4px 0 0 38px;
-  padding: 0 0 var(--sp-4);
+  margin: 0 0 0 48px;
+  padding: var(--sp-1) 0 var(--sp-5);
   border-top: 0;
   color: var(--fg-muted);
+}
+
+/* ═══ 點開主題：圖示圈起來 → 往下一條直線 → 一行一行橫向接到每一句 ═══
+   guide.js 量好每一句第一行的位置，把樹幹、樹枝擺上去，也算好每一段的延遲。
+   .is-drawn 有＝畫好，沒有＝收起來；兩邊各有自己的延遲（收回時從最下面一句倒著收）。
+   高度動畫也在 guide.js（Web Animations），動畫中 .is-moving 把超出的內容切掉。 */
+
+.is-plain .topic {
+  position: relative;
+}
+
+.is-plain .topic.is-moving {
+  overflow: hidden;
+}
+
+/* 內容一句一句浮現，不用整塊淡入 */
+.is-plain .topic[open]>.topic-body {
+  animation: none;
+}
+
+/* 圓圈從正下方起筆、繞一圈回到正下方，樹幹接著往下 */
+.topic-ring {
+  position: absolute;
+  inset: 0;
+  width: 36px;
+  height: 36px;
+  overflow: visible;
+  fill: none;
+  stroke: var(--tone);
+  stroke-width: 2;
+  stroke-linecap: round;
+  transform: rotate(90deg);
+}
+
+/* 收起來時把整段線推到起點之前（101），圓頭線帽才不會在起點留一個點 */
+.topic-ring circle {
+  stroke-dasharray: 100 200;
+  stroke-dashoffset: 101;
+  transition: stroke-dashoffset 180ms cubic-bezier(.4, 0, 1, 1) var(--ring-out, 0ms);
+}
+
+.is-drawn .topic-ring circle {
+  stroke-dashoffset: 0;
+  transition: stroke-dashoffset var(--ring-in, 220ms) cubic-bezier(.4, 0, .7, .6);
+}
+
+.topic-tree {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.tree-trunk {
+  position: absolute;
+  width: 2px;
+  border-radius: 1px;
+  background: var(--tone);
+  transform: scaleY(0);
+  transform-origin: top;
+  transition: transform var(--dur-out, 200ms) linear var(--out, 0ms);
+}
+
+.is-drawn .tree-trunk {
+  transform: none;
+  transition: transform var(--dur-in, 300ms) linear var(--in, 0ms);
+}
+
+/* 樹枝：8px 高的盒子，線畫在中間；「做法」的樹枝尾端多一顆圓點（和「說法」分得出來） */
+.tree-twig {
+  position: absolute;
+  height: 8px;
+  clip-path: inset(0 100% 0 0);
+  transition: clip-path 140ms cubic-bezier(.4, 0, 1, 1) var(--out, 0ms);
+}
+
+.is-drawn .tree-twig {
+  clip-path: inset(0 0 0 0);
+  transition: clip-path 200ms var(--ease) var(--in, 0ms);
+}
+
+.tree-twig::before {
+  content: "";
+  position: absolute;
+  inset: 3px 0;
+  border-radius: 1px;
+  background: var(--tone);
+}
+
+.tree-twig.has-node::after {
+  content: "";
+  position: absolute;
+  top: .5px;
+  right: 0;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--tone);
+}
+
+/* 每一句等樹枝接到了，才從左往右展開（像線條延伸進句子裡）；收回時由右往左收。
+   用 clip-path 不用 transform：guide.js 量樹枝長度時，句子的位置不能被位移影響。
+   四邊多留 6px，「看答案」的焦點框才不會被切掉。 */
+.tree-row {
+  clip-path: inset(-6px -6px -6px -6px);
+  transition: clip-path 160ms cubic-bezier(.4, 0, 1, 1) var(--out, 0ms),
+    opacity 160ms ease var(--out, 0ms);
+}
+
+.topic:not(.is-drawn) .tree-row {
+  clip-path: inset(-6px 100% -6px -6px);
+  opacity: 0;
+}
+
+.is-drawn .tree-row {
+  transition: clip-path 380ms var(--ease) var(--in, 0ms),
+    opacity 300ms var(--ease) var(--in, 0ms);
+}
+
+/* 不是點出來的（預設打開、頁內搜尋自動打開）：直接畫好，不跑動畫 */
+.is-instant .topic-ring circle,
+.is-instant .tree-trunk,
+.is-instant .tree-twig,
+.is-instant .tree-row {
+  transition: none;
 }
 
 /* ═══ 年紀卡（單選；選到的有勾勾） ═══════════════════════════ */
@@ -234,43 +361,10 @@ html {
   gap: 10px;
 }
 
-/* 怎麼說：一句一行，前面一條章節色的短橫槓（不用對話框，整段才安靜） */
+/* 一句一行。前面不另加記號：打開時樹枝會接到每一句（說法＝一條線，做法＝線＋圓點） */
 .say,
-#say .do {
-  position: relative;
-  padding-inline-start: 28px;
-  line-height: 1.75;
-}
-
-/* 橫槓對齊第一行的中線（行高 1.75 → 0.875em） */
-.say::before,
-#say .do::before {
-  content: "";
-  position: absolute;
-  inset-inline-start: 2px;
-  top: calc(.875em - 1px);
-  width: 16px;
-  height: 2px;
-  border-radius: 1px;
-  background: var(--tone);
-}
-
-/* 家長可以做的事：章節色圓點清單 */
 .do {
-  position: relative;
-  padding-inline-start: var(--sp-5);
   line-height: 1.75;
-}
-
-.do::before {
-  content: "";
-  position: absolute;
-  inset-inline-start: 6px;
-  top: .72em;
-  width: 7px;
-  height: 7px;
-  border-radius: 50%;
-  background: var(--tone);
 }
 
 .topic-lead {
@@ -470,5 +564,17 @@ html {
   .ready-card:active,
   .age-opt input:active+.age-face {
     transform: none;
+  }
+
+  /* 線條和句子直接出現／消失；高度也不動（guide.js 同樣看這個設定） */
+  .topic-ring circle,
+  .is-drawn .topic-ring circle,
+  .tree-trunk,
+  .is-drawn .tree-trunk,
+  .tree-twig,
+  .is-drawn .tree-twig,
+  .tree-row,
+  .is-drawn .tree-row {
+    transition: none;
   }
 }
