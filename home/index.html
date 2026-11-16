@@ -123,13 +123,24 @@
         </svg>
         <span class="quad-center-label">開始打針</span>
       </a>
+
+      <!-- 小麻糬趴在「抽血大小問」的圓弧上（裝飾；home/mascots.js 畫進來） -->
+      <span class="peek" id="peek" aria-hidden="true"></span>
     </nav>
+
+    <!-- ── 4. 小抹茶在地平線上散步（裝飾；home/mascots.js 畫圖、走路，人物沿用 /games/dash/art.js） ── -->
+    <div class="stroll" id="stroll" aria-hidden="true">
+      <div class="stroll-walker" id="strollWalker"></div>
+    </div>
 
   </main>
 
   <!-- 只用來確認代碼是否已由醫檢師完成；載不到時代碼卡維持原樣 -->
   <script type="module" src="/shared/firebase.js"></script>
   <script src="/home/home.js"></script>
+  <!-- 小抹茶、小麻糬：遊戲的人物畫法＋主頁的散步 -->
+  <script src="/games/dash/art.js"></script>
+  <script src="/home/mascots.js"></script>
 </body>
 
 </html>

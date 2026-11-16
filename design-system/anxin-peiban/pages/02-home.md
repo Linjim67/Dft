@@ -98,3 +98,19 @@ Section heading (等待的時候) is `sr-only`: screen readers get the structure
 - `.pill-cta` text is 17px bold — *normal* text, since large-bold starts at 18.66px. Its hover therefore
   cannot darken to `#FFE2C4` (4.17:1); it lifts with a shadow instead. `.btn-primary` can use that
   hover only because its 18.7px bold label counts as large text.
+
+## Mascots (decorative, `aria-hidden`) — `home/mascots.js`
+
+Both characters are drawn with the game's own art (`/games/dash/art.js`, `DashArt.SPRITES`), so they
+match the game exactly.
+
+- **小抹茶 strolls on a ground line** under the button circle (`.stroll`: 72px tall, 2px `--rule`
+  line). It walks to a random spot at least a quarter of the width away (about 34px/s, easing in and
+  out), rests 1.2–3.8s, then turns and walks again. The walk frames (`matchaWalk1–3`) advance by
+  distance travelled (every 7px), so steps slow down with the easing. Facing left is `scaleX(-1)`.
+  With reduced motion it stands still in the middle.
+- **小麻糬 lies on the 抽血大小問 arc** (`.peek`, inside `.quad`). The standing `mochi` sprite is
+  clipped at 68% of its height, and that cut line sits on the outer arc at 50°, rotated 40° to match the
+  tangent. The arc geometry is radius `50cqw − 15px`, centre `(50cqw + 15px, 50cqw − 15px)`. Two
+  U-shaped hands hang from just above the cut over the tile. It ignores pointer events, so it never
+  blocks the button.

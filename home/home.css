@@ -360,6 +360,65 @@
   border-radius: 50%;
 }
 
+/* ═══ 小麻糬：趴在「抽血大小問」的圓弧上 ════════════════════════
+   右上那塊的外弧：半徑 r = 格子寬 − 10px = 50cqw − 15px，圓心在 (50cqw + 15px, 50cqw − 15px)。
+   取弧上 50° 的那一點（cos .6428、sin .7660），圖的裁切線（高度 68%）貼在這一點上，
+   再轉 40°（= 90° − 50°），讓裁切線和弧的切線一樣斜。點不到它（不擋按鈕）。 */
+.peek {
+  position: absolute;
+  z-index: 2;
+  /* 沒有 cqw 的瀏覽器：照 342px 寬的位置 */
+  left: 286px;
+  top: 36px;
+  width: 65px;
+  aspect-ratio: 1;
+  transform: translate(-50%, -68%) rotate(40deg);
+  transform-origin: 50% 68%;
+  pointer-events: none;
+}
+
+@supports (width: 1cqw) {
+  .peek {
+    left: calc(82.14cqw + 5.36px);
+    top: calc(11.7cqw - 3.51px);
+    width: 19cqw;
+  }
+}
+
+.peek svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+/* ═══ 小抹茶：在地平線上散步 ══════════════════════════════════════
+   一條灰色地平線；小抹茶的腳踩在線上，home/mascots.js 讓它左右走。 */
+.stroll {
+  position: relative;
+  height: 72px;
+  margin-top: var(--sp-6);
+  border-bottom: 2px solid var(--rule);
+  pointer-events: none;
+}
+
+.stroll-walker {
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  width: 60px;
+  height: 60px;
+  will-change: transform;
+}
+
+.stroll-frame,
+.stroll-frame svg {
+  position: absolute;
+  inset: 0;
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
 @media (hover: hover) and (pointer: fine) {
   .quad-item:hover,
   .quad-center:hover {
