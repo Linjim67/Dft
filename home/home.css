@@ -360,35 +360,39 @@
   border-radius: 50%;
 }
 
-/* ═══ 小麻糬：趴在「抽血大小問」的圓弧上 ════════════════════════
-   右上那塊的外弧：半徑 r = 格子寬 − 10px = 50cqw − 15px，圓心在 (50cqw + 15px, 50cqw − 15px)。
-   取弧上 50° 的那一點（cos .6428、sin .7660），圖的裁切線（高度 68%）貼在這一點上，
-   再轉 40°（= 90° − 50°），讓裁切線和弧的切線一樣斜。點不到它（不擋按鈕）。 */
-.peek {
+/* ═══ 小麻糬：躲在「抽血大小問」後面，從圓弧探出頭 ════════════════
+   身體放在按鈕後面（z-index −1，.quad 有 filter 所以自成一層）：圓弧自己擋住下半身，人是正的。
+   兩隻手畫在按鈕上面，各自貼在弧上。位置由 home/mascots.js 依那一塊的實際大小算。
+   點得到露出來的頭（被按鈕蓋住的地方點到的是按鈕）；手不擋按鈕。 */
+.peek-body {
   position: absolute;
-  z-index: 2;
-  /* 沒有 cqw 的瀏覽器：照 342px 寬的位置 */
-  left: 286px;
-  top: 36px;
-  width: 65px;
+  z-index: -1;
+  display: block;
   aspect-ratio: 1;
-  transform: translate(-50%, -68%) rotate(40deg);
   transform-origin: 50% 68%;
-  pointer-events: none;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
 }
 
-@supports (width: 1cqw) {
-  .peek {
-    left: calc(82.14cqw + 5.36px);
-    top: calc(11.7cqw - 3.51px);
-    width: 19cqw;
-  }
-}
-
-.peek svg {
+.peek-body svg {
   display: block;
   width: 100%;
   height: 100%;
+}
+
+.peek-hands {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+  pointer-events: none;
+}
+
+.peek-hands path {
+  transform-box: fill-box;
+  transform-origin: 50% 0;
 }
 
 /* ═══ 小抹茶：在地平線上散步 ══════════════════════════════════════
@@ -401,6 +405,7 @@
   pointer-events: none;
 }
 
+/* 小抹茶點得到（點了會跳一下）；地平線其他地方不擋東西 */
 .stroll-walker {
   position: absolute;
   left: 0;
@@ -408,12 +413,37 @@
   width: 60px;
   height: 60px;
   will-change: transform;
+  pointer-events: auto;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* 跳的時候動這一層（腳踩的地方是軸） */
+.stroll-body {
+  position: absolute;
+  inset: 0;
+  transform-origin: 50% 100%;
 }
 
 .stroll-frame,
 .stroll-frame svg {
   position: absolute;
   inset: 0;
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+/* 點小抹茶時頭上飄出來的葉綠小愛心 */
+.stroll-heart {
+  position: absolute;
+  bottom: 56px;
+  width: 20px;
+  height: 20px;
+  pointer-events: none;
+}
+
+.stroll-heart svg {
   display: block;
   width: 100%;
   height: 100%;

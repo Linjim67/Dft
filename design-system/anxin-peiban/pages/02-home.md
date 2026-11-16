@@ -101,16 +101,20 @@ Section heading (等待的時候) is `sr-only`: screen readers get the structure
 
 ## Mascots (decorative, `aria-hidden`) — `home/mascots.js`
 
-Both characters are drawn with the game's own art (`/games/dash/art.js`, `DashArt.SPRITES`), so they
-match the game exactly.
+Both characters use the game's own drawings (`/games/dash/art.js`, `DashArt.SPRITES`), recoloured to
+the sand palette when drawn here; the game itself is unchanged:
+- 小抹茶: body leaf-tile, outline leaf-deep, paper belly, cocoa eyes, peach blush.
+- 小麻糬: body cocoa-tile → cocoa-soft → paper, cocoa outline, leaf crown and plaster, peach blush.
 
-- **小抹茶 strolls on a ground line** under the button circle (`.stroll`: 72px tall, 2px `--rule`
-  line). It walks to a random spot at least a quarter of the width away (about 34px/s, easing in and
-  out), rests 1.2–3.8s, then turns and walks again. The walk frames (`matchaWalk1–3`) advance by
-  distance travelled (every 7px), so steps slow down with the easing. Facing left is `scaleX(-1)`.
-  With reduced motion it stands still in the middle.
-- **小麻糬 lies on the 抽血大小問 arc** (`.peek`, inside `.quad`). The standing `mochi` sprite is
-  clipped at 68% of its height, and that cut line sits on the outer arc at 50°, rotated 40° to match the
-  tangent. The arc geometry is radius `50cqw − 15px`, centre `(50cqw + 15px, 50cqw − 15px)`. Two
-  U-shaped hands hang from just above the cut over the tile. It ignores pointer events, so it never
-  blocks the button.
+- **小抹茶 strolls on a ground line** under the button circle (`.stroll`, a 2px `--rule` line). It
+  walks to random spots (about 34px/s, easing in and out, walk frames advanced every 7px travelled),
+  rests 1.2–3.8s and turns. **Tap:** it stops, switches to the happy jump face, hops once (squash and
+  stretch on `.stroll-body`), and a leaf heart floats up; then it resumes.
+- **小麻糬 peeks from behind 抽血大小問**, upright (owner, 2026-11-17). `.peek-body` sits behind the
+  tiles (`z-index: -1` inside `.quad`'s stacking context), so the tile's curved edge hides its lower
+  body. Two U-shaped hands (`.peek-hands`, above the tiles, no pointer events) sit on the arc at ±6.5°,
+  one higher than the other. Position: 57° up the tile's outer arc (radius = tile − 10px), computed from
+  the tile's real size and re-run on resize. Any higher and the crown touches the code card. **Tap the
+  head:** it ducks 26%, shakes its head ±11°, and pops back up while the hands grip tighter. Taps where
+  the tile covers it, and on the hands, still open 抽血大小問.
+- Reduced motion: 小抹茶 stands still; taps only swap to the happy face.
