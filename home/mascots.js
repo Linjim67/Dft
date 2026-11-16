@@ -133,7 +133,7 @@
         { transform: 'translateY(26%) rotate(-11deg)', offset: .38 },
         { transform: 'translateY(26%) rotate(11deg)', offset: .56 },
         { transform: 'translateY(26%) rotate(-7deg)', offset: .72 },
-        { transform: 'translateY(26%) rotate(0)', offset: .82, easing: 'cubic-bezier(.2, 1.4, .4, 1)' },
+        { transform: 'translateY(26%) rotate(0)', offset: .82, easing: 'cubic-bezier(.22, 1, .36, 1)' },
         { transform: 'translateY(0) rotate(0)' }
       ], { duration: 1400, easing: 'ease-in-out' });
       /* 手跟著縮短一點（像是抓緊邊邊） */
