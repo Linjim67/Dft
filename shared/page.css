@@ -490,13 +490,6 @@ a.btn {
   color: var(--fg-muted);
 }
 
-.help-links {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--sp-2) var(--sp-3);
-  margin-top: var(--sp-3);
-}
-
 .help-link {
   justify-self: start;
   display: inline-flex;
