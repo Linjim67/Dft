@@ -80,6 +80,13 @@
   var ctx = pad.getContext ? pad.getContext('2d') : null;
   var dpr = 1;
 
+  /* 顏色照主頁面的格式，從 token 讀（HOME-FORMAT.md）：
+     孩子畫的線＝孩子的資料＝葉綠深；最完美的圓（虛線）＝可可 */
+  var rootCss = window.getComputedStyle(document.documentElement);
+  function token(name, fallback) { return rootCss.getPropertyValue(name).trim() || fallback; }
+  var INK_CHILD = token('--leaf-deep', '#476D33');
+  var INK_IDEAL = token('--primary-ink', '#3E3329');
+
   function fitPad() {
     var w = pad.clientWidth;
     if (!w || !ctx) return;
@@ -100,7 +107,7 @@
     ctx.lineWidth = 6;
     ctx.lineCap = 'round';
     ctx.lineJoin = 'round';
-    ctx.strokeStyle = '#C2410C';
+    ctx.strokeStyle = INK_CHILD;
   }
 
   function pos(ev) {
@@ -127,7 +134,7 @@
     ctx.save();
     ctx.setLineDash([10, 8]);
     ctx.lineWidth = 3;
-    ctx.strokeStyle = '#15803D';
+    ctx.strokeStyle = INK_IDEAL;
     ctx.beginPath();
     ctx.arc(c.cx, c.cy, c.r, 0, Math.PI * 2);
     ctx.stroke();
@@ -379,9 +386,13 @@
      開始畫面
      ───────────────────────────────────────────────────────────── */
 
+  /* 「最高紀錄 81 分」：數字另外包一層，才能用孩子資料的葉綠深 */
   if (record.best > 0) {
-    $('bestLine').textContent = '最高紀錄 ' + record.best + ' 分';
-    $('bestLine').hidden = false;
+    var bl = $('bestLine'), num = document.createElement('strong');
+    num.textContent = record.best;
+    bl.textContent = '';
+    bl.append('最高紀錄 ', num, ' 分');
+    bl.hidden = false;
   }
 
   /* 測試用 */

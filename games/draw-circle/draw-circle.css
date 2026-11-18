@@ -1,5 +1,7 @@
 /* ═══ #07 畫圓圈（單機）═══════════════════════════════════════
-   沿用 /shared/styles.css 的 token 與表單元件。
+   照主頁面的格式（design-system/anxin-peiban/HOME-FORMAT.md）：沙米底、紙白卡片靠陰影浮起、不加框，
+   字＝可可，孩子自己的東西（畫的線、分數、紀錄、最高、「你」）＝葉綠深，只有可可＋葉綠兩色。
+   不在 /shared/styles.css 的遊戲調色盤清單裡；這裡只用 token，不寫色碼。
    ═══════════════════════════════════════════════════════════════ */
 
 .sprite {
@@ -21,15 +23,31 @@
   margin-top: var(--sp-2);
 }
 
+/* 320px 寬時「和爸爸媽媽比賽」會換行：只在 HTML 的 <wbr> 換（「和爸爸媽媽／比賽」），置中，
+   不要拆開「爸爸媽媽」或只剩一個「賽」 */
+.dc-segmented .segmented-face {
+  text-align: center;
+  word-break: keep-all;
+}
+
 .dc-mode-hint {
   margin: var(--sp-2) 0 0;
 }
 
+/* 最高紀錄：說明字灰、數字是孩子的資料（葉綠深、等寬，和主頁的代碼數字同一色） */
 .dc-best {
   margin-bottom: var(--sp-4);
   text-align: center;
   font-weight: 700;
   color: var(--fg-muted);
+}
+
+.dc-best strong {
+  margin-inline: 2px;
+  font-size: 1.5rem;
+  line-height: 1;
+  color: var(--code);
+  font-variant-numeric: tabular-nums;
 }
 
 /* ═══ 畫畫 ═══════════════════════════════════════════════════ */
@@ -113,23 +131,26 @@
   box-shadow: var(--sh-sm);
 }
 
-/* 現在要畫的這一格：淡橘底＋深橘框（不只靠顏色：寫著「這一次」） */
+/* 現在要畫的這一格：紙白＋2px 可可框（不只靠顏色：寫著「這一次」） */
 .hist-slot.is-now {
-  background: var(--primary-wash);
+  background: var(--card);
   box-shadow: inset 0 0 0 2px var(--primary-deep);
   color: var(--primary-deep);
 }
 
-/* 最高分：淡黃底＋星星（不只靠顏色） */
+/* 最高分：葉綠淡底＋葉綠深框＋星星（不只靠顏色） */
 .hist-slot.is-best {
-  background: #FEF9C3;
-  box-shadow: inset 0 0 0 2px #A16207;
+  background: var(--pick-wash);
+  box-shadow: inset 0 0 0 2px var(--pick);
 }
 
 .hist-star {
   width: 14px;
   height: 14px;
-  fill: #F59E0B;
+  fill: var(--leaf);
+  stroke: var(--leaf-deep);
+  stroke-width: 1.6;
+  stroke-linejoin: round;
 }
 
 .pad-wrap {
@@ -139,7 +160,8 @@
   margin-inline: auto;
 }
 
-/* touch-action:none：手指在畫布上移動時不要捲動頁面 */
+/* 畫布＝主頁代碼卡那種紙白卡片：28px 圓角、靠陰影浮起、不加框。
+   touch-action:none：手指在畫布上移動時不要捲動頁面 */
 .pad {
   display: block;
   width: 100%;
@@ -147,7 +169,7 @@
   aspect-ratio: 1 / 1;
   background: var(--card);
   border-radius: var(--r-xl);
-  box-shadow: var(--sh-md), inset 0 0 0 var(--line-w) var(--hairline);
+  box-shadow: var(--sh-md);
   touch-action: none;
   cursor: crosshair;
 }
@@ -167,7 +189,8 @@
   display: none;
 }
 
-/* 教學動畫：淡淡的虛線圓是「要畫成這樣」，橘色那一筆跟著手指畫出來 */
+/* 教學動畫：淡淡的虛線圓是「要畫成這樣」，葉綠深那一筆（和真的畫出來的線同色）跟著手指畫出來。
+   手指是紙白填色＋可可線，和主頁的線條圖示同一種畫法 */
 .pad-demo {
   width: 74%;
   height: auto;
@@ -176,14 +199,14 @@
 
 .demo-guide {
   fill: none;
-  stroke: var(--hairline);
+  stroke: var(--rule);
   stroke-width: 3;
   stroke-dasharray: 6 8;
 }
 
 .demo-stroke {
   fill: none;
-  stroke: #C2410C;
+  stroke: var(--leaf-deep);
   stroke-width: 6;
   stroke-linecap: round;
   stroke-dasharray: 100;
@@ -192,14 +215,15 @@
 }
 
 .demo-hand path {
-  fill: #fff;
-  stroke: #57534E;
+  fill: var(--card);
+  stroke: var(--primary-ink);
   stroke-width: 1.1;
   stroke-linejoin: round;
 }
 
 .demo-tip {
-  fill: rgba(194, 65, 12, .18);
+  fill: var(--leaf-tile);
+  opacity: .8;
 }
 
 .pad-demo-text {
@@ -223,9 +247,10 @@
   line-height: 1;
 }
 
+/* 分數＝孩子的資料：和主頁代碼數字一樣，粗體、等寬、葉綠深 */
 .dc-score strong {
-  font-size: 3rem;
-  color: var(--primary-deep);
+  font-size: 3.1rem;
+  color: var(--code);
   font-variant-numeric: tabular-nums;
 }
 
@@ -239,6 +264,7 @@
   gap: 4px;
 }
 
+/* 星星：拿到的＝葉綠實心＋葉綠深外框；沒拿到的＝只有 --line 外框（實心與空心，不只靠顏色） */
 .dc-star {
   display: block;
   width: 28px;
@@ -246,11 +272,12 @@
   fill: none;
   stroke: var(--line);
   stroke-width: 1.8;
+  stroke-linejoin: round;
 }
 
 .dc-star-slot.is-on .dc-star {
-  fill: #F59E0B;
-  stroke: #B45309;
+  fill: var(--leaf);
+  stroke: var(--leaf-deep);
 }
 
 .dc-rating {
@@ -277,10 +304,11 @@
   line-height: 1.4;
 }
 
+/* 圖示一律葉綠深（主頁的線條圖示） */
 .lb-icon {
   width: 22px;
   height: 22px;
-  color: #A16207;
+  color: var(--leaf-deep);
 }
 
 .dc-lb-list {
@@ -302,31 +330,24 @@
   background: var(--bg-sunk);
 }
 
-/* 名次：金、銀、銅（深色底白字，數字本身就說了名次，不只靠顏色） */
+/* 名次：紙白圓片＋可可數字（主頁的圓形）；第 1 名是葉綠深實心＋白字（5.99:1）。
+   數字本身就說了名次，不只靠顏色 */
 .lb-rank {
   display: grid;
   place-items: center;
   width: 32px;
   height: 32px;
   border-radius: 50%;
-  color: #fff;
+  background: var(--card);
+  box-shadow: var(--sh-sm);
+  color: var(--fg);
   font-weight: 700;
   font-variant-numeric: tabular-nums;
 }
 
 .rank-1 .lb-rank {
-  background: #B45309;
-  box-shadow: 0 0 0 3px #FDE68A;
-}
-
-.rank-2 .lb-rank {
-  background: #57534E;
-  box-shadow: 0 0 0 3px #E7E5E4;
-}
-
-.rank-3 .lb-rank {
-  background: #9A3412;
-  box-shadow: 0 0 0 3px #FED7AA;
+  background: var(--leaf-deep);
+  color: #FFFFFF;
 }
 
 .lb-score {
@@ -350,15 +371,15 @@
   white-space: nowrap;
 }
 
-/* 自己的那一行：淡橘底＋深橘框＋「你」 */
+/* 自己的那一行：葉綠淡底＋葉綠深框＋「你」（孩子自己的＝葉綠） */
 .lb-row.is-mine {
-  background: var(--primary-wash);
-  box-shadow: inset 0 0 0 2px var(--primary-deep);
+  background: var(--pick-wash);
+  box-shadow: inset 0 0 0 2px var(--pick);
 }
 
 .lb-tag.is-me {
-  background: var(--primary-deep);
-  color: #fff;
+  background: var(--pick);
+  color: #FFFFFF;
 }
 
 .dc-lb-note {
@@ -378,14 +399,17 @@
   display: none;
 }
 
+/* 沒算分的提醒（不是錯誤）：主頁那種紙白卡片，靠陰影浮起、不加框 */
 .dc-warn {
   margin-top: var(--sp-4);
   padding: var(--sp-3) var(--sp-4);
-  border-radius: var(--r-md);
-  background: var(--primary-wash);
-  box-shadow: inset 0 0 0 2px var(--primary-deep);
+  border-radius: var(--r-lg);
+  background: var(--card);
+  box-shadow: var(--sh-md);
   font-weight: 700;
   line-height: 1.55;
+  text-align: center;
+  text-wrap: balance;
 }
 
 .dc-actions {
@@ -448,7 +472,7 @@
 
 .dc-best-score strong {
   font-size: 1.5rem;
-  color: var(--primary-deep);
+  color: var(--code);
   font-variant-numeric: tabular-nums;
 }
 
@@ -472,17 +496,17 @@
   color: var(--fg-muted);
 }
 
-/* 最高分：粗體 + 外框 + 「最高」文字 */
+/* 最高分：粗體 + 葉綠淡底與葉綠深框（和畫畫時的最高那格一樣）+ 「最高」文字 */
 .dc-tries li.is-best {
-  background: var(--primary-wash);
-  box-shadow: inset 0 0 0 2px var(--primary-deep);
+  background: var(--pick-wash);
+  box-shadow: inset 0 0 0 2px var(--pick);
   color: var(--fg);
   font-weight: 700;
 }
 
 .best-tag {
   font-size: .72rem;
-  color: var(--primary-deep);
+  color: var(--pick);
 }
 
 .dc-record {
@@ -498,10 +522,4 @@
 .dc-record.is-new {
   background: var(--success-wash);
   color: var(--success);
-}
-
-@media (min-width: 40rem) {
-  .dc-actions .btn {
-    width: auto;
-  }
 }

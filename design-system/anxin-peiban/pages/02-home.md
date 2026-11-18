@@ -1,6 +1,7 @@
 # 02 主頁面 + 子頁外框 — page overrides
 
 Inherits MASTER. Covers `/home/` and the shell shared by every subpage (`/shared/page.css`).
+The hub's look, distilled for other pages to copy, is in `../HOME-FORMAT.md`.
 
 ## Routing
 

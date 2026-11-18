@@ -128,10 +128,10 @@
 
 /* 遊戲畫面維持原本的調色盤（使用者決定：遊戲內部自己的顏色不動）。遊戲頁都會載入自己的樣式表，
    用它認頁面，遊戲的檔案不用改。遊戲選單（/games/solo/、/games/duo/ 與配對頁）不在清單裡，跟著新調色盤。
+   畫圓圈（/games/draw-circle/）2026-11-18 起照主頁面的格式（HOME-FORMAT.md），也不在清單裡。
    新增遊戲時，把它的樣式表路徑加進來。不支援 :has() 的舊瀏覽器會顯示新調色盤，不影響使用。 */
 :root:has(link[href^="/games/whack-a-mole/"], link[href^="/games/duo/whack-a-mole/"],
-  link[href^="/games/dash/"], link[href^="/games/golf/"], link[href^="/games/draw-circle/"],
-  link[href^="/games/farm/"]) {
+  link[href^="/games/dash/"], link[href^="/games/golf/"], link[href^="/games/farm/"]) {
   --bg-sunk: #FFF1E0;
   --card: #FFFFFF;
   --fg: #7C2D12;

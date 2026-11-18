@@ -538,6 +538,32 @@ their message is 「連線中斷了，請重新整理這一頁」, not "reconnec
 | `circle.js` | `window.CircleScore` — **pure** scoring, no DOM; every tunable in `CONFIG` |
 | `draw-circle.js` | Canvas, turn-taking, views, record |
 
+## Format — follows the home page (2026-11-18)
+
+畫圓圈 follows the home page's format (`../HOME-FORMAT.md`) instead of the orange game palette. Its
+stylesheet is no longer in the games selector in `shared/styles.css`, so it gets the sand tokens like the
+game menus. The page CSS uses only tokens; the canvas reads its two colours from them
+(`getComputedStyle`).
+
+| Element | Was (game palette) | Now |
+|---|---|---|
+| Ground, cards, pad | cream, white cards, pad with an inset hairline | sand; paper cards and pad on `--sh-md`, no border |
+| Buttons, 開始打針 | orange-wash pills | style C: paper + 2px cocoa, 16px corners |
+| The child's stroke (and the demo's) | `#C2410C` orange | `--leaf-deep` (5.75:1 on card) |
+| The perfect circle | dashed `#15803D` green | dashed `--primary-ink` cocoa, 3px; told apart from the 6px solid stroke by width, dash and hue |
+| Score, best score, 最高紀錄 number | dark orange | `--code` (leaf-deep), like the home code digits |
+| Stars | gold `#F59E0B` | earned: `--leaf` fill + `--leaf-deep` outline; empty: `--line` outline only (filled vs empty, not colour alone) |
+| Best slot / best try | pale yellow + `#A16207` frame | `--pick-wash` + 2px `--pick` ring, star / 「最高」 kept |
+| 這一次 slot | orange wash + frame | paper + 2px cocoa ring |
+| 「你」 row and tag | orange | `--pick-wash` row + `--pick` ring; tag white on leaf-deep (5.99:1) |
+| Rank discs | gold / silver / bronze | 1st: leaf-deep disc, white numeral; 2nd, 3rd: paper disc on `--sh-sm`, cocoa numeral |
+| Trophy icon | `#A16207` | `--leaf-deep` |
+| Retry note | orange wash + frame | paper card on `--sh-md`, centred |
+
+On 320px phones the 「和爸爸媽媽比賽」 choice wraps, centred, and only at `和爸爸媽媽<wbr>比賽`
+(`word-break: keep-all`), so 爸爸媽媽 never splits. The 40rem desktop rule for the buttons was removed
+(phone-only).
+
 ## Scoring algorithm
 
 1. **Resample** the stroke to 64 points evenly spaced *along the path*. Without this, slow-drawn
@@ -567,13 +593,14 @@ Tested invariant to position, size, direction, starting point and drawing speed.
 
 After each try the fitted circle is drawn **dashed** over the child's stroke — they can see where
 it bulged, rather than only receiving a number. (No caption: the 「虛線是最完美的圓」 legend was
-removed at the product owner's request; the dashed green circle explains itself.)
+removed at the product owner's request; the dashed circle explains itself. It is cocoa since
+2026-11-18; it was green on the orange palette.)
 
 ## Play
 
 - **The how-to is an animation, not text on the cover.** The cover keeps only the title, the mode
   choice and 開始畫. On the empty drawing pad, a pointing finger draws a circle in one stroke, starting
-  at the top and going clockwise. An orange line grows behind it over a faint dashed guide. The
+  at the top and going clockwise. A leaf-deep line grows behind it over a faint dashed guide. The
   finger lifts, the circle fades and the loop repeats every 3.2 s, under the caption 「一筆畫一個圓」.
   The moment a finger touches the pad the demo disappears, and it comes back for the next try. It is
   SMIL in an inline SVG, so the line and the finger share one clock. With reduced motion it is paused
@@ -581,9 +608,9 @@ removed at the product owner's request; the dashed green circle explains itself.
   line 「用一根手指，一筆畫一個圓」 carries the instruction as text.
 - **Earlier tries stay on screen.** Under the turn title, each player has a row of three slots:
   - a finished try shows its score;
-  - once there are two or more, the best one gets a star on pale yellow (#FEF9C3, #A16207 frame) —
-    a star, not colour alone;
-  - the try being drawn is framed in orange with 「這一次」;
+  - once there are two or more, the best one gets a leaf star on `--pick-wash` with a `--pick`
+    frame — a star, not colour alone;
+  - the try being drawn is framed in cocoa with 「這一次」;
   - the rest show 「—」.
 
   In 比賽 mode both rows are shown, named, so the child can see the parent's score while drawing.
@@ -603,10 +630,10 @@ removed at the product owner's request; the dashed green circle explains itself.
     two players, real scores always show and defaults fill only the empty places (highest first).
     Default rows are tagged 「預設」 so the board never passes off made-up scores as other children.
     Ties put the real player above the default.
-  - The phone's own row is tagged 「你」 on orange — visible only on that phone, so it isn't a name.
+  - The phone's own row is tagged 「你」 on leaf-deep — visible only on that phone, so it isn't a name.
     After a round: 「你今天最好的 82 分，排第 1 名！」 or 「…再 9 分就能上榜！」.
-  - Ranks are gold / silver / bronze discs with white numerals; the numeral carries the rank, so it
-    isn't colour alone.
+  - Ranks are round discs: 1st leaf-deep with a white numeral, 2nd and 3rd paper with a cocoa
+    numeral. The numeral carries the rank, so it isn't colour alone.
   - **Offline or rules not published:** the defaults still show, with 「連不上排行榜，先顯示預設分數。」;
     the game is unaffected.
   - **Tested:**

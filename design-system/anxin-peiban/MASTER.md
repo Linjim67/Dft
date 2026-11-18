@@ -75,7 +75,13 @@ Search highlights (`mark`) use the honey tile (8.6:1 with cocoa).
 The owner excluded the games' own colours. `shared/styles.css` restores the old orange-era token
 values (and pill buttons) on game screens, recognised with `:root:has(link[href^="/games/<game>/"])`.
 The game menus (`/games/solo/`, `/games/duo/` and the pairing page) are not in that list and follow
-the sand palette. **Add any new game's stylesheet path to that selector.**
+the sand palette. **畫圓圈 (`/games/draw-circle/`) left the list on 2026-11-18**: it follows the home
+page's format (`HOME-FORMAT.md`). **Add any new game's stylesheet path to that selector**, unless the
+game is meant to follow the home format.
+
+### Home format
+`HOME-FORMAT.md` writes down what makes `/home/` look the way it does (surfaces, colour roles,
+controls, icons, circles, words) and has a checklist for bringing another page into that format.
 
 ## Style — warm soft, low-chrome
 
