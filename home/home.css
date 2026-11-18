@@ -364,11 +364,14 @@
    身體放在按鈕後面（z-index −1，.quad 有 filter 所以自成一層）：圓弧自己擋住下半身，人是正的。
    兩隻手畫在按鈕上面，各自貼在弧上。位置由 home/mascots.js 依那一塊的實際大小算。
    點得到露出來的頭（被按鈕蓋住的地方點到的是按鈕）；手不擋按鈕。 */
+/* 順時針斜 20°（主人指定），以下巴（貼在弧上的那一點）為軸。
+   用獨立的 rotate 屬性，點牠時的 transform 動畫（縮、擺頭）會疊在這個角度上，不會把它蓋掉 */
 .peek-body {
   position: absolute;
   z-index: -1;
   display: block;
   aspect-ratio: 1;
+  rotate: 20deg;
   transform-origin: 50% 68%;
   cursor: pointer;
   -webkit-tap-highlight-color: transparent;

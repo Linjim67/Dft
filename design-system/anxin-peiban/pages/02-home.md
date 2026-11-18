@@ -110,7 +110,7 @@ the sand palette when drawn here; the game itself is unchanged:
   walks to random spots (about 34px/s, easing in and out, walk frames advanced every 7px travelled),
   rests 1.2–3.8s and turns. **Tap:** it stops, switches to the happy jump face, hops once (squash and
   stretch on `.stroll-body`), and a leaf heart floats up; then it resumes.
-- **小麻糬 peeks from behind 抽血大小問**, upright (owner, 2026-11-17). `.peek-body` sits behind the
+- **小麻糬 peeks from behind 抽血大小問**, tilted 20° clockwise about its chin (owner, 2026-11-18; the CSS `rotate` property, so the tap animation's `transform` stacks on top). `.peek-body` sits behind the
   tiles (`z-index: -1` inside `.quad`'s stacking context), so the tile's curved edge hides its lower
   body. Two U-shaped hands (`.peek-hands`, above the tiles, no pointer events) sit on the arc at ±6.5°,
   one higher than the other. Position: 57° up the tile's outer arc (radius = tile − 10px), computed from
