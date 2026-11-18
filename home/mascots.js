@@ -82,7 +82,7 @@
 
     /* 右上那塊的外弧：半徑 r = 格子寬 − 10px，圓心在格子左邊 10px、上面 r 的地方（格子座標） */
     var THETA = 57;            /* 小麻糬在弧上的位置（度，0 = 正右、90 = 正上）；再高皇冠會碰到上面的代碼卡 */
-    var HAND_SPREAD = 6.5;     /* 兩隻手離中心幾度 */
+    var HAND_SPREAD = 4;       /* 兩隻手離中心幾度（主人：手再靠近身體一點） */
     var lastW = 0;
     var bodyW = 0;
     var layout = function () {

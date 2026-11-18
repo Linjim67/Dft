@@ -112,7 +112,7 @@ the sand palette when drawn here; the game itself is unchanged:
   stretch on `.stroll-body`), and a leaf heart floats up; then it resumes.
 - **小麻糬 peeks from behind 抽血大小問**, tilted 20° clockwise about its chin (owner, 2026-11-18; the CSS `rotate` property, so the tap animation's `transform` stacks on top). `.peek-body` sits behind the
   tiles (`z-index: -1` inside `.quad`'s stacking context), so the tile's curved edge hides its lower
-  body. Two U-shaped hands (`.peek-hands`, above the tiles, no pointer events) sit on the arc at ±6.5°,
+  body. Two U-shaped hands (`.peek-hands`, above the tiles, no pointer events) sit on the arc at ±4° (closer in, owner 2026-11-18),
   one higher than the other. Position: 57° up the tile's outer arc (radius = tile − 10px), computed from
   the tile's real size and re-run on resize. Any higher and the crown touches the code card. **Tap the
   head:** it ducks 26%, shakes its head ±11°, and pops back up while the hands grip tighter. Taps where
