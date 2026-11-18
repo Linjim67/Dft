@@ -79,10 +79,14 @@ The page itself has no lede either: the h1 「家長安慰指南」 sits straigh
   each phrase or action, and only 怎麼說 draws them. 打針當下 and 不要說 only circle the icon, with
   no trunk or branches (owner, 2026-11-14; `plantTree(…, { lines: false })` → `.is-bare`). Their
   paragraphs, actions and pairs fade in one at a time on the same rhythm. `guide.js` measures the positions and
-  re-measures on resize, font load and riddle reveals (`ResizeObserver`). Topics that open without a
-  tap (the first one in each age group, find-in-page) appear already drawn. Reduced motion → instant.
+  re-measures on resize, font load and riddle reveals (`ResizeObserver`). Every topic starts
+  collapsed, including the first in each age group (owner, 2026-11-18). Topics opened without a tap
+  (find-in-page) appear already drawn. Reduced motion → instant.
 - **Age cards** (2 歲以下 / 3–4 歲 / 5–9 歲): a radio group with icons and a check badge, selected in
-  cocoa. Pre-selected from the profile by whole years (2歲半 → 2 歲以下; 10+ falls back to 5–9 with
+  leaf. The icons are one set (redrawn 2026-11-18; the old backpack read as a padlock and didn't say
+  "school-age child"): the same round face, aged by hair and props. Baby: a curl and a pacifier
+  (`baby`). 3–4: straight bangs (`kid`). 5–9: a baseball cap with the brim to the right
+  (`schoolkid`). Pre-selected from the profile by whole years (2歲半 → 2 歲以下; 10+ falls back to 5–9 with
   a note). Only the selected group's panel is rendered visible.
 - 怎麼說 opens straight onto the age cards.
 - **Phrases to say** are one per line in regular weight, with no bubbles. The tree's branch is their

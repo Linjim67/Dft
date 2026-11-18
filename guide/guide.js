@@ -32,14 +32,18 @@
   }
 
   var ICONS = {
-    /* 年紀 */
+    /* 年紀卡：同一張圓臉，靠髮型和配件分年紀（寶寶：一撮捲毛＋奶嘴；3–4 歲：齊瀏海；5–9 歲：棒球帽） */
     baby: '<circle cx="12" cy="13" r="7.5"/><path d="M12 5.5c0-1.6 1.2-2.8 2.8-2.8"/>' +
-      '<path d="M9.4 12.2h.01M14.6 12.2h.01"/><path d="M10 15.6c1.2.9 2.8.9 4 0"/>',
+      '<path d="M9.3 11.8h.01M14.7 11.8h.01"/><path d="M9.6 15.4h4.8"/><circle cx="12" cy="17" r="1.4"/>',
+    kid: '<circle cx="12" cy="13" r="7.5"/>' +
+      '<path d="M4.7 11.6c3 0 5.6-1.3 7.3-3.9 1.7 2.6 4.3 3.9 7.3 3.9"/>' +
+      '<path d="M9.3 13.9h.01M14.7 13.9h.01"/><path d="M9.9 16.6c1.2.9 3 .9 4.2 0"/>',
+    schoolkid: '<circle cx="12" cy="13.5" r="7"/><path d="M5.2 11.4H21.5"/>' +
+      '<path d="M9.4 14.3h.01M14.6 14.3h.01"/><path d="M10 17c1.2.9 2.8.9 4 0"/>',
+    /* 主題用的小熊（熟悉的玩具） */
     bear: '<circle cx="6.8" cy="7" r="2.6"/><circle cx="17.2" cy="7" r="2.6"/>' +
       '<circle cx="12" cy="13.5" r="7"/><path d="M9.8 12.4h.01M14.2 12.4h.01"/>' +
       '<path d="M10.8 16h2.4"/>',
-    backpack: '<path d="M5.5 11a6.5 6.5 0 0 1 13 0v8a2 2 0 0 1-2 2h-9a2 2 0 0 1-2-2Z"/>' +
-      '<path d="M9 5.2V4.5a3 3 0 0 1 6 0v.7"/><path d="M9 14.5h6v3.5H9Z"/>',
     /* 打針當下 */
     shield: '<path d="M12 3 5 6v5.2c0 4.3 2.9 8.1 7 9.8 4.1-1.7 7-5.5 7-9.8V6Z"/>' +
       '<path d="m9 12 2.2 2.2L15.5 10"/>',
@@ -78,7 +82,7 @@
     stethoscope: '<path d="M6 3.5H4.8v5.2a4.2 4.2 0 0 0 8.4 0V3.5H12"/>' +
       '<path d="M9 12.9v1.9a4.7 4.7 0 0 0 9.4 0v-2.3"/><circle cx="18.4" cy="10.4" r="2.1"/>'
   };
-  var AGE_ICON = { baby: 'baby', preschool: 'bear', school: 'backpack' };
+  var AGE_ICON = { baby: 'baby', preschool: 'kid', school: 'schoolkid' };
 
   var ICON_X = '<path d="M7 7l10 10M17 7 7 17"/>';
   var ICON_CHECK = '<path d="M6 12.4 10.2 16.6 18 8.8"/>';
@@ -350,8 +354,8 @@
     var panel = el('div', 'topic-list is-plain age-panel');
     panel.id = 'panel-' + g.id;
     panel.hidden = true;
-    g.topics.forEach(function (t, i) {
-      var topic = Anxin.buildTopic(t.title, { open: i === 0, icon: ICONS[t.icon], animate: false });
+    g.topics.forEach(function (t) {
+      var topic = Anxin.buildTopic(t.title, { icon: ICONS[t.icon], animate: false });
       topic.body.appendChild(renderItems(t.items));
       panel.appendChild(topic.root);
       plantTree(topic, listRows(topic.body));
