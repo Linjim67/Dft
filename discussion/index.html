@@ -25,11 +25,12 @@
     /* 兩個網址、同一張頁面（vercel.json 把 /discussion/parent/ 指到這裡）：
        /discussion/         公開版：任何人，自己填稱呼、身分、孩子的年紀
        /discussion/parent/  家長版：從回饋頁過來，身分固定「家長」，孩子沿用 #01 填的資料
-       家長版找不到資料（過期、換了手機）就改用公開版，而不是把人帶回 #01 重填。 */
+       家長版找不到資料（過期、換了手機）就改用公開版，而不是把人帶回 #01 重填。
+       ?tab=share | ask | other 選好分頁：安慰指南連到 share（我想分享），抽血大小問連到 ask（我要問問題）。 */
     (function () {
       var parent = /^\/discussion\/parent\/?$/.test(location.pathname);
       if (parent && !Anxin.profile.load()) {
-        location.replace('/discussion/' + location.hash);
+        location.replace('/discussion/' + location.search + location.hash);
         return;
       }
       document.documentElement.setAttribute('data-discuss', parent ? 'clinic' : 'public');
@@ -59,90 +60,103 @@
         <p class="page-lede only-clinic">辛苦了！您剛剛陪孩子用過的方法，也許正是下一個家庭需要的。</p>
       </div>
 
-      <a class="btn btn-primary compose-btn" href="#new">
-        <svg viewBox="0 0 24 24" class="icon" aria-hidden="true">
-          <path d="M4.5 19.5h4l10-10-4-4-10 10v4Z" />
-          <path d="m13 7 4 4" />
-        </svg>
-        <span>分享您的方法</span>
-      </a>
-
-      <div class="finder" role="search" aria-label="搜尋討論">
-        <div class="search-row">
-          <div class="search-box">
-            <label class="vh" for="q">搜尋討論</label>
-            <svg viewBox="0 0 24 24" class="icon" aria-hidden="true">
-              <circle cx="11" cy="11" r="6.5" />
-              <path d="m16 16 4 4" />
-            </svg>
-            <input type="search" id="q" placeholder="關鍵字或 #標籤" enterkeyhint="search" autocomplete="off">
-          </div>
-          <button class="filter-toggle" type="button" id="filterBtn" aria-expanded="false"
-            aria-controls="filterPanel">
-            <svg viewBox="0 0 24 24" class="icon" aria-hidden="true">
-              <path d="M4 7h9M17 7h3M4 17h3M11 17h9" />
-              <circle cx="15" cy="7" r="2" />
-              <circle cx="9" cy="17" r="2" />
-            </svg>
-            <span>篩選</span>
-            <span class="filter-count" id="filterCount" hidden></span>
-          </button>
-        </div>
-
-        <div class="filter-panel" id="filterPanel" hidden>
-          <fieldset class="filter-group">
-            <legend class="filter-label">身分</legend>
-            <div class="chip-row" id="roleFilter"></div>
-          </fieldset>
-
-          <div class="filter-group">
-            <p class="filter-label">
-              <span id="ageFilterLabel">孩子年紀</span>
-              <output id="ageFilterOut" class="filter-out">不限</output>
-            </p>
-            <!-- 一條軌道、兩端都能拖（discussion.js 的「年紀範圍」） -->
-            <div class="dual-range" data-dual id="ageDual">
-              <div class="dual-track" aria-hidden="true"><div class="dual-fill"></div></div>
-              <input type="range" class="dual-lo" id="ageFrom" min="0" max="36" step="1" value="0"
-                aria-label="孩子年紀：最小">
-              <input type="range" class="dual-hi" id="ageTo" min="0" max="36" step="1" value="36"
-                aria-label="孩子年紀：最大">
-            </div>
-            <p class="dual-scale" aria-hidden="true"><span>0 歲</span><span>18 歲</span></p>
-          </div>
-
-          <fieldset class="filter-group">
-            <legend class="filter-label">孩子性別</legend>
-            <div class="chip-row" id="genderFilter">
-              <label class="chip-radio"><input type="radio" name="genderFilter" value="" checked><span
-                  class="chip">不限</span></label>
-              <label class="chip-radio"><input type="radio" name="genderFilter" value="男"><span
-                  class="chip">男孩</span></label>
-              <label class="chip-radio"><input type="radio" name="genderFilter" value="女"><span
-                  class="chip">女孩</span></label>
-            </div>
-          </fieldset>
-
-          <button class="quiet-link clear-filters" type="button" id="clearFilters">清除篩選</button>
-        </div>
-
-        <!-- 家長版：一鍵找「和自己孩子差不多大」的經驗 -->
-        <div class="chip-row only-clinic">
-          <button class="chip" type="button" id="nearAgeBtn" aria-pressed="false">和孩子差不多大</button>
-        </div>
+      <!-- 三種文章，一次看一種（樣子和家長安慰指南的章節分頁一樣，discussion.js 負責切換）。
+           文章的 kind 就是這三個分頁之一；分頁裡的發文按鈕會先選好同一種 -->
+      <div class="tabs" role="tablist" aria-label="文章分類" id="kindTabs">
+        <button class="tab" type="button" role="tab" id="tab-share" data-kind="share" aria-controls="kindPanel"
+          aria-selected="true">我想分享</button>
+        <button class="tab" type="button" role="tab" id="tab-ask" data-kind="ask" aria-controls="kindPanel"
+          aria-selected="false" tabindex="-1">我要問問題</button>
+        <button class="tab" type="button" role="tab" id="tab-other" data-kind="other" aria-controls="kindPanel"
+          aria-selected="false" tabindex="-1">其他</button>
       </div>
 
-      <div class="list-bar">
-        <div class="sort" role="radiogroup" aria-label="排序方式">
-          <label><input type="radio" name="sort" value="recommend" checked><span>推薦</span></label>
-          <label><input type="radio" name="sort" value="latest"><span>最新</span></label>
-        </div>
-        <p class="list-count" id="listCount"></p>
-      </div>
+      <div id="kindPanel" role="tabpanel" aria-labelledby="tab-share">
+        <a class="btn btn-primary compose-btn" href="#new">
+          <svg viewBox="0 0 24 24" class="icon" aria-hidden="true">
+            <path d="M4.5 19.5h4l10-10-4-4-10 10v4Z" />
+            <path d="m13 7 4 4" />
+          </svg>
+          <span id="composeBtnLabel">分享您的方法</span>
+        </a>
 
-      <div id="listStatus"></div>
-      <ol class="thread-list" id="threadList"></ol>
-      <button class="btn btn-quiet more-btn" type="button" id="moreBtn" hidden>顯示更多</button>
+        <div class="finder" role="search" aria-label="搜尋討論">
+          <div class="search-row">
+            <div class="search-box">
+              <label class="vh" for="q">搜尋討論</label>
+              <svg viewBox="0 0 24 24" class="icon" aria-hidden="true">
+                <circle cx="11" cy="11" r="6.5" />
+                <path d="m16 16 4 4" />
+              </svg>
+              <input type="search" id="q" placeholder="關鍵字或 #標籤" enterkeyhint="search" autocomplete="off">
+            </div>
+            <button class="filter-toggle" type="button" id="filterBtn" aria-expanded="false"
+              aria-controls="filterPanel">
+              <svg viewBox="0 0 24 24" class="icon" aria-hidden="true">
+                <path d="M4 7h9M17 7h3M4 17h3M11 17h9" />
+                <circle cx="15" cy="7" r="2" />
+                <circle cx="9" cy="17" r="2" />
+              </svg>
+              <span>篩選</span>
+              <span class="filter-count" id="filterCount" hidden></span>
+            </button>
+          </div>
+
+          <div class="filter-panel" id="filterPanel" hidden>
+            <fieldset class="filter-group">
+              <legend class="filter-label">身分</legend>
+              <div class="chip-row" id="roleFilter"></div>
+            </fieldset>
+
+            <div class="filter-group">
+              <p class="filter-label">
+                <span id="ageFilterLabel">孩子年紀</span>
+                <output id="ageFilterOut" class="filter-out">不限</output>
+              </p>
+              <!-- 一條軌道、兩端都能拖（discussion.js 的「年紀範圍」） -->
+              <div class="dual-range" data-dual id="ageDual">
+                <div class="dual-track" aria-hidden="true"><div class="dual-fill"></div></div>
+                <input type="range" class="dual-lo" id="ageFrom" min="0" max="36" step="1" value="0"
+                  aria-label="孩子年紀：最小">
+                <input type="range" class="dual-hi" id="ageTo" min="0" max="36" step="1" value="36"
+                  aria-label="孩子年紀：最大">
+              </div>
+              <p class="dual-scale" aria-hidden="true"><span>0 歲</span><span>18 歲</span></p>
+            </div>
+
+            <fieldset class="filter-group">
+              <legend class="filter-label">孩子性別</legend>
+              <div class="chip-row" id="genderFilter">
+                <label class="chip-radio"><input type="radio" name="genderFilter" value="" checked><span
+                    class="chip">不限</span></label>
+                <label class="chip-radio"><input type="radio" name="genderFilter" value="男"><span
+                    class="chip">男孩</span></label>
+                <label class="chip-radio"><input type="radio" name="genderFilter" value="女"><span
+                    class="chip">女孩</span></label>
+              </div>
+            </fieldset>
+
+            <button class="quiet-link clear-filters" type="button" id="clearFilters">清除篩選</button>
+          </div>
+
+          <!-- 家長版：一鍵找「和自己孩子差不多大」的經驗 -->
+          <div class="chip-row only-clinic">
+            <button class="chip" type="button" id="nearAgeBtn" aria-pressed="false">和孩子差不多大</button>
+          </div>
+        </div>
+
+        <div class="list-bar">
+          <div class="sort" role="radiogroup" aria-label="排序方式">
+            <label><input type="radio" name="sort" value="recommend" checked><span>推薦</span></label>
+            <label><input type="radio" name="sort" value="latest"><span>最新</span></label>
+          </div>
+          <p class="list-count" id="listCount"></p>
+        </div>
+
+        <div id="listStatus"></div>
+        <ol class="thread-list" id="threadList"></ol>
+        <button class="btn btn-quiet more-btn" type="button" id="moreBtn" hidden>顯示更多</button>
+      </div>
     </section>
 
     <!-- ══════════ 單篇討論 ══════════ -->
@@ -193,8 +207,9 @@
     <!-- ══════════ 發文 ══════════ -->
     <section id="composeView" hidden aria-labelledby="composeTitle">
       <div class="page-head">
+        <!-- 標題、說明、內文的題目跟著分類換（discussion.js 的 KIND） -->
         <h1 id="composeTitle" tabindex="-1">分享您的方法</h1>
-        <p class="page-lede">怎麼跟孩子說明、當下怎麼轉移注意力、事後怎麼鼓勵，有用、沒用的都值得說。</p>
+        <p class="page-lede" id="composeLede">怎麼跟孩子說明、當下怎麼轉移注意力、事後怎麼鼓勵，有用、沒用的都值得說。</p>
       </div>
 
       <div id="errorSummary" class="error-summary" role="alert" tabindex="-1"
@@ -211,9 +226,22 @@
 
       <form id="composeForm" novalidate>
 
+        <!-- ── 分類：先選好目前的分頁，可以改 ── -->
+        <fieldset class="field kind-field">
+          <legend class="field-label">分類</legend>
+          <div class="chip-row" id="kindChips">
+            <label class="chip-radio"><input type="radio" name="kind" value="share" checked><span
+                class="chip">我想分享</span></label>
+            <label class="chip-radio"><input type="radio" name="kind" value="ask"><span
+                class="chip">我要問問題</span></label>
+            <label class="chip-radio"><input type="radio" name="kind" value="other"><span
+                class="chip">其他</span></label>
+          </div>
+        </fieldset>
+
         <!-- 家長版：不用再填，沿用 #01 的資料（不含暱稱） -->
         <div class="identity-card only-clinic">
-          <p class="identity-title">以「家長」身分分享</p>
+          <p class="identity-title" id="identityTitle">以「家長」身分分享</p>
           <p class="identity-kid">
             <svg viewBox="0 0 24 24" class="icon" aria-hidden="true">
               <circle cx="12" cy="7.5" r="3.2" />
@@ -267,7 +295,7 @@
         <!-- ── 內容 ── -->
         <div class="field" id="contentField">
           <label class="field-label" for="content">
-            您的方法或經驗 <span class="req">必填</span>
+            <span id="contentLabel">您的方法或經驗</span> <span class="req">必填</span>
           </label>
           <textarea id="content" maxlength="2000" rows="6" aria-required="true"
             aria-describedby="content-error content-count"

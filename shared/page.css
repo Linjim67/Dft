@@ -404,6 +404,55 @@ a.btn {
   }
 }
 
+/* ═══ 分頁：三顆膠囊置中，捲動時黏在頂端 ══════════════════════
+   家長安慰指南的章節、討論區的分類。選到的那一個：葉綠深實心＋白字（5.99:1）；其他：白底深字。
+   形狀不變，靠實心／空心分辨，不只靠顏色。 */
+
+.tabs {
+  position: sticky;
+  top: 0;
+  z-index: 5;
+  display: flex;
+  justify-content: center;
+  gap: var(--sp-2);
+  margin: 0 calc(var(--sp-5) * -1) var(--sp-5);
+  padding: var(--sp-2) var(--sp-5);
+  background: var(--bg);
+  transition: box-shadow var(--t-base) var(--ease);
+}
+
+.tabs.is-stuck {
+  box-shadow: 0 8px 16px -12px rgba(62, 51, 41, .35);
+}
+
+.tab {
+  min-height: var(--tap);
+  padding-inline: 20px;
+  border: 0;
+  border-radius: var(--r-btn);
+  background: var(--card);
+  color: var(--fg);
+  font: inherit;
+  font-size: .95rem;
+  font-weight: 700;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: background-color var(--t-fast) var(--ease),
+    color var(--t-fast) var(--ease);
+}
+
+.tab[aria-selected="true"] {
+  background: var(--pick);
+  color: #FFFFFF;
+}
+
+/* 320px 寬的小手機：三顆膠囊擠得下一排 */
+@media (max-width: 359px) {
+  .tab {
+    padding-inline: 12px;
+  }
+}
+
 /* ═══ 讀完之後：下一步（兩頁的最後一張卡） ═══════════════════
    紙白卡浮在沙米底上（看得出是一張卡）；圖示方塊用葉綠，連結是可可描邊 */
 
@@ -602,6 +651,10 @@ mark {
   }
 
   .help-link:hover {
+    background: var(--primary-wash);
+  }
+
+  .tab[aria-selected="false"]:hover {
     background: var(--primary-wash);
   }
 

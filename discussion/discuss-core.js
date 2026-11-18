@@ -9,6 +9,8 @@
   'use strict';
 
   var ROLES = ['家長', '醫師', '護士', '醫檢師', '其他'];
+  /* 文章的三種分類（列表上方的三個分頁）。舊文章沒有這個欄位，都是分享方法 → share */
+  var KINDS = ['share', 'ask', 'other'];
   /* 醫護人員分享的是「一群孩子」的經驗：年紀用範圍（例如 3–6 歲） */
   var PRO_ROLES = ['醫師', '護士', '醫檢師'];
   var GENDERS = ['男', '女', '不限'];
@@ -104,7 +106,12 @@
     return text(raw, nickname, MAX.author);
   }
 
-  /* f: { role, author, content, members: [{ ageMin, ageMax, gender }], hashtags }
+  function kindOf(k) {
+    if (KINDS.indexOf(k) === -1) throw new Error('invalid kind: ' + k);
+    return k;
+  }
+
+  /* f: { kind, role, author, content, members: [{ ageMin, ageMax, gender }], hashtags }
      opts: { source: 'public' | 'clinic', nickname }
      一篇只寫一個孩子：members 只留第一位（舊文章可能有好幾位，讀的時候照樣顯示） */
   function buildThread(f, opts) {
@@ -116,6 +123,7 @@
     if (!members.length) throw new Error('no members');
     return {
       v: 1,
+      kind: kindOf(f.kind),
       role: roleOf(f, source),
       author: authorName(f.author, nickname),
       content: content,
@@ -174,6 +182,7 @@
     return {
       id: d.id,
       v: d.v === 1 ? 1 : 0,
+      kind: KINDS.indexOf(d.kind) === -1 ? 'share' : d.kind,
       role: ROLES.indexOf(d.role) === -1 ? '其他' : d.role,
       author: typeof d.author === 'string' ? d.author : '',
       content: typeof d.content === 'string' ? d.content : '',
@@ -254,10 +263,11 @@
 
   function overlaps(m, lo, hi) { return m.ageMin <= hi && m.ageMax >= lo; }
 
-  /* f: { query, roles: [], ageMin, ageMax (null = 不限), gender (null = 不限) }
+  /* f: { kind (null = 全部), query, roles: [], ageMin, ageMax (null = 不限), gender (null = 不限) }
      年紀和性別要是「同一位」孩子：3 歲男孩＋8 歲女孩的文章，不算「3–6 歲的女孩」 */
   function matches(t, f) {
     f = f || {};
+    if (f.kind && t.kind !== f.kind) return false;
     if (f.roles && f.roles.length && f.roles.indexOf(t.role) === -1) return false;
     var aged = f.ageMin != null || f.ageMax != null;
     if (aged || f.gender) {
@@ -345,6 +355,7 @@
 
   var AnxinDiscuss = {
     ROLES: ROLES,
+    KINDS: KINDS,
     PRO_ROLES: PRO_ROLES,
     GENDERS: GENDERS,
     KID: KID,

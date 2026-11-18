@@ -444,10 +444,17 @@ service cloud.firestore {
       'clicks', 'dwellMs', 'helpful', 'replyCount', 'lastReplyId', 'lastActivityAt', 'createdAt'];
   }
 
+  // 分類（討論區的三個分頁：我想分享／我要問問題／其他）。必須與 AnxinDiscuss.KINDS 一致
+  function discussKinds() {
+    return ['share', 'ask', 'other'];
+  }
+
   // 家長版（source 'clinic'，從回饋頁過來）：身分固定家長、孩子就是 #01 填的那一位（稱呼和公開版一樣選填）
   // 兩版都是一篇一個孩子（validMembers）
+  // kind 可以沒有：還開著舊版頁面的手機照樣能發文（讀的時候當成 share）
   function validThread(d) {
-    return d.keys().hasOnly(threadKeys()) && d.keys().hasAll(threadKeys())
+    return d.keys().hasOnly(threadKeys().concat(['kind'])) && d.keys().hasAll(threadKeys())
+      && (!d.keys().hasAny(['kind']) || d.kind in discussKinds())
       && d.v == 1
       && d.role in discussRoles()
       && d.author is string && d.author.size() <= 20

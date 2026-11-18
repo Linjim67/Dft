@@ -5,6 +5,7 @@
      clinic  /discussion/parent/  從回饋頁過來的家長：身分固定家長，孩子沿用 #01 的資料
    資料規則（payload、搜尋、推薦排序）在 discuss-core.js，資料進出在 /shared/firebase.js。
    畫面：#（列表）、#t=<id>（單篇）、#new（發文），手機的返回鍵在三者之間來回。
+   分類：列表上方三個分頁（我想分享／我要問問題／其他），網址 ?tab=share | ask | other。
    ═══════════════════════════════════════════════════════════════ */
 (function () {
   'use strict';
@@ -29,6 +30,65 @@
   var PAGE = 20;
   var SEND_TIMEOUT_MS = 15000;
   var FULL = { from: 0, to: D.AGE_MAX_IDX };
+
+  /* ─────────────────────────────────────────────────────────────
+     三種文章（D.KINDS）：分頁名稱、發文按鈕、發文頁的標題與題目、空列表、常用標籤
+     ───────────────────────────────────────────────────────────── */
+
+  var KIND = {
+    share: {
+      tab: '我想分享',
+      compose: '分享您的方法',
+      lede: '怎麼跟孩子說明、當下怎麼轉移注意力、事後怎麼鼓勵，有用、沒用的都值得說。',
+      as: '分享',
+      label: '您的方法或經驗',
+      placeholder: '例如：打針前先讓孩子抱著喜歡的玩偶，跟他一起數到三。',
+      missing: '請寫下您的方法或經驗。',
+      empty: ['還沒有人分享', '成為第一個分享方法的人吧。'],
+      posted: '已發布，謝謝您的分享',
+      suggest: ['深呼吸', '轉移注意力', '事先說明', '抱抱', '說故事', '玩遊戲', '小獎勵']
+    },
+    ask: {
+      tab: '我要問問題',
+      compose: '提出您的問題',
+      lede: '陪孩子打針、抽血遇到的疑問，其他家長和醫護人員都可以回答。和孩子身體狀況有關的問題，請直接問現場的醫護人員。',
+      as: '提問',
+      label: '您的問題',
+      placeholder: '例如：孩子上次打針哭得很厲害，這次要怎麼事先跟他說？',
+      missing: '請寫下您的問題。',
+      empty: ['還沒有人提問', '有疑問就問問看吧。'],
+      posted: '已發布，有人回覆時會出現在這裡',
+      suggest: ['打針', '抽血', '事先說明', '害怕', '空腹', '瘀青']
+    },
+    other: {
+      tab: '其他',
+      compose: '寫下您想說的',
+      lede: '心情、感謝、建議，想說什麼都可以。',
+      as: '發文',
+      label: '您想說的話',
+      placeholder: '例如：謝謝今天幫忙的醫檢師，孩子比上次勇敢多了。',
+      missing: '請寫下您想說的話。',
+      empty: ['這裡還沒有文章', '想說什麼都可以寫下來。'],
+      posted: '已發布，謝謝您',
+      suggest: ['感謝', '心情', '建議']
+    }
+  };
+
+  function isKind(k) { return D.KINDS.indexOf(k) !== -1; }
+
+  /* 網址的 ?tab=：安慰指南帶 share、抽血大小問帶 ask；沒帶或看不懂就是 share */
+  function kindFromUrl() {
+    var k = null;
+    try { k = new URLSearchParams(location.search).get('tab'); } catch (e) { /* 忽略 */ }
+    return isKind(k) ? k : 'share';
+  }
+
+  function kindSearch(kind) {
+    var params;
+    try { params = new URLSearchParams(location.search); } catch (e) { return location.search; }
+    params.set('tab', kind);
+    return '?' + params.toString();
+  }
 
   /* ─────────────────────────────────────────────────────────────
      本機儲存（都只是方便，存不進去頁面照常）
@@ -167,6 +227,7 @@
     loading: false,
     failed: false,
     sort: 'recommend',
+    kind: kindFromUrl(),
     shown: PAGE,
     filters: { query: '', roles: [], from: FULL.from, to: FULL.to, gender: '' }
   };
@@ -242,6 +303,8 @@
   }
 
   window.addEventListener('hashchange', function () { route(false); });
+  /* 發文後網址的 ?tab= 換過：返回時只有網址的查詢字串不同，也要換畫面（route 重複叫沒關係） */
+  window.addEventListener('popstate', function () { route(false); });
 
   function updateTopbar(view) {
     var onList = view === 'list';
@@ -298,6 +361,7 @@
     var f = state.filters;
     var aged = ageFiltered();
     return {
+      kind: state.kind,
       query: f.query,
       roles: f.roles,
       ageMin: aged ? D.indexToAge(f.from) : null,
@@ -337,8 +401,9 @@
     var narrowed = !!state.filters.query.trim() || filterCount() > 0;
     count.textContent = (narrowed ? '找到 ' : '共 ') + hits.length + ' 則';
 
-    if (!state.threads.length) {
-      status.innerHTML = stateHtml(ICON.chat, '還沒有人分享', '成為第一個分享方法的人吧。');
+    var empty = !state.threads.some(function (t) { return t.kind === state.kind; });
+    if (empty) {
+      status.innerHTML = stateHtml(ICON.chat, KIND[state.kind].empty[0], KIND[state.kind].empty[1]);
     } else if (!hits.length) {
       status.innerHTML = stateHtml(ICON.search, '沒有符合的討論', '換個關鍵字，或放寬篩選條件。',
         '<button class="btn btn-quiet" type="button" data-clear>清除搜尋與篩選</button>');
@@ -483,9 +548,83 @@
     if (ev.target.closest('[data-clear]')) clearFilters(true);
   });
 
+  /* ── 分類分頁：和家長安慰指南的章節分頁同一套操作 ──────────────
+     WAI-ARIA tabs：三個分頁共用一個 tabpanel（下面的列表跟著換），左右鍵換分頁、Home／End。
+     搜尋和篩選留著，換分頁時一起套用。 */
+
+  var kindBar = $('kindTabs');
+  var kindTabs = Array.prototype.slice.call(kindBar.querySelectorAll('[data-kind]'));
+  var kindSentinel = document.createElement('div');
+  kindBar.parentNode.insertBefore(kindSentinel, kindBar);
+
+  function renderKind() {
+    var selected = null;
+    kindTabs.forEach(function (tab) {
+      var on = tab.getAttribute('data-kind') === state.kind;
+      tab.setAttribute('aria-selected', on ? 'true' : 'false');
+      tab.tabIndex = on ? 0 : -1;
+      if (on) selected = tab;
+    });
+    $('kindPanel').setAttribute('aria-labelledby', selected.id);
+    $('composeBtnLabel').textContent = KIND[state.kind].compose;
+  }
+
+  /* 列表的網址帶著目前的分頁：重新整理、從單篇回來都還在同一頁（沒帶 ?tab= 就是 share，不用補） */
+  function syncKindUrl() {
+    if (kindFromUrl() === state.kind) return;
+    window.history.replaceState(null, '', location.pathname + kindSearch(state.kind) + location.hash);
+  }
+
+  function setKind(kind) {
+    if (!isKind(kind) || kind === state.kind) return;
+    state.kind = kind;
+    state.shown = PAGE;
+    renderKind();
+  }
+
+  function selectKind(tab, opts) {
+    opts = opts || {};
+    var kind = tab.getAttribute('data-kind');
+    var changed = kind !== state.kind;
+    setKind(kind);
+    if (opts.focus) tab.focus();
+    if (!changed) return;
+    syncKindUrl();
+    renderList();
+    /* 捲過了分頁列：回到分頁列（新的列表從頭看） */
+    var top = kindSentinel.getBoundingClientRect().top + window.scrollY;
+    if (window.scrollY > top) window.scrollTo(0, top);
+    Anxin.announce(live, KIND[kind].tab + '：' + $('listCount').textContent);
+  }
+
+  kindBar.addEventListener('click', function (ev) {
+    var tab = ev.target.closest('[data-kind]');
+    if (tab) selectKind(tab);
+  });
+
+  kindBar.addEventListener('keydown', function (ev) {
+    var i = kindTabs.indexOf(document.activeElement);
+    if (i < 0) return;
+    var n = kindTabs.length;
+    var next = { ArrowRight: kindTabs[(i + 1) % n], ArrowLeft: kindTabs[(i - 1 + n) % n],
+      Home: kindTabs[0], End: kindTabs[n - 1] }[ev.key];
+    if (!next) return;
+    ev.preventDefault();
+    selectKind(next, { focus: true });
+  });
+
+  /* 黏在頂端時加一點陰影（和指南一樣） */
+  if ('IntersectionObserver' in window) {
+    new IntersectionObserver(function (entries) {
+      kindBar.classList.toggle('is-stuck', !entries[0].isIntersecting);
+    }).observe(kindSentinel);
+  }
+
   function showList(prev, first) {
     seenList = true;
     document.title = '安心陪伴 · 討論區';
+    renderKind();
+    syncKindUrl();
     if (!state.loaded) loadThreads();
     renderList();
     if (first) return;
@@ -554,6 +693,8 @@
         var nt = D.normalizeThread(d);
         upsert(nt);
         thread.data = nt;
+        /* 直接打開的連結（還沒看過列表）：「所有討論」回到這篇所在的分頁 */
+        if (!seenList) setKind(nt.kind);
         renderPost();
         countOpen(nt);
         startDwell(nt);
@@ -606,7 +747,8 @@
     /* 內容不會變，只畫一次；之後的快照只更新計數（按鈕的焦點才不會被洗掉） */
     if (post.getAttribute('data-id') !== t.id) {
       post.setAttribute('data-id', t.id);
-      post.innerHTML = membersHtml(t) + metaHtml(t, Date.now(), true) +
+      post.innerHTML = '<p class="post-kind">' + esc(KIND[t.kind].tab) + '</p>' +
+        membersHtml(t) + metaHtml(t, Date.now(), true) +
         '<div class="post-body">' + esc(t.content) + '</div>' +
         /* 標籤和列表卡片一樣是純文字；點一下仍會搜尋這個標籤 */
         (t.hashtags.length ? '<ul class="card-tags post-tags" aria-label="標籤（點一下搜尋）">' +
@@ -1082,7 +1224,7 @@
   var errorFields = {
     role: { label: '您的身分' },
     members: { label: '孩子的年紀與性別' },
-    content: { label: '您的方法或經驗', focus: 'content', invalid: 'content' }
+    content: { label: KIND.share.label, focus: 'content', invalid: 'content' }
   };
   var errors = Anxin.createFormErrors({
     form: form,
@@ -1092,6 +1234,8 @@
   });
 
   var role = CLINIC ? '家長' : '';
+  /* 這篇的分類：打開發文頁時先選好目前的分頁 */
+  var composeKind = state.kind;
   /* 一篇只寫一個孩子（醫護人員：一個年齡層）。陣列裡永遠只有一位 */
   var members = [];
   var tags = [];
@@ -1231,9 +1375,37 @@
     errors.clearError('role');
   });
 
+  /* ── 分類：標題、說明、內文的題目、常用標籤跟著換 ── */
+
+  function renderComposeKind() {
+    var k = KIND[composeKind];
+    var r = form.querySelector('input[name="kind"][value="' + composeKind + '"]');
+    if (r) {
+      r.checked = true;
+      Anxin.setAnswered(r, true);
+    }
+    $('composeTitle').textContent = k.compose;
+    $('composeLede').textContent = k.lede;
+    $('identityTitle').textContent = '以「家長」身分' + k.as;
+    $('contentLabel').textContent = k.label;
+    content.placeholder = k.placeholder;
+    errorFields.content.label = k.label;
+    if (current && current.view === 'compose') document.title = '安心陪伴 · ' + k.compose;
+    renderTags();
+  }
+
+  $('kindChips').addEventListener('change', function (ev) {
+    if (!isKind(ev.target.value)) return;
+    composeKind = ev.target.value;
+    renderComposeKind();
+    /* 題目換了：已經顯示的「請寫下…」也換成新的說法 */
+    if (!$('content-error').hidden) {
+      errors.setError('content', KIND[composeKind].missing);
+    }
+  });
+
   /* ── 標籤 ── */
 
-  var SUGGEST = ['深呼吸', '轉移注意力', '事先說明', '抱抱', '說故事', '玩遊戲', '小獎勵'];
   var tagInput = $('tagInput');
 
   function renderTags() {
@@ -1246,7 +1418,7 @@
     tagInput.disabled = full;
     $('tagAdd').disabled = full;
     tagInput.placeholder = full ? '已經 5 個了' : '例如：深呼吸';
-    var left = SUGGEST.filter(function (s) { return tags.indexOf(s) === -1; });
+    var left = KIND[composeKind].suggest.filter(function (s) { return tags.indexOf(s) === -1; });
     $('tagSuggestWrap').hidden = full || !left.length;
     $('tagSuggest').innerHTML = left.map(function (s) {
       return '<button class="chip chip-suggest" type="button" data-suggest="' + s + '">' + ICON.plus + '#' + s + '</button>';
@@ -1340,7 +1512,7 @@
         }
       }
     }
-    if (!content.value.trim()) list.push({ key: 'content', msg: '請寫下您的方法或經驗。' });
+    if (!content.value.trim()) list.push({ key: 'content', msg: KIND[composeKind].missing });
     list.forEach(function (e) { errors.setError(e.key, e.msg); });
     return list;
   }
@@ -1396,6 +1568,7 @@
     var typedName = $('author').value.trim();
     try {
       payload = D.buildThread({
+        kind: composeKind,
         role: role,
         author: typedName,
         content: content.value,
@@ -1422,10 +1595,12 @@
       upsert(D.normalizeThread(Object.assign({ id: id, createdAt: now, lastActivityAt: now }, payload)));
       setPosting(false);
       resetComposer();
+      /* 列表換到這篇的分頁：回去就看得到自己剛發的 */
+      setKind(payload.kind);
       /* 換掉 #new 這一筆：看完自己的文章按返回，回到列表而不是空白表單 */
-      window.history.replaceState(null, '', '#t=' + id);
+      window.history.replaceState(null, '', location.pathname + kindSearch(payload.kind) + '#t=' + id);
       route(false);
-      Anxin.announce(live, '已發布，謝謝您的分享');
+      Anxin.announce(live, KIND[payload.kind].posted);
     }, function (err) {
       window.console.error('發文失敗：', err);
       if (err && err.code === 'permission-denied') markPosted();
@@ -1435,7 +1610,9 @@
   });
 
   function showCompose(first) {
-    document.title = '安心陪伴 · 分享您的方法';
+    composeKind = state.kind;
+    renderComposeKind();
+    document.title = '安心陪伴 · ' + KIND[composeKind].compose;
     window.scrollTo(0, 0);
     if (!first) $('composeTitle').focus({ preventScroll: true });
   }
@@ -1469,6 +1646,7 @@
      開始
      ───────────────────────────────────────────────────────────── */
 
+  renderKind();
   renderFilters();
   initComposer();
   fillIdentity();

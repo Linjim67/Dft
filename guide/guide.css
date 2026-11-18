@@ -1,54 +1,14 @@
 /* ═══ 家長安慰指南 ═══════════════════════════════════════════════
    小冊子外框、章節標題、一題一張卡沿用 /shared/page.css（.booklet、.part、.topic）。
    三章都用葉綠（leaf）當章節色，也沒有章節標題（分頁就是標題）。可以按的東西用可可色。
-   這裡放本頁的：章節分頁、主題列（點開時畫的圓圈和樹枝）、年紀卡、句子、清單、猜謎、「我要打針了」、不要說／改成說。
+   這裡放本頁的：主題列（點開時畫的圓圈和樹枝）、年紀卡、句子、清單、猜謎、「我要打針了」、不要說／改成說。
    ═══════════════════════════════════════════════════════════════ */
 
 html {
   scroll-behavior: smooth;
 }
 
-/* ═══ 章節分頁：三顆膠囊置中，捲動時黏在頂端 ════════════════════
-   選到的那一章：葉綠深實心＋白字（5.99:1）；其他：白底深字。
-   形狀不變，靠實心／空心分辨，不只靠顏色。 */
-
-.tabs {
-  position: sticky;
-  top: 0;
-  z-index: 5;
-  display: flex;
-  justify-content: center;
-  gap: var(--sp-2);
-  margin: 0 calc(var(--sp-5) * -1) var(--sp-5);
-  padding: var(--sp-2) var(--sp-5);
-  background: var(--bg);
-  transition: box-shadow var(--t-base) var(--ease);
-}
-
-.tabs.is-stuck {
-  box-shadow: 0 8px 16px -12px rgba(62, 51, 41, .35);
-}
-
-.tab {
-  min-height: var(--tap);
-  padding-inline: 20px;
-  border: 0;
-  border-radius: var(--r-btn);
-  background: var(--card);
-  color: var(--fg);
-  font: inherit;
-  font-size: .95rem;
-  font-weight: 700;
-  white-space: nowrap;
-  cursor: pointer;
-  transition: background-color var(--t-fast) var(--ease),
-    color var(--t-fast) var(--ease);
-}
-
-.tab[aria-selected="true"] {
-  background: var(--pick);
-  color: #FFFFFF;
-}
+/* 章節分頁（.tabs／.tab）在 /shared/page.css：討論區的三個分頁也用同一個樣子 */
 
 /* 一次只顯示一章：章節之間不需要再拉開距離 */
 .part[role="tabpanel"] {
@@ -539,10 +499,6 @@ html {
     background: var(--primary-wash);
     border-color: var(--primary-deep);
     color: var(--primary-deep);
-  }
-
-  .tab[aria-selected="false"]:hover {
-    background: var(--primary-wash);
   }
 
   .age-opt input:not(:checked)+.age-face:hover {
