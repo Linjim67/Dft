@@ -7,10 +7,11 @@
        └─ 家屬/{uid}                              一支家長手機（雙機時孩子的手機也併進來）
             ├─ 個資/{代碼-領取毫秒}                 那次領號填的資料
             ├─ 醫檢師回饋/{代碼-領取毫秒}           done: false = 醫檢師還沒完成
+            ├─ 回饋/{feedback id}                 家長填的 03 回饋（有 uid 的才放得進來）
             └─ 遊戲進程/{遊戲 id}                   這個遊戲當天的總時間、各關時間
                  └─ 紀錄/{playtime id}              每一段（playtime 原始資料）
 
-   日期一律是台灣時間：領號以「領取日」、遊戲以「開始那一刻」歸到哪一天。
+   日期一律是台灣時間：領號以「領取日」、遊戲以「開始那一刻」、回饋以「送出那一刻」歸到哪一天。
    原始資料不搬也不刪（個資除外：之後由封存刪掉），所以整理可以重跑，結果相同。
    ═══════════════════════════════════════════════════════════════ */
 
@@ -23,6 +24,7 @@ const ROOT = '整理';
 const FAMILY = '家屬';
 const PROFILE = '個資';
 const STAFF = '醫檢師回饋';
+const FEEDBACK = '回饋';
 const GAMES = '遊戲進程';
 const ROWS = '紀錄';
 
@@ -66,11 +68,12 @@ async function collectDay(db, day) {
   const to = Timestamp.fromMillis(end);
 
   /* 這天領的號碼：還在 codes/ 的（個資還在）＋ 已經封存的（個資已刪） */
-  const [live, archived, rows, circle] = await Promise.all([
+  const [live, archived, rows, circle, feedback] = await Promise.all([
     db.collection('codes').where('createdAt', '>=', from).where('createdAt', '<', to).get(),
     db.collection('archivedCode').doc(day).collection('codes').get(),
     db.collection('playtime').where('startAt', '>=', from).where('startAt', '<', to).get(),
-    db.collection('circleDays').doc(day).collection('scores').get()
+    db.collection('circleDays').doc(day).collection('scores').get(),
+    db.collection('feedback').where('createdAt', '>=', from).where('createdAt', '<', to).get()
   ]);
 
   const claims = new Map();
@@ -99,6 +102,7 @@ async function collectDay(db, day) {
     day,
     claims: list,
     rows: rows.docs.map((s) => ({ id: s.id, ...s.data() })),
+    feedback: feedback.docs.map((s) => ({ id: s.id, ...s.data() })),
     circle: new Map(circle.docs.map((s) => [s.id, s.get('score')]))
   };
 }
@@ -166,14 +170,14 @@ function gameSummary(game, rows) {
   };
 }
 
-/* 回傳 { dayDoc, families: [{ uid, doc, profiles, staff, games: [{ game, doc, rows }] }] }
-   每個 profiles／staff／rows 項目是 { id, data } */
+/* 回傳 { dayDoc, families: [{ uid, doc, profiles, staff, feedback, games: [{ game, doc, rows }] }] }
+   每個 profiles／staff／feedback／rows 項目是 { id, data } */
 function buildDay(src) {
   const parentOf = childLinks(src.claims);
   const families = new Map();
   const family = (uid) => {
     if (!families.has(uid)) {
-      families.set(uid, { uid, claims: [], children: new Set(), phones: new Set([uid]), rows: [] });
+      families.set(uid, { uid, claims: [], children: new Set(), phones: new Set([uid]), rows: [], feedback: [] });
     }
     return families.get(uid);
   };
@@ -188,6 +192,13 @@ function buildDay(src) {
     const f = family(owner);
     if (owner !== r.uid) { f.children.add(r.uid); f.phones.add(r.uid); }
     f.rows.push(r);
+  });
+  /* 回饋：2026-11-20 以前送出的沒有 uid，放不進任何家屬，只計數 */
+  let unplaced = 0;
+  (src.feedback || []).forEach((fb) => {
+    if (!fb.uid) { unplaced += 1; return; }
+    const { id, ...data } = fb;
+    family(parentOf.get(fb.uid) || fb.uid).feedback.push({ id, data });
   });
   parentOf.forEach((parent, child) => {
     if (families.has(parent)) { families.get(parent).children.add(child); families.get(parent).phones.add(child); }
@@ -234,10 +245,12 @@ function buildDay(src) {
     const withProfile = profiles.filter((p) => p.data.source !== 'none');
     const latest = withProfile[withProfile.length - 1];
     const rowAge = f.rows.find((r) => typeof r.age === 'number');
+    const feedback = f.feedback.sort((a, b) => ms(a.data.createdAt) - ms(b.data.createdAt));
     out.push({
       uid: f.uid,
       profiles,
       staff,
+      feedback,
       games,
       doc: {
         uid: f.uid,
@@ -247,6 +260,7 @@ function buildDay(src) {
         age: latest && typeof latest.data.age === 'number' ? latest.data.age : rowAge ? rowAge.age : null,
         hasProfile: withProfile.length > 0,
         staffDone: done,
+        feedbacks: feedback.length,
         games: games.map((g) => g.game),
         playMs: games.reduce((sum, g) => sum + g.doc.totalMs, 0)
       }
@@ -259,7 +273,9 @@ function buildDay(src) {
       families: out.length,
       claims: src.claims.length,
       staffDone,
-      playRows: src.rows.length
+      playRows: src.rows.length,
+      feedbacks: (src.feedback || []).length - unplaced,
+      feedbackUnplaced: unplaced
     },
     families: out
   };
@@ -314,6 +330,7 @@ async function organizeDay(db, day, { dryRun = false } = {}) {
       put(fam.collection(PROFILE).doc(p.id), p.data);
     });
     f.staff.forEach((s) => put(fam.collection(STAFF).doc(s.id), s.data));
+    f.feedback.forEach((fb) => put(fam.collection(FEEDBACK).doc(fb.id), fb.data));
     f.games.forEach((g) => {
       const gameRef = fam.collection(GAMES).doc(g.game);
       put(gameRef, g.doc);
@@ -333,6 +350,6 @@ async function organizeDay(db, day, { dryRun = false } = {}) {
 }
 
 module.exports = {
-  ROOT, FAMILY, PROFILE, STAFF, GAMES, ROWS, GAME_NAMES,
+  ROOT, FAMILY, PROFILE, STAFF, FEEDBACK, GAMES, ROWS, GAME_NAMES,
   dayRange, previousDay, collectDay, buildDay, organizeDay
 };

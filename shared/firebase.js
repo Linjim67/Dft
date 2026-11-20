@@ -57,10 +57,11 @@ ensureAuth().catch((err) => {
   console.warn('匿名登入暫時失敗，送出時會再試一次：', err);
 });
 
-/* payload 由 Anxin.buildFeedbackPayload 產生（已排除暱稱）；時間戳記由伺服器決定 */
+/* payload 由 Anxin.buildFeedbackPayload 產生（已排除暱稱）；時間戳記由伺服器決定。
+   uid 是這支手機的匿名 uid：每晚的整理靠它把回饋放進同一位家屬的資料夾（整理/）。 */
 export async function submitFeedback(payload) {
-  await ensureAuth();
-  return addDoc(collection(db, 'feedback'), { ...payload, createdAt: serverTimestamp() });
+  const u = await ensureAuth();
+  return addDoc(collection(db, 'feedback'), { ...payload, uid: u.uid, createdAt: serverTimestamp() });
 }
 
 /* ─────────────────────────────────────────────────────────────

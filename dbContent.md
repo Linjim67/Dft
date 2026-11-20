@@ -32,6 +32,7 @@ cooldowns/{uid}                       time of this phone's last post or reply (1
   └─ 家屬/{uid}                        one parent's phone (plus its paired child phone)
        ├─ 個資/{code}-{claimMs}         the profile filled in for that claim
        ├─ 醫檢師回饋/{code}-{claimMs}    staff feedback, or done: false
+       ├─ 回饋/{feedbackId}             the parent's 03 feedback form
        └─ 遊戲進程/{game}               one game's totals for the day
             └─ 紀錄/{playtimeId}        each playtime row
 ```
@@ -173,7 +174,7 @@ The archive runs as the second half of the **nightly job** ([functions/nightly.j
 
 The nightly job's per-family view of one day, for research on each child. Built by [functions/organize.js](functions/organize.js). It **copies**: the source collections are not changed, so a day can be organized again and gives the same result. No client can read or write it (the rules have no `match` for it).
 
-- `{YYYYMMDD}` is a Taipei day. A claim belongs to its **claim day**, the same as `archivedCode`. A playtime row belongs to the day its `startAt` falls on, so a game played after midnight lands in the next day's folder under the same uid.
+- `{YYYYMMDD}` is a Taipei day. A claim belongs to its **claim day**, the same as `archivedCode`. A playtime row belongs to the day its `startAt` falls on, and a feedback form to the day of its `createdAt`, so anything after midnight lands in the next day's folder under the same uid.
 - `{uid}` is the parent's phone (`holderUid`), not the child: the anonymous uid stays in the phone's browser across visits, so the same uid on two days is usually the same family, but one phone could be used for a sibling. To follow a phone across days, query the collection group `家屬` on `uid`.
 - When the job runs: by itself at 00:00 for yesterday, and again just before that day's locks are archived the next night, which picks up a staff finish or a game row that came in after midnight. By hand: `node functions/organize-now.js <key.json> [--day YYYYMMDD | --day YYYYMMDD..YYYYMMDD] [--dry-run]` organizes those days (default: yesterday) and does not archive. Days from before Nov 2026 can be organized too, but staff finishing a code deleted its profile back then, so most claims get `source: 'staffFeedback'`.
 
@@ -186,11 +187,13 @@ The nightly job's per-family view of one day, for research on each child. Built 
 | `claims` | int | codes claimed that day |
 | `staffDone` | int | claims the staff finished |
 | `playRows` | int | playtime rows that started that day |
+| `feedbacks` | int | feedback forms placed in a family |
+| `feedbackUnplaced` | int | feedback forms from that day without `uid` (sent before 2026-11-20), not copied |
 | `organizedAt` | Timestamp | server time of the last run |
 
 **`家屬/{uid}`**
 
-Families are the holders of that day's claims, plus every uid with playtime rows that day. A family with games and no claim that day has `codes: []` and no `個資`. On 雙機, the child's phone has its own uid; its rows are put under the parent when `rooms/{code}` still pairs them (`parentUid` is the holder, `childUid` is that phone, and the room was opened during this claim). After the parent unpairs, the child's rows get their own `家屬` doc.
+Families are the holders of that day's claims, plus every uid with playtime rows or a feedback form that day. A family with games and no claim that day has `codes: []` and no `個資`. On 雙機, the child's phone has its own uid; its rows are put under the parent when `rooms/{code}` still pairs them (`parentUid` is the holder, `childUid` is that phone, and the room was opened during this claim). After the parent unpairs, the child's rows get their own `家屬` doc.
 
 | Field | Type | Value |
 |---|---|---|
@@ -201,6 +204,7 @@ Families are the holders of that day's claims, plus every uid with playtime rows
 | `age` | number \| null | from the newest `個資`, otherwise from a playtime row |
 | `hasProfile` | bool | at least one `個資` with real data |
 | `staffDone` | int | how many of `codes` the staff finished |
+| `feedbacks` | int | number of `回饋` docs |
 | `games` | string[] | ids of the `遊戲進程` docs |
 | `playMs` | int | total play time of all games, ms |
 | `organizedAt` | Timestamp | server time of the last run |
@@ -224,6 +228,8 @@ On a later run, a `source: 'profile'` doc is never replaced by a weaker one: onc
 | `doneAt` | Timestamp | from the lock |
 | `staffFear`, `parentFear`, `note`, `profile`, `scaleVersion`, `createdAt` | | copied from `staffFeedback` |
 
+**`回饋/{feedbackId}`**: the parent's feedback form, same id and fields as [`feedback/{autoId}`](#feedbackautoid) (including `uid` and `createdAt`). A form sent from a paired child phone goes under the parent, like its playtime rows.
+
 **`遊戲進程/{game}`**: one per game the family played that day. The id is the playtime `game`.
 
 | Field | Type | Value |
@@ -238,13 +244,13 @@ On a later run, a `source: 'profile'` doc is never replaced by a weaker one: onc
 
 **`遊戲進程/{game}/紀錄/{playtimeId}`**: one playtime row, same id as in `playtime/`. Fields: `level`, `startAt`, `endAt`, `ms`, `ended`, `uid` (which phone), `age`.
 
-Not included: `feedback` (it has no uid or code, so it can't be placed with a family) and `bookWishes`. Game progress kept only on the phone (stars, unlocked levels) isn't in Firestore, so the only game data here is playtime and the draw-circle score.
+Not included: feedback forms without `uid` (sent before 2026-11-20) and `bookWishes`. Game progress kept only on the phone (stars, unlocked levels) isn't in Firestore, so the only game data here is playtime and the draw-circle score.
 
 ## `feedback/{autoId}`
 
 The parent's feedback form (03 → 回饋). It can be created but never read, updated or deleted by any client. It is built by `Anxin.buildFeedbackPayload`.
 
-It has **no code and no nickname**, so a `feedback` doc cannot be linked to a code or to a `staffFeedback` doc.
+It has **no code and no nickname**. Since 2026-11-20 it carries the phone's `uid`, so the nightly job can put it in that family's [整理](#整理yyyymmdd) folder next to the claim and the `staffFeedback` of the same day. The 7 docs from before that have no `uid` and can't be placed.
 
 | Field | Type | Value |
 |---|---|---|
@@ -255,6 +261,7 @@ It has **no code and no nickname**, so a `feedback` doc cannot be linked to a co
 | `suggestion` | string | ≤ 1000 chars |
 | `profile` | map | `{ age, gender, fearLevel, worryLevel, specialNeeds }` plus the optional `triggers` and `comfort`, same types as `private/profile` |
 | `scaleVersion` | string | `'balanced-v1'` (balanced 5-point scale with 普通 in the middle) |
+| `uid` | string | the phone's anonymous uid (added by `submitFeedback` in [shared/firebase.js](shared/firebase.js)). The rules require it to be the writer's own uid, but still accept a doc without it, so a page opened before the change can still send. |
 | `createdAt` | Timestamp | server time |
 
 ## `rooms/{code}`
@@ -461,6 +468,7 @@ Every query filters or sorts on a single field, so no composite indexes are need
 
 - `codes`: `expiresAt >` (staff list), `expiresAt <` (archive job), `createdAt` range (整理)
 - `playtime`: `startAt` range (整理)
+- `feedback`: `createdAt` range (整理)
 - `rooms/{code}/cmds`: `at >=`
 - `circleDays/{day}/scores`: `orderBy score desc, limit 3`
 - `threads`: `orderBy createdAt desc, limit 300`

@@ -575,9 +575,12 @@ service cloud.firestore {
   }
 
   // 欄位必須與 Anxin.buildFeedbackPayload（shared/app.js）完全一致
+  // uid：送出的手機（每晚整理時放進那位家屬的資料夾）。只能是自己的 uid；
+  // 沒有 uid 也收：還沒重新整理的舊回饋頁會這樣送，不能讓家長填的內容被拒。
   function validFeedback(d) {
     return d.keys().hasOnly(['satisfaction', 'satisfactionReason', 'cryLevel',
-        'effectiveness', 'suggestion', 'profile', 'scaleVersion', 'createdAt'])
+        'effectiveness', 'suggestion', 'profile', 'scaleVersion', 'uid', 'createdAt'])
+      && (!('uid' in d) || d.uid == request.auth.uid)
       && d.keys().hasAll(['satisfaction', 'satisfactionReason', 'cryLevel',
         'effectiveness', 'suggestion', 'profile', 'scaleVersion', 'createdAt'])
       && isLevel(d.satisfaction)
