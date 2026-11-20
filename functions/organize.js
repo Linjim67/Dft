@@ -1,15 +1,17 @@
 /* ═══════════════════════════════════════════════════════════════
    安心陪伴 — 每日整理：把某一天散在各集合的資料，依家屬（手機的匿名 uid）收成一包
    排程（nightly.js，每天 00:00）和手動（organize-now.js、archive-now.js）共用這一份。
-   欄位說明在 dbContent.md；手機端完全不會碰到 整理/（firestore.rules 沒有開放）。
+   欄位說明在 dbContent.md；手機端完全不會碰到 organized/（firestore.rules 沒有開放）。
+   路徑一律英文；子集合名稱刻意和原始集合（staffFeedback、feedback、playtime）不同，
+   collectionGroup 查詢才不會把副本和原始資料混在一起。
 
-     整理/{YYYYMMDD}                              這一天的摘要
-       └─ 家屬/{uid}                              一支家長手機（雙機時孩子的手機也併進來）
-            ├─ 個資/{代碼-領取毫秒}                 那次領號填的資料
-            ├─ 醫檢師回饋/{代碼-領取毫秒}           done: false = 醫檢師還沒完成
-            ├─ 回饋/{feedback id}                 家長填的 03 回饋（有 uid 的才放得進來）
-            └─ 遊戲進程/{遊戲 id}                   這個遊戲當天的總時間、各關時間
-                 └─ 紀錄/{playtime id}              每一段（playtime 原始資料）
+     organized/{YYYYMMDD}                          這一天的摘要
+       └─ families/{uid}                           一支家長手機（雙機時孩子的手機也併進來）
+            ├─ profiles/{代碼-領取毫秒}             個資：那次領號填的資料
+            ├─ staffReviews/{代碼-領取毫秒}         醫檢師回饋；done: false = 醫檢師還沒完成
+            ├─ parentFeedback/{feedback id}        家長填的 03 回饋（有 uid 的才放得進來）
+            └─ games/{遊戲 id}                      遊戲進程：這個遊戲當天的總時間、各關時間
+                 └─ sessions/{playtime id}         每一段（playtime 原始資料）
 
    日期一律是台灣時間：領號以「領取日」、遊戲以「開始那一刻」、回饋以「送出那一刻」歸到哪一天。
    原始資料不搬也不刪（個資除外：之後由封存刪掉），所以整理可以重跑，結果相同。
@@ -20,24 +22,13 @@
 const { FieldValue, Timestamp } = require('firebase-admin/firestore');
 const { dayKey } = require('./archive');
 
-const ROOT = '整理';
-const FAMILY = '家屬';
-const PROFILE = '個資';
-const STAFF = '醫檢師回饋';
-const FEEDBACK = '回饋';
-const GAMES = '遊戲進程';
-const ROWS = '紀錄';
-
-/* 和 shared/playtime.js 的 GAMES 一致；名字只是方便在 Console 看 */
-const GAME_NAMES = {
-  'dash': '衝衝衝',
-  'golf': '浮空小島高爾夫',
-  'draw-circle': '畫圓圈',
-  'farm': '機器人農場',
-  'whack-a-mole': '打地鼠',
-  'whack-a-mole-duo': '雙機打地鼠（孩子的手機）',
-  'whack-a-mole-remote': '雙機打地鼠（家長的遙控）'
-};
+const ROOT = 'organized';
+const FAMILY = 'families';
+const PROFILE = 'profiles';
+const STAFF = 'staffReviews';
+const FEEDBACK = 'parentFeedback';
+const GAMES = 'games';
+const ROWS = 'sessions';
 
 const DAY_MS = 24 * 3600 * 1000;
 const TAIPEI_MS = 8 * 3600 * 1000;
@@ -160,7 +151,6 @@ function gameSummary(game, rows) {
   });
   return {
     game,
-    name: GAME_NAMES[game] || game,
     totalMs,
     rows: rows.length,
     unfinished: rows.filter((r) => !r.ended).length,
@@ -281,7 +271,7 @@ function buildDay(src) {
   };
 }
 
-/* ── 寫：整理/{day}/… ───────────────────────────────────────── */
+/* ── 寫：organized/{day}/… ───────────────────────────────────────── */
 
 function dayRef(db, day) {
   return db.collection(ROOT).doc(day);
@@ -350,6 +340,6 @@ async function organizeDay(db, day, { dryRun = false } = {}) {
 }
 
 module.exports = {
-  ROOT, FAMILY, PROFILE, STAFF, FEEDBACK, GAMES, ROWS, GAME_NAMES,
+  ROOT, FAMILY, PROFILE, STAFF, FEEDBACK, GAMES, ROWS,
   dayRange, previousDay, collectDay, buildDay, organizeDay
 };

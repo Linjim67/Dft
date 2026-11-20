@@ -33,7 +33,7 @@ function organizedLine(r) {
   if (p.kept) parts.push(p.kept + ' 份沿用之前整理的');
   if (p.staffFeedback) parts.push(p.staffFeedback + ' 份只剩醫檢師回饋裡的幾欄');
   if (p.none) parts.push(p.none + ' 份找不到');
-  return '  整理/' + r.day + '：' + r.families + ' 位家屬、' + r.claims + ' 次領號（個資 ' + parts.join('、')
+  return '  organized/' + r.day + '：' + r.families + ' 位家屬、' + r.claims + ' 次領號（個資 ' + parts.join('、')
     + '）、醫檢師完成 ' + r.staffDone + '、回饋 ' + r.feedbacks
     + (r.feedbackUnplaced ? '（另有 ' + r.feedbackUnplaced + ' 份沒有 uid，放不進家屬）' : '')
     + '、遊戲紀錄 ' + r.playRows + ' 段，' + r.writes + ' 筆寫入';

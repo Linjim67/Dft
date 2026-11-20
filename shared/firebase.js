@@ -58,7 +58,7 @@ ensureAuth().catch((err) => {
 });
 
 /* payload 由 Anxin.buildFeedbackPayload 產生（已排除暱稱）；時間戳記由伺服器決定。
-   uid 是這支手機的匿名 uid：每晚的整理靠它把回饋放進同一位家屬的資料夾（整理/）。 */
+   uid 是這支手機的匿名 uid：每晚的整理靠它把回饋放進同一位家屬的資料夾（organized/）。 */
 export async function submitFeedback(payload) {
   const u = await ensureAuth();
   return addDoc(collection(db, 'feedback'), { ...payload, uid: u.uid, createdAt: serverTimestamp() });
@@ -257,7 +257,7 @@ const codes = {
   /* 醫檢師送出回饋＝代碼失效，兩件事同一批寫入，要嘛全部成功、要嘛全部沒發生：
      回饋存進 staffFeedback、鎖標成 done。
      個人資料不在這裡刪：代碼變 done 之後已經沒有人讀得到（規則），
-     留給每晚的整理（functions/organize.js）收進 整理/，再由封存刪掉。
+     留給每晚的整理（functions/organize.js）收進 organized/，再由封存刪掉。
      回饋的文件 id = 代碼-領取時間，一次領取只能有一份回饋。 */
   async finish(code, lock, payload) {
     await ensureAuth();
