@@ -24,8 +24,9 @@ function archiveRef(db, code, claimMs) {
     .collection('codes').doc(code + '-' + claimMs);
 }
 
-/* 一組過期的鎖：封存、刪鎖、刪掉沒被醫檢師刪的個人資料，同一批寫入。
-   個人資料不封存：它本來就只活到送出回饋或過期為止（TTL 也會刪）。
+/* 一組過期的鎖：封存、刪鎖、刪掉個人資料，同一批寫入。
+   個人資料不放進 archivedCode：每晚的整理（organize.js）已經先把它複製到 organized/，
+   這裡刪的是 codes/ 裡的原始那份。nightly.js 保證整理一定在封存之前。
    刪鎖帶 lastUpdateTime 前提：查詢之後若剛好有新家庭領走這組號碼，整批都不寫，
    新家庭的鎖和個人資料不動，只把舊的這一份補進封存。 */
 async function archiveOne(db, snap) {

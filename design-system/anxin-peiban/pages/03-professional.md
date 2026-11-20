@@ -143,5 +143,5 @@ not to type names. The collection is create-only and readable by nobody, the sam
 
 1. **Publish `firestore.rules`.** Until then #01 cannot claim codes; the parent sees a setup message, not a network one.
 2. Anonymous auth must stay enabled (staff use it too).
-3. Optional: a Firestore TTL policy on the `private` collection group's `expiresAt` field, so profiles of
-   codes that were never finished are deleted automatically.
+3. No TTL policy on the `private` collection group. Profiles are kept until the nightly job copies them
+   into `organized/` (see dbContent.md); a TTL could delete them first.

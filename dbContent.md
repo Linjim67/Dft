@@ -97,7 +97,7 @@ Two families never hold the same code at the same time. After a code expires, a 
 | Path | Old family's data |
 |---|---|
 | `codes/{code}` | Usually already moved to `archivedCode/` by the first archive run after it expired, so the new claim creates a fresh doc. If the number is claimed again before that run, the new claim overwrites the lock and the earlier claim is lost (except its `staffFeedback` doc if staff finished it). |
-| `codes/{code}/private/profile` | Copied to `organized/` by the nightly job, then deleted by the archive job or the TTL policy (see the next section), whichever comes first. A claim on the reused number overwrites it if neither has run yet. |
+| `codes/{code}/private/profile` | Copied to `organized/` by the nightly job, then deleted by the archive job. If the nightly job hasn't copied it yet, the new family's claim overwrites it and the old profile is lost (see the next section). |
 | `staffFeedback/{code}-{claimMs}` | Kept, and no collision is possible: every claim has a different `claimMs`. |
 | `rooms/{code}` | Overwritten when the new parent opens 雙機. `childUid` goes back to `null`, so the old child's phone stops. |
 | `rooms/{code}/cmds`, `state/child` | Kept, because overwriting a doc doesn't delete its subcollections. The child only runs commands from the last 2 minutes. The parent's remote ignores any `state/child` older than the room's `createdAt`. |
@@ -111,7 +111,9 @@ The child profile shown to the 醫檢師. The doc id is always `profile`. It is 
 
 Once the code is `done` or expired, no client can read or change it. It stays until the nightly job: [organized](#organizedyyyymmdd) copies it into `organized/{claim day}/families/{uid}/profiles/`, and right after that the archive job deletes it together with its lock (it is not copied to `archivedCode`). This is the only complete copy of the profile, so the archive must never run before the organize step; [functions/nightly.js](functions/nightly.js) keeps that order.
 
-As a backup, a Firestore **TTL policy** on collection group `private`, field `expiresAt`, also deletes it, usually within about a day after it expires. That policy is set in the Firebase Console (Firestore → Time-to-live), not in this repo. If the nightly job is skipped for a day or more, TTL can delete profiles before the organize step copies them; those claims then keep only the few fields in `staffFeedback` (`source: 'staffFeedback'`). Remove the policy if the job can't run every day.
+There is **no TTL policy** (checked 2026-11-20: no field in the database has one). Nothing deletes a profile except the archive job, right after the organize step has copied it. Don't add one: a profile deleted before the organize step is gone for good.
+
+One case can still lose a profile: after its code expires (claim + 24 h, plus the 10-minute reuse margin), a new family can get the same number, and their claim overwrites `private/profile`. The organize step copies yesterday's claims, so running the nightly job every day between 00:00 and the clinic opening copies every profile before its code can expire. Each skipped day leaves that day's profiles exposed to this, although the chance that one of them is drawn again is small.
 
 | Field | Type | Value |
 |---|---|---|
@@ -168,7 +170,7 @@ The profile is not archived. A code that fails to move stays in `codes/`, and th
 The archive runs as the second half of the **nightly job** ([functions/nightly.js](functions/nightly.js)): first [organize](#organizedyyyymmdd) yesterday plus the claim day of every lock about to be archived, then the archive. If any day fails to organize, nothing is archived, so no profile is deleted before it is copied. There are two ways to run it. Both do the same thing:
 
 - **Scheduled** (needs the Blaze plan): the `nightly` Cloud Function in [functions/index.js](functions/index.js) runs every day at 00:00 Asia/Taipei, and Cloud Scheduler retries a failed run up to 3 times. To deploy: `cd functions && npm install`, then `firebase deploy --only functions` from the repo root. The schedule is in the code, not in the Console. As of Nov 2026 it has never been deployed (the Cloud Functions API is off), so the job runs only by hand.
-- **By hand** (works on the free plan): `node functions/archive-now.js <key.json> --dry-run` lists what each day's organize step would write and how many codes would move into each day's folder, without writing anything. Run it again without `--dry-run` to do it. The key is a service-account key from Firebase Console → Project settings → Service accounts → Generate new private key. It has full admin access to the database, so keep it outside the repo. Any time of day works. Run it at least once a day: archive folders use the claim day, so skipping days is safe for them, but profiles can be lost to TTL (see `private/profile`), and the reuse gap above (a number claimed again before the next run) gets more time to happen.
+- **By hand** (works on the free plan): `node functions/archive-now.js <key.json> --dry-run` lists what each day's organize step would write and how many codes would move into each day's folder, without writing anything. Run it again without `--dry-run` to do it. The key is a service-account key from Firebase Console → Project settings → Service accounts → Generate new private key. It has full admin access to the database, so keep it outside the repo. Run it every day, ideally between 00:00 and the clinic opening. Archive folders use the claim day, so skipping days is safe for them, but profiles not yet organized can be overwritten when their number is claimed again (see `private/profile`).
 
 ## `organized/{YYYYMMDD}`
 
