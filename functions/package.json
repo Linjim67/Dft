@@ -1,6 +1,6 @@
 {
   "name": "anxin-functions",
-  "description": "安心陪伴 — 每天 00:00 封存過期代碼",
+  "description": "安心陪伴 — 每天 00:00 整理昨天的資料、封存過期代碼",
   "private": true,
   "main": "index.js",
   "engines": {

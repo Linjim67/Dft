@@ -253,15 +253,16 @@ const codes = {
     return { ...s.data(), expiresAt: toMs(s.data().expiresAt) };
   },
 
-  /* 醫檢師送出回饋＝代碼失效，三件事同一批寫入，要嘛全部成功、要嘛全部沒發生：
-     回饋存進 staffFeedback、鎖標成 done、個人資料刪掉。
+  /* 醫檢師送出回饋＝代碼失效，兩件事同一批寫入，要嘛全部成功、要嘛全部沒發生：
+     回饋存進 staffFeedback、鎖標成 done。
+     個人資料不在這裡刪：代碼變 done 之後已經沒有人讀得到（規則），
+     留給每晚的整理（functions/organize.js）收進 整理/，再由封存刪掉。
      回饋的文件 id = 代碼-領取時間，一次領取只能有一份回饋。 */
   async finish(code, lock, payload) {
     await ensureAuth();
     const batch = writeBatch(db);
     batch.set(doc(db, 'staffFeedback', code + '-' + lock.createdAt), { ...payload, createdAt: serverTimestamp() });
     batch.update(lockRef(code), { status: 'done', doneAt: serverTimestamp() });
-    batch.delete(codeProfileRef(code));
     return batch.commit();
   }
 };

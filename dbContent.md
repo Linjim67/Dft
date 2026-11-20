@@ -28,6 +28,12 @@ threads/{autoId}                      discussion post (#04)
   ├─ replies/{autoId}                 reply
   └─ votes/{uid}                      「有幫助」, one per phone
 cooldowns/{uid}                       time of this phone's last post or reply (15 s rule)
+整理/{YYYYMMDD}                        one day's data, gathered per family by the nightly job
+  └─ 家屬/{uid}                        one parent's phone (plus its paired child phone)
+       ├─ 個資/{code}-{claimMs}         the profile filled in for that claim
+       ├─ 醫檢師回饋/{code}-{claimMs}    staff feedback, or done: false
+       └─ 遊戲進程/{game}               one game's totals for the day
+            └─ 紀錄/{playtimeId}        each playtime row
 ```
 
 | Collection | Written by | Readable by | Page |
@@ -47,6 +53,7 @@ cooldowns/{uid}                       time of this phone's last post or reply (1
 | `threads`, `replies` | any signed-in phone (with a cooldown stamp) | **anyone**, even signed out | 04 討論區 |
 | `threads/*/votes` | each phone, its own doc only | that uid only | 04 討論區 |
 | `cooldowns` | each phone, its own doc only | that uid only | 04 討論區 |
+| `整理` | the nightly job in [functions/organize.js](functions/organize.js) | **nobody** (Console / Admin SDK only) | — |
 
 ## Shared conventions
 
@@ -77,10 +84,10 @@ The lock for one 4-digit temporary code: who holds it, its status and when it ex
 
 1. **Claim** (01 個人資訊). One transaction writes the lock and `private/profile` together. It succeeds only if the doc doesn't exist or the previous `expiresAt` has passed. The client also waits an extra 10 minutes (`Anxin.codes.REUSE_MARGIN_MS`) and tries up to 8 random codes.
 2. **Staff list** (03 醫護端 「等待中」). The query is `where('expiresAt', '>', now)`. The page itself decides between active, done and expired.
-3. **Finish** (staff submits feedback). This is one batch with three writes: create `staffFeedback/…`, set `status: 'done'` and `doneAt`, and delete `private/profile`. Only `status` and `doneAt` can change.
+3. **Finish** (staff submits feedback). This is one batch with two writes: create `staffFeedback/…`, and set `status: 'done'` and `doneAt`. Only `status` and `doneAt` can change. `private/profile` is kept for the nightly job (see its section); pages from before Nov 2026 also deleted it in this batch, and the rules still allow that.
 4. **Parent's phone** listens to its own lock. When `status` becomes `done`, the phone goes to `/shot/?done=1`.
 5. A `done` code is not reissued before its `expiresAt`, because `rooms/{code}` uses the same number.
-6. **Archive** (every day at 00:00 Taipei time, or by hand). The archive job in [functions/archive.js](functions/archive.js) moves every lock whose `expiresAt` has passed to [`archivedCode/…`](#archivedcodeyyyymmddcodescode-claimms). For each code, one batch writes the archive copy, deletes the lock and deletes any leftover `private/profile`. The lock is deleted only if it hasn't changed since the query; if a new family claimed the number in the meantime, their lock and profile stay and only the old claim is archived. After that, the staff page shows the code as 查無 instead of 已過期.
+6. **Archive** (every day at 00:00 Taipei time, or by hand, always right after [整理](#整理yyyymmdd)). The archive job in [functions/archive.js](functions/archive.js) moves every lock whose `expiresAt` has passed to [`archivedCode/…`](#archivedcodeyyyymmddcodescode-claimms). For each code, one batch writes the archive copy, deletes the lock and deletes any leftover `private/profile`. The lock is deleted only if it hasn't changed since the query; if a new family claimed the number in the meantime, their lock and profile stay and only the old claim is archived. After that, the staff page shows the code as 查無 instead of 已過期.
 
 **When a number is reused**
 
@@ -89,7 +96,7 @@ Two families never hold the same code at the same time. After a code expires, a 
 | Path | Old family's data |
 |---|---|
 | `codes/{code}` | Usually already moved to `archivedCode/` by the first archive run after it expired, so the new claim creates a fresh doc. If the number is claimed again before that run, the new claim overwrites the lock and the earlier claim is lost (except its `staffFeedback` doc if staff finished it). |
-| `codes/{code}/private/profile` | Already deleted if staff finished the code. Otherwise the archive job or the TTL policy removes it (see the next section), whichever comes first. It is never archived. |
+| `codes/{code}/private/profile` | Copied to `整理/` by the nightly job, then deleted by the archive job or the TTL policy (see the next section), whichever comes first. A claim on the reused number overwrites it if neither has run yet. |
 | `staffFeedback/{code}-{claimMs}` | Kept, and no collision is possible: every claim has a different `claimMs`. |
 | `rooms/{code}` | Overwritten when the new parent opens 雙機. `childUid` goes back to `null`, so the old child's phone stops. |
 | `rooms/{code}/cmds`, `state/child` | Kept, because overwriting a doc doesn't delete its subcollections. The child only runs commands from the last 2 minutes. The parent's remote ignores any `state/child` older than the room's `createdAt`. |
@@ -99,9 +106,11 @@ A phone whose clock is more than 10 minutes fast can think an expired code is fr
 
 ## `codes/{code}/private/profile`
 
-The child profile shown to the 醫檢師. The doc id is always `profile`. It is written in the claim transaction and deleted in the finish batch. In between, the phone that holds the code may rewrite it (修改填寫內容) while the code is still active; `expiresAt` must stay the same. It is built by `Anxin.codes.buildProfile`.
+The child profile shown to the 醫檢師. The doc id is always `profile`. It is written in the claim transaction. While the code is still active, the phone that holds the code may rewrite it (修改填寫內容); `expiresAt` must stay the same. It is built by `Anxin.codes.buildProfile`.
 
-If staff never finishes the code, the profile is deleted by the archive job together with its lock (it is not copied to the archive). As a backup, a Firestore **TTL policy** on collection group `private`, field `expiresAt`, also deletes it, usually within about a day after it expires. That policy is set in the Firebase Console (Firestore → Time-to-live), not in this repo.
+Once the code is `done` or expired, no client can read or change it. It stays until the nightly job: [整理](#整理yyyymmdd) copies it into `整理/{claim day}/家屬/{uid}/個資/`, and right after that the archive job deletes it together with its lock (it is not copied to `archivedCode`). This is the only complete copy of the profile, so the archive must never run before 整理; [functions/nightly.js](functions/nightly.js) keeps that order.
+
+As a backup, a Firestore **TTL policy** on collection group `private`, field `expiresAt`, also deletes it, usually within about a day after it expires. That policy is set in the Firebase Console (Firestore → Time-to-live), not in this repo. If the nightly job is skipped for a day or more, TTL can delete profiles before 整理 copies them; those claims then keep only the few fields in `staffFeedback` (`source: 'staffFeedback'`). Remove the policy if the job can't run every day.
 
 | Field | Type | Value |
 |---|---|---|
@@ -155,10 +164,81 @@ An expired `codes/{code}` lock, moved here by the archive job ([functions/archiv
 
 The profile is not archived. A code that fails to move stays in `codes/`, and the next run picks it up.
 
-There are two ways to run the job. Both do the same thing:
+The archive runs as the second half of the **nightly job** ([functions/nightly.js](functions/nightly.js)): first [整理](#整理yyyymmdd) for yesterday plus the claim day of every lock about to be archived, then the archive. If any day fails to organize, nothing is archived, so no profile is deleted before it is copied. There are two ways to run it. Both do the same thing:
 
-- **Scheduled** (needs the Blaze plan): the `archiveExpiredCodes` Cloud Function in [functions/index.js](functions/index.js) runs every day at 00:00 Asia/Taipei, and Cloud Scheduler retries a failed run up to 3 times. To deploy: `cd functions && npm install`, then `firebase deploy --only functions` from the repo root. The schedule is in the code, not in the Console.
-- **By hand** (works on the free plan): `node functions/archive-now.js <key.json> --dry-run` lists how many codes would move into each day's folder, without writing anything. Run it again without `--dry-run` to move them. The key is a service-account key from Firebase Console → Project settings → Service accounts → Generate new private key. It has full admin access to the database, so keep it outside the repo. Any time of day works. Skipping days is safe, because folders use the claim day, not the run day. It only gives the reuse gap above (a number claimed again before the next run) more time to happen.
+- **Scheduled** (needs the Blaze plan): the `nightly` Cloud Function in [functions/index.js](functions/index.js) runs every day at 00:00 Asia/Taipei, and Cloud Scheduler retries a failed run up to 3 times. To deploy: `cd functions && npm install`, then `firebase deploy --only functions` from the repo root. The schedule is in the code, not in the Console. As of Nov 2026 it has never been deployed (the Cloud Functions API is off), so the job runs only by hand.
+- **By hand** (works on the free plan): `node functions/archive-now.js <key.json> --dry-run` lists what each day's 整理 would write and how many codes would move into each day's folder, without writing anything. Run it again without `--dry-run` to do it. The key is a service-account key from Firebase Console → Project settings → Service accounts → Generate new private key. It has full admin access to the database, so keep it outside the repo. Any time of day works. Run it at least once a day: archive folders use the claim day, so skipping days is safe for them, but profiles can be lost to TTL (see `private/profile`), and the reuse gap above (a number claimed again before the next run) gets more time to happen.
+
+## `整理/{YYYYMMDD}`
+
+The nightly job's per-family view of one day, for research on each child. Built by [functions/organize.js](functions/organize.js). It **copies**: the source collections are not changed, so a day can be organized again and gives the same result. No client can read or write it (the rules have no `match` for it).
+
+- `{YYYYMMDD}` is a Taipei day. A claim belongs to its **claim day**, the same as `archivedCode`. A playtime row belongs to the day its `startAt` falls on, so a game played after midnight lands in the next day's folder under the same uid.
+- `{uid}` is the parent's phone (`holderUid`), not the child: the anonymous uid stays in the phone's browser across visits, so the same uid on two days is usually the same family, but one phone could be used for a sibling. To follow a phone across days, query the collection group `家屬` on `uid`.
+- When the job runs: by itself at 00:00 for yesterday, and again just before that day's locks are archived the next night, which picks up a staff finish or a game row that came in after midnight. By hand: `node functions/organize-now.js <key.json> [--day YYYYMMDD | --day YYYYMMDD..YYYYMMDD] [--dry-run]` organizes those days (default: yesterday) and does not archive. Days from before Nov 2026 can be organized too, but staff finishing a code deleted its profile back then, so most claims get `source: 'staffFeedback'`.
+
+**`整理/{day}`** (summary)
+
+| Field | Type | Value |
+|---|---|---|
+| `day` | string | same as the doc id |
+| `families` | int | number of `家屬` docs |
+| `claims` | int | codes claimed that day |
+| `staffDone` | int | claims the staff finished |
+| `playRows` | int | playtime rows that started that day |
+| `organizedAt` | Timestamp | server time of the last run |
+
+**`家屬/{uid}`**
+
+Families are the holders of that day's claims, plus every uid with playtime rows that day. A family with games and no claim that day has `codes: []` and no `個資`. On 雙機, the child's phone has its own uid; its rows are put under the parent when `rooms/{code}` still pairs them (`parentUid` is the holder, `childUid` is that phone, and the room was opened during this claim). After the parent unpairs, the child's rows get their own `家屬` doc.
+
+| Field | Type | Value |
+|---|---|---|
+| `uid` | string | same as the doc id |
+| `day` | string | same as the day |
+| `codes` | string[] | codes this phone claimed that day, oldest first |
+| `childUids` | string[] | paired child phones whose rows are included |
+| `age` | number \| null | from the newest `個資`, otherwise from a playtime row |
+| `hasProfile` | bool | at least one `個資` with real data |
+| `staffDone` | int | how many of `codes` the staff finished |
+| `games` | string[] | ids of the `遊戲進程` docs |
+| `playMs` | int | total play time of all games, ms |
+| `organizedAt` | Timestamp | server time of the last run |
+
+**`個資/{code}-{claimMs}`**: one per claim. The id is the same as `staffFeedback` and `archivedCode`.
+
+| Field | Type | Value |
+|---|---|---|
+| `code`, `claimedAt` | string, Timestamp | the claim (`claimedAt` = the lock's `createdAt`) |
+| `source` | string | `'profile'`: copied from `private/profile` (all fields below). `'staffFeedback'`: the profile was already gone, so only `age`, `gender`, `worryLevel` and `fearLevel` (= `parentFear`) are there. `'none'`: neither was found. |
+| `age`, `gender`, `fearLevel`, `worryLevel`, `specialNeeds`, `triggers`, `comfort` | | as in `private/profile`, without `expiresAt`. `triggers` and `comfort` only when the parent answered. |
+
+On a later run, a `source: 'profile'` doc is never replaced by a weaker one: once the profile has been deleted, the doc keeps what the earlier run copied.
+
+**`醫檢師回饋/{code}-{claimMs}`**: one per claim, same id as `個資`.
+
+| Field | Type | Value |
+|---|---|---|
+| `code`, `claimedAt` | | as in `個資` |
+| `done` | bool | `false`: staff hadn't finished the code when the job ran, and there are no other fields |
+| `doneAt` | Timestamp | from the lock |
+| `staffFear`, `parentFear`, `note`, `profile`, `scaleVersion`, `createdAt` | | copied from `staffFeedback` |
+
+**`遊戲進程/{game}`**: one per game the family played that day. The id is the playtime `game`.
+
+| Field | Type | Value |
+|---|---|---|
+| `game`, `name` | string | the id and its Chinese name, e.g. `'dash'`, `'衝衝衝'` |
+| `totalMs` | int | sum of `endAt - startAt` over the rows |
+| `rows` | int | number of rows |
+| `unfinished` | int | rows with `ended: false` (still open, or the page was killed) |
+| `firstAt`, `lastAt` | Timestamp \| null | first `startAt`, last `endAt` |
+| `levels` | map | `{ [level]: { ms, rows } }`, same level names as playtime (`home`, `'1'`, `'inf'`, `'play'`…) |
+| `bestScore` | int \| null | `draw-circle` only: the best `circleDays/{day}/scores/{uid}` of the family's phones. A score with no playtime rows still makes this doc, with `rows: 0`. |
+
+**`遊戲進程/{game}/紀錄/{playtimeId}`**: one playtime row, same id as in `playtime/`. Fields: `level`, `startAt`, `endAt`, `ms`, `ended`, `uid` (which phone), `age`.
+
+Not included: `feedback` (it has no uid or code, so it can't be placed with a family) and `bookWishes`. Game progress kept only on the phone (stars, unlocked levels) isn't in Firestore, so the only game data here is playtime and the draw-circle score.
 
 ## `feedback/{autoId}`
 
@@ -379,7 +459,8 @@ Every post and reply sets it in the same batch, and an update is accepted only w
 
 Every query filters or sorts on a single field, so no composite indexes are needed:
 
-- `codes`: `expiresAt >` (staff list), `expiresAt <` (archive job)
+- `codes`: `expiresAt >` (staff list), `expiresAt <` (archive job), `createdAt` range (整理)
+- `playtime`: `startAt` range (整理)
 - `rooms/{code}/cmds`: `at >=`
 - `circleDays/{day}/scores`: `orderBy score desc, limit 3`
 - `threads`: `orderBy createdAt desc, limit 300`
