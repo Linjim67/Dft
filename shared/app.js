@@ -486,36 +486,40 @@
      以前是把表單內容雜湊成 4 位數、只存在手機上——一萬組號碼裡，
      同一天約 118 個家庭就有一半機率撞號，而且沒有人會發現。
      現在每組代碼在 Firestore 都有一張「鎖」（codes/{代碼}）：
-       領取 = 一筆交易，讀到空的（或上一位的 24 小時已過）才寫入；
+       領取 = 一筆交易，codes/ 裡沒有這組才寫入；
               兩支手機同時搶同一組，Firestore 會讓其中一筆重跑並看到已被佔用。
        失效 = 醫檢師送出回饋時標成 done：之後查不到個人資料，
               它留給每晚的整理（organized/），封存時才刪。
-     done 的代碼要等原本的 24 小時過了才會再發出去：家長手機上的
-     雙機房間（rooms/{代碼}）和遊戲紀錄也用這組號碼，提早發給別人會撞到。
+     號碼要等每晚的工作「先整理、再封存」把鎖刪掉之後才會再發出去，過期了也一樣：
+     個資才不會在整理前被新的領號蓋掉，家長手機上的雙機房間（rooms/{代碼}）也不會撞到。
+     代碼不含數字 4（0–3、5–9，共 9⁴ = 6561 組）。
      ───────────────────────────────────────────────────────────── */
 
   var CODE_TRIES = 8;
-  /* 鎖的期限由家長手機的時鐘決定；多等 10 分鐘，手機時間稍快也不會去搶還沒過期的 */
-  var CODE_REUSE_MARGIN_MS = 10 * 60 * 1000;
+  /* 代碼只用這 9 個數字（不含 4）；firestore.rules 的 validClaim 也只收這些 */
+  var CODE_DIGITS = '012356789';
 
-  /* 0000–9999 等機率：Uint16 取到 60000 以上就重抽（60000 = 6 × 10000，取餘數才不會偏） */
+  /* 每一位在 9 個數字裡等機率：Uint8 取到 252 以上就重抽（252 = 28 × 9，取餘數才不會偏） */
   function randomCode() {
     var c = root.crypto;
-    var buf = new Uint16Array(1);
-    var n;
-    do {
+    var buf = new Uint8Array(1);
+    var code = '';
+    while (code.length < 4) {
+      var n;
       if (c && c.getRandomValues) {
         c.getRandomValues(buf);
         n = buf[0];
       } else {
-        n = Math.floor(Math.random() * 65536);
+        n = Math.floor(Math.random() * 256);
       }
-    } while (n >= 60000);
-    return String(n % 10000).padStart(4, '0');
+      if (n < 252) code += CODE_DIGITS.charAt(n % 9);
+    }
+    return code;
   }
 
-  function codeIsFree(lock, now) {
-    return !lock || Number(lock.expiresAt) + CODE_REUSE_MARGIN_MS < now;
+  /* codes/ 裡沒有這組才算空著。過期但還沒封存的鎖仍算有人在用（規則也只允許新建） */
+  function codeIsFree(lock) {
+    return !lock;
   }
 
   /* 醫檢師查詢時看到的狀態 */
@@ -685,7 +689,7 @@
     WORRY_CAPTIONS: WORRY_CAPTIONS,
     codes: {
       TRIES: CODE_TRIES,
-      REUSE_MARGIN_MS: CODE_REUSE_MARGIN_MS,
+      DIGITS: CODE_DIGITS,
       random: randomCode,
       isFree: codeIsFree,
       state: codeState,

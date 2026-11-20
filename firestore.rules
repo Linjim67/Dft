@@ -105,10 +105,11 @@ service cloud.firestore {
       allow get: if request.auth != null && code.matches('^[0-9]{4}$');
       allow list: if isStaff();
 
-      // 領取：全新的代碼，或上一位的 24 小時已經過了
+      // 領取：只能新建，codes/ 裡已經有的號碼（就算過期）不能重領。
+      // 上一位的鎖要等每晚的工作先整理（個資複製進 organized/）、再封存才會刪，
+      // 所以個資不會在整理前被新的領號蓋掉。
       allow create: if validClaim(code, request.resource.data);
-      allow update: if (resource.data.expiresAt < request.time && validClaim(code, request.resource.data))
-        || staffFinish(code);
+      allow update: if staffFinish(code);
       allow delete: if false;
 
       // 給醫檢師看的個人資料（不含暱稱）。
@@ -188,7 +189,7 @@ service cloud.firestore {
 
     function validClaim(code, d) {
       return request.auth != null
-        && code.matches('^[0-9]{4}$')
+        && code.matches('^[0-35-9]{4}$')   // 新領的代碼不含數字 4
         && d.keys().hasOnly(['v', 'code', 'holderUid', 'status', 'expiresAt', 'doneAt', 'createdAt'])
         && d.keys().hasAll(['v', 'code', 'holderUid', 'status', 'expiresAt', 'doneAt', 'createdAt'])
         && d.v == 1

@@ -62,7 +62,7 @@ organized/{YYYYMMDD}                  one day's data, gathered per family by the
 - **Level**: an integer from 1 to 5.
 - **age**: a number from 0 to 18, in 0.5 steps up to 6 and whole years after that.
 - **gender**: `'男'` or `'女'`.
-- **code**: a 4-digit string (`^[0-9]{4}$`), e.g. `"0427"`. The same number is used as the doc id in both `codes/` and `rooms/`.
+- **code**: a 4-digit string without the digit 4 (`^[0-35-9]{4}$`, 9⁴ = 6561 codes), e.g. `"0527"`. Codes claimed before 2026-11-21 may contain a 4. The same number is used as the doc id in both `codes/` and `rooms/`.
 - **No nickname, ever.** The rules list the allowed keys (`keys().hasOnly([...])`), so the server rejects any doc with a nickname or any other extra field. Free-text fields have the nickname replaced with `孩子` before upload (`Anxin.scrubNickname`).
 
 ---
@@ -83,27 +83,27 @@ The lock for one 4-digit temporary code: who holds it, its status and when it ex
 
 **Lifecycle**
 
-1. **Claim** (01 個人資訊). One transaction writes the lock and `private/profile` together. It succeeds only if the doc doesn't exist or the previous `expiresAt` has passed. The client also waits an extra 10 minutes (`Anxin.codes.REUSE_MARGIN_MS`) and tries up to 8 random codes.
+1. **Claim** (01 個人資訊). One transaction writes the lock and `private/profile` together. It succeeds only if the doc doesn't exist: the rules allow only `create`, so a lock that is still in `codes/` blocks its number even after it expires. The client tries up to 8 random codes (`Anxin.codes.random`, digits `Anxin.codes.DIGITS` = `012356789`).
 2. **Staff list** (03 醫護端 「等待中」). The query is `where('expiresAt', '>', now)`. The page itself decides between active, done and expired.
 3. **Finish** (staff submits feedback). This is one batch with two writes: create `staffFeedback/…`, and set `status: 'done'` and `doneAt`. Only `status` and `doneAt` can change. `private/profile` is kept for the nightly job (see its section); pages from before Nov 2026 also deleted it in this batch, and the rules still allow that.
 4. **Parent's phone** listens to its own lock. When `status` becomes `done`, the phone goes to `/shot/?done=1`.
-5. A `done` code is not reissued before its `expiresAt`, because `rooms/{code}` uses the same number.
-6. **Archive** (every day at 00:00 Taipei time, or by hand, always right after [organized](#organizedyyyymmdd)). The archive job in [functions/archive.js](functions/archive.js) moves every lock whose `expiresAt` has passed to [`archivedCode/…`](#archivedcodeyyyymmddcodescode-claimms). For each code, one batch writes the archive copy, deletes the lock and deletes any leftover `private/profile`. The lock is deleted only if it hasn't changed since the query; if a new family claimed the number in the meantime, their lock and profile stay and only the old claim is archived. After that, the staff page shows the code as 查無 instead of 已過期.
+5. No number is reissued until the archive job has deleted its lock, which happens only after the organize step has copied the profile. This also keeps `rooms/{code}` from being shared by two families.
+6. **Archive** (every day at 00:00 Taipei time, or by hand, always right after [organized](#organizedyyyymmdd)). The archive job in [functions/archive.js](functions/archive.js) moves every lock whose `expiresAt` has passed to [`archivedCode/…`](#archivedcodeyyyymmddcodescode-claimms). For each code, one batch writes the archive copy, deletes the lock and deletes any leftover `private/profile`. The lock is deleted only if it hasn't changed since the query (a safeguard; the rules no longer let a new family overwrite a lock). After that, the number can be claimed again, and the staff page shows the code as 查無 instead of 已過期.
 
 **When a number is reused**
 
-Two families never hold the same code at the same time. After a code expires, a new family can get the same number. This is what happens to the old family's data:
+Two families never hold the same code at the same time, and a number comes back only after the nightly job has organized and archived the previous claim. This is what happens to the old family's data:
 
 | Path | Old family's data |
 |---|---|
-| `codes/{code}` | Usually already moved to `archivedCode/` by the first archive run after it expired, so the new claim creates a fresh doc. If the number is claimed again before that run, the new claim overwrites the lock and the earlier claim is lost (except its `staffFeedback` doc if staff finished it). |
-| `codes/{code}/private/profile` | Copied to `organized/` by the nightly job, then deleted by the archive job. If the nightly job hasn't copied it yet, the new family's claim overwrites it and the old profile is lost (see the next section). |
+| `codes/{code}` | Already moved to `archivedCode/`; the new claim creates a fresh doc. |
+| `codes/{code}/private/profile` | Already copied to `organized/` and deleted. |
 | `staffFeedback/{code}-{claimMs}` | Kept, and no collision is possible: every claim has a different `claimMs`. |
 | `rooms/{code}` | Overwritten when the new parent opens 雙機. `childUid` goes back to `null`, so the old child's phone stops. |
 | `rooms/{code}/cmds`, `state/child` | Kept, because overwriting a doc doesn't delete its subcollections. The child only runs commands from the last 2 minutes. The parent's remote ignores any `state/child` older than the room's `createdAt`. |
 | `feedback`, `circleDays`, `playtime` | Not affected: they aren't keyed by code. |
 
-A phone whose clock is more than 10 minutes fast can think an expired code is free before the server agrees. The server rejects that claim, and `tryClaim` treats the rejection as "taken" and moves on to the next random code. A rejection on a code that has never been used is a real setup problem, so that error still reaches the page.
+If the nightly job isn't run for a while, expired locks pile up in `codes/` and fewer numbers are free. That's harmless at clinic volume (8 tries out of 6561 numbers), but `tryClaim` fails with `anxin/no-free-code` once nearly all of them are taken.
 
 ## `codes/{code}/private/profile`
 
@@ -113,7 +113,7 @@ Once the code is `done` or expired, no client can read or change it. It stays un
 
 There is **no TTL policy** (checked 2026-11-20: no field in the database has one). Nothing deletes a profile except the archive job, right after the organize step has copied it. Don't add one: a profile deleted before the organize step is gone for good.
 
-One case can still lose a profile: after its code expires (claim + 24 h, plus the 10-minute reuse margin), a new family can get the same number, and their claim overwrites `private/profile`. The organize step copies yesterday's claims, so running the nightly job every day between 00:00 and the clinic opening copies every profile before its code can expire. Each skipped day leaves that day's profiles exposed to this, although the chance that one of them is drawn again is small.
+A new claim can't overwrite it either: the number stays taken until the archive job has deleted the lock, and that only happens after the organize step. So skipping the nightly job for a few days loses nothing; the profiles just wait in `codes/`.
 
 | Field | Type | Value |
 |---|---|---|
@@ -170,7 +170,7 @@ The profile is not archived. A code that fails to move stays in `codes/`, and th
 The archive runs as the second half of the **nightly job** ([functions/nightly.js](functions/nightly.js)): first [organize](#organizedyyyymmdd) yesterday plus the claim day of every lock about to be archived, then the archive. If any day fails to organize, nothing is archived, so no profile is deleted before it is copied. There are two ways to run it. Both do the same thing:
 
 - **Scheduled** (needs the Blaze plan): the `nightly` Cloud Function in [functions/index.js](functions/index.js) runs every day at 00:00 Asia/Taipei, and Cloud Scheduler retries a failed run up to 3 times. To deploy: `cd functions && npm install`, then `firebase deploy --only functions` from the repo root. The schedule is in the code, not in the Console. As of Nov 2026 it has never been deployed (the Cloud Functions API is off), so the job runs only by hand.
-- **By hand** (works on the free plan): `node functions/archive-now.js <key.json> --dry-run` lists what each day's organize step would write and how many codes would move into each day's folder, without writing anything. Run it again without `--dry-run` to do it. The key is a service-account key from Firebase Console → Project settings → Service accounts → Generate new private key. It has full admin access to the database, so keep it outside the repo. Run it every day, ideally between 00:00 and the clinic opening. Archive folders use the claim day, so skipping days is safe for them, but profiles not yet organized can be overwritten when their number is claimed again (see `private/profile`).
+- **By hand** (works on the free plan): `node functions/archive-now.js <key.json> --dry-run` lists what each day's organize step would write and how many codes would move into each day's folder, without writing anything. Run it again without `--dry-run` to do it. The key is a service-account key from Firebase Console → Project settings → Service accounts → Generate new private key. It has full admin access to the database, so keep it outside the repo. Run it every day so `organized/` stays current. Skipping days loses no data: archive folders use the claim day, and a number isn't reissued before its claim has been organized and archived. Until then, its expired lock just keeps the number taken.
 
 ## `organized/{YYYYMMDD}`
 

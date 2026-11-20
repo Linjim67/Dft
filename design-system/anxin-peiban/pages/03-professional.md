@@ -11,21 +11,21 @@ of a duplicate (~12% at 50 families), and nothing would notice. The 醫檢師 al
 
 Now every code has a lock document, `codes/{code}`, and claiming it is one Firestore transaction:
 
-1. `Anxin.codes.random()`: `crypto.getRandomValues`, rejection-sampled so 0000–9999 are equally likely.
+1. `Anxin.codes.random()`: `crypto.getRandomValues`, rejection-sampled so each digit is equally likely. Codes never
+   contain the digit 4 (digits `012356789`, 6561 codes).
 2. `tx.get(lock)`. If it is free, write the lock and `codes/{code}/private/profile` in the same transaction.
-   If it is taken, try another code (up to 8; with 10 000 codes this practically never loops).
+   If it is taken, try another code (up to 8; with 6561 codes this practically never loops).
 3. If two phones race for the same code, Firestore aborts the later transaction and reruns it, and the
    rerun sees the code as taken. Verified with 10 concurrent claims (exactly one wins) and with 200
    sequential families (200 distinct codes).
 
-The rules are the second guarantee. Create succeeds only on an empty lock; overwrite succeeds only when
-`expiresAt < request.time`. The lock and the profile must appear together (`existsAfter`, plus
+The rules are the second guarantee. Create succeeds only on an empty lock and a code without 4; a lock can
+never be overwritten by a new claim. The lock and the profile must appear together (`existsAfter`, plus
 `lock.createdAt == request.time`), so a lookup that finds a code always finds its data.
 
-**A code is never reissued inside its 24 h window, even after it is done.** The parent's duo room
-(`rooms/{code}`) and local game progress use the same number until `expiresAt`. Reissuing early would
-put two families on one room. The client waits a further 10 minutes after expiry
-(`CODE_REUSE_MARGIN_MS`) to absorb phone clock skew. 10 000 codes per day is far above clinic volume.
+**A code is never reissued until the nightly job has organized and archived it**, however long ago it
+expired. The profile is copied into `organized/` before the lock is deleted, so a new family can never
+overwrite it, and the parent's duo room (`rooms/{code}`) is never shared. 6561 codes is far above clinic volume.
 
 Profiles are stored under `anxin.profile.v2`. v1 profiles held unregistered codes that could collide, so
 `load()` deletes them and the parent fills in the form again.

@@ -445,7 +445,8 @@
     }).then(function (r) {
       if (seq !== lookupSeq) return;
       if (r.state !== 'active') {
-        note(code + ' ' + STATE_TEXT[r.state][0], STATE_TEXT[r.state][1]);
+        note(code + ' ' + STATE_TEXT[r.state][0],
+          r.state === 'missing' && code.indexOf('4') >= 0 ? '代碼不會有數字 4，請再核對一次' : STATE_TEXT[r.state][1]);
         return;
       }
       current = { code: code, lock: lock, profile: r.profile };

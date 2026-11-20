@@ -27,8 +27,8 @@ function archiveRef(db, code, claimMs) {
 /* 一組過期的鎖：封存、刪鎖、刪掉個人資料，同一批寫入。
    個人資料不放進 archivedCode：每晚的整理（organize.js）已經先把它複製到 organized/，
    這裡刪的是 codes/ 裡的原始那份。nightly.js 保證整理一定在封存之前。
-   刪鎖帶 lastUpdateTime 前提：查詢之後若剛好有新家庭領走這組號碼，整批都不寫，
-   新家庭的鎖和個人資料不動，只把舊的這一份補進封存。 */
+   刪鎖帶 lastUpdateTime 前提：查詢之後鎖若被改過，整批都不寫，只把舊的這一份補進封存。
+   （規則現在只允許新建鎖，過期的鎖不會被新家庭重領；這只是保險。） */
 async function archiveOne(db, snap) {
   const lock = snap.data();
   const ref = archiveRef(db, snap.id, lock.createdAt.toMillis());
