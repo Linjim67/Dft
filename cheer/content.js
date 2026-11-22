@@ -75,7 +75,7 @@ window.CHEER_CONTENT = {
        watch     要注意：什麼時候要告訴醫護人員、尋求協助（可省略）
        tip       小提醒：家長可以怎麼做（可省略）
        eat       可以多攝取（綠框）：{ label, text, foods: [{ img: [圖檔名], name, sub? }] }，
-                 圖在 /cheer/img/food/{圖檔名}.svg（來源與授權見同資料夾 SOURCE.txt）
+                 圖在 /cheer/img/food/{圖檔名}.svg（自己畫的寫實插圖，說明見同資料夾 SOURCE.txt）
      醫療現場解密的題目也可以用這套欄位（有 short 就用這套，沒有就是 醫療小知識＋給家長的小提醒） */
   faqs: [
     {
@@ -166,7 +166,8 @@ window.CHEER_CONTENT = {
         label: '可以多攝取',
         text: '富含鐵質、葉酸與維生素 B12 的食物，有助於血球的生成。',
         foods: [
-          { img: ['meat', 'chicken'], name: '瘦肉、雞肉' },
+          { img: ['meat'], name: '瘦肉' },
+          { img: ['chicken'], name: '雞肉' },
           { img: ['egg'], name: '雞蛋' },
           { img: ['greens'], name: '深綠色蔬菜', sub: '如菠菜' },
           { img: ['beans'], name: '豆類', sub: '如豆腐、黃豆' },

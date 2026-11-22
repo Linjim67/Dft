@@ -370,7 +370,7 @@
   color: var(--leaf-deep);
 }
 
-/* 三欄：390px 寬時每格約 88px，五種食物排成 3 + 2 */
+/* 三欄：390px 寬時每格約 88px，六種食物排成 3 + 3 */
 .food-grid {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -392,13 +392,13 @@
   display: flex;
   justify-content: center;
   align-items: center;
-  height: 40px;
+  height: 46px;
 }
 
 .food-pics img {
   display: block;
-  width: 36px;
-  height: 36px;
+  width: 44px;
+  height: 44px;
 }
 
 /* 兩種食物一格（瘦肉、雞肉）：各縮小一點並排 */

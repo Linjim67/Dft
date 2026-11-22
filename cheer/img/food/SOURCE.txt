@@ -1,11 +1,12 @@
-食物插圖：Microsoft Fluent Emoji（Flat 版），MIT 授權（見同資料夾 LICENSE.txt）。
-https://github.com/microsoft/fluentui-emoji  commit 1ffb34c752ecf5d402f04cfb4b392c77f57c54bc（2026-08-24）
+食物插圖：安心陪伴專案自己畫的寫實風 SVG（64 × 64），沒有使用外部圖片，不需另外標示授權。
+（之前的版本用過 Microsoft Fluent Emoji，2026-11-22 換掉。）
 
-meat.svg     ← assets/Cut of meat/Flat/cut_of_meat_flat.svg   瘦肉
-chicken.svg  ← assets/Poultry leg/Flat/poultry_leg_flat.svg   雞肉
-egg.svg      ← assets/Egg/Flat/egg_flat.svg                   雞蛋
-greens.svg   ← assets/Leafy green/Flat/leafy_green_flat.svg   深綠色蔬菜
-beans.svg    ← assets/Beans/Flat/beans_flat.svg               豆類
-nuts.svg     ← assets/Peanuts/Flat/peanuts_flat.svg           堅果與種子
+meat.svg     瘦肉：生牛排，上緣一條油邊、側面厚度、細油花
+chicken.svg  雞肉：烤雞腿
+egg.svg      雞蛋：紅殼蛋＋白殼蛋
+greens.svg   深綠色蔬菜：一把菠菜（根部帶紅）
+beans.svg    豆類：豆腐＋黃豆
+nuts.svg     堅果與種子：杏仁、腰果、芝麻
 
 用在 /cheer/（抽血大小問「抽血後，可以吃甚麼幫助補充血液？」的「可以多攝取」）。
+寫法：漸層做立體感、白色半透明做光澤、地面一個淡淡的影子；改圖時維持同一套光源（左上）。

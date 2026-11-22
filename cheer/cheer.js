@@ -118,8 +118,8 @@
         var im = el('img');
         im.src = '/cheer/img/food/' + name + '.svg';
         im.alt = '';
-        im.width = 36;
-        im.height = 36;
+        im.width = 44;
+        im.height = 44;
         im.loading = 'lazy';
         im.decoding = 'async';
         pics.appendChild(im);
