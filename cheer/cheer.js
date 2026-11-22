@@ -6,7 +6,7 @@
    - 先搜尋、再瀏覽：搜尋框在最上面，邊打邊篩，命中的字標出來
    - 依時間分類：抽血前／抽血時／抽血後，和搜尋可以同時用
    - 「全部展開／全部收合」（GOV.UK accordion 的 Show all sections）
-   - 每題答案拆成：簡單說 → 條列 → 補充 → 放心 → 要注意
+   - 每題答案拆成：簡單說 → 條列 → 補充 → 可以多攝取 → 放心 → 要注意 → 小提醒
    - 每題有自己的網址（#why-1、#faq-3），打開連結就直接展開那一題
    - 找不到答案時，告訴家長下一步：問現場醫護人員、看其他家長的經驗
    ═══════════════════════════════════════════════════════════════ */
@@ -92,8 +92,45 @@
       body.appendChild(ul);
     }
     if (f.note) body.appendChild(textNode('p', 'ans-note', f.note, item));
+    if (f.eat) body.appendChild(renderEat(f.eat, item));
     if (f.calm) body.appendChild(labelled('is-calm', ICON_CHECK, '放心', f.calm, item));
     if (f.watch) body.appendChild(labelled('is-watch', ICON_ALERT, '要注意', f.watch, item));
+    if (f.tip) body.appendChild(labelled('is-hint', ICON_HEART, '小提醒', f.tip, item));
+  }
+
+  /* 可以多攝取：綠框，一句說明＋一格一種食物（圖＋名字＋例子）。
+     圖只是輔助（alt 空白），名字由文字承擔；食物名字也進搜尋 */
+  var ICON_SPROUT = '<path d="M12 20v-7"/><path d="M12 13c0-4 2.8-6.5 7-6.5 0 4-2.8 6.5-7 6.5Z"/>' +
+    '<path d="M12 15.5c0-3-2.2-5-5.5-5 0 3 2.2 5 5.5 5Z"/>';
+
+  function renderEat(e, item) {
+    var box = el('div', 'know is-eat');
+    var head = el('p', 'know-label');
+    head.innerHTML = '<svg viewBox="0 0 24 24" class="icon" aria-hidden="true">' + ICON_SPROUT + '</svg>';
+    head.appendChild(doc.createTextNode(e.label));
+    box.appendChild(head);
+    box.appendChild(textNode('p', null, e.text, item));
+    var ul = el('ul', 'food-grid');
+    e.foods.forEach(function (f) {
+      var li = el('li', 'food');
+      var pics = el('span', 'food-pics' + (f.img.length > 1 ? ' is-pair' : ''));
+      f.img.forEach(function (name) {
+        var im = el('img');
+        im.src = '/cheer/img/food/' + name + '.svg';
+        im.alt = '';
+        im.width = 36;
+        im.height = 36;
+        im.loading = 'lazy';
+        im.decoding = 'async';
+        pics.appendChild(im);
+      });
+      li.appendChild(pics);
+      li.appendChild(textNode('span', 'food-name', f.name, item));
+      if (f.sub) li.appendChild(textNode('span', 'food-sub', f.sub, item));
+      ul.appendChild(li);
+    });
+    box.appendChild(ul);
+    return box;
   }
 
   function addItem(section, list, idPrefix, idx, q, when, fill) {
@@ -110,6 +147,11 @@
   var whyList = doc.getElementById('whyList');
   C.whys.forEach(function (w, i) {
     addItem('why', whyList, 'why', i, w.q, w.when, function (body, item) {
+      /* 有 short 的題目用抽血大小問的格式（簡單說→原因→放心→小提醒） */
+      if (w.short) {
+        renderAnswer(body, w, item);
+        return;
+      }
       body.appendChild(labelled('is-fact', ICON_INFO, '醫療小知識', w.fact, item));
       body.appendChild(labelled('is-tip', ICON_HEART, '給家長的小提醒', w.tip, item));
     });

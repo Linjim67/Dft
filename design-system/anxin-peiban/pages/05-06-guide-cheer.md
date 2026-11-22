@@ -121,5 +121,16 @@ Chapters: 醫療現場解密 and 抽血大小問 are both leaf (owner, 2026-11-1
   box with a warning icon: when to tell the staff). The wording is the authors'; sentences were only
   split up, with a few joining words. 醫療現場解密 keeps its two blocks: 醫療小知識 and a 給家長的小提醒
   box in the chapter's soft tone. All of these text pieces are searchable and highlighted.
-- **Deep links:** `#why-1…7` and `#faq-1…11` open and scroll to that question.
+- **Two more answer fields** (owner, 2026-11-22):
+  - **小提醒** (`tip`) comes last, in a cocoa-soft box with a heart. It is cocoa, not the chapter tone,
+    so it stays distinct from the green 放心 (cocoa label 7.22:1).
+  - **可以多攝取** (`eat`) is a green box, as the owner asked: leaf-soft with a 2px `--leaf` frame and a
+    sprout label. It has one sentence, then a 3-column grid of white food tiles (a picture, a bold name,
+    and an optional grey example such as 如菠菜). The pictures are Microsoft Fluent Emoji (Flat, MIT),
+    stored in `/cheer/img/food/` with `LICENSE.txt` and `SOURCE.txt` (pinned commit). They are
+    decorative (`alt=""`); the name carries the meaning and is searchable.
+  - A 醫療現場解密 item that has `short` renders with these structured fields instead of
+    醫療小知識/小提醒 (used by the 瘀青 question).
+- **Deep links:** `#why-1…8` and `#faq-1…12` open and scroll to that question. Nothing in the site links to
+  a numbered question, so new questions go next to related ones and renumber the rest.
 - **Empty state:** reuses `.empty-state`, with tappable suggestions (頭暈 / 瘀青 / 空腹 / 血管).
