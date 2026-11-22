@@ -126,12 +126,13 @@ Chapters: 醫療現場解密 and 抽血大小問 are both leaf (owner, 2026-11-1
     so it stays distinct from the green 放心 (cocoa label 7.22:1).
   - **可以多攝取** (`eat`) is a green box, as the owner asked: leaf-soft with a 2px `--leaf` frame and a
     sprout label. It has one sentence, then a 3-column grid of white food tiles (a picture, a bold name,
-    and an optional grey example such as 如菠菜). Six tiles: 瘦肉 · 雞肉 · 雞蛋 · 深綠色蔬菜 · 豆類 · 堅果與種子.
-    The pictures are **drawn in-house** (owner, 2026-11-22): semi-realistic 64×64 SVGs in
-    `/cheer/img/food/`, built from gradients, a gloss highlight, texture and a soft ground shadow. There
-    are no outside assets, so there is no licence to track. An earlier version used emoji art, and stock
-    photos were tried and dropped. The pictures are decorative (`alt=""`); the name carries the meaning
-    and is searchable.
+    and an optional grey example such as 如菠菜). Six tiles: 瘦肉 · 雞蛋 · 深綠色蔬菜 · 豆類 · 堅果與種子 ·
+    柑橘類水果 (owner, 2026-11-23: 雞肉 removed, orange added).
+    - **Pictures** are the owner's photos with the background removed. They are 160×160 WebP (5–10 KB
+      each) in `/cheer/img/food/` (see `SOURCE.txt`), shown at 52px with a soft drop-shadow so the egg
+      white shows on the off-white tile, and with `--sp-2` between picture and name.
+    - They are decorative (`alt=""`); the name carries the meaning and is searchable.
+    - Earlier versions used emoji art, then in-house drawings, and stock photos were tried and dropped.
   - A 醫療現場解密 item that has `short` renders with these structured fields instead of
     醫療小知識/小提醒 (used by the 瘀青 question).
 - **Deep links:** `#why-1…8` and `#faq-1…12` open and scroll to that question. Nothing in the site links to

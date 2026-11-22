@@ -1,12 +1,15 @@
-食物插圖：安心陪伴專案自己畫的寫實風 SVG（64 × 64），沒有使用外部圖片，不需另外標示授權。
-（之前的版本用過 Microsoft Fluent Emoji，2026-11-22 換掉。）
+食物圖片：主人提供的照片（2026-11-23），去背後輸出成 160 × 160 透明 WebP。
 
-meat.svg     瘦肉：生牛排，上緣一條油邊、側面厚度、細油花
-chicken.svg  雞肉：烤雞腿
-egg.svg      雞蛋：紅殼蛋＋白殼蛋
-greens.svg   深綠色蔬菜：一把菠菜（根部帶紅）
-beans.svg    豆類：豆腐＋黃豆
-nuts.svg     堅果與種子：杏仁、腰果、芝麻
+meat.webp    瘦肉          ← foods.jpg 左上（生牛排）
+egg.webp     雞蛋          ← foods.jpg 中上（切半的水煮蛋）
+greens.webp  深綠色蔬菜    ← foods.jpg 右上（菠菜）
+beans.webp   豆類          ← foods.jpg 左下（紅腰豆、黃豆）
+nuts.webp    堅果與種子    ← foods.jpg 右下（黑芝麻）
+orange.webp  柑橘類水果    ← orange.png（柳橙，原檔已去背）
 
+處理方式：foods.jpg 是黑底，切成五張後用 rembg（u2net）去背；雞蛋的蛋白被模型當成背景，
+改用亮度去背（比背景亮的就是蛋，補洞、邊緣羽化 1px）。orange.png 原本就是透明背景，
+只清掉邊緣殘留的淡光暈。每張裁到物件外框、置中放進正方形。
+
+原始檔（foods.jpg、orange.png）不放上網站（共約 2.4 MB），只留在本機。
 用在 /cheer/（抽血大小問「抽血後，可以吃甚麼幫助補充血液？」的「可以多攝取」）。
-寫法：漸層做立體感、白色半透明做光澤、地面一個淡淡的影子；改圖時維持同一套光源（左上）。

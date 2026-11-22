@@ -392,13 +392,18 @@
   display: flex;
   justify-content: center;
   align-items: center;
-  height: 46px;
+  height: 52px;
+  /* 圖和下面的名字拉開一點（主人指定） */
+  margin-bottom: var(--sp-2);
 }
 
+/* 去背照片：淡淡的落地陰影，白色的蛋白在米白格子上才看得出輪廓 */
 .food-pics img {
   display: block;
-  width: 44px;
-  height: 44px;
+  width: 52px;
+  height: 52px;
+  object-fit: contain;
+  filter: drop-shadow(0 2px 2px rgba(62, 51, 41, .16));
 }
 
 /* 兩種食物一格（瘦肉、雞肉）：各縮小一點並排 */

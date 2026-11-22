@@ -116,10 +116,10 @@
       var pics = el('span', 'food-pics' + (f.img.length > 1 ? ' is-pair' : ''));
       f.img.forEach(function (name) {
         var im = el('img');
-        im.src = '/cheer/img/food/' + name + '.svg';
+        im.src = '/cheer/img/food/' + name + '.webp';
         im.alt = '';
-        im.width = 44;
-        im.height = 44;
+        im.width = 52;
+        im.height = 52;
         im.loading = 'lazy';
         im.decoding = 'async';
         pics.appendChild(im);
