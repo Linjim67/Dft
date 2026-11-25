@@ -27,8 +27,9 @@ function archiveRef(db, code, claimMs) {
 /* 一組過期的鎖：封存、刪鎖、刪掉個人資料，同一批寫入。
    個人資料不放進 archivedCode：每晚的整理（organize.js）已經先把它複製到 organized/，
    這裡刪的是 codes/ 裡的原始那份。nightly.js 保證整理一定在封存之前。
-   刪鎖帶 lastUpdateTime 前提：查詢之後鎖若被改過，整批都不寫，只把舊的這一份補進封存。
-   （規則現在只允許新建鎖，過期的鎖不會被新家庭重領；這只是保險。） */
+   刪鎖帶 lastUpdateTime 前提：查詢之後鎖若被改過（例如 --all 時醫檢師剛好按完成），
+   整批都不寫，只把舊的這一份補進封存，鎖和個資留在 codes/，下次再搬（同一個 id，會蓋掉這份）。
+   （規則只允許新建鎖，過期的鎖不會被新家庭重領。） */
 async function archiveOne(db, snap) {
   const lock = snap.data();
   const ref = archiveRef(db, snap.id, lock.createdAt.toMillis());
@@ -52,13 +53,18 @@ async function findExpired(db, now) {
   return (await db.collection('codes').where('expiresAt', '<', now).get()).docs;
 }
 
-/* 搬走 now 之前過期的所有代碼。失敗的組留在 codes/，下次再搬。
+/* codes/ 裡的每一組鎖，還沒過期的也算（archive-now.js --all） */
+async function findAll(db) {
+  return (await db.collection('codes').get()).docs;
+}
+
+/* 搬走這幾組（findExpired／findAll 查到、而且已經整理過的鎖）。失敗的組留在 codes/，下次再搬。
+   只搬傳進來的這幾組，不重新查：整理途中才領的號碼不會沒整理就被刪掉個資。
    回傳 { moved, reclaimed, failed: [{ code, error }] } */
-async function archiveExpiredCodes(db, now) {
-  const expired = await findExpired(db, now);
+async function archiveCodes(db, locks) {
   const result = { moved: 0, reclaimed: 0, failed: [] };
-  for (let i = 0; i < expired.length; i += PARALLEL) {
-    const chunk = expired.slice(i, i + PARALLEL);
+  for (let i = 0; i < locks.length; i += PARALLEL) {
+    const chunk = locks.slice(i, i + PARALLEL);
     const settled = await Promise.allSettled(chunk.map((snap) => archiveOne(db, snap)));
     settled.forEach((r, j) => {
       if (r.status === 'fulfilled') result[r.value]++;
@@ -68,4 +74,4 @@ async function archiveExpiredCodes(db, now) {
   return result;
 }
 
-module.exports = { dayKey, findExpired, archiveExpiredCodes };
+module.exports = { dayKey, findExpired, findAll, archiveCodes };
