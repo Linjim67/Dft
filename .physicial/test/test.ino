@@ -2,18 +2,35 @@
 //
 // 接線：模組 V → 3V3 (或 5V)、G → GND、S → GPIO15
 //
+// 這塊模組 S 腳是 LOW 出霧、HIGH 停止 (實測)。模組上有電阻把 S 拉到 G，
+// 所以 S 空接時會一直噴；ESP32 重開機的瞬間腳位放開，也會短暫噴一下。
+//
 // 板子上兩個 USB 口都能用：USB 口 (晶片內建 USB) 或 UART 口 (CH343)，訊息兩邊同時送。
 // 從序列埠 (115200) 隨時輸入：
 //   0..1023     霧量。0 = 關，1023 = 全開
 //   f <Hz>      PWM 頻率，0.05 ~ 39000 (預設 10)
 //   min <0..1023>  開始出霧的最低值；1..1023 會線性對應到 min..1023
-//   inv         反轉 S 腳極性 (模組若是 LOW 才出霧)
+//   inv         反轉 S 腳極性 (預設 LOW = 出霧)
 //   on / off    等於 1023 / 0
 //   sweep       每 2 秒往上加 32，用來找開始出霧的值；輸入任何東西就停
 //   s 或 ?      顯示目前設定
 //   pin         量 GPIO15 腳上實際的電位 (確認腳有在輸出)
 //   pulse       S 腳「按一下」0.3 秒再放開 (測模組是不是按鍵切換式)
 //   probe       放開 S 腳，用內部上拉/下拉看模組那端有沒有接上、有沒有電
+//   v <0~3.3>   S 腳輸出固定電壓 (不受 inv 影響)。輸入霧量/頻率等指令就回到 PWM 模式
+//
+// 固定電壓 (v 指令)：ESP32-S3 沒有 DAC，腳位本身只能輸出 0 或 3.3V。
+//   v 用 39 kHz PWM 做出「平均電壓」，要在 GPIO15 和 S 之間加 RC 低通濾波，S 才是平滑的直流：
+//
+//     GPIO15 ── 1kΩ ──┬── S
+//                     │
+//                    10µF (電解電容 + 接這端)
+//                     │
+//                    GND
+//
+//   RC 時間常數 10 ms，改電壓後約 50 ms 穩定；39 kHz 的漣波約 1 mV。
+//   不加 RC：電表會量到平均電壓，但模組實際收到的是 0/3.3V 的快速方波。
+//   模組上有電阻把 S 拉到 G，會和 1kΩ 分壓，S 上的實際電壓會比設定值低一點，請用電表在 S 量。
 //
 // 為什麼頻率要低：
 //   霧化片由模組上的振盪電路 (約 100 kHz 級) 推動，S 腳只是開關。
@@ -41,7 +58,7 @@ static const uint32_t XTAL_HZ = 40000000;
 static float freqHz = 10.0f;
 static uint16_t level = 0;      // 使用者輸入 0..1023
 static uint16_t minLevel = 0;   // 死區補償
-static bool activeLow = false;
+static bool activeLow = true;   // 這塊模組 S = LOW 出霧
 
 static bool hwMode = false;
 static uint8_t hwRes = 0;
@@ -141,6 +158,42 @@ static bool applyFrequency() {
   return true;
 }
 
+// ---- 電壓模式 (v 指令) ----
+static const float VDD = 3.30f;              // GPIO HIGH 的實際電壓；用電表量過可以改
+static const uint32_t VOLT_PWM_HZ = 39000;   // 10 bit 解析度下 LEDC 能跑的最高頻率
+static bool voltMode = false;
+static float voltOut = 0;
+
+static uint16_t voltDuty() {
+  return (uint16_t)(voltOut / VDD * 1023.0f + 0.5f);
+}
+
+static bool applyVoltage() {
+  stopHw();
+  if (!ledcAttach(MIST_PIN, VOLT_PWM_HZ, 10)) {
+    out.println("! LEDC 設定失敗");
+    voltMode = false;
+    return false;
+  }
+  ledcOutputInvert(MIST_PIN, false);   // 電壓就是腳位電壓，不反相
+  hwMode = true;
+  hwRes = 10;
+  ledcWrite(MIST_PIN, voltDuty());     // 1023 時核心會補成 100%
+  voltMode = true;
+  return true;
+}
+
+static void exitVoltMode() {
+  if (!voltMode) return;
+  voltMode = false;
+  applyFrequency();
+}
+
+static void applyOutput() {
+  if (voltMode) applyVoltage();
+  else applyFrequency();
+}
+
 static void serviceSoftwarePwm() {
   if (hwMode) return;
   if (swOnUs == 0) { writePin(false); return; }
@@ -154,6 +207,11 @@ static void serviceSoftwarePwm() {
 }
 
 static void printStatus() {
+  if (voltMode) {
+    out.printf("電壓模式  S 腳平均 %.3f V  (duty %u/1023，%lu Hz PWM；加 RC 濾波後才是平滑直流)  不受 inv 影響\n",
+               voltOut, voltDuty(), (unsigned long)VOLT_PWM_HZ);
+    return;
+  }
   uint16_t e = effectiveLevel();
   float periodMs = 1000.0f / freqHz;
   out.printf("level=%u  實際duty=%u/1023 (%.1f%%)  f=%.2f Hz  每週期開 %.1f ms / %.1f ms  min=%u  %s  %s\n",
@@ -163,7 +221,7 @@ static void printStatus() {
 }
 
 static void printHelp() {
-  out.println("指令: 0..1023 | f <Hz> | min <0..1023> | inv | on | off | sweep | s | pin | pulse | probe");
+  out.println("指令: 0..1023 | f <Hz> | min <0..1023> | inv | on | off | sweep | v <V> | s | pin | pulse | probe");
 }
 
 // 讀回腳位實際電位：只打開輸入緩衝，不影響輸出
@@ -178,10 +236,16 @@ static void printPinLevel() {
     N++;
     delayMicroseconds(100);
   }
-  uint16_t e = effectiveLevel();
-  float expectHigh = activeLow ? 100.0f - e * 100.0f / 1023 : e * 100.0f / 1023;
-  out.printf("GPIO%u 量到 HIGH 的比例 %.1f%%  (應該約 %.1f%%)\n",
-                MIST_PIN, highs * 100.0f / N, expectHigh);
+  float ratio = highs * 100.0f / N;
+  float expectHigh;
+  if (voltMode) {
+    expectHigh = voltDuty() * 100.0f / 1023;
+  } else {
+    uint16_t e = effectiveLevel();
+    expectHigh = activeLow ? 100.0f - e * 100.0f / 1023 : e * 100.0f / 1023;
+  }
+  out.printf("GPIO%u 量到 HIGH 的比例 %.1f%%，平均約 %.2f V  (應該約 %.1f%%)\n",
+             MIST_PIN, ratio, ratio / 100.0f * VDD, expectHigh);
 }
 
 // 放開 S 腳，分別開內部上拉、下拉 (~45k) 讀電位。
@@ -195,15 +259,15 @@ static void probeLine() {
   delay(5);
   int down = digitalRead(MIST_PIN);
   pinMode(MIST_PIN, OUTPUT);
-  applyFrequency();   // 恢復原本的輸出
+  applyOutput();   // 恢復原本的輸出
 
   out.printf("probe: 開上拉讀到 %s，開下拉讀到 %s\n", up ? "HIGH" : "LOW", down ? "HIGH" : "LOW");
   if (up && !down) {
-    out.println("  → S 腳像是空接：線沒接上、G 沒共地，或模組輸入沒有上下拉電阻 (無法判斷)");
+    out.println("  → S 腳像是空接：S 線沒接上，或 G 沒共地 (這塊模組 S 空接會一直噴霧)");
   } else if (!up && !down) {
-    out.println("  → 模組把 S 拉到 G：S 有接上、G 有共地，S 應該是 HIGH 啟動");
+    out.println("  → 模組把 S 拉到 G：S 有接上、G 有共地 (正常)");
   } else if (up && down) {
-    out.println("  → 模組把 S 拉到 V：S 有接上、模組 V 有電，S 可能是 LOW 啟動 (試 inv)");
+    out.println("  → 模組把 S 拉到 V：S 有接上、模組 V 有電 (跟這塊模組實測不同，檢查是不是換了模組)");
   } else {
     out.println("  → 上拉讀 LOW、下拉讀 HIGH，不合理，可能接觸不良");
   }
@@ -212,6 +276,7 @@ static void probeLine() {
 // 模擬按鍵：S 腳啟動 300 ms 再放開，之後維持關
 static void pulseButton() {
   level = 0;
+  voltMode = false;
   stopHw();
   writePin(true);
   delay(300);
@@ -223,7 +288,8 @@ static void pulseButton() {
 
 static void setLevel(long v) {
   level = (uint16_t)constrain(v, 0L, 1023L);
-  applyDuty();
+  if (voltMode) exitVoltMode();   // 會一併套用新的 level
+  else applyDuty();
   printStatus();
 }
 
@@ -245,15 +311,26 @@ static void handleLine(char *s) {
       return;
     }
     freqHz = f;
+    voltMode = false;
     applyFrequency();
+    printStatus();
+  } else if (s[0] == 'v' && (s[1] == ' ' || s[1] == '=' || s[1] == '.' || isdigit((unsigned char)s[1]))) {
+    float v = atof(s + 1 + (s[1] == ' ' || s[1] == '='));
+    if (v < 0 || v > VDD + 0.005f) {
+      out.printf("! 電壓範圍 0 ~ %.2f V\n", VDD);
+      return;
+    }
+    voltOut = min(v, VDD);
+    applyVoltage();
     printStatus();
   } else if (!strncmp(s, "min", 3)) {
     minLevel = (uint16_t)constrain(atol(s + 3), 0L, 1023L);
-    applyDuty();
+    if (voltMode) exitVoltMode();
+    else applyDuty();
     printStatus();
   } else if (!strcmp(s, "inv")) {
     activeLow = !activeLow;
-    applyFrequency();
+    applyOutput();   // 電壓模式不受影響，回到 PWM 時才生效
     printStatus();
   } else if (!strcmp(s, "on")) {
     setLevel(1023);
