@@ -2,6 +2,7 @@
 //
 // 接線：模組 V → 3V3 (或 5V)、G → GND、S → GPIO15
 //
+// 板子上兩個 USB 口都能用：USB 口 (晶片內建 USB) 或 UART 口 (CH343)，訊息兩邊同時送。
 // 從序列埠 (115200) 隨時輸入：
 //   0..1023     霧量。0 = 關，1023 = 全開
 //   f <Hz>      PWM 頻率，0.05 ~ 39000 (預設 10)
@@ -54,6 +55,22 @@ static bool sweeping = false;
 static uint32_t sweepLast = 0;
 static const uint16_t SWEEP_STEP = 32;
 static const uint32_t SWEEP_MS = 2000;
+
+// 輸出同時送到 USB 口 (Serial) 和 UART 口 (Serial0)。USB 口沒插時寫入會直接丟掉，不會卡住。
+class DualOut : public Print {
+ public:
+  size_t write(uint8_t c) override {
+    Serial.write(c);
+    Serial0.write(c);
+    return 1;
+  }
+  size_t write(const uint8_t *buf, size_t n) override {
+    Serial.write(buf, n);
+    Serial0.write(buf, n);
+    return n;
+  }
+};
+static DualOut out;
 
 static char lineBuf[32];
 static uint8_t lineLen = 0;
@@ -110,7 +127,7 @@ static bool applyFrequency() {
     uint32_t f = (uint32_t)(freqHz + 0.5f);
     uint8_t r = pickResolution(f);
     if (r == 0 || !ledcAttach(MIST_PIN, f, r)) {
-      Serial.printf("! LEDC 設定 %lu Hz 失敗\n", (unsigned long)f);
+      out.printf("! LEDC 設定 %lu Hz 失敗\n", (unsigned long)f);
       return false;
     }
     ledcOutputInvert(MIST_PIN, activeLow);
@@ -139,14 +156,14 @@ static void serviceSoftwarePwm() {
 static void printStatus() {
   uint16_t e = effectiveLevel();
   float periodMs = 1000.0f / freqHz;
-  Serial.printf("level=%u  實際duty=%u/1023 (%.1f%%)  f=%.2f Hz  每週期開 %.1f ms / %.1f ms  min=%u  %s  %s\n",
+  out.printf("level=%u  實際duty=%u/1023 (%.1f%%)  f=%.2f Hz  每週期開 %.1f ms / %.1f ms  min=%u  %s  %s\n",
                 level, e, e * 100.0f / 1023, freqHz, periodMs * e / 1023, periodMs, minLevel,
                 activeLow ? "LOW=出霧" : "HIGH=出霧",
                 hwMode ? "[LEDC]" : "[軟體]");
 }
 
 static void printHelp() {
-  Serial.println("指令: 0..1023 | f <Hz> | min <0..1023> | inv | on | off | sweep | s | pin | pulse | probe");
+  out.println("指令: 0..1023 | f <Hz> | min <0..1023> | inv | on | off | sweep | s | pin | pulse | probe");
 }
 
 // 讀回腳位實際電位：只打開輸入緩衝，不影響輸出
@@ -163,7 +180,7 @@ static void printPinLevel() {
   }
   uint16_t e = effectiveLevel();
   float expectHigh = activeLow ? 100.0f - e * 100.0f / 1023 : e * 100.0f / 1023;
-  Serial.printf("GPIO%u 量到 HIGH 的比例 %.1f%%  (應該約 %.1f%%)\n",
+  out.printf("GPIO%u 量到 HIGH 的比例 %.1f%%  (應該約 %.1f%%)\n",
                 MIST_PIN, highs * 100.0f / N, expectHigh);
 }
 
@@ -180,15 +197,15 @@ static void probeLine() {
   pinMode(MIST_PIN, OUTPUT);
   applyFrequency();   // 恢復原本的輸出
 
-  Serial.printf("probe: 開上拉讀到 %s，開下拉讀到 %s\n", up ? "HIGH" : "LOW", down ? "HIGH" : "LOW");
+  out.printf("probe: 開上拉讀到 %s，開下拉讀到 %s\n", up ? "HIGH" : "LOW", down ? "HIGH" : "LOW");
   if (up && !down) {
-    Serial.println("  → S 腳像是空接：線沒接上、G 沒共地，或模組輸入沒有上下拉電阻 (無法判斷)");
+    out.println("  → S 腳像是空接：線沒接上、G 沒共地，或模組輸入沒有上下拉電阻 (無法判斷)");
   } else if (!up && !down) {
-    Serial.println("  → 模組把 S 拉到 G：S 有接上、G 有共地，S 應該是 HIGH 啟動");
+    out.println("  → 模組把 S 拉到 G：S 有接上、G 有共地，S 應該是 HIGH 啟動");
   } else if (up && down) {
-    Serial.println("  → 模組把 S 拉到 V：S 有接上、模組 V 有電，S 可能是 LOW 啟動 (試 inv)");
+    out.println("  → 模組把 S 拉到 V：S 有接上、模組 V 有電，S 可能是 LOW 啟動 (試 inv)");
   } else {
-    Serial.println("  → 上拉讀 LOW、下拉讀 HIGH，不合理，可能接觸不良");
+    out.println("  → 上拉讀 LOW、下拉讀 HIGH，不合理，可能接觸不良");
   }
 }
 
@@ -200,7 +217,7 @@ static void pulseButton() {
   delay(300);
   writePin(false);
   applyFrequency();
-  Serial.printf("pulse: S 腳%s 300 ms 後放開。若霧開始出來並持續，代表模組是按鍵切換式\n",
+  out.printf("pulse: S 腳%s 300 ms 後放開。若霧開始出來並持續，代表模組是按鍵切換式\n",
                 activeLow ? "拉 LOW" : "拉 HIGH");
 }
 
@@ -216,7 +233,7 @@ static void handleLine(char *s) {
 
   if (sweeping) {
     sweeping = false;
-    Serial.println("sweep 停止");
+    out.println("sweep 停止");
   }
 
   if (isdigit((unsigned char)*s)) {
@@ -224,7 +241,7 @@ static void handleLine(char *s) {
   } else if (s[0] == 'f' && (s[1] == ' ' || s[1] == '=' || s[1] == '.' || isdigit((unsigned char)s[1]))) {
     float f = atof(s + 1 + (s[1] == ' ' || s[1] == '='));
     if (f < MIN_HZ || f > MAX_HZ) {
-      Serial.printf("! 頻率範圍 %.2f ~ %.0f Hz\n", MIN_HZ, MAX_HZ);
+      out.printf("! 頻率範圍 %.2f ~ %.0f Hz\n", MIN_HZ, MAX_HZ);
       return;
     }
     freqHz = f;
@@ -245,7 +262,7 @@ static void handleLine(char *s) {
   } else if (!strcmp(s, "sweep")) {
     sweeping = true;
     sweepLast = millis();
-    Serial.printf("sweep: 每 %lu ms +%u，輸入任何東西停止\n", (unsigned long)SWEEP_MS, SWEEP_STEP);
+    out.printf("sweep: 每 %lu ms +%u，輸入任何東西停止\n", (unsigned long)SWEEP_MS, SWEEP_STEP);
     setLevel(0);
   } else if (!strcmp(s, "pin")) {
     printPinLevel();
@@ -257,14 +274,14 @@ static void handleLine(char *s) {
     printStatus();
     printHelp();
   } else {
-    Serial.printf("? 看不懂: %s\n", s);
+    out.printf("? 看不懂: %s\n", s);
     printHelp();
   }
 }
 
 static void readSerial() {
-  while (Serial.available()) {
-    char c = (char)Serial.read();
+  while (Serial.available() || Serial0.available()) {
+    char c = (char)(Serial.available() ? Serial.read() : Serial0.read());
     lastCharMs = millis();
     if (c == '\n' || c == '\r') {
       lineBuf[lineLen] = 0;
@@ -287,7 +304,7 @@ static void serviceSweep() {
   sweepLast = millis();
   if (level >= 1023) {
     sweeping = false;
-    Serial.println("sweep 完成 (停在 1023)");
+    out.println("sweep 完成 (停在 1023)");
     return;
   }
   setLevel(min(1023, level + SWEEP_STEP));
@@ -298,11 +315,12 @@ void setup() {
   digitalWrite(MIST_PIN, activeLow ? HIGH : LOW);  // 開機先關
 
   Serial.begin(115200);
+  Serial0.begin(115200);
   uint32_t t0 = millis();
   while (!Serial && millis() - t0 < 2000) delay(10);
 
-  Serial.println();
-  Serial.printf("霧化器 PWM 測試  GPIO%u\n", MIST_PIN);
+  out.println();
+  out.printf("霧化器 PWM 測試  GPIO%u\n", MIST_PIN);
   applyFrequency();
   printStatus();
   printHelp();
