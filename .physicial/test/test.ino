@@ -10,6 +10,8 @@
 //   on / off    等於 1023 / 0
 //   sweep       每 2 秒往上加 32，用來找開始出霧的值；輸入任何東西就停
 //   s 或 ?      顯示目前設定
+//   pin         量 GPIO15 腳上實際的電位 (確認腳有在輸出)
+//   pulse       S 腳「按一下」0.3 秒再放開 (測模組是不是按鍵切換式)
 //
 // 為什麼頻率要低：
 //   霧化片由模組上的振盪電路 (約 100 kHz 級) 推動，S 腳只是開關。
@@ -19,14 +21,17 @@
 //   用 10 Hz 這種低頻做「開一段、停一段」，霧量就會跟著 duty 變。
 //   如果 10 Hz 還是不線性，試 f 2 或 f 1；模組上若有 MCU 在讀 S 腳，要更慢才會動。
 //
-// 頻率 >= 3 Hz 用 LEDC 硬體 PWM；< 3 Hz 用 micros() 軟體計時。
+// 頻率 >= 5 Hz 用 LEDC 硬體 PWM；< 5 Hz 用 micros() 軟體計時。
 // 霧化片不可乾燒：通電前請確認霧化片浮在水面上。
 
 #include <Arduino.h>
+#include <driver/gpio.h>
 
 static const uint8_t MIST_PIN = 15;
 
-static const float HW_MIN_HZ = 3.0f;      // LEDC 用 40 MHz XTAL、14 bit 時最低約 2.4 Hz
+// LEDC 用 40 MHz XTAL。最多用 13 bit：14 bit 時 100% duty (16384) 會溢位變成 0，腳位反而全關。
+// 13 bit 時分頻器上限 1023 → 最低約 4.8 Hz
+static const float HW_MIN_HZ = 5.0f;
 static const float MIN_HZ = 0.05f;
 static const float MAX_HZ = 39000.0f;     // 保留至少 10 bit 解析度
 static const uint32_t XTAL_HZ = 40000000;
@@ -68,7 +73,7 @@ static void writePin(bool mistOn) {
 
 // 在 resolution 內找最大且 LEDC 分頻器 (1 ~ 1023) 撐得住的 bit 數
 static uint8_t pickResolution(uint32_t f) {
-  for (uint8_t r = 14; r >= 10; r--) {
+  for (uint8_t r = 13; r >= 10; r--) {
     uint32_t div = XTAL_HZ / (f * (1UL << r));
     if (div >= 1 && div <= 1023) return r;
   }
@@ -140,7 +145,37 @@ static void printStatus() {
 }
 
 static void printHelp() {
-  Serial.println("指令: 0..1023 | f <Hz> | min <0..1023> | inv | on | off | sweep | s");
+  Serial.println("指令: 0..1023 | f <Hz> | min <0..1023> | inv | on | off | sweep | s | pin | pulse");
+}
+
+// 讀回腳位實際電位：只打開輸入緩衝，不影響輸出
+static void printPinLevel() {
+  gpio_input_enable((gpio_num_t)MIST_PIN);
+  // 取樣至少 200 ms；軟體模式取滿一個週期 (最多 2 秒)，取樣期間軟體 PWM 照跑
+  uint32_t windowUs = hwMode ? 200000UL : constrain(swPeriodUs, 200000UL, 2000000UL);
+  uint32_t highs = 0, N = 0, t0 = micros();
+  while (micros() - t0 < windowUs) {
+    serviceSoftwarePwm();
+    highs += gpio_get_level((gpio_num_t)MIST_PIN);
+    N++;
+    delayMicroseconds(100);
+  }
+  uint16_t e = effectiveLevel();
+  float expectHigh = activeLow ? 100.0f - e * 100.0f / 1023 : e * 100.0f / 1023;
+  Serial.printf("GPIO%u 量到 HIGH 的比例 %.1f%%  (應該約 %.1f%%)\n",
+                MIST_PIN, highs * 100.0f / N, expectHigh);
+}
+
+// 模擬按鍵：S 腳啟動 300 ms 再放開，之後維持關
+static void pulseButton() {
+  level = 0;
+  stopHw();
+  writePin(true);
+  delay(300);
+  writePin(false);
+  applyFrequency();
+  Serial.printf("pulse: S 腳%s 300 ms 後放開。若霧開始出來並持續，代表模組是按鍵切換式\n",
+                activeLow ? "拉 LOW" : "拉 HIGH");
 }
 
 static void setLevel(long v) {
@@ -186,6 +221,10 @@ static void handleLine(char *s) {
     sweepLast = millis();
     Serial.printf("sweep: 每 %lu ms +%u，輸入任何東西停止\n", (unsigned long)SWEEP_MS, SWEEP_STEP);
     setLevel(0);
+  } else if (!strcmp(s, "pin")) {
+    printPinLevel();
+  } else if (!strcmp(s, "pulse")) {
+    pulseButton();
   } else if (!strcmp(s, "s") || !strcmp(s, "?")) {
     printStatus();
     printHelp();
