@@ -12,6 +12,7 @@
 //   s 或 ?      顯示目前設定
 //   pin         量 GPIO15 腳上實際的電位 (確認腳有在輸出)
 //   pulse       S 腳「按一下」0.3 秒再放開 (測模組是不是按鍵切換式)
+//   probe       放開 S 腳，用內部上拉/下拉看模組那端有沒有接上、有沒有電
 //
 // 為什麼頻率要低：
 //   霧化片由模組上的振盪電路 (約 100 kHz 級) 推動，S 腳只是開關。
@@ -145,7 +146,7 @@ static void printStatus() {
 }
 
 static void printHelp() {
-  Serial.println("指令: 0..1023 | f <Hz> | min <0..1023> | inv | on | off | sweep | s | pin | pulse");
+  Serial.println("指令: 0..1023 | f <Hz> | min <0..1023> | inv | on | off | sweep | s | pin | pulse | probe");
 }
 
 // 讀回腳位實際電位：只打開輸入緩衝，不影響輸出
@@ -164,6 +165,31 @@ static void printPinLevel() {
   float expectHigh = activeLow ? 100.0f - e * 100.0f / 1023 : e * 100.0f / 1023;
   Serial.printf("GPIO%u 量到 HIGH 的比例 %.1f%%  (應該約 %.1f%%)\n",
                 MIST_PIN, highs * 100.0f / N, expectHigh);
+}
+
+// 放開 S 腳，分別開內部上拉、下拉 (~45k) 讀電位。
+// 模組端若有電阻把 S 拉到 G 或 V，就會蓋過內部的弱上下拉。
+static void probeLine() {
+  stopHw();
+  pinMode(MIST_PIN, INPUT_PULLUP);
+  delay(5);
+  int up = digitalRead(MIST_PIN);
+  pinMode(MIST_PIN, INPUT_PULLDOWN);
+  delay(5);
+  int down = digitalRead(MIST_PIN);
+  pinMode(MIST_PIN, OUTPUT);
+  applyFrequency();   // 恢復原本的輸出
+
+  Serial.printf("probe: 開上拉讀到 %s，開下拉讀到 %s\n", up ? "HIGH" : "LOW", down ? "HIGH" : "LOW");
+  if (up && !down) {
+    Serial.println("  → S 腳像是空接：線沒接上、G 沒共地，或模組輸入沒有上下拉電阻 (無法判斷)");
+  } else if (!up && !down) {
+    Serial.println("  → 模組把 S 拉到 G：S 有接上、G 有共地，S 應該是 HIGH 啟動");
+  } else if (up && down) {
+    Serial.println("  → 模組把 S 拉到 V：S 有接上、模組 V 有電，S 可能是 LOW 啟動 (試 inv)");
+  } else {
+    Serial.println("  → 上拉讀 LOW、下拉讀 HIGH，不合理，可能接觸不良");
+  }
 }
 
 // 模擬按鍵：S 腳啟動 300 ms 再放開，之後維持關
@@ -225,6 +251,8 @@ static void handleLine(char *s) {
     printPinLevel();
   } else if (!strcmp(s, "pulse")) {
     pulseButton();
+  } else if (!strcmp(s, "probe")) {
+    probeLine();
   } else if (!strcmp(s, "s") || !strcmp(s, "?")) {
     printStatus();
     printHelp();
